@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Laboratory Setup</title>
+
+    <h2>Laboratory Setup</h2>
+    <a href="{% url 'add_laboratory' %}">Add Laboratory</a> <!-- Add Laboratory Button -->
+
+    <h3>Existing Laboratories</h3>
+    <ul>
+        {% for lab in labs %}
+            <li>{{ lab.name }}: {{ lab.description }}</li>
+        {% endfor %}
+    </ul>
+
+    <a href="logout">logout</a>
+
+</head>
+<body>
+
+</body>
+</html>

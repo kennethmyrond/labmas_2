@@ -1,0 +1,13 @@
+
+    {% extends 'temp_navbar.html' %}
+    {%load socialaccount %}
+
+    {% block content %}
+        {% if user.is_authenticated %}
+            <p>You are signed in as {{ user.email }}</p>
+            <a href="{% url 'logout' %}">Logout</a>
+        {% else %}
+            <p>You are not signed in.</p>
+            <a href="{% url 'account_login' %}">Login</a>
+        {% endif %}
+    {% endblock %}
