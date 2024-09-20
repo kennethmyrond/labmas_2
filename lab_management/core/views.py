@@ -23,6 +23,9 @@ def inventory_view(request):
 def inventory_addNewItem_view(request):
     return render(request, 'mod_inventory/inventory_addNewItem.html')
 
+def inventory_itemDetails_view(request):
+    return render(request, 'mod_inventory/inventory_itemDetails.html')
+
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
 
