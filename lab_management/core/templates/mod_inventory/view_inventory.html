@@ -141,7 +141,7 @@
               <hr class="dropdown-divider">
             </li>
 
-            <li>
+            {% comment %} <li>
               <a class="dropdown-item d-flex align-items-center" href="users-profile.html">
                 <i class="bi bi-person"></i>
                 <span>My Profile</span>
@@ -159,15 +159,15 @@
             </li>
             <li>
               <hr class="dropdown-divider">
-            </li>
+            </li> {% endcomment %}
 
-            <li>
+            {% comment %} <li>
               <a class="dropdown-item d-flex align-items-center" href="pages-faq.html">
                 <i class="bi bi-question-circle"></i>
                 <span>Need Help?</span>
               </a>
             </li>
-            <li>
+            <li> {% endcomment %}
               <hr class="dropdown-divider">
             </li>
 
@@ -198,38 +198,43 @@
         </a>
       </li><!-- End Dashboard Nav -->
 
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#inventory-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-box2"></i><span>Inventory</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="inventory-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="inventory-alerts.html">
-              <i class="bi bi-circle"></i><span>Add New Item</span>
+ <li class="nav-item">
+    <a class="nav-link active" data-bs-target="#inventory-nav" data-bs-toggle="collapse" href="inventory.html">
+        <i class="bi bi-box2"></i><span>Inventory</span><i class="bi bi-chevron-down ms-auto"></i>
+    </a>
+    <ul id="inventory-nav" class="nav-content collapse show" data-bs-parent="#sidebar-nav">
+        <li>
+            <a href="{% url 'view_inventory' %}" class="active">
+                <i class="bi bi-circle"></i><span>View Inventory</span>
             </a>
-          </li>
-          <li>
+        </li>
+        <li>
+            <a href="{% url 'inventory_addNewItem' %}">
+                <i class="bi bi-circle"></i><span>Add New Item</span>
+            </a>
+        </li>
+        <li>
             <a href="inventory-accordion.html">
-              <i class="bi bi-circle"></i><span>Update Item</span>
+                <i class="bi bi-circle"></i><span>Update Item</span>
             </a>
-          </li>
-          <li>
+        </li>
+        <li>
             <a href="inventory-badges.html">
-              <i class="bi bi-circle"></i><span>Physical Count</span>
+                <i class="bi bi-circle"></i><span>Physical Count</span>
             </a>
-          </li>
-          <li>
+        </li>
+        <li>
             <a href="inventory-breadcrumbs.html">
-              <i class="bi bi-circle"></i><span>Report Loss</span>
+                <i class="bi bi-circle"></i><span>Report Loss</span>
             </a>
-          </li>
-          <li>
+        </li>
+        <li>
             <a href="inventory-buttons.html">
-              <i class="bi bi-circle"></i><span>Inventory Config</span>
+                <i class="bi bi-circle"></i><span>Inventory Config</span>
             </a>
-          </li>
-        </ul>
-      </li><!-- End inventory Nav -->
+        </li>
+    </ul>
+</li><!-- End inventory Nav -->
 
       <li class="nav-item">
         <a class="nav-link collapsed" data-bs-target="#borrow-nav" data-bs-toggle="collapse" href="#">
@@ -260,18 +265,18 @@
       </li><!-- End Borrowing Nav -->
 
       <li class="nav-item">
-        <a class="nav-link " data-bs-target="#tables-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link collapsed" data-bs-target="#tables-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-layout-text-window-reverse"></i><span>Clearance</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="tables-nav" class="nav-content collapse show" data-bs-parent="#sidebar-nav">
+        <ul id="tables-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
           <li>
             <a href="tables-general.html">
               <i class="bi bi-circle"></i><span>General Tables</span>
             </a>
           </li>
           <li>
-            <a href="tables-data.html" class="active">
-              <i class="bi bi-circle"></i><span>Data Tables</span>
+            <a href="tables-data.html">
+              <i class="bi bi-circle"></i><span>view Inventory</span>
             </a>
           </li>
         </ul>
@@ -331,12 +336,11 @@
   <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Data Tables</h1>
+      <h1>Inventory</h1>
       <nav>
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-          <li class="breadcrumb-item">Tables</li>
-          <li class="breadcrumb-item active">Data</li>
+          <li class="breadcrumb-item"><a href="index.html">Inventory</a></li>
+          <li class="breadcrumb-item active">View Inventory</li>
         </ol>
       </nav>
     </div><!-- End Page Title -->
@@ -443,7 +447,7 @@
   </main><!-- End #main -->
 
   <!-- ======= Footer ======= -->
-  <footer id="footer" class="footer">
+  {% comment %} <footer id="footer" class="footer">
     <div class="copyright">
       &copy; Copyright <strong><span>NiceAdmin</span></strong>. All Rights Reserved
     </div>
@@ -454,7 +458,7 @@
       <!-- Purchase the pro version with working PHP/AJAX contact form: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/ -->
       Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
     </div>
-  </footer><!-- End Footer -->
+  </footer><!-- End Footer --> {% endcomment %}
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

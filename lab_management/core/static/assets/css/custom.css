@@ -29,11 +29,13 @@
   overflow: hidden; /* Hide overflow text */
   text-overflow: ellipsis; /* Add ellipsis for overflowing text */
   /* white-space: nowrap; Prevents text from wrapping */
+  
 }
 
 .card-body {
   font-size:1vw
 }
+
 
 
 
@@ -48,4 +50,15 @@
 	border-right: 4px solid transparent;
 	opacity: 0.2;
 
+}
+
+.datatable-table > tbody > tr > td,
+.datatable-table > tbody > tr > th,
+.datatable-table > tfoot > tr > td,
+.datatable-table > tfoot > tr > th,
+.datatable-table > thead > tr > td,
+.datatable-table > thead > tr > th {
+	vertical-align: top;
+	padding: 8px 10px;
+  text-align: center
 }
