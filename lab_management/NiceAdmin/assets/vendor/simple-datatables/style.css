@@ -112,6 +112,7 @@
 	width: 100%;
 	border-spacing: 0;
 	border-collapse: separate;
+	
 }
 
 .datatable-table > tbody > tr > td,
@@ -161,7 +162,7 @@
 	display: inline-block;
 	height: 100%;
 	position: relative;
-	width: 100%;
+	width: 70%;
 }
 
 .datatable-sorter::before,
@@ -174,6 +175,7 @@
 	border-left: 4px solid transparent;
 	border-right: 4px solid transparent;
 	opacity: 0.2;
+
 }
 
 
