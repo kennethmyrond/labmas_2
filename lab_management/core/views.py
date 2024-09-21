@@ -18,7 +18,7 @@ def logout_view(request):
     return redirect("/login")
 
 def inventory_view(request):
-    return render(request, 'mod_inventory/inventory.html')
+    return render(request, 'mod_inventory/view_inventory.html')
 
 def inventory_addNewItem_view(request):
     return render(request, 'mod_inventory/inventory_addNewItem.html')

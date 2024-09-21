@@ -1,6 +1,18 @@
-<html>
-    <head><title>Item Details</title></head>
-  <body>
-    <h1>item details</h1>
-  </body>
-</html>
+{% extends 'temp_navbar.html' %}
+{% load socialaccount %}
+{% block title %}Item Detail{% endblock %}
+{% block content %}
+  <div class="pagetitle">
+    <h1>Inventory</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'inventory_view'%}">Inventory</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'inventory_view'%}">View Inventory</a></li>
+        <li class="breadcrumb-item active">Item Detals</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+
+  <p>Hi</p>
+
+{% endblock %}
