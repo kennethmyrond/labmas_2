@@ -1,0 +1,64 @@
+/* .sidebar {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  bottom: 0;
+  width: 300px;
+  z-index: 996;
+  transition: all 0.3s;
+  padding: 20px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #00703C;
+  box-shadow: 0px 0px 20px rgba(1, 41, 112, 0.1);
+  background-color: #00703C;
+} */
+
+/* TABLE */
+.datatable-table {
+	max-width: 100%;
+	width: 100%;
+	border-spacing: 0;
+	border-collapse: separate;
+	
+}
+
+
+.datatable-table th {
+  width: 10%; /* Adjust as necessary */
+  overflow: hidden; /* Hide overflow text */
+  text-overflow: ellipsis; /* Add ellipsis for overflowing text */
+  /* white-space: nowrap; Prevents text from wrapping */
+  
+}
+
+.card-body {
+  font-size:1vw
+}
+
+
+
+
+.datatable-sorter::before,
+.datatable-sorter::after {
+	content: "";
+	height: 0;
+	width: 0;
+	position: absolute;
+	right: 1px;
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+	opacity: 0.2;
+
+}
+
+.datatable-table > tbody > tr > td,
+.datatable-table > tbody > tr > th,
+.datatable-table > tfoot > tr > td,
+.datatable-table > tfoot > tr > th,
+.datatable-table > thead > tr > td,
+.datatable-table > thead > tr > th {
+	vertical-align: top;
+	padding: 8px 10px;
+  text-align: center
+}
