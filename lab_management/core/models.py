@@ -12,13 +12,13 @@ class laboratory(models.Model):
 from django.db import models
 from django.contrib.auth.models import User
 
-class laboratory(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    modules = models.ManyToManyField('Module')  # Use Many-to-Many relationship for modules
+# class laboratory(models.Model):
+#     name = models.CharField(max_length=100)
+#     description = models.TextField()
+#     modules = models.ManyToManyField('Module')  # Use Many-to-Many relationship for modules
 
-    def __str__(self):
-        return self.name
+#     def __str__(self):
+#         return self.name
 
 class role(models.Model):
     roles_id = models.AutoField(primary_key=True)
