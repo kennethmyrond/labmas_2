@@ -1,5 +1,17 @@
-<html>
-  <body>
-    <h1>hi</h1>
-  </body>
-</html>
+{% extends 'temp_navbar.html' %}
+{% load socialaccount %}
+{% block title %}Inventory{% endblock %}
+{% block content %}
+  <div class="pagetitle">
+    <h1>Inventory</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="index.html">Inventory</a></li>
+        <li class="breadcrumb-item active">Add New Item</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+
+  <p>Hi</p>
+
+{% endblock %}

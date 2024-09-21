@@ -1,6 +1,7 @@
 
     {% extends 'temp_navbar.html' %}
-    {%load socialaccount %}
+    {% load socialaccount %}
+    {% block title %}Home{% endblock %}
 
     {% block content %}
         {% if user.is_authenticated %}
