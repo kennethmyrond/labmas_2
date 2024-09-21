@@ -8,7 +8,7 @@ class LoginForm(AuthenticationForm):
 
 
 from django import forms
-from .models import Laboratory, Module
+from .models import laboratory, Module
 
 class LaboratoryForm(forms.ModelForm):
     module_choices = forms.ModelMultipleChoiceField(
@@ -18,7 +18,7 @@ class LaboratoryForm(forms.ModelForm):
     )
 
     class Meta:
-        model = Laboratory
+        model = laboratory
         fields = ['name', 'description']  # Exclude module_choices here
 
     def __init__(self, *args, **kwargs):
