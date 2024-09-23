@@ -25,24 +25,25 @@ def inventory_view(request):
 def inventory_addNewItem_view(request):
     # Fetch all item types to populate the dropdown
     item_types_list = item_types.objects.all()
+
     if request.method == "POST":
         # Extract form data
         item_name = request.POST.get('item_name')
-        item_type_id = request.POST.get('item_type')  # Get the selected itemType_id from the dropdown
+        item_type_id = request.POST.get('item_type')
         amount = request.POST.get('amount')
         dimension = request.POST.get('item_dimension')
-        nature = request.POST.get('item_nature')
-        grade = request.POST.get('item_grade')
-        location = request.POST.get('item_location')
-        kind = request.POST.get('item_kind')
 
-        # Prepare the add_cols field in JSON format
-        add_cols = json.dumps({
-            'Nature': nature,
-            'Grade': grade,
-            'Location': location,
-            'Kind': kind
-        })
+        # Dynamic fields from additional columns (based on the selected item_type)
+        item_type = item_types.objects.get(itemType_id=item_type_id)
+        add_cols_dict = {}
+        if item_type.add_cols:
+            add_cols = json.loads(item_type.add_cols)
+            for col in add_cols:
+                field_value = request.POST.get(f'add_col_{col.lower()}')
+                add_cols_dict[col] = field_value
+
+        # Convert the additional columns to a JSON string
+        add_cols_json = json.dumps(add_cols_dict)
 
         # Save the data to the database
         new_item = item_description(
@@ -51,12 +52,12 @@ def inventory_addNewItem_view(request):
             itemType_id=item_type_id,  # Set the itemType_id from the dropdown
             amount=amount,
             dimension=dimension,
-            add_cols=add_cols
+            add_cols=add_cols_json  # Save the additional columns as JSON
         )
         new_item.save()
 
         # Redirect after successful submission
-        return redirect('inventory_view')  # Redirect to the inventory view page
+        return redirect('inventory_view')
 
     return render(request, 'mod_inventory/inventory_addNewItem.html', {
         'item_types': item_types_list  # Pass the item types to the template
@@ -99,16 +100,15 @@ def superuser_logout(request):
     logout(request)
     return redirect("/login/superuser")
 
-@login_required(login_url='/login/superuser')
+
+@login_required()
 def superuser_setup(request):
     if not request.user.is_superuser:
-        return redirect('userlogin')
+        return redirect('/login')
 
     labs = laboratory.objects.all()
     modules = Module.objects.all()
     return render(request, 'superuser/superuser_setup.html', {'labs': labs, 'modules': modules})
-
-
 
 
 from django.shortcuts import render, redirect

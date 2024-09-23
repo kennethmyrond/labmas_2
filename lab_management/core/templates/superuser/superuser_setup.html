@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Laboratory Setup</title>
+{% extends 'temp_navbar.html' %}
+{% load socialaccount %}
+{% block title %}Setup{% endblock %}
 
+{% block content %}
     <h2>Laboratory Setup</h2>
     <a href="{% url 'add_laboratory' %}">Add Laboratory</a> <!-- Add Laboratory Button -->
 
@@ -13,11 +12,4 @@
             <li>{{ lab.name }}: {{ lab.description }}</li>
         {% endfor %}
     </ul>
-
-    <a href="logout">logout</a>
-
-</head>
-<body>
-
-</body>
-</html>
+{%endblock%}

@@ -28,9 +28,9 @@
               <div class="row mb-3">
                 <label for="inputText" class="col-sm-2 col-form-label">Type:</label>
                 <div class="col-sm-10">
-                  <select class="form-select" id="item_type" name="item_type">
+                  <select class="form-select" id="item_type" name="item_type" onchange="handleItemTypeChange()">
                     {% for type in item_types %}
-                      <option value="{{ type.itemType_id }}">{{ type.itemType_name }}</option>
+                      <option value="{{ type.itemType_id }}" data-add-cols="{{ type.add_cols }}">{{ type.itemType_name }}</option>
                     {% endfor %}
                   </select>
                 </div>
@@ -55,31 +55,12 @@
                   <input type="text" class="form-control" id="item_dimension" name="item_dimension">
                 </div>
               </div>
-              <div class="row mb-3">
-                <label for="inputText" class="col-sm-2 col-form-label">Nature:</label>
-                <div class="col-sm-10">
-                  <input type="text" class="form-control" id="item_nature" name="item_nature">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label for="inputText" class="col-sm-2 col-form-label">Grade:</label>
-                <div class="col-sm-10">
-                  <input type="text" class="form-control" id="item_grade" name="item_grade">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label for="inputText" class="col-sm-2 col-form-label">Location:</label>
-                <div class="col-sm-10">
-                  <input type="text" class="form-control" id="item_location" name="item_location">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label for="inputText" class="col-sm-2 col-form-label">Kind:</label>
-                <div class="col-sm-10">
-                  <input type="text" class="form-control" id="item_kind" name="item_kind">
-                </div>
-              </div>
-      
+
+              <!-- Additional columns -->
+              <div id="additional_fields_container"></div>
+              <!-- end of additional columns -->
+
+
               <div class="row mb-5 ">
                 <div class="col-sm-10 d-flex align-items-center"> <!-- Center items vertically -->
                   <button type="submit" class="btn btn-primary me-3" id="generate_button">Generate Barcode</button>
@@ -230,4 +211,54 @@
 
       </div>
 
+      <script>
+        function handleItemTypeChange() {
+          const selectElement = document.getElementById('item_type');
+          const selectedOption = selectElement.options[selectElement.selectedIndex];
+          const addColsJson = selectedOption.getAttribute('data-add-cols');
+          
+          // Parse the add_cols JSON string
+          let addCols = [];
+          if (addColsJson) {
+            try {
+              addCols = JSON.parse(addColsJson);
+            } catch (e) {
+              console.error('Invalid JSON format in add_cols:', e);
+            }
+          }
+      
+          // Clear the additional fields container
+          const additionalFieldsContainer = document.getElementById('additional_fields_container');
+          additionalFieldsContainer.innerHTML = '';
+      
+          // Dynamically generate new fields if add_cols is present
+          if (addCols.length > 0) {
+            addCols.forEach((col) => {
+              const rowDiv = document.createElement('div');
+              rowDiv.className = 'row mb-3';
+      
+              const labelDiv = document.createElement('label');
+              labelDiv.className = 'col-sm-2 col-form-label';
+              labelDiv.textContent = col + ':';
+              rowDiv.appendChild(labelDiv);
+      
+              const inputDiv = document.createElement('div');
+              inputDiv.className = 'col-sm-10';
+              const inputElement = document.createElement('input');
+              inputElement.type = 'text';
+              inputElement.className = 'form-control';
+              inputElement.name = `add_col_${col.toLowerCase()}`; // Naming convention for inputs
+              inputDiv.appendChild(inputElement);
+      
+              rowDiv.appendChild(inputDiv);
+              additionalFieldsContainer.appendChild(rowDiv);
+            });
+          }
+        }
+      
+        // Initialize the form based on the default selection
+        document.addEventListener('DOMContentLoaded', handleItemTypeChange);
+      </script>
+
 {% endblock %}
+
