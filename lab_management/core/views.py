@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
-from .forms import LoginForm
-from .models import laboratory, Module
-
+from django.http import HttpResponse
+from .forms import LoginForm, InventoryItemForm
+from .models import laboratory, Module, item_description, item_types
+import json
 
 def userlogin(request):
     return render(request,"user_login.html")
@@ -21,7 +22,45 @@ def inventory_view(request):
     return render(request, 'mod_inventory/view_inventory.html')
 
 def inventory_addNewItem_view(request):
-    return render(request, 'mod_inventory/inventory_addNewItem.html')
+    # Fetch all item types to populate the dropdown
+    item_types_list = item_types.objects.all()
+
+    if request.method == "POST":
+        # Extract form data
+        item_name = request.POST.get('item_name')
+        item_type_id = request.POST.get('item_type')  # Get the selected itemType_id from the dropdown
+        amount = request.POST.get('amount')
+        dimension = request.POST.get('item_dimension')
+        nature = request.POST.get('item_nature')
+        grade = request.POST.get('item_grade')
+        location = request.POST.get('item_location')
+        kind = request.POST.get('item_kind')
+
+        # Prepare the add_cols field in JSON format
+        add_cols = json.dumps({
+            'Nature': nature,
+            'Grade': grade,
+            'Location': location,
+            'Kind': kind
+        })
+
+        # Save the data to the database
+        new_item = item_description(
+            laboratory_id=1,  # Assuming the laboratory is 1
+            item_name=item_name,
+            itemType_id=item_type_id,  # Set the itemType_id from the dropdown
+            amount=amount,
+            dimension=dimension,
+            add_cols=add_cols
+        )
+        new_item.save()
+
+        # Redirect after successful submission
+        return redirect('inventory_view')  # Redirect to the inventory view page
+
+    return render(request, 'mod_inventory/inventory_addNewItem.html', {
+        'item_types': item_types_list  # Pass the item types to the template
+    })
 
 def inventory_itemDetails_view(request):
     return render(request, 'mod_inventory/inventory_itemDetails.html')
