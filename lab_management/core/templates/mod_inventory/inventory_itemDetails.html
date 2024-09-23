@@ -2,6 +2,30 @@
 {% load socialaccount %}
 {% block title %}Item Detail{% endblock %}
 {% block content %}
+<head>
+  <style type="text/css">
+    .cardinfo{
+      display: flex;
+      align-items: flex-start;
+    }
+    .buttoncontainer{
+      display: flex;
+    }
+    .iteminfo{
+      margin-right: 70%;
+    }
+    #deletebtn{
+      margin-left: 25px;
+      color:red;
+    }
+    #deletebtn:hover{
+      color:rgb(255, 83, 83);
+    }
+    #editbtn, #deletebtn{
+      text-decoration: underline;
+    }
+  </style>
+</head>
   <div class="pagetitle">
     <h1>Inventory</h1>
     <nav>
@@ -13,6 +37,120 @@
     </nav>
   </div><!-- End Page Title -->
 
-  <p>Hi</p>
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title" >Item Name</h5>
+            <div class="cardinfo">
+              <table class="iteminfo">
+                <tr>
+                  <td style="padding-right:10px">Type:</td>
+                  <td id="itemType">Item type</td>
+                </tr>
+                <tr>
+                  <td style="padding-right:10px">Sub-Type:</td>
+                  <td id="itemsubType">Item subtype</td>
+                </tr>
+                <tr>
+                  <td style="padding-right:10px">Running Quantity:</td>
+                  <td id="itemrunQuantity">10</td>
+                </tr>
+              </table>
+              <div class="buttoncontainer">
+                <a id="editbtn" href="">Edit</a>
+                <a id="deletebtn" href="">Delete</a>
+              </div>
+            </div>
+            
+
+            <br>
+            <!-- Table with stripped rows -->
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>Item ID</th>
+                  <th>Item Name</th>
+                  <th>Qty</th>
+                  <th>User</th>
+                  <th data-type="date" data-format="YYYY/DD/MM" class="date_row">Date Updated</th>
+                  <th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td id="itemid">1</td>
+                  <td id="itemname">Item1</td>
+                  <td id="quantitychange" style="color:green;">+20</td>
+                  <td id="user">Technician 1</td>
+                  <td id="dateupdate">17/04/2024</td>
+                  <td id="remarks">-</td>
+                </tr>
+                <tr>
+                  <td>1</td>
+                  <td>Item1</td>
+                  <td style="color:red;">-2</td>
+                  <td>Technician 1</td>
+                  <td>18/04/2024</td>
+                  <td>For lab activity 1</td>
+                </tr>
+                <tr>
+                  <td>1</td>
+                  <td>Item1</td>
+                  <td style="color:red;">-4</td>
+                  <td>Technician 3</td>
+                  <td>19/04/2024</td>
+                  <td>For lab activity 2</td>
+                </tr>
+                <tr>
+                  <td>1</td>
+                  <td>Item1</td>
+                  <td style="color:green;">+3</td>
+                  <td>Technician 2</td>
+                  <td>01/05/2024</td>
+                  <td>-</td>
+                </tr>
+                <tr>
+                  <td>1</td>
+                  <td>Item1</td>
+                  <td style="color:green;">+2</td>
+                  <td>Technician 1</td>
+                  <td>17/04/2024</td>
+                  <td>-</td>
+                </tr>
+              </tbody>
+            </table>
+            <!-- End Table with stripped rows -->
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main><!-- End #main -->
+
+<!-- ======= Footer ======= -->
+{% comment %} <footer id="footer" class="footer">
+  <div class="copyright">
+    &copy; Copyright <strong><span>NiceAdmin</span></strong>. All Rights Reserved
+  </div>
+  <div class="credits">
+    <!-- All the links in the footer should remain intact. -->
+    <!-- You can delete the links only if you purchased the pro version. -->
+    <!-- Licensing information: https://bootstrapmade.com/license/ -->
+    <!-- Purchase the pro version with working PHP/AJAX contact form: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/ -->
+    Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
+  </div>
+</footer><!-- End Footer --> {% endcomment %}
+
+<a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+
+</body>
 
 {% endblock %}
+</html>
