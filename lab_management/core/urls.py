@@ -9,6 +9,7 @@ urlpatterns = [
     path('inventory/addNewItem', views.inventory_addNewItem_view, name='inventory_addNewItem'),
     path('inventory/updateItem', views.inventory_updateItem_view, name='inventory_updateItem'),
     path('inventory/itemDetails', views.inventory_itemDetails_view, name='inventory_itemDetails'),
+    path('inventory/physicalCount', views.inventory_physicalCount_view, name='inventory_physicalCount'),
     path('borrowing/', views.borrowing_view, name='borrowing'),
     path('clearance/', views.clearance_view, name='clearance'),
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),

@@ -70,6 +70,9 @@ def inventory_updateItem_view(request):
 def inventory_itemDetails_view(request):
     return render(request, 'mod_inventory/inventory_itemDetails.html')
 
+def inventory_physicalCount_view(request):
+    return render(request, 'mod_inventory/inventory_physicalCount.html')
+
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
 
