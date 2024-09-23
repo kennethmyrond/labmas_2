@@ -150,7 +150,9 @@ class item_inventory(models.Model):
     purchase_price = models.FloatField(null=True, blank=True)
     remarks = models.CharField(max_length=45, null=True, blank=True)
     transaction = models.ForeignKey('item_transactions', on_delete=models.SET_NULL, null=True, blank=True)
-
+    qty = models.IntegerField()  # Quantity; required field
+    amount = models.IntegerField()  # Amount; required field
+    
     def __str__(self):
         return f"Inventory Item {self.inventory_item_id}"
 

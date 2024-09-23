@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
 from .forms import LoginForm
-from .models import laboratory, Module
+from .models import laboratory, Module, item_inventory
 
 
 def userlogin(request):
@@ -18,7 +18,9 @@ def logout_view(request):
     return redirect("/login")
 
 def inventory_view(request):
-    return render(request, 'mod_inventory/view_inventory.html')
+    inventory_items = item_inventory.objects.select_related('item').all()
+    return render(request, 'mod_inventory/view_inventory.html', {'inventory_items': inventory_items})
+
 
 def inventory_addNewItem_view(request):
     return render(request, 'mod_inventory/inventory_addNewItem.html')

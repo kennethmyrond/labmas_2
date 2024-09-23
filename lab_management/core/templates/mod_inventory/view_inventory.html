@@ -27,82 +27,29 @@
             <table class="table datatable">
               <thead>
                 <tr>
-                  <th>Status</th>
                   <th>Item ID</th>
                   <th>Item Name</th>
+                  <th>Amount</th>
+                  <th>Dimension</th>
                   <th>Qty</th>
-                  <th>Unit</th>
-                  <th data-type="date" data-format="YYYY/DD/MM" class="date_row">Date Updated</th>
-                  <th>Available Qty</th>
                 </tr>
               </thead>
               <tbody>
+                {% for item in inventory_items %}
                 <tr>
-                  <td>Available</td>
-                  <td>1</td>
-                  <td>Beaker</td>
-                  <td>20</td>
-                  <td>pieces</td>
-                  <td>1999/04/07</td>
-                  <td>19</td>
+                  <td>{{ item.inventory_item_id }}</td>
+                  <td>{{ item.item.item_name }}</td>
+                  <td>{{ item.amount }}</td>  <!-- Display Amount -->
+                  <td>{{ item.item.dimension }}</td>  <!-- Display Dimension -->
+                  <td>{{ item.qty}}</td>  <!-- Display available quantity -->
                 </tr>
+                {% empty %}
                 <tr>
-                  <td>Available</td>
-                  <td>2</td>
-                  <td>Leaker</td>
-                  <td>10</td>
-                  <td>pieces</td>
-                  <td>1999/04/07</td>
-                  <td>9</td>
+                  <td colspan="5">No items found.</td>
                 </tr>
-                <tr>
-                  <td>Available</td>
-                  <td>3</td>
-                  <td>H2O</td>
-                  <td>20</td>
-                  <td>pieces</td>
-                  <td>1999/04/07</td>
-                  <td>19</td>
-                </tr>
-                <tr>
-                  <td>Available</td>
-                  <td>4</td>
-                  <td>Air</td>
-                  <td>20</td>
-                  <td>pieces</td>
-                  <td>1999/04/07</td>
-                  <td>19</td>
-                </tr>
-                {% comment %} <tr>
-                  <td>Available</td>
-                  <td>5</td>
-                  <td>Beaker 5</td>
-                  <td>20</td>
-                  <td>pieces</td>
-                  <td>2002/04/10</td>
-                  <td>19</td>
-                </tr>
-                <tr>
-                  <td>Available</td>
-                  <td>6</td>
-                  <td>Chloride</td>
-                  <td>20</td>
-                  <td>mL</td>
-                  <td>1992/04/07</td>
-                  <td>19</td>
-                </tr>
-                <tr>
-                  <td>Available</td>
-                  <td>7</td>
-                  <td>Silver</td>
-                  <td>20</td>
-                  <td>pieces</td>
-                  <td>1999/04/07</td>
-                  <td>19</td>
-                </tr> {% endcomment %}
-            
-            
+                {% endfor %}
               </tbody>
+              
             </table>
             <!-- End Table with stripped rows -->
 
