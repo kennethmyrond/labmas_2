@@ -1,6 +1,6 @@
 
-
-/* body{
+/* 
+body{
   background-color: red;
 } */
 .datatable-table {
@@ -61,3 +61,7 @@
   background-color: #00703C;
 }
 
+#delete{
+  background-color: red;
+	border:none;
+}

@@ -7,6 +7,7 @@ urlpatterns = [
     path("logout", views.logout_view, name='logout'),
     path('inventory/', views.inventory_view, name='inventory_view'),
     path('inventory/addNewItem', views.inventory_addNewItem_view, name='inventory_addNewItem'),
+    path('inventory/updateItem', views.inventory_updateItem_view, name='inventory_updateItem'),
     path('inventory/itemDetails', views.inventory_itemDetails_view, name='inventory_itemDetails'),
     path('borrowing/', views.borrowing_view, name='borrowing'),
     path('clearance/', views.clearance_view, name='clearance'),

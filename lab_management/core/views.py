@@ -63,6 +63,10 @@ def inventory_addNewItem_view(request):
         'item_types': item_types_list  # Pass the item types to the template
     })
 
+
+def inventory_updateItem_view(request):
+    return render(request, 'mod_inventory/inventory_updateItem.html')
+
 def inventory_itemDetails_view(request):
     return render(request, 'mod_inventory/inventory_itemDetails.html')
 
