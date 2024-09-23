@@ -22,11 +22,9 @@ def inventory_view(request):
     inventory_items = item_inventory.objects.select_related('item').all()
     return render(request, 'mod_inventory/view_inventory.html', {'inventory_items': inventory_items})
 
-
 def inventory_addNewItem_view(request):
     # Fetch all item types to populate the dropdown
     item_types_list = item_types.objects.all()
-
     if request.method == "POST":
         # Extract form data
         item_name = request.POST.get('item_name')
