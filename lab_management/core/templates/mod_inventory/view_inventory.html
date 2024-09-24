@@ -57,7 +57,7 @@
                 {% for item in inventory_items %}
                 <tr>
                   <td>Available</td>
-                  <td>{{ item.item_id }}</td> <!-- item_id from item_description -->
+                  <td><a href="{%url 'inventory_itemDetails' %}">{{ item.item_id }}</a></td> <!-- item_id from item_description -->
                   <td>{{ item.item_name }}</td> <!-- item_name from item_description -->
                   <td>{{ item.amount }}</td> <!-- amount from item_description -->
                   <td>{{ item.dimension }}</td> <!-- dimension from item_description -->

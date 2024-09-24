@@ -130,8 +130,6 @@ def suggest_items(request):
     
     return JsonResponse(data, safe=False)
 
-
-
 def inventory_updateItem_view(request):
     if request.method == 'POST':
         item_name = request.POST.get('item_name')
@@ -188,8 +186,6 @@ def inventory_updateItem_view(request):
 
     # If the request method is not POST, render the form
     return render(request, 'mod_inventory/inventory_updateItem.html')
-
-
 
 def inventory_itemDetails_view(request):
     return render(request, 'mod_inventory/inventory_itemDetails.html')
