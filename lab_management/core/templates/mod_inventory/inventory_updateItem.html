@@ -3,6 +3,19 @@
 {% block title %}Update Item in Inventory{% endblock %}
 
 {% block content %}
+<head>
+  <style>
+    #deletebtn{
+      color: red;
+      background: none;
+      border: none;
+    }
+    #deletebtn:hover{
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
   <div class="pagetitle">
     <h1>Inventory</h1>
     <nav>
@@ -92,17 +105,30 @@
                   <tr>
                     <th>Item Name</th>
                     <th>Qty</th>
-                    <th>Price</th>
+                    <th>Price - PHP</th>
                     <th>Supplier</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr class="no-entries">
-                    <td colspan="4" class="text-center">No entries found</td>
+                  <tr>
+                    <td id="itemname">Item1</td>
+                    <td id="quantity">20</td>
+                    <td id="price">20</td>
+                    <td id="supplier">Supplier 1</td>
+                    <td id="deletecolumn">
+                      <button id="deletebtn">Delete</button>
+                    </td>
                   </tr>
+                  
                 </tbody>
               </table>
               <!-- End Table with stripped rows -->
+              <div class="row mb-3">
+                <div class="col-sm-10 d-flex">
+                  <button type="button" class="btn btn-primary me-2" id="save">Save</button>
+                </div>
+              </div>
 
             </div>
           </div>
