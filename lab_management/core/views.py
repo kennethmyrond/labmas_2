@@ -1,9 +1,11 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.db.models import Q 
+from django.utils import timezone
+from django.http import HttpResponse, JsonResponse
 from .forms import LoginForm, InventoryItemForm
-from .models import laboratory, Module, item_description, item_types, item_inventory
+from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, item_transactions, user
 import json
 
 def userlogin(request):
@@ -63,9 +65,88 @@ def inventory_addNewItem_view(request):
         'item_types': item_types_list  # Pass the item types to the template
     })
 
+def suggest_items(request):
+    query = request.GET.get('query', '')
+    suggestions = item_description.objects.filter(item_name__icontains=query)[:5]  # Get up to 5 matching items
+
+    data = []
+    for item in suggestions:
+        # Get the associated item_inventory entry
+        inventory_item = item_inventory.objects.filter(item_id=item.item_id).first()  # Get the first inventory entry
+        
+        if inventory_item:
+            data.append({
+                'item_name': item.item_name,
+                'amount': item.amount,  # From item_description
+                'dimension': item.dimension,
+                'unit_price': inventory_item.purchase_price,  # Correctly named field
+                'supplier': inventory_item.supplier_id,  # Assuming supplier_id is the integer supplier ID
+                'date_received': inventory_item.date_received,  # Correct field name
+                'qty'          : inventory_item.qty
+            })
+    
+    return JsonResponse(data, safe=False)
+
+
 
 def inventory_updateItem_view(request):
+    if request.method == 'POST':
+        item_name = request.POST.get('item_name')
+        amount = request.POST.get('amount')
+        item_date_purchased = request.POST.get('item_date_purchased')
+        item_date_received = request.POST.get('item_date_received')
+        item_price = request.POST.get('item_price')
+        item_supplier = request.POST.get('item_supplier')
+
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            return HttpResponse("You are not authenticated.", status=403)
+
+        # Find the item_id based on the item_name
+        item_description_instance = get_object_or_404(item_description, item_name=item_name)
+
+        # Ensure the supplier_id exists
+        try:
+            supplier_instance = suppliers.objects.get(suppliers_id=item_supplier)
+        except suppliers.DoesNotExist:
+            return HttpResponse("Supplier does not exist.", status=400)
+
+        # Retrieve the custom user instance
+        try:
+            current_user = user.objects.get(email=request.user.email)
+        except user.DoesNotExist:
+            return HttpResponse("No user matches the given query.", status=404)
+
+        # Create a new item transaction
+        transaction = item_transactions.objects.create(
+            user=current_user,
+            timestamp=timezone.now()
+        )
+
+        # Create a new items inventory entry
+        new_inventory_item = item_inventory.objects.create(
+            item=item_description_instance,
+            supplier=supplier_instance,
+            date_purchased=item_date_purchased,
+            date_received=item_date_received,
+            purchase_price=item_price,
+            transaction=transaction,
+            qty=amount
+        )
+
+        # Prepare the context to render the new item
+        context = {
+            'new_item': new_inventory_item,
+            'success_message': "Item added successfully!"
+        }
+
+        # Render the updated template with the new item
+        return render(request, 'mod_inventory/inventory_updateItem.html', context)
+
+    # If the request method is not POST, render the form
     return render(request, 'mod_inventory/inventory_updateItem.html')
+
+
 
 def inventory_itemDetails_view(request):
     return render(request, 'mod_inventory/inventory_itemDetails.html')

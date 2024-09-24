@@ -15,7 +15,9 @@ urlpatterns = [
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),
     path('reports/', views.reports_view, name='reports'),
     path('user-settings/', views.user_settings_view, name='user_settings'),
+    path('suggest_items/', views.suggest_items, name='suggest_items'),
 
+    
     # superuser
     path('login/superuser', views.superuser_login, name='login'),
     path('setup/logout', views.superuser_logout, name='superuser_logout'),

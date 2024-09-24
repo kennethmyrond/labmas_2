@@ -37,11 +37,11 @@
               <tbody>
                 {% for item in inventory_items %}
                 <tr>
-                  <td>{{ item.inventory_item_id }}</td>
-                  <td>{{ item.item.item_name }}</td>
-                  <td>{{ item.amount }}</td>  <!-- Display Amount -->
+                  <td>{{ item.item.item_id }}</td>  <!-- Display Item ID -->
+                  <td>{{ item.item.item_name }}</td>  <!-- Display Item Name -->
+                  <td>{{ item.item.amount }}</td>  <!-- Display Amount -->
                   <td>{{ item.item.dimension }}</td>  <!-- Display Dimension -->
-                  <td>{{ item.qty}}</td>  <!-- Display available quantity -->
+                  <td>{{ item.qty }}</td>  <!-- Display available quantity (Qty) -->
                 </tr>
                 {% empty %}
                 <tr>
