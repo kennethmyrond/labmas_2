@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
@@ -13,6 +13,13 @@ def userlogin(request):
 def home(request):
     return render(request,"home.html")
 
+def set_lab(request, laboratory_id):
+    # Set the chosen laboratory in the session
+    lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+    request.session['selected_lab'] = lab.laboratory_id
+    request.session['selected_lab_name'] = lab.name
+    return redirect(request.META.get('HTTP_REFERER', '/'))  # Redirect back to the previous page
+
 
 def logout_view(request):
     logout(request)
@@ -23,8 +30,11 @@ def inventory_view(request):
     return render(request, 'mod_inventory/view_inventory.html', {'inventory_items': inventory_items})
 
 def inventory_addNewItem_view(request):
-    # Fetch all item types to populate the dropdown
-    item_types_list = item_types.objects.all()
+    selected_lab = request.session.get('selected_lab')
+    if selected_lab:
+        item_types_list = item_types.objects.filter(laboratory_id=selected_lab)
+    else:
+        item_types_list = item_types.objects.none()  # No lab selected, show nothing or handle it accordingly
 
     if request.method == "POST":
         # Extract form data
@@ -32,6 +42,7 @@ def inventory_addNewItem_view(request):
         item_type_id = request.POST.get('item_type')
         amount = request.POST.get('amount')
         dimension = request.POST.get('item_dimension')
+        laboratory = request.session.get('selected_lab_name')
 
         # Dynamic fields from additional columns (based on the selected item_type)
         item_type = item_types.objects.get(itemType_id=item_type_id)
@@ -47,7 +58,7 @@ def inventory_addNewItem_view(request):
 
         # Save the data to the database
         new_item = item_description(
-            laboratory_id=1,  # Assuming the laboratory is 1
+            laboratory_id=laboratory,  # Assuming the laboratory is 1
             item_name=item_name,
             itemType_id=item_type_id,  # Set the itemType_id from the dropdown
             amount=amount,
@@ -60,11 +71,19 @@ def inventory_addNewItem_view(request):
         return redirect('inventory_view')
 
     return render(request, 'mod_inventory/inventory_addNewItem.html', {
-        'item_types': item_types_list  # Pass the item types to the template
+        'item_types': item_types_list,
+        'selected_lab_name': request.session.get('selected_lab_name'),
     })
+
+
+def inventory_updateItem_view(request):
+    return render(request, 'mod_inventory/inventory_updateItem.html')
 
 def inventory_itemDetails_view(request):
     return render(request, 'mod_inventory/inventory_itemDetails.html')
+
+def inventory_physicalCount_view(request):
+    return render(request, 'mod_inventory/inventory_physicalCount.html')
 
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')

@@ -4,10 +4,13 @@ from . import views
 urlpatterns = [
     path('login/', views.userlogin, name='userlogin'),
     path('', views.home, name = 'home'),
+    path('set_lab/<int:laboratory_id>/', views.set_lab, name='set_lab'),
     path("logout", views.logout_view, name='logout'),
     path('inventory/', views.inventory_view, name='inventory_view'),
     path('inventory/addNewItem', views.inventory_addNewItem_view, name='inventory_addNewItem'),
+    path('inventory/updateItem', views.inventory_updateItem_view, name='inventory_updateItem'),
     path('inventory/itemDetails', views.inventory_itemDetails_view, name='inventory_itemDetails'),
+    path('inventory/physicalCount', views.inventory_physicalCount_view, name='inventory_physicalCount'),
     path('borrowing/', views.borrowing_view, name='borrowing'),
     path('clearance/', views.clearance_view, name='clearance'),
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),
