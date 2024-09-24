@@ -3,171 +3,184 @@
 {% block title %}Update Item in Inventory{% endblock %}
 
 {% block content %}
-<head>
-  <style>
-    #deletebtn{
-      color: red;
-      background: none;
-      border: none;
-    }
-    #deletebtn:hover{
-      text-decoration: underline;
-    }
-  </style>
-</head>
-
-  <div class="pagetitle">
+<div class="pagetitle">
     <h1>Inventory</h1>
     <nav>
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'inventory_view' %}">Inventory</a></li>
-        <li class="breadcrumb-item active">Update Item Quantity</li>
-      </ol>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'inventory_view' %}">Inventory</a></li>
+            <li class="breadcrumb-item active">Update Item Quantity</li>
+        </ol>
     </nav>
-  </div><!-- End Page Title -->
+</div><!-- End Page Title -->
 
-  <section class="section">
+<section class="section">
     <div class="row">
-      <div class="col-lg-12">
+        <div class="col-lg-12">
 
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Update Item Quantity</h5>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Update Item Quantity</h5>
 
-            <!-- General Form Elements -->
-            <form id="updateForm" onsubmit="return false;">
-              {% csrf_token %}
+                    <!-- General Form Elements -->
+                    <form id="updateForm" method="POST" action="{% url 'inventory_updateItem' %}">
+                        {% csrf_token %}
 
-              <div id="form-container">
-                <!-- Form field set -->
-                <div class="form-set">
-                  <div class="row mb-3">
-                    <label for="inputText" class="col-sm-2 col-form-label">Item Name:</label>
-                    <div class="col-sm-10">
-                      <input type="text" class="form-control" name="item_name" required>
-                    </div>
-                  </div>
+                        <div id="form-container">
+                            <!-- Form field set -->
+                            <div class="form-set">
+                                <div class="row mb-3">
+                                    <label for="itemName" class="col-sm-2 col-form-label">Item Name:</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" class="form-control" name="item_name" id="itemName" required oninput="suggestItems(this.value)">
+                                        <div id="suggestions" class="suggestions"></div> <!-- Suggestions div -->
+                                    </div>
+                                </div>
 
-                  <div class="row mb-3">
-                    <label for="inputNumber" class="col-sm-2 col-form-label">Quantity:</label>
-                    <div class="col-sm-10">
-                      <input type="number" class="form-control" name="amount" required>
-                    </div>
-                  </div>
+                                <div class="row mb-3">
+                                    <label for="inputNumber" class="col-sm-2 col-form-label">Quantity:</label>
+                                    <div class="col-sm-10">
+                                        <input type="number" class="form-control" name="amount" id="amount" required>
+                                    </div>
+                                </div>
 
-                  <div class="row mb-3">
-                    <label for="inputDate" class="col-sm-2 col-form-label">Date:</label>
-                    <div class="col-sm-10">
-                      <input type="date" class="form-control" name="item_date" required>
-                    </div>
-                  </div>
+                                <div class="row mb-3">
+                                    <label for="inputDatePurchased" class="col-sm-2 col-form-label">Date Purchased:</label>
+                                    <div class="col-sm-10">
+                                        <input type="datetime-local" class="form-control" name="item_date_purchased" required>
+                                    </div>
+                                </div>
+                  
+                                <div class="row mb-3">
+                                    <label for="inputDateReceived" class="col-sm-2 col-form-label">Date Received:</label>
+                                    <div class="col-sm-10">
+                                        <input type="datetime-local" class="form-control" name="item_date_received" required>
+                                    </div>
+                                </div>
 
-                  <div class="row mb-3">
-                    <label for="inputText" class="col-sm-2 col-form-label">Unit Price:</label>
-                    <div class="col-sm-10">
-                      <input type="text" class="form-control" name="item_price" required>
-                    </div>
-                  </div>
+                                <div class="row mb-3">
+                                    <label for="inputText" class="col-sm-2 col-form-label">Unit Price:</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" class="form-control" name="item_price" id="unit_price" required>
+                                    </div>
+                                </div>
 
-                  <div class="row mb-3">
-                    <label for="inputText" class="col-sm-2 col-form-label">Supplier:</label>
-                    <div class="col-sm-10">
-                      <input type="text" class="form-control" name="item_supplier" required>
-                    </div>
-                  </div>
+                                <div class="row mb-3">
+                                    <label for="inputText" class="col-sm-2 col-form-label">Supplier:</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" class="form-control" name="item_supplier" id="supplier" required>
+                                    </div>
+                                </div>
 
-                  <div class="row mb-3">
-                    <div class="col-sm-10 d-flex">
-                      <button type="button" class="btn btn-primary me-2" id="add">Add</button>
-                      <button type="reset" class="btn btn-secondary" id="clear">Clear</button>
-                    </div>
-                  </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-10 d-flex">
+                                        <button type="submit" class="btn btn-primary me-2" id="add">Add</button>
+                                        <button type="reset" class="btn btn-secondary" id="clear">Clear</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form><!-- End General Form Elements -->
+
+                    {% if new_item %}
+                        <div class="alert alert-success mt-3">
+                            <strong>{{ success_message }}</strong><br>
+                            <strong>Inventory Item ID:</strong> {{ new_item.inventory_item_id }}<br>
+                            <strong>Date Purchased:</strong> {{ new_item.date_purchased }}<br>
+                            <strong>Date Received:</strong> {{ new_item.date_received }}<br>
+                            <strong>Quantity:</strong> {{ new_item.qty }}<br>
+                            <strong>Unit Price:</strong> {{ new_item.purchase_price }}<br>
+                            <strong>Supplier:</strong> {{ new_item.supplier.suppliers_id }} <!-- Adjust based on your supplier representation -->
+                        </div>
+                    {% endif %}
+
                 </div>
-              </div>
-            </form><!-- End General Form Elements -->
+            </div>
 
-          </div>
         </div>
-
-      </div>
     </div>
 
     <section class="section">
-      <div class="row">
-        <div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Items</h5>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Items</h5>
 
-              <!-- Table with stripped rows -->
-              <table class="table datatable" id="itemsTable">
-                <thead>
-                  <tr>
-                    <th>Item Name</th>
-                    <th>Qty</th>
-                    <th>Price - PHP</th>
-                    <th>Supplier</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td id="itemname">Item1</td>
-                    <td id="quantity">20</td>
-                    <td id="price">20</td>
-                    <td id="supplier">Supplier 1</td>
-                    <td id="deletecolumn">
-                      <button id="deletebtn">Delete</button>
-                    </td>
-                  </tr>
-                  
-                </tbody>
-              </table>
-              <!-- End Table with stripped rows -->
-              <div class="row mb-3">
-                <div class="col-sm-10 d-flex">
-                  <button type="button" class="btn btn-primary me-2" id="save">Save</button>
+                        <!-- Existing table to display items -->
+                        <table class="table datatable" id="itemsTable">
+                          <thead>
+                              <tr>
+                                  <th>Item Name</th>
+                                  <th>Qty</th>
+                                  <th>Price</th>
+                                  <th>Supplier</th>
+                                  <th>Date</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {% for item in inventory_items %}
+                              <tr>
+                                  <td>{{ item.item.item_name }}</td>
+                                  <td>{{ item.qty }}</td>
+                                  <td>{{ item.purchase_price }}</td>
+                                  <td>{{ item.supplier.id }}</td> <!-- Assuming supplier is an object with id -->
+                                  <td>{{ item.date_received }}</td>
+                              </tr>
+                              {% endfor %}
+                              {% if inventory_items.count == 0 %}
+                              <tr class="no-entries">
+                                  <td colspan="5" class="text-center">No entries found</td>
+                              </tr>
+                              {% endif %}
+                          </tbody>
+                        </table>
+                    </div>
                 </div>
-              </div>
-
             </div>
-          </div>
         </div>
-      </div>
     </section>
 
-  </section>
+</section>
 
-  <script>
-    document.getElementById('add').addEventListener('click', function() {
-      // Get input values
-      const itemName = document.querySelector('input[name="item_name"]').value;
-      const quantity = document.querySelector('input[name="amount"]').value;
-      const unitPrice = document.querySelector('input[name="item_price"]').value;
-      const supplier = document.querySelector('input[name="item_supplier"]').value;
+<script>
+    function suggestItems(query) {
+        if (query.length < 2) {
+            document.getElementById('suggestions').innerHTML = '';
+            return;
+        }
 
-      // Create a new row
-      const newRow = document.createElement('tr');
-      newRow.innerHTML = `
-        <td>${itemName}</td>
-        <td>${quantity}</td>
-        <td>${unitPrice}</td>
-        <td>${supplier}</td>
-      `;
+        fetch(`/suggest_items?query=${query}`)
+            .then(response => response.json())
+            .then(data => {
+                let suggestions = document.getElementById('suggestions');
+                suggestions.innerHTML = '<table class="table"><thead><tr><th>Item Name</th><th>Amount</th><th>Dimension</th><th>Price</th><th>Supplier</th><th>Qty</th></tr></thead><tbody></tbody></table>';
+                let tbody = suggestions.querySelector('tbody');
+                
+                data.forEach(item => {
+                    let row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.item_name}</td>
+                        <td>${item.amount}</td>
+                        <td>${item.dimension}</td> <!-- Added dimension -->
+                        <td>${item.unit_price}</td>
+                        <td>${item.supplier}</td>
+                        <td>${item.qty}</td>
+                    `;
+                    row.onclick = () => selectItem(item.item_name, item.qty, item.unit_price, item.supplier, item.date); // Note: date is not currently being used here
+                    tbody.appendChild(row);
+                });
+            });
+    }
 
-      // Append the new row to the table body
-      const tableBody = document.querySelector('#itemsTable tbody');
-      tableBody.appendChild(newRow);
-
-      // Remove the "No entries found" row if there are new entries
-      const noEntriesRow = document.querySelector('.no-entries');
-      if (noEntriesRow) {
-        tableBody.removeChild(noEntriesRow);
-      }
-
-      // Optionally clear input fields
-      document.getElementById('updateForm').reset();
-    });
-  </script>
+    function selectItem(itemName, amount, unitPrice, supplier, date, dimension, qty) {
+        document.getElementById('itemName').value = itemName;
+        document.getElementById('amount').value = amount;
+        document.getElementById('unit_price').value = unitPrice;
+        document.getElementById('supplier').value = supplier;
+        document.getElementById('qty').value = qty;
+        document.querySelector('input[name="item_date"]').value = date; // Set the date
+        document.getElementById('suggestions').innerHTML = ''; // Clear suggestions
+    }
+</script>
 
 {% endblock %}
