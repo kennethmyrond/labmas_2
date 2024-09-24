@@ -106,8 +106,10 @@ class item_description(models.Model):
     itemType = models.ForeignKey('item_types', on_delete=models.SET_NULL, null=True, blank=True)
     amount = models.FloatField(null=True, blank=True)
     dimension = models.CharField(max_length=10, null=True, blank=True)
-    add_cols = models.CharField(max_length=45, null=True, blank=True)
     qty = models.IntegerField()
+    alert_qty = models.IntegerField()
+    add_cols = models.CharField(max_length=45, null=True, blank=True)
+    
 
     def __str__(self):
         return self.item_name
