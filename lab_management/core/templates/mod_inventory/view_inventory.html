@@ -1,5 +1,5 @@
 {% extends 'temp_navbar.html' %}
-{% load socialaccount %}
+{% load socialaccount inventory_extras %}
 {% block title %}Inventory{% endblock %}
 
 {% block content %}
@@ -20,28 +20,52 @@
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Inventory</h5>
-            <a href="{% url 'inventory_itemDetails' %}">item details temp</a>
-            
+
+            <!-- Dropdown to select item_type -->
+            <form method="GET" id="itemTypeForm">
+              <div class="row mb-3">
+                <label for="item_type" class="col-sm-2 col-form-label">Select Item Type:</label>
+                <div class="col-sm-10">
+                  <select class="form-select" id="item_type" name="item_type" onchange="document.getElementById('itemTypeForm').submit()">
+                    <option value="">All</option>
+                    {% for type in item_types %}
+                      <option value="{{ type.itemType_id }}" {% if selected_item_type == type.itemType_id %}selected{% endif %}>
+                        {{ type.itemType_name }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </form>
 
             <!-- Table with stripped rows -->
             <table class="table datatable">
               <thead>
                 <tr>
+                  <th>Status</th>
                   <th>Item ID</th>
                   <th>Item Name</th>
                   <th>Amount</th>
                   <th>Dimension</th>
                   <th>Qty</th>
+                  {% for col in add_cols %}
+                    <th>{{ col }}</th>
+                  {% endfor %}
                 </tr>
               </thead>
               <tbody>
                 {% for item in inventory_items %}
                 <tr>
-                  <td>{{ item.inventory_item_id }}</td>
-                  <td>{{ item.item.item_name }}</td>
-                  <td>{{ item.amount }}</td>  <!-- Display Amount -->
-                  <td>{{ item.item.dimension }}</td>  <!-- Display Dimension -->
-                  <td>{{ item.qty}}</td>  <!-- Display available quantity -->
+                  <td>Available</td>
+                  <td>{{ item.item_id }}</td> <!-- item_id from item_description -->
+                  <td>{{ item.item_name }}</td> <!-- item_name from item_description -->
+                  <td>{{ item.amount }}</td> <!-- amount from item_description -->
+                  <td>{{ item.dimension }}</td> <!-- dimension from item_description -->
+                  <td>{{ item.qty }}</td> <!-- qty from item_description -->
+                  
+                  {% for col in add_cols %}
+                    <td>{{ item.add_cols|get_col_value:col }}</td> <!-- Dynamically display add_cols values -->
+                  {% endfor %}
                 </tr>
                 {% empty %}
                 <tr>

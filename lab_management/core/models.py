@@ -107,7 +107,7 @@ class item_description(models.Model):
     amount = models.FloatField(null=True, blank=True)
     dimension = models.CharField(max_length=10, null=True, blank=True)
     add_cols = models.CharField(max_length=45, null=True, blank=True)
-    alert_Qty = models.CharField(max_length=45, null=True, blank=True)
+    qty = models.IntegerField()
 
     def __str__(self):
         return self.item_name
@@ -128,6 +128,7 @@ class item_transactions(models.Model):
     transaction_id = models.AutoField(primary_key=True)
     user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
     timestamp = models.DateTimeField(null=True, blank=True)
+    remarks = models.CharField(max_length=45, null=True, blank=True)
 
     def __str__(self):
         return f"Transaction {self.transaction_id}"
@@ -151,7 +152,6 @@ class item_inventory(models.Model):
     remarks = models.CharField(max_length=45, null=True, blank=True)
     transaction = models.ForeignKey('item_transactions', on_delete=models.SET_NULL, null=True, blank=True)
     qty = models.IntegerField()  # Quantity; required field
-    amount = models.IntegerField()  # Amount; required field
     
     def __str__(self):
         return f"Inventory Item {self.inventory_item_id}"

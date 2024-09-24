@@ -16,122 +16,75 @@
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
-
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Physical Count - Update Item Quantity</h5>
+            <h5 class="card-title">Items</h5>
 
-            <!-- General Form Elements -->
-            <form id="updateForm" onsubmit="return false;">
-              {% csrf_token %}
-
-              <div id="form-container">
-                <!-- Form field set -->
-                <div class="form-set">
-                  <div class="row mb-3">
-                    <label for="inputText" class="col-sm-2 col-form-label">Item Name:</label>
-                    <div style="display:flex;" class="col-sm-10">
-                      <input type="text" class="form-control" name="item_name" required>
-                      <a style="display:flex;margin-left:10px;" href="">Scan Code</a>
-                    </div>
-                  </div>
-
-                  <div class="row mb-3">
-                    <label for="inputNumber" class="col-sm-2 col-form-label">Quantity:</label>
-                    <div class="col-sm-10">
-                      <input type="number" style="max-width: 40%;" class="form-control" name="amount" required>
-                    </div>
-                  </div>
-
-                  <div class="row mb-3">
-                    <label for="inputText" class="col-sm-2 col-form-label">Remarks:</label>
-                    <div class="col-sm-10">
-                      <input type="text" class="form-control" name="remarks">
-                    </div>
-                  </div>
-
-                  <div class="row mb-3">
-                    <div class="col-sm-10 d-flex">
-                      <button type="button" class="btn btn-primary me-2" id="add">Add</button>
-                      <button type="reset" class="btn btn-secondary" id="clear">Clear</button>
-                    </div>
-                  </div>
+            <!-- Dropdown to select item_type -->
+            <form method="GET" id="itemTypeForm">
+              <div class="row mb-3">
+                <label for="item_type" class="col-sm-2 col-form-label">Select Item Type:</label>
+                <div class="col-sm-10">
+                  <select class="form-select" id="item_type" name="item_type" onchange="document.getElementById('itemTypeForm').submit()">
+                    <option value="">All</option>
+                    {% for type in item_types %}
+                      <option value="{{ type.itemType_id }}" {% if selected_item_type == type.itemType_id %}selected{% endif %}>
+                        {{ type.itemType_name }}
+                      </option>
+                    {% endfor %}
+                  </select>
                 </div>
               </div>
-            </form><!-- End General Form Elements -->
+            </form>
 
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <section class="section">
-      <div class="row">
-        <div class="col-lg-12">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Items</h5>
-
+            <!-- Physical Count Form -->
+            <form method="POST" action="{% url 'inventory_physicalCount' %}">
+              {% csrf_token %}
+              
               <!-- Table with stripped rows -->
               <table class="table datatable" id="itemsTable">
                 <thead>
                   <tr>
-                    <th>Status</th>
                     <th>Item ID</th>
                     <th>Item Name</th>
                     <th>Amount</th>
-                    <th>Unit</th>
+                    <th>Dimension</th>
                     <th>Qty</th>
-                    <th>Remarks</th>
+                    <th>Count Qty</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr class="no-entries">
-                    <td colspan="7" class="text-center">No entries found</td>
-                  </tr>
+                  {% for item in inventory_items %}
+                    <tr>
+                      <td>{{ item.item_id }}</td> <!-- Item ID -->
+                      <td>{{ item.item_name }}</td> <!-- Item Name -->
+                      <td>{{ item.amount }}</td> <!-- Amount -->
+                      <td>{{ item.dimension }}</td> <!-- Dimension -->
+                      <td>{{ item.qty }}</td> <!-- Quantity -->
+                      <td>
+                        <input type="number" name="count_qty_{{ item.item_id }}" class="form-control" placeholder="Enter count" required>
+                      </td> <!-- Count Qty input field -->
+                    </tr>
+                  {% empty %}
+                    <tr>
+                      <td colspan="6" class="text-center">No items found.</td>
+                    </tr>
+                  {% endfor %}
                 </tbody>
               </table>
               <!-- End Table with stripped rows -->
 
-            </div>
+              <div class="row mb-3"></div>
+                <div class="col-sm-10 d-flex">
+                  <button type="submit" class="btn btn-primary me-2" id="save">Save</button>
+                </div>
+              </div>
+            </form>
+
           </div>
         </div>
       </div>
-    </section>
-
+    </div>
   </section>
-
-  <script>
-    document.getElementById('add').addEventListener('click', function() {
-      // Get input values
-      const itemName = document.querySelector('input[name="item_name"]').value;
-      const quantity = document.querySelector('input[name="amount"]').value;
-      const unitPrice = document.querySelector('input[name="item_price"]').value;
-      const supplier = document.querySelector('input[name="item_supplier"]').value;
-
-      // Create a new row
-      const newRow = document.createElement('tr');
-      newRow.innerHTML = `
-        <td>${itemName}</td>
-        <td>${quantity}</td>
-        <td>${unitPrice}</td>
-        <td>${supplier}</td>
-      `;
-
-      // Append the new row to the table body
-      const tableBody = document.querySelector('#itemsTable tbody');
-      tableBody.appendChild(newRow);
-
-      // Remove the "No entries found" row if there are new entries
-      const noEntriesRow = document.querySelector('.no-entries');
-      if (noEntriesRow) {
-        tableBody.removeChild(noEntriesRow);
-      }
-
-      // Optionally clear input fields
-      document.getElementById('updateForm').reset();
-    });
-  </script>
 
 {% endblock %}
