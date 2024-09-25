@@ -57,24 +57,25 @@
                 {% for item in inventory_items %}
                 <tr>
                   <td>Available</td>
-                  <td><a href="{%url 'inventory_itemDetails' %}">{{ item.item_id }}</a></td> <!-- item_id from item_description -->
-                  <td>{{ item.item_name }}</td> <!-- item_name from item_description -->
-                  <td>{{ item.amount }}</td> <!-- amount from item_description -->
-                  <td>{{ item.dimension }}</td> <!-- dimension from item_description -->
-                  <td>{{ item.qty }}</td> <!-- qty from item_description -->
-                  
+                  <td><a href="{% url 'inventory_itemDetails_view' item.item_id %}">{{ item.item_id }}</a></td>
+                  <td>{{ item.item_name }}</td>
+                  <td>{{ item.amount }}</td>
+                  <td>{{ item.dimension }}</td>
+                  <td class="{% if item.total_qty > 0 %}qty-positive{% else %}qty-negative{% endif %}">
+                    {{ item.total_qty }}  <!-- Directly display the total quantity without + or - -->
+                  </td>
                   {% for col in add_cols %}
-                    <td>{{ item.add_cols|get_col_value:col }}</td> <!-- Dynamically display add_cols values -->
+                    <td>{{ item.add_cols|get_col_value:col }}</td>
                   {% endfor %}
                 </tr>
                 {% empty %}
                 <tr>
-                  <td colspan="5">No items found.</td>
+                  <td colspan="6">No items found.</td>
                 </tr>
                 {% endfor %}
               </tbody>
-              
             </table>
+            
             <!-- End Table with stripped rows -->
 
           </div>
