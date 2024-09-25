@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q 
+from django.db.models import Q, Sum 
 from django.utils import timezone
+from django import forms
 from django.http import HttpResponse, JsonResponse
 from .forms import LoginForm, InventoryItemForm
-from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, item_transactions, user
+from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, item_transactions, user, laboratory
 import json
 from django.utils import timezone
 
@@ -38,30 +39,29 @@ def inventory_view(request):
     # Get the selected item_type from the GET parameters
     selected_item_type = request.GET.get('item_type')
 
-    # Filter inventory items by both the selected item_type and the selected laboratory
+    # Filter inventory items by both the selected item_type and the selected laboratory,
+    # and ensure the item is not disabled
     if selected_item_type:
-        # Filter by both item_type and selected_lab (item's laboratory should match)
         inventory_items = item_description.objects.filter(
             itemType_id=selected_item_type,
-            laboratory_id=selected_laboratory_id
-        )
-        # Get the add_cols for the selected item_type
+            laboratory_id=selected_laboratory_id,
+            disabled=0  # Only get items that are enabled
+        ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
         selected_item_type_instance = item_types.objects.get(pk=selected_item_type)
         add_cols = json.loads(selected_item_type_instance.add_cols)
     else:
-        # Filter only by the selected_lab if no item_type is chosen
         inventory_items = item_description.objects.filter(
-            laboratory_id=selected_laboratory_id
-        )
+            laboratory_id=selected_laboratory_id,
+            disabled=0  # Only get items that are enabled
+        ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
         add_cols = []
 
     return render(request, 'mod_inventory/view_inventory.html', {
         'inventory_items': inventory_items,
         'item_types': item_types_list,
-        'selected_item_type': int(selected_item_type) if selected_item_type else None,  # Fix comparison issue
+        'selected_item_type': int(selected_item_type) if selected_item_type else None,
         'add_cols': add_cols
     })
-
 def inventory_addNewItem_view(request):
     selected_lab = request.session.get('selected_lab')
     if selected_lab:
@@ -187,8 +187,95 @@ def inventory_updateItem_view(request):
     # If the request method is not POST, render the form
     return render(request, 'mod_inventory/inventory_updateItem.html')
 
-def inventory_itemDetails_view(request):
-    return render(request, 'mod_inventory/inventory_itemDetails.html')
+def inventory_itemDetails_view(request, item_id):
+    # Get the item_description instance
+    item = get_object_or_404(item_description, item_id=item_id)
+
+    # Parse add_cols JSON
+    add_cols_data = json.loads(item.add_cols) if item.add_cols else {}
+
+    # Get the related itemType instance
+    item_type = item.itemType
+
+    # Get the related laboratory instance
+    lab = get_object_or_404(laboratory, laboratory_id=item.laboratory_id)
+
+    # Get all item_inventory entries for the specified item_id
+    item_inventories = item_inventory.objects.filter(item=item).select_related('supplier')
+
+    # Calculate the total quantity
+    total_qty = item_inventories.aggregate(Sum('qty'))['qty__sum'] or 0
+
+    # Prepare context for rendering
+    context = {
+        'item': item,
+        'itemType_name': item_type.itemType_name if item_type else None,
+        'laboratory_name': lab.name if lab else None,
+        'item_inventories': item_inventories,
+        'total_qty': total_qty,
+        'add_cols_data': add_cols_data,
+        'is_edit_mode': False,  # Not in edit mode
+    }
+
+    return render(request, 'mod_inventory/inventory_itemDetails.html', context)
+
+
+# Create a form for editing the item
+class ItemEditForm(forms.ModelForm):
+    class Meta:
+        model = item_description
+        fields = ['item_name', 'amount', 'dimension']
+
+def inventory_itemEdit_view(request, item_id):
+    # Get the item_description instance
+    item = get_object_or_404(item_description, item_id=item_id)
+
+    # Parse add_cols JSON
+    add_cols_data = json.loads(item.add_cols) if item.add_cols else {}
+
+    if request.method == 'POST':
+        form = ItemEditForm(request.POST, instance=item)
+        
+        if form.is_valid():
+            form.save()
+            # Update the additional columns
+            for label in add_cols_data.keys():
+                add_cols_data[label] = request.POST.get(label, '')  # Get the updated value or set to empty
+            
+            # Save the updated add_cols data back to the item
+            item.add_cols = json.dumps(add_cols_data)
+            item.save()
+            
+            return redirect('inventory_itemDetails_view', item_id=item_id)  # Redirect to item details after saving
+    else:
+        form = ItemEditForm(instance=item)
+
+    return render(request, 'mod_inventory/inventory_itemEdit.html', {
+        'form': form,
+        'item': item,
+        'add_cols_data': add_cols_data,  # Pass the add_cols_data to the template
+    })
+
+def inventory_itemDelete_view(request, item_id):
+    item = get_object_or_404(item_description, item_id=item_id)
+
+    if request.method == 'POST':
+        item.disabled = 1  # Mark item as disabled
+        item.save()
+        return redirect('inventory_view')  # Redirect to view inventory after disabling
+
+    # Prepare context for rendering the confirmation template
+    item_type = item.itemType
+    lab = get_object_or_404(laboratory, laboratory_id=item.laboratory_id)
+    context = {
+        'item': item,
+        'itemType_name': item_type.itemType_name if item_type else None,
+        'laboratory_name': lab.name if lab else None,
+    }
+
+    return render(request, 'mod_inventory/inventory_itemDelete.html', context)
+
+
 
 def inventory_physicalCount_view(request):
     # Get the selected laboratory from the session

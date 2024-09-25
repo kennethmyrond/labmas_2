@@ -109,6 +109,7 @@ class item_description(models.Model):
     qty = models.IntegerField()
     alert_qty = models.IntegerField()
     add_cols = models.CharField(max_length=45, null=True, blank=True)
+    disabled = models.BooleanField(default=False)  # New field to mark as disabled
     
 
     def __str__(self):

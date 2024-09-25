@@ -1,0 +1,54 @@
+{% extends 'temp_navbar.html' %}
+
+{% block title %}Confirm Delete Item{% endblock %}
+
+{% block content %}
+<div class="pagetitle">
+    <h1>Confirm Delete Item</h1>
+</div>
+
+<section class="section">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Are you sure you want to disable the following item?</h5>
+                    <table class="table">
+                        <tr>
+                            <th>Item ID:</th>
+                            <td>{{ item.item_id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Item Name:</th>
+                            <td>{{ item.item_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Amount:</th>
+                            <td>{{ item.amount }}</td>
+                        </tr>
+                        <tr>
+                            <th>Dimension:</th>
+                            <td>{{ item.dimension }}</td>
+                        </tr>
+                        <tr>
+                            <th>Item Type:</th>
+                            <td>{{ itemType_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Laboratory Name:</th>
+                            <td>{{ laboratory_name }}</td>
+                        </tr>
+                    </table>
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Yes, Disable Item</button>
+                        <a href="{% url 'inventory_itemDetails_view' item.item_id %}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

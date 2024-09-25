@@ -4,141 +4,148 @@
 {% block content %}
 <head>
   <style type="text/css">
-    .cardinfo{
+    .cardinfo {
       display: flex;
       align-items: flex-start;
     }
-    .buttoncontainer{
+    .buttoncontainer {
       display: flex;
     }
-    .iteminfo{
+    .iteminfo {
       margin-right: 70%;
     }
-    #deletebtn{
+    #deletebtn {
       margin-left: 25px;
-      color:red;
+      color: red;
     }
-    #deletebtn:hover{
-      color:rgb(255, 83, 83);
+    #deletebtn:hover {
+      color: rgb(255, 83, 83);
     }
-    #editbtn, #deletebtn{
+    #editbtn, #deletebtn {
       text-decoration: underline;
+    }
+    .qty-positive {
+      color: green !important;
+    }
+    .qty-negative {
+      color: red !important;
+    }
+    .columns-container {
+      padding-left: 20px; /* Indentation for columns */
     }
   </style>
 </head>
-  <div class="pagetitle">
-    <h1>Inventory</h1>
-    <nav>
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'inventory_view'%}">Inventory</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'inventory_view'%}">View Inventory</a></li>
-        <li class="breadcrumb-item active">Item Details</li>
-      </ol>
-    </nav>
-  </div><!-- End Page Title -->
 
-  <section class="section">
-    <div class="row">
-      <div class="col-lg-12">
+<div class="pagetitle">
+  <h1>Inventory</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'inventory_view'%}">Inventory</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'inventory_view'%}">View Inventory</a></li>
+      <li class="breadcrumb-item active">Item Details</li>
+    </ol>
+  </nav>
+</div><!-- End Page Title -->
 
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title" >Item Name</h5>
-            <div class="cardinfo">
-              <table class="iteminfo">
-                <tr>
-                  <td style="padding-right:10px">Type:</td>
-                  <td id="itemType">Item type</td>
-                </tr>
-                <tr>
-                  <td style="padding-right:10px">Sub-Type:</td>
-                  <td id="itemsubType">Item subtype</td>
-                </tr>
-                <tr>
-                  <td style="padding-right:10px">Running Quantity:</td>
-                  <td id="itemrunQuantity">10</td>
-                </tr>
-              </table>
-              <div class="buttoncontainer">
-                <a id="editbtn" href="">Edit</a>
-                <a id="deletebtn" href="">Delete</a>
-              </div>
-            </div>
-            
-
-            <br>
-            <!-- Table with stripped rows -->
-            <table class="table datatable">
-              <thead>
-                <tr>
-                  <th>Qty</th>
-                  <th>User</th>
-                  <th data-type="date" data-format="YYYY/DD/MM" class="date_row">Date Updated</th>
-                  <th>Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td id="quantitychange" style="color:green;">+20</td>
-                  <td id="user">Technician 1</td>
-                  <td id="dateupdate">17/04/2024</td>
-                  <td id="remarks">-</td>
-                </tr>
-                <tr>
-                  <td style="color:red;">-2</td>
-                  <td>Technician 1</td>
-                  <td>18/04/2024</td>
-                  <td>For lab activity 1</td>
-                </tr>
-                <tr>
-                  <td style="color:red;">-4</td>
-                  <td>Technician 3</td>
-                  <td>19/04/2024</td>
-                  <td>For lab activity 2</td>
-                </tr>
-                <tr>
-                  <td style="color:green;">+3</td>
-                  <td>Technician 2</td>
-                  <td>01/05/2024</td>
-                  <td>-</td>
-                </tr>
-                <tr>
-                  <td style="color:green;">+2</td>
-                  <td>Technician 1</td>
-                  <td>17/04/2024</td>
-                  <td>-</td>
-                </tr>
-              </tbody>
+<section class="section">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">{{ item.item_name }}</h5> <!-- Display the item name -->
+          <div class="cardinfo">
+            <table class="iteminfo">
+              <tr>
+                <td style="padding-right:10px">Item ID:</td>
+                <td id="itemID">{{ item.item_id }}</td>
+              </tr>
+              <tr>
+                <td style="padding-right:10px">Amount:</td>
+                <td id="itemAmount">{{ item.amount }}</td>
+              </tr>
+              <tr>
+                <td style="padding-right:10px">Dimension:</td>
+                <td id="itemDimension">{{ item.dimension }}</td>
+              </tr>
+              <tr>
+                <td style="padding-right:10px">Columns:</td>
+                <td>
+                  <div class="columns-container">
+                    {% for label, value in add_cols_data.items %}
+                      {{ label }}: {{ value }}<br>
+                    {% endfor %}
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-right:10px">Item Type:</td>
+                <td id="itemType">{{ itemType_name }}</td>
+              </tr>
+              <tr>
+                <td style="padding-right:10px">Laboratory Name:</td>
+                <td id="laboratory">{{ laboratory_name }}</td>
+              </tr>
+              <tr>
+                <td style="padding-right:10px">Running Quantity:</td>
+                <td id="itemrunQuantity" class="{% if total_qty > 0 %}qty-positive{% else %}qty-negative{% endif %}">
+                  {% if total_qty >= 0 %}
+                    +{{ total_qty }}
+                  {% else %}
+                    {{ total_qty }}
+                  {% endif %}
+                </td>
+              </tr>
             </table>
-            <!-- End Table with stripped rows -->
-
+            <div class="buttoncontainer">
+              <a id="editbtn" href="{% url 'inventory_itemEdit_view' item.item_id %}">Edit</a>
+              <a id="deletebtn" href="{% url 'inventory_itemDelete_view' item.item_id %}">Delete</a>
+            </div>
           </div>
         </div>
 
+        <br>
+        <!-- Table with stripped rows -->
+        <table class="table datatable">
+          <thead>
+            <tr>
+              <th>Qty</th>
+              <th>Date Purchased</th>
+              <th>Date Received</th>
+              <th>Purchase Price</th>
+              <th>Remarks</th>
+              <th>Supplier Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for inventory in item_inventories %}
+            <tr>
+              <td class="{% if inventory.qty|default:0 > 0 %}qty-positive{% else %}qty-negative{% endif %}">
+                {% if inventory.qty|default:0 > 0 %}
+                  +{{ inventory.qty }}
+                {% else %}
+                  -{{ inventory.qty }}
+                {% endif %}
+              </td>
+              <td>{{ inventory.date_purchased }}</td>
+              <td>{{ inventory.date_received }}</td>
+              <td>{{ inventory.purchase_price }}</td>
+              <td>{{ inventory.remarks }}</td>
+              <td>{{ inventory.supplier.suppliername }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6">No inventory records found for this item.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <!-- End Table with stripped rows -->
+
       </div>
     </div>
-  </section>
-
-</main><!-- End #main -->
-
-<!-- ======= Footer ======= -->
-{% comment %} <footer id="footer" class="footer">
-  <div class="copyright">
-    &copy; Copyright <strong><span>NiceAdmin</span></strong>. All Rights Reserved
   </div>
-  <div class="credits">
-    <!-- All the links in the footer should remain intact. -->
-    <!-- You can delete the links only if you purchased the pro version. -->
-    <!-- Licensing information: https://bootstrapmade.com/license/ -->
-    <!-- Purchase the pro version with working PHP/AJAX contact form: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/ -->
-    Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
-  </div>
-</footer><!-- End Footer --> {% endcomment %}
+</section>
 
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
-
-</body>
-
 {% endblock %}
-</html>
