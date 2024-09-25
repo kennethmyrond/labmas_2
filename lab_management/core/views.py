@@ -5,9 +5,11 @@ from django.db.models import Q
 from django.utils import timezone
 from django.http import HttpResponse, JsonResponse
 from .forms import LoginForm, InventoryItemForm
-from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, item_transactions, user
+from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, item_transactions, user, suppliers
 import json
-from django.utils import timezone
+from django.http import JsonResponse
+from django.shortcuts import render, get_object_or_404, HttpResponse
+from .models import item_description, item_inventory, item_transactions, suppliers, user
 
 def userlogin(request):
     return render(request,"user_login.html")
@@ -22,7 +24,6 @@ def set_lab(request, laboratory_id):
     request.session['selected_lab'] = lab.laboratory_id
     request.session['selected_lab_name'] = lab.name
     return redirect(request.META.get('HTTP_REFERER', '/'))  # Redirect back to the previous page
-
 
 def logout_view(request):
     logout(request)
@@ -91,12 +92,14 @@ def inventory_addNewItem_view(request):
 
         # Save the data to the database
         new_item = item_description(
-            laboratory_id=laboratory,  # Assuming the laboratory is 1
+            laboratory_id=selected_lab,  # Assuming the laboratory is 1
             item_name=item_name,
             itemType_id=item_type_id,  # Set the itemType_id from the dropdown
             amount=amount,
             dimension=dimension,
-            add_cols=add_cols_json  # Save the additional columns as JSON
+            add_cols=add_cols_json,  # Save the additional columns as JSON
+            qty = 0,
+            alert_qty = 0,
         )
         new_item.save()
 
@@ -110,30 +113,63 @@ def inventory_addNewItem_view(request):
 
 def suggest_items(request):
     query = request.GET.get('query', '')
-    suggestions = item_description.objects.filter(item_name__icontains=query)[:5]  # Get up to 5 matching items
+    selected_laboratory_id = request.session.get('selected_lab')
+    suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id)[:5]  # Get up to 5 matching items
 
     data = []
     for item in suggestions:
-        # Get the associated item_inventory entry
-        inventory_item = item_inventory.objects.filter(item_id=item.item_id).first()  # Get the first inventory entry
-        
-        if inventory_item:
-            data.append({
-                'item_name': item.item_name,
-                'amount': item.amount,  # From item_description
-                'dimension': item.dimension,
-                'unit_price': inventory_item.purchase_price,  # Correctly named field
-                'supplier': inventory_item.supplier_id,  # Assuming supplier_id is the integer supplier ID
-                'date_received': inventory_item.date_received,  # Correct field name
-                'qty'          : inventory_item.qty
-            })
+        # Parse add_cols from item_description if it's available
+        try:
+            add_cols = json.loads(item.add_cols) if item.add_cols else {}
+        except json.JSONDecodeError:
+            add_cols = {}
+
+        # Add item details including add_cols to the response data
+        data.append({
+            'item_name': item.item_name,
+            'amount': item.amount,
+            'dimension': item.dimension,
+            'add_cols': add_cols,  # Pass the parsed add_cols
+            'qty': item.qty  # Assuming qty is now in item_description
+        })
     
     return JsonResponse(data, safe=False)
+
+# def suggest_items(request):
+#     query = request.GET.get('query', '')
+#     selected_laboratory_id = request.session.get('selected_lab')
+#     suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id)[:5]
+
+#     data = []
+#     for item in suggestions:
+#         data.append({
+#             'item_id': item.item_id,
+#             'item_name': item.item_name,
+#             'amount': item.amount,
+#             'dimension': item.dimension
+#         })
+    
+#     return JsonResponse(data, safe=False)
+
+# def suggest_suppliers(request):
+#     query = request.GET.get('query', '')
+#     supplier_suggestions = suppliers.objects.filter(supplier_name__icontains=query)[:5]
+
+#     data = []
+#     for supplier in supplier_suggestions:
+#         data.append({
+#             'suppliers_id': supplier.suppliers_id,
+#             'supplier_name': supplier.supplier_name
+#         })
+
+#     return JsonResponse(data, safe=False)
+
 
 def inventory_updateItem_view(request):
     if request.method == 'POST':
         item_name = request.POST.get('item_name')
-        amount = request.POST.get('amount')
+        action_type = request.POST.get('action_type')
+        amount = request.POST.get('amount') if action_type == 'add' else request.POST.get('quantity_removed')
         item_date_purchased = request.POST.get('item_date_purchased')
         item_date_received = request.POST.get('item_date_received')
         item_price = request.POST.get('item_price')
@@ -146,46 +182,53 @@ def inventory_updateItem_view(request):
         # Find the item_id based on the item_name
         item_description_instance = get_object_or_404(item_description, item_name=item_name)
 
-        # Ensure the supplier_id exists
+        # Ensure the supplier exists
         try:
             supplier_instance = suppliers.objects.get(suppliers_id=item_supplier)
         except suppliers.DoesNotExist:
             return HttpResponse("Supplier does not exist.", status=400)
 
-        # Retrieve the custom user instance
-        try:
-            current_user = user.objects.get(email=request.user.email)
-        except user.DoesNotExist:
-            return HttpResponse("No user matches the given query.", status=404)
+        # Retrieve the current user instance
+        current_user = get_object_or_404(user, email=request.user.email)
+        # current_user = 1
 
         # Create a new item transaction
         transaction = item_transactions.objects.create(
             user=current_user,
-            timestamp=timezone.now()
+            timestamp=timezone.now(),
+            remarks="Add to inventory" if action_type == 'add' else "Remove from inventory"
         )
 
-        # Create a new items inventory entry
-        new_inventory_item = item_inventory.objects.create(
-            item=item_description_instance,
-            supplier=supplier_instance,
-            date_purchased=item_date_purchased,
-            date_received=item_date_received,
-            purchase_price=item_price,
-            transaction=transaction,
-            qty=amount
-        )
+        # Add to inventory logic
+        if action_type == 'add':
+            # Create a new item_inventory entry
+            new_inventory_item = item_inventory.objects.create(
+                item=item_description_instance,
+                supplier=supplier_instance,
+                date_purchased=item_date_purchased,
+                date_received=item_date_received,
+                purchase_price=item_price,
+                transaction=transaction,
+                qty=amount
+            )
+
+            item_description_instance.qty += int(amount)
+            item_description_instance.save()
+        else:
+            # Remove from inventory: Decrease the qty from item_description
+            item_description_instance.qty -= int(amount)
+            item_description_instance.save()
 
         # Prepare the context to render the new item
         context = {
-            'new_item': new_inventory_item,
-            'success_message': "Item added successfully!"
+            'success_message': f"Item {'added to' if action_type == 'add' else 'removed from'} inventory successfully!"
         }
 
-        # Render the updated template with the new item
         return render(request, 'mod_inventory/inventory_updateItem.html', context)
 
     # If the request method is not POST, render the form
     return render(request, 'mod_inventory/inventory_updateItem.html')
+
 
 def inventory_itemDetails_view(request):
     return render(request, 'mod_inventory/inventory_itemDetails.html')

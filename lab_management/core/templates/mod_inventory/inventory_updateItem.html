@@ -26,8 +26,18 @@
                         {% csrf_token %}
 
                         <div id="form-container">
-                            <!-- Form field set -->
                             <div class="form-set">
+                                
+                                <div class="row mb-3">
+                                    <label for="actionType" class="col-sm-2 col-form-label">Action:</label>
+                                    <div class="col-sm-10">
+                                        <select class="form-select" id="actionType" name="action_type" required onchange="toggleActionFields()">
+                                            <option value="add">Add to Inventory</option>
+                                            <option value="remove">Remove from Inventory</option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="row mb-3">
                                     <label for="itemName" class="col-sm-2 col-form-label">Item Name:</label>
                                     <div class="col-sm-10">
@@ -36,38 +46,53 @@
                                     </div>
                                 </div>
 
-                                <div class="row mb-3">
-                                    <label for="inputNumber" class="col-sm-2 col-form-label">Quantity:</label>
-                                    <div class="col-sm-10">
-                                        <input type="number" class="form-control" name="amount" id="amount" required>
+                                <!-- Add to Inventory Fields -->
+                                <div id="addFields">
+                                    
+
+                                    <div class="row mb-3">
+                                        <label for="inputDatePurchased" class="col-sm-2 col-form-label">Date Purchased:</label>
+                                        <div class="col-sm-10">
+                                            <input type="datetime-local" class="form-control" name="item_date_purchased">
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <label for="inputDateReceived" class="col-sm-2 col-form-label">Date Received:</label>
+                                        <div class="col-sm-10">
+                                            <input type="datetime-local" class="form-control" name="item_date_received">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <label for="amount" class="col-sm-2 col-form-label">Quantity Bought:</label>
+                                        <div class="col-sm-10">
+                                            <input type="number" class="form-control" name="amount" id="amount" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <label for="inputText" class="col-sm-2 col-form-label">Unit Price:</label>
+                                        <div class="col-sm-10">
+                                            <input type="number" class="form-control" name="item_price" id="unit_price" step="0.01">
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <label for="inputText" class="col-sm-2 col-form-label">Supplier:</label>
+                                        <div class="col-sm-10">
+                                            <input type="text" class="form-control" name="item_supplier" id="supplier">
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div class="row mb-3">
-                                    <label for="inputDatePurchased" class="col-sm-2 col-form-label">Date Purchased:</label>
-                                    <div class="col-sm-10">
-                                        <input type="datetime-local" class="form-control" name="item_date_purchased" required>
-                                    </div>
-                                </div>
-                  
-                                <div class="row mb-3">
-                                    <label for="inputDateReceived" class="col-sm-2 col-form-label">Date Received:</label>
-                                    <div class="col-sm-10">
-                                        <input type="datetime-local" class="form-control" name="item_date_received" required>
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3">
-                                    <label for="inputText" class="col-sm-2 col-form-label">Unit Price:</label>
-                                    <div class="col-sm-10">
-                                        <input type="text" class="form-control" name="item_price" id="unit_price" required>
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3">
-                                    <label for="inputText" class="col-sm-2 col-form-label">Supplier:</label>
-                                    <div class="col-sm-10">
-                                        <input type="text" class="form-control" name="item_supplier" id="supplier" required>
+                                <!-- Remove from Inventory Field -->
+                                <div id="removeFields" style="display: none;">
+                                    <div class="row mb-3">
+                                        <label for="quantityRemoved" class="col-sm-2 col-form-label">Quantity Removed:</label>
+                                        <div class="col-sm-10">
+                                            <input type="number" class="form-control" name="quantity_removed" id="quantity_removed">
+                                        </div>
                                     </div>
                                 </div>
 
@@ -81,65 +106,52 @@
                         </div>
                     </form><!-- End General Form Elements -->
 
-                    {% if new_item %}
-                        <div class="alert alert-success mt-3">
-                            <strong>{{ success_message }}</strong><br>
-                            <strong>Inventory Item ID:</strong> {{ new_item.inventory_item_id }}<br>
-                            <strong>Date Purchased:</strong> {{ new_item.date_purchased }}<br>
-                            <strong>Date Received:</strong> {{ new_item.date_received }}<br>
-                            <strong>Quantity:</strong> {{ new_item.qty }}<br>
-                            <strong>Unit Price:</strong> {{ new_item.purchase_price }}<br>
-                            <strong>Supplier:</strong> {{ new_item.supplier.suppliers_id }} <!-- Adjust based on your supplier representation -->
+                    <!-- Items Table -->
+                    <section class="section">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Items</h5>
+                                        <table class="table datatable" id="itemsTable">
+                                          <thead>
+                                              <tr>
+                                                  <th>Item Name</th>
+                                                  <th>Qty</th>
+                                                  <th>Price</th>
+                                                  <th>Supplier</th>
+                                                  <th>Date</th>
+                                              </tr>
+                                          </thead>
+                                          <tbody id="itemList">
+                                              {% for item in inventory_items %}
+                                              <tr>
+                                                  <td>{{ item.item.item_name }}</td>
+                                                  <td>{{ item.qty }}</td>
+                                                  <td>{{ item.purchase_price }}</td>
+                                                  <td>{{ item.supplier.suppliers_id }}</td> <!-- Assuming supplier is an object with suppliers_id -->
+                                                  <td>{{ item.date_received }}</td>
+                                              </tr>
+                                              {% endfor %}
+                                              {% if inventory_items.count == 0 %}
+                                              <tr class="no-entries">
+                                                  <td colspan="5" class="text-center">No entries found</td>
+                                              </tr>
+                                              {% endif %}
+                                          </tbody>
+                                        </table>
+                                        <button type="button" class="btn btn-success" onclick="saveTransaction()">Save</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    {% endif %}
+                    </section>
 
                 </div>
             </div>
 
         </div>
     </div>
-
-    <section class="section">
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Items</h5>
-
-                        <!-- Existing table to display items -->
-                        <table class="table datatable" id="itemsTable">
-                          <thead>
-                              <tr>
-                                  <th>Item Name</th>
-                                  <th>Qty</th>
-                                  <th>Price</th>
-                                  <th>Supplier</th>
-                                  <th>Date</th>
-                              </tr>
-                          </thead>
-                          <tbody>
-                              {% for item in inventory_items %}
-                              <tr>
-                                  <td>{{ item.item.item_name }}</td>
-                                  <td>{{ item.qty }}</td>
-                                  <td>{{ item.purchase_price }}</td>
-                                  <td>{{ item.supplier.id }}</td> <!-- Assuming supplier is an object with id -->
-                                  <td>{{ item.date_received }}</td>
-                              </tr>
-                              {% endfor %}
-                              {% if inventory_items.count == 0 %}
-                              <tr class="no-entries">
-                                  <td colspan="5" class="text-center">No entries found</td>
-                              </tr>
-                              {% endif %}
-                          </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
 </section>
 
 <script>
@@ -153,33 +165,53 @@
             .then(response => response.json())
             .then(data => {
                 let suggestions = document.getElementById('suggestions');
-                suggestions.innerHTML = '<table class="table"><thead><tr><th>Item Name</th><th>Amount</th><th>Dimension</th><th>Price</th><th>Supplier</th><th>Qty</th></tr></thead><tbody></tbody></table>';
+                suggestions.innerHTML = '<table class="table"><thead><tr><th>Item Name</th><th>Amount</th><th>Dimension</th><th>Additional Info</th><th>Qty</th></tr></thead><tbody></tbody></table>';
                 let tbody = suggestions.querySelector('tbody');
                 
                 data.forEach(item => {
+                    let addCols = '';  // String to store formatted add_cols
+                    for (const [key, value] of Object.entries(item.add_cols)) {
+                        addCols += `<strong>${key}:</strong> ${value} <br>`;  // Format add_cols as key-value pairs
+                    }
+
                     let row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${item.item_name}</td>
                         <td>${item.amount}</td>
-                        <td>${item.dimension}</td> <!-- Added dimension -->
-                        <td>${item.unit_price}</td>
-                        <td>${item.supplier}</td>
+                        <td>${item.dimension}</td>
+                        <td>${addCols}</td>  <!-- Display add_cols -->
                         <td>${item.qty}</td>
                     `;
-                    row.onclick = () => selectItem(item.item_name, item.qty, item.unit_price, item.supplier, item.date); // Note: date is not currently being used here
+                    row.onclick = () => selectItem(item.item_name, item.amount, item.dimension, item.qty, item.add_cols);
                     tbody.appendChild(row);
                 });
             });
     }
 
-    function selectItem(itemName, amount, unitPrice, supplier, date, dimension, qty) {
+    function selectItem(itemName, amount, dimension, qty, addCols) {
         document.getElementById('itemName').value = itemName;
-        document.getElementById('amount').value = amount;
-        document.getElementById('unit_price').value = unitPrice;
-        document.getElementById('supplier').value = supplier;
-        document.getElementById('qty').value = qty;
-        document.querySelector('input[name="item_date"]').value = date; // Set the date
         document.getElementById('suggestions').innerHTML = ''; // Clear suggestions
+        // Optionally set other fields, e.g., dimension, qty
+        console.log(addCols);  // You can process addCols if needed
+    }
+
+    function toggleActionFields() {
+        const actionType = document.getElementById('actionType').value;
+        const addFields = document.getElementById('addFields');
+        const removeFields = document.getElementById('removeFields');
+
+        if (actionType === 'add') {
+            addFields.style.display = 'block';
+            removeFields.style.display = 'none';
+        } else {
+            addFields.style.display = 'none';
+            removeFields.style.display = 'block';
+        }
+    }
+
+    function saveTransaction() {
+        // You can implement logic here to save the entire transaction when the user clicks "Save"
+        alert('Transaction saved!');
     }
 </script>
 
