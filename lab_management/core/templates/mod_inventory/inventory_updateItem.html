@@ -1,8 +1,11 @@
+
+
 {% extends 'temp_navbar.html' %}
 {% load socialaccount %}
 {% block title %}Update Item in Inventory{% endblock %}
 
-{% block content %}
+{%block content%}
+
 <div class="pagetitle">
     <h1>Inventory</h1>
     <nav>
@@ -45,6 +48,8 @@
                                     </div>
                                 </div>
 
+                                <!-- <p name="item_id" id="item_id"></p> -->
+
                                 <!-- Add to Inventory Fields -->
                                 <div id="addFields">
                                     
@@ -77,10 +82,14 @@
                                         </div>
                                     </div>
 
+                                    <!-- Supplier Dropdown -->
                                     <div class="row mb-3">
-                                        <label for="inputText" class="col-sm-2 col-form-label">Supplier:</label>
+                                        <label for="itemSupplier" class="col-sm-2 col-form-label">Supplier:</label>
                                         <div class="col-sm-10">
-                                            <input type="text" class="form-control" name="item_supplier" id="supplier" required>
+                                            <!-- Use Select2 to make this a searchable dropdown -->
+                                            <select class="js-example-basic-single form-control" id="itemSupplier" name="item_supplier" required>
+                                                <!-- Options will be dynamically loaded via AJAX -->
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -153,7 +162,38 @@
     </div>
 </section>
 
+
+
 <script>
+
+    $(document).ready(function() {
+        $('#itemSupplier').select2({
+            ajax: {
+                url: '/suggest_suppliers',  // Your URL endpoint to fetch supplier suggestions
+                dataType: 'json',
+                delay: 250,  // Delay in milliseconds to wait before triggering the request
+                data: function(params) {
+                    return {
+                        query: params.term // The search term that user enters
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data.map(function(supplier) {
+                            return {
+                                id: supplier.suppliers_id, // The ID that will be the value of the option
+                                text: supplier.supplier_name // The text that will be displayed in the dropdown
+                            };
+                        })
+                    };
+                },
+                placeholder: 'Search for a supplier',
+                minimumInputLength: 2
+            }
+        });
+    });
+
+
     function suggestItems(query) {
         if (query.length < 2) {
             document.getElementById('suggestions').innerHTML = '';
@@ -188,7 +228,7 @@
     }
 
     function selectItem(itemName, amount, dimension, qty, addCols) {
-        document.getElementById('itemName').value = itemName + '-' +amount+ dimension;
+        document.getElementById('itemName').value = itemName;
         document.getElementById('suggestions').innerHTML = ''; // Clear suggestions
         // Optionally set other fields, e.g., dimension, qty
         console.log(addCols);  // You can process addCols if needed

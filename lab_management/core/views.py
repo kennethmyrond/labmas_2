@@ -30,6 +30,9 @@ def logout_view(request):
     return redirect("/login")
 
 def inventory_view(request):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
     # Get the selected laboratory from the session
     selected_laboratory_id = request.session.get('selected_lab')
     
@@ -64,6 +67,9 @@ def inventory_view(request):
     })
 
 def inventory_addNewItem_view(request):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
     selected_lab = request.session.get('selected_lab')
     if selected_lab:
         item_types_list = item_types.objects.filter(laboratory_id=selected_lab)
@@ -76,7 +82,6 @@ def inventory_addNewItem_view(request):
         item_type_id = request.POST.get('item_type')
         amount = request.POST.get('amount')
         dimension = request.POST.get('item_dimension')
-        laboratory = request.session.get('selected_lab_name')
 
         # Dynamic fields from additional columns (based on the selected item_type)
         item_type = item_types.objects.get(itemType_id=item_type_id)
@@ -112,6 +117,9 @@ def inventory_addNewItem_view(request):
     })
 
 def suggest_items(request):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
     query = request.GET.get('query', '')
     selected_laboratory_id = request.session.get('selected_lab')
     suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id, disabled=0)[:5]  # Get up to 5 matching items
@@ -126,6 +134,7 @@ def suggest_items(request):
 
         # Add item details including add_cols to the response data
         data.append({
+            'item_id':item.item_id,
             'item_name': item.item_name,
             'amount': item.amount,
             'dimension': item.dimension,
@@ -151,46 +160,53 @@ def suggest_items(request):
     
 #     return JsonResponse(data, safe=False)
 
-# def suggest_suppliers(request):
-#     query = request.GET.get('query', '')
-#     supplier_suggestions = suppliers.objects.filter(supplier_name__icontains=query)[:5]
+def suggest_suppliers(request):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
+    selected_laboratory_id = request.session.get('selected_lab')
+    query = request.GET.get('query', '')
+    supplier_suggestions = suppliers.objects.filter(supplier_name__icontains=query, laboratory=selected_laboratory_id)[:5]  # Limit the results to 5
 
-#     data = []
-#     for supplier in supplier_suggestions:
-#         data.append({
-#             'suppliers_id': supplier.suppliers_id,
-#             'supplier_name': supplier.supplier_name
-#         })
+    data = []
+    for supplier in supplier_suggestions:
+        data.append({
+            'suppliers_id': supplier.suppliers_id,
+            'supplier_name': supplier.supplier_name
+        })
 
-#     return JsonResponse(data, safe=False)
+    return JsonResponse(data, safe=False)
 
 
 def inventory_updateItem_view(request):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
+    print(request.user.id)
     if request.method == 'POST':
         item_name = request.POST.get('item_name')
+        # item_id = request.POST.get("item_id")
         action_type = request.POST.get('action_type')
         amount = request.POST.get('amount') if action_type == 'add' else request.POST.get('quantity_removed')
         item_date_purchased = request.POST.get('item_date_purchased')
         item_date_received = request.POST.get('item_date_received')
         item_price = request.POST.get('item_price')
-        item_supplier = request.POST.get('item_supplier')
+        item_supplier_id = request.POST.get('item_supplier')  # This is now the supplier_id from the dropdown
 
         # Check if user is authenticated
         if not request.user.is_authenticated:
             return HttpResponse("You are not authenticated.", status=403)
 
-        # Find the item_id based on the item_name
+        # Find the item based on the item_name
         item_description_instance = get_object_or_404(item_description, item_name=item_name)
 
-        # Ensure the supplier exists
-        try:
-            supplier_instance = suppliers.objects.get(suppliers_id=item_supplier)
-        except suppliers.DoesNotExist:
-            return HttpResponse("Supplier does not exist.", status=400)
+        # Ensure the supplier exists by its ID
+        supplier_instance = get_object_or_404(suppliers, suppliers_id=item_supplier_id)
+
+
 
         # Retrieve the current user instance
-        current_user = get_object_or_404(user, email=request.user.email)
-        # current_user = 1
+        current_user = get_object_or_404(user, user_id=request.user.id)
 
         # Create a new item transaction
         transaction = item_transactions.objects.create(
@@ -229,7 +245,11 @@ def inventory_updateItem_view(request):
     # If the request method is not POST, render the form
     return render(request, 'mod_inventory/inventory_updateItem.html')
 
+
 def inventory_itemDetails_view(request, item_id):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
     # Get the item_description instance
     item = get_object_or_404(item_description, item_id=item_id)
 
@@ -268,6 +288,9 @@ class ItemEditForm(forms.ModelForm):
         fields = ['item_name', 'amount', 'dimension']
 
 def inventory_itemEdit_view(request, item_id):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
     # Get the item_description instance
     item = get_object_or_404(item_description, item_id=item_id)
 
@@ -298,6 +321,9 @@ def inventory_itemEdit_view(request, item_id):
     })
 
 def inventory_itemDelete_view(request, item_id):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
     item = get_object_or_404(item_description, item_id=item_id)
 
     if request.method == 'POST':
@@ -317,6 +343,9 @@ def inventory_itemDelete_view(request, item_id):
     return render(request, 'mod_inventory/inventory_itemDelete.html', context)
 
 def inventory_physicalCount_view(request):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
     # Get the selected laboratory from the session
     selected_laboratory_id = request.session.get('selected_lab')
 
@@ -376,6 +405,30 @@ def inventory_physicalCount_view(request):
         'inventory_items': inventory_items,
         'item_types': item_types_list,
         'selected_item_type': int(selected_item_type) if selected_item_type else None  # Fix comparison issue
+    })
+
+def inventory_manageSuppliers_view(request):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
+    selected_laboratory_id = request.session.get('selected_lab')
+    lab_suppliers = suppliers.objects.filter(laboratory=selected_laboratory_id)
+
+    if request.method == "POST":
+        supplier_name = request.POST.get("supplier_name")
+        supplier_desc = request.POST.get("description")
+
+        new_supplier = suppliers(
+            laboratory_id=selected_laboratory_id,
+            supplier_name = supplier_name,
+            description = supplier_desc
+        )
+        new_supplier.save()
+
+        return redirect('inventory_manageSuppliers')
+
+    return render(request, 'mod_inventory/inventory_manageSuppliers.html',{
+        'suppliers':lab_suppliers,
     })
 
 def borrowing_view(request):

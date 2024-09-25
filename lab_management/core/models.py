@@ -127,7 +127,7 @@ class item_transactions(models.Model):
 
 class item_types(models.Model):
     itemType_id = models.AutoField(primary_key=True)
-    laboratory_id = models.CharField(max_length=45, null=True, blank=True)  # Since it's a VARCHAR
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)  # Since it's a VARCHAR
     itemType_name = models.CharField(max_length=45, null=True, blank=True)
     add_cols = models.CharField(max_length=45, null=True, blank=True)
 
@@ -150,7 +150,9 @@ class item_inventory(models.Model):
 
 class suppliers(models.Model):
     suppliers_id = models.AutoField(primary_key=True)
-    suppliername = models.CharField(max_length=45, null=True, blank=True)
+    supplier_name = models.CharField(max_length=45)
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE, null=True, blank=True)
+    description = models.CharField(max_length=45, null=True, blank=True)
 
     def __str__(self):
         return self.suppliername
