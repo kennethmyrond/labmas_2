@@ -338,6 +338,9 @@ def inventory_physicalCount_view(request):
         'selected_item_type': int(selected_item_type) if selected_item_type else None  # Fix comparison issue
     })
 
+def inventory_manageSuppliers_view(request):
+    return render(request, 'mod_inventory/inventory_manageSuppliers.html')
+
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
 

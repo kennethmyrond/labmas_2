@@ -13,6 +13,7 @@ urlpatterns = [
     path('inventory/item/edit/<int:item_id>/', views.inventory_itemEdit_view, name='inventory_itemEdit_view'),
     path('inventory/item/delete/<int:item_id>/', views.inventory_itemDelete_view, name='inventory_itemDelete_view'),
     path('inventory/physicalCount/', views.inventory_physicalCount_view, name='inventory_physicalCount'),  # Added trailing slash
+    path('inventory/manageSuppliers/', views.inventory_manageSuppliers_view, name='inventory_manageSuppliers'),  
     path('borrowing/', views.borrowing_view, name='borrowing'),
     path('clearance/', views.clearance_view, name='clearance'),
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),
