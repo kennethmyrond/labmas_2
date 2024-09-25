@@ -10,7 +10,6 @@ from .models import laboratory, Module, item_description, item_types, item_inven
 import json
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, HttpResponse
-from .models import item_description, item_inventory, item_transactions, suppliers, user
 
 def userlogin(request):
     return render(request,"user_login.html")
@@ -63,6 +62,7 @@ def inventory_view(request):
         'selected_item_type': int(selected_item_type) if selected_item_type else None,
         'add_cols': add_cols
     })
+
 def inventory_addNewItem_view(request):
     selected_lab = request.session.get('selected_lab')
     if selected_lab:
@@ -114,7 +114,7 @@ def inventory_addNewItem_view(request):
 def suggest_items(request):
     query = request.GET.get('query', '')
     selected_laboratory_id = request.session.get('selected_lab')
-    suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id)[:5]  # Get up to 5 matching items
+    suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id, disabled=0)[:5]  # Get up to 5 matching items
 
     data = []
     for item in suggestions:
@@ -261,7 +261,6 @@ def inventory_itemDetails_view(request, item_id):
 
     return render(request, 'mod_inventory/inventory_itemDetails.html', context)
 
-
 # Create a form for editing the item
 class ItemEditForm(forms.ModelForm):
     class Meta:
@@ -317,8 +316,6 @@ def inventory_itemDelete_view(request, item_id):
 
     return render(request, 'mod_inventory/inventory_itemDelete.html', context)
 
-
-
 def inventory_physicalCount_view(request):
     # Get the selected laboratory from the session
     selected_laboratory_id = request.session.get('selected_lab')
@@ -333,10 +330,11 @@ def inventory_physicalCount_view(request):
     if selected_item_type:
         inventory_items = item_description.objects.filter(
             laboratory_id=selected_laboratory_id, 
-            itemType_id=selected_item_type
+            itemType_id=selected_item_type, 
+            disabled=0
         )
     else:
-        inventory_items = item_description.objects.filter(laboratory_id=selected_laboratory_id)
+        inventory_items = item_description.objects.filter(laboratory_id=selected_laboratory_id, disabled=0)
 
     if request.method == "POST":
         # Step 1: Create a new transaction record

@@ -4,8 +4,15 @@
 
 {% block content %}
 <div class="pagetitle">
-    <h1>Edit Item</h1>
-</div>
+    <h1>Inventory</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'inventory_view'%}">View Inventory</a></li>
+        <li class="breadcrumb-item active"><a href="{% url 'inventory_itemDetails_view' item.item_id%}">Item Details</a></li>
+        <li class="breadcrumb-item active">Physical Count</li>
+      </ol>
+    </nav>
+  </div>
 
 <section class="section">
     <div class="row">

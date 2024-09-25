@@ -7,7 +7,6 @@
     <h1>Inventory</h1>
     <nav>
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'inventory_view' %}">Inventory</a></li>
             <li class="breadcrumb-item active">Update Item Quantity</li>
         </ol>
     </nav>
@@ -31,7 +30,7 @@
                                 <div class="row mb-3">
                                     <label for="actionType" class="col-sm-2 col-form-label">Action:</label>
                                     <div class="col-sm-10">
-                                        <select class="form-select" id="actionType" name="action_type" required onchange="toggleActionFields()">
+                                        <select class="form-select" id="actionType" name="action_type" required onchange="toggleActionFields()" required>
                                             <option value="add">Add to Inventory</option>
                                             <option value="remove">Remove from Inventory</option>
                                         </select>
@@ -41,7 +40,7 @@
                                 <div class="row mb-3">
                                     <label for="itemName" class="col-sm-2 col-form-label">Item Name:</label>
                                     <div class="col-sm-10">
-                                        <input type="text" class="form-control" name="item_name" id="itemName" required oninput="suggestItems(this.value)">
+                                        <input type="text" class="form-control" name="item_name" id="itemName" required oninput="suggestItems(this.value)" required>
                                         <div id="suggestions" class="suggestions"></div> <!-- Suggestions div -->
                                     </div>
                                 </div>
@@ -53,14 +52,14 @@
                                     <div class="row mb-3">
                                         <label for="inputDatePurchased" class="col-sm-2 col-form-label">Date Purchased:</label>
                                         <div class="col-sm-10">
-                                            <input type="datetime-local" class="form-control" name="item_date_purchased">
+                                            <input type="datetime-local" class="form-control" name="item_date_purchased" required>
                                         </div>
                                     </div>
 
                                     <div class="row mb-3">
                                         <label for="inputDateReceived" class="col-sm-2 col-form-label">Date Received:</label>
                                         <div class="col-sm-10">
-                                            <input type="datetime-local" class="form-control" name="item_date_received">
+                                            <input type="datetime-local" class="form-control" name="item_date_received" required>
                                         </div>
                                     </div>
                                     
@@ -81,7 +80,7 @@
                                     <div class="row mb-3">
                                         <label for="inputText" class="col-sm-2 col-form-label">Supplier:</label>
                                         <div class="col-sm-10">
-                                            <input type="text" class="form-control" name="item_supplier" id="supplier">
+                                            <input type="text" class="form-control" name="item_supplier" id="supplier" required>
                                         </div>
                                     </div>
                                 </div>
@@ -189,7 +188,7 @@
     }
 
     function selectItem(itemName, amount, dimension, qty, addCols) {
-        document.getElementById('itemName').value = itemName;
+        document.getElementById('itemName').value = itemName + '-' +amount+ dimension;
         document.getElementById('suggestions').innerHTML = ''; // Clear suggestions
         // Optionally set other fields, e.g., dimension, qty
         console.log(addCols);  // You can process addCols if needed

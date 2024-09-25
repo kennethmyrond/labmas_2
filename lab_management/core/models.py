@@ -10,17 +10,6 @@ class laboratory(models.Model):
     department = models.CharField(max_length=45, null=True, blank=True)
     is_available = models.BooleanField(default=True)
 
-from django.db import models
-from django.contrib.auth.models import User
-
-# class laboratory(models.Model):
-#     name = models.CharField(max_length=100)
-#     description = models.TextField()
-#     modules = models.ManyToManyField('Module')  # Use Many-to-Many relationship for modules
-
-#     def __str__(self):
-#         return self.name
-
 class role(models.Model):
     roles_id = models.AutoField(primary_key=True)
     laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)  # ForeignKey to Laboratory

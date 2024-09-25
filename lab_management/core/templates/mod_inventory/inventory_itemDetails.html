@@ -40,7 +40,6 @@
   <h1>Inventory</h1>
   <nav>
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="{% url 'inventory_view'%}">Inventory</a></li>
       <li class="breadcrumb-item"><a href="{% url 'inventory_view'%}">View Inventory</a></li>
       <li class="breadcrumb-item active">Item Details</li>
     </ol>
@@ -67,23 +66,16 @@
                 <td style="padding-right:10px">Dimension:</td>
                 <td id="itemDimension">{{ item.dimension }}</td>
               </tr>
+              {% for label, value in add_cols_data.items %}
               <tr>
-                <td style="padding-right:10px">Columns:</td>
-                <td>
-                  <div class="columns-container">
-                    {% for label, value in add_cols_data.items %}
-                      {{ label }}: {{ value }}<br>
-                    {% endfor %}
-                  </div>
-                </td>
+                <td style="padding-right:10px">{{ label }}:</td>
+                <td>{{ value }}</td>
+                
               </tr>
+              {% endfor %}
               <tr>
                 <td style="padding-right:10px">Item Type:</td>
                 <td id="itemType">{{ itemType_name }}</td>
-              </tr>
-              <tr>
-                <td style="padding-right:10px">Laboratory Name:</td>
-                <td id="laboratory">{{ laboratory_name }}</td>
               </tr>
               <tr>
                 <td style="padding-right:10px">Running Quantity:</td>
