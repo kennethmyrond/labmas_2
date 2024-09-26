@@ -420,19 +420,33 @@ def inventory_manageSuppliers_view(request):
 
         new_supplier = suppliers(
             laboratory_id=selected_laboratory_id,
-            supplier_name = supplier_name,
-            description = supplier_desc
+            supplier_name=supplier_name,
+            description=supplier_desc
         )
         new_supplier.save()
 
+        # Fetch suppliers again to ensure the list is up to date
+        lab_suppliers = suppliers.objects.filter(laboratory=selected_laboratory_id)
         return redirect('inventory_manageSuppliers')
 
-    return render(request, 'mod_inventory/inventory_manageSuppliers.html',{
-        'suppliers':lab_suppliers,
+    return render(request, 'mod_inventory/inventory_manageSuppliers.html', {
+        'suppliers': lab_suppliers,
     })
 
-def inventory_supplierDetails_view(request):
-    return render(request, 'mod_inventory/inventory_supplierDetails.html')
+
+def inventory_supplierDetails_view(request, supplier_id):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
+    # Get the supplier details using the supplier_id
+    supplier = suppliers.objects.get(suppliers_id=supplier_id)
+
+    return render(request, 'mod_inventory/inventory_supplierDetails.html', {
+        'supplier': supplier
+    })
+
+
+
 def inventory_config_view(request):
     return render(request, 'mod_inventory/inventory_config.html')
 

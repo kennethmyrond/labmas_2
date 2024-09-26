@@ -19,7 +19,8 @@ urlpatterns = [
     path('suggest_items/', views.suggest_items, name='suggest_items'),
     path('suggest_suppliers/', views.suggest_suppliers, name='suggest_suppliers'),
     path('inventory/manageSuppliers/', views.inventory_manageSuppliers_view, name='inventory_manageSuppliers'),
-     path('inventory/supplierDetails/', views.inventory_supplierDetails_view, name='inventory_supplierDetails'),    
+    path('inventory/supplierDetails/<int:supplier_id>/', views.inventory_supplierDetails_view, name='inventory_supplierDetails'),
+
     
     # borrowing
     path('borrowing/', views.borrowing_view, name='borrowing'),

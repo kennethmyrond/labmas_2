@@ -31,13 +31,14 @@
                           </tr>
                         </thead>
                         <tbody>
-                          {% for suppliers in suppliers %}
+                          {% for supplier in suppliers %}
                           <tr>
-                            <td><a href="#">{{suppliers.supplier_name}}</a></td>
-                            <td>{{suppliers.description}}</td>
+                              <td><a href="{% url 'inventory_supplierDetails' supplier.suppliers_id %}">{{ supplier.supplier_name }}</a></td>
+                              <td>{{ supplier.description }}</td>
                           </tr>
                           {% endfor %}
-                        </tbody>
+                      </tbody>
+                      
                       </table>
                       <!-- End Table with stripped rows -->
         
