@@ -431,6 +431,9 @@ def inventory_manageSuppliers_view(request):
         'suppliers':lab_suppliers,
     })
 
+def inventory_config_view(request):
+    return render(request, 'mod_inventory/inventory_config.html')
+
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
 

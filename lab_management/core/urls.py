@@ -15,6 +15,7 @@ urlpatterns = [
     path('inventory/item/edit/<int:item_id>/', views.inventory_itemEdit_view, name='inventory_itemEdit_view'),
     path('inventory/item/delete/<int:item_id>/', views.inventory_itemDelete_view, name='inventory_itemDelete_view'),
     path('inventory/physicalCount/', views.inventory_physicalCount_view, name='inventory_physicalCount'),  # Added trailing slash
+    path('inventory/config/', views.inventory_config_view, name='inventory_config'),
     path('suggest_items/', views.suggest_items, name='suggest_items'),
     path('suggest_suppliers/', views.suggest_suppliers, name='suggest_suppliers'),
     path('inventory/manageSuppliers/', views.inventory_manageSuppliers_view, name='inventory_manageSuppliers'),  
