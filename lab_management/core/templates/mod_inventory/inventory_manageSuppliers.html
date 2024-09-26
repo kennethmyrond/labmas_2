@@ -31,13 +31,14 @@
                           </tr>
                         </thead>
                         <tbody>
-                          {% for suppliers in suppliers %}
+                          {% for supplier in suppliers %}
                           <tr>
-                            <td><a href="#">{{suppliers.supplier_name}}</a></td>
-                            <td>{{suppliers.description}}</td>
+                              <td><a href="{% url 'inventory_supplierDetails' supplier.suppliers_id %}">{{ supplier.supplier_name }}</a></td>
+                              <td>{{ supplier.description }}</td>
                           </tr>
                           {% endfor %}
-                        </tbody>
+                      </tbody>
+                      
                       </table>
                       <!-- End Table with stripped rows -->
         
@@ -96,33 +97,38 @@
 
 
   <script>
-    document.getElementById('addSupplierForm').addEventListener('submit', function(event) {
-      event.preventDefault();
-  
-      // Get form data
-      const supplierName = document.getElementById('supplierName').value;
-      const category = document.getElementById('supplierCategory').value;
-      const description = document.getElementById('supplierDescription').value;
-  
-      // Add a new row to the table (can also send the data to the backend using AJAX)
-      const table = document.querySelector('.datatable tbody');
-      const newRow = document.createElement('tr');
-      newRow.innerHTML = `
-        <td>${supplierName}</td>
-        <td>${category}</td>
-        <td>${description}</td>
-      `;
-      table.appendChild(newRow);
-  
-      // Clear the form fields
-      document.getElementById('addSupplierForm').reset();
-  
-      // Hide the modal
-      const modal = bootstrap.Modal.getInstance(document.getElementById('addSupplierModal'));
-      modal.hide();
-    });
+      document.addEventListener('DOMContentLoaded', function() {
+        const dataTable = new simpleDatatables.DataTable(".datatable");
+      });
+      
+      document.getElementById('addSupplierForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+    
+        // Get form data
+        const supplierName = document.getElementById('supplierName').value;
+        const description = document.getElementById('supplierDescription').value;
+    
+        // Add a new row to the table (can also send the data to the backend using AJAX)
+        const table = document.querySelector('.datatable tbody');
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = 
+          <td>${supplierName}</td>
+          <td>${description}</td>
+        ;
+        table.appendChild(newRow);
+    
+        // Clear the form fields
+        document.getElementById('addSupplierForm').reset();
+    
+        // Re-render the DataTable after adding the new row
+        dataTable.update();
+    
+        // Hide the modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addSupplierModal'));
+        modal.hide();
+      });
+    
   </script>
   
 {% endblock %}
-
 

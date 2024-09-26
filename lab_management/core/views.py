@@ -116,49 +116,49 @@ def inventory_addNewItem_view(request):
         'selected_lab_name': request.session.get('selected_lab_name'),
     })
 
-def suggest_items(request):
-    if not request.user.is_authenticated:
-        return redirect('userlogin')
-    
-    query = request.GET.get('query', '')
-    selected_laboratory_id = request.session.get('selected_lab')
-    suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id, disabled=0)[:5]  # Get up to 5 matching items
-
-    data = []
-    for item in suggestions:
-        # Parse add_cols from item_description if it's available
-        try:
-            add_cols = json.loads(item.add_cols) if item.add_cols else {}
-        except json.JSONDecodeError:
-            add_cols = {}
-
-        # Add item details including add_cols to the response data
-        data.append({
-            'item_id':item.item_id,
-            'item_name': item.item_name,
-            'amount': item.amount,
-            'dimension': item.dimension,
-            'add_cols': add_cols,  # Pass the parsed add_cols
-            'qty': item.qty  # Assuming qty is now in item_description
-        })
-    
-    return JsonResponse(data, safe=False)
-
 # def suggest_items(request):
+#     if not request.user.is_authenticated:
+#         return redirect('userlogin')
+    
 #     query = request.GET.get('query', '')
 #     selected_laboratory_id = request.session.get('selected_lab')
-#     suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id)[:5]
+#     suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id, disabled=0)[:5]  # Get up to 5 matching items
 
 #     data = []
 #     for item in suggestions:
+#         # Parse add_cols from item_description if it's available
+#         try:
+#             add_cols = json.loads(item.add_cols) if item.add_cols else {}
+#         except json.JSONDecodeError:
+#             add_cols = {}
+
+#         # Add item details including add_cols to the response data
 #         data.append({
-#             'item_id': item.item_id,
+#             'item_id':item.item_id,
 #             'item_name': item.item_name,
 #             'amount': item.amount,
-#             'dimension': item.dimension
+#             'dimension': item.dimension,
+#             'add_cols': add_cols,  # Pass the parsed add_cols
+#             'qty': item.qty  # Assuming qty is now in item_description
 #         })
     
 #     return JsonResponse(data, safe=False)
+
+def suggest_items(request):
+    query = request.GET.get('query', '')
+    selected_laboratory_id = request.session.get('selected_lab')
+    suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id, disabled=0)[:5]
+
+    data = []
+    for item in suggestions:
+        data.append({
+            'item_id': item.item_id,
+            'item_name': item.item_name,
+            'amount': item.amount,
+            'dimension': item.dimension
+        })
+    
+    return JsonResponse(data, safe=False)
 
 def suggest_suppliers(request):
     if not request.user.is_authenticated:
@@ -181,43 +181,29 @@ def suggest_suppliers(request):
 def inventory_updateItem_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
-    
-    print(request.user.id)
+
     if request.method == 'POST':
-        item_name = request.POST.get('item_name')
-        # item_id = request.POST.get("item_id")
+        item_id = request.POST.get('item_name')
         action_type = request.POST.get('action_type')
         amount = request.POST.get('amount') if action_type == 'add' else request.POST.get('quantity_removed')
         item_date_purchased = request.POST.get('item_date_purchased')
         item_date_received = request.POST.get('item_date_received')
         item_price = request.POST.get('item_price')
-        item_supplier_id = request.POST.get('item_supplier')  # This is now the supplier_id from the dropdown
+        item_supplier_id = request.POST.get('item_supplier')
 
-        # Check if user is authenticated
-        if not request.user.is_authenticated:
-            return HttpResponse("You are not authenticated.", status=403)
-
-        # Find the item based on the item_name
-        item_description_instance = get_object_or_404(item_description, item_name=item_name)
-
-        # Ensure the supplier exists by its ID
-        supplier_instance = get_object_or_404(suppliers, suppliers_id=item_supplier_id)
-
-
-
-        # Retrieve the current user instance
+        # Fetch item and supplier
+        item_description_instance = get_object_or_404(item_description, item_id=item_id)
         current_user = get_object_or_404(user, user_id=request.user.id)
-
         # Create a new item transaction
         transaction = item_transactions.objects.create(
             user=current_user,
             timestamp=timezone.now(),
             remarks="Add to inventory" if action_type == 'add' else "Remove from inventory"
-        )
+        ) 
 
-        # Add to inventory logic
+        # Add or remove inventory logic
         if action_type == 'add':
-            # Create a new item_inventory entry
+            supplier_instance = get_object_or_404(suppliers, suppliers_id=item_supplier_id)
             new_inventory_item = item_inventory.objects.create(
                 item=item_description_instance,
                 supplier=supplier_instance,
@@ -225,25 +211,30 @@ def inventory_updateItem_view(request):
                 date_received=item_date_received,
                 purchase_price=item_price,
                 transaction=transaction,
-                qty=amount
+                qty=amount,
+                remarks = "add"
             )
-
             item_description_instance.qty += int(amount)
-            item_description_instance.save()
         else:
-            # Remove from inventory: Decrease the qty from item_description
-            item_description_instance.qty -= int(amount)
-            item_description_instance.save()
+            new_inventory_item = item_inventory.objects.create(
+                item=item_description_instance,
+                transaction = transaction,
+                remarks = "remove",
+                qty= 0 - int(amount)
+            )
+            item_description_instance.qty = item_description_instance.qty - int(amount)
 
-        # Prepare the context to render the new item
+        item_description_instance.save()
+
+        # Success message
         context = {
             'success_message': f"Item {'added to' if action_type == 'add' else 'removed from'} inventory successfully!"
         }
 
         return render(request, 'mod_inventory/inventory_updateItem.html', context)
 
-    # If the request method is not POST, render the form
     return render(request, 'mod_inventory/inventory_updateItem.html')
+
 
 
 def inventory_itemDetails_view(request, item_id):
@@ -420,16 +411,32 @@ def inventory_manageSuppliers_view(request):
 
         new_supplier = suppliers(
             laboratory_id=selected_laboratory_id,
-            supplier_name = supplier_name,
-            description = supplier_desc
+            supplier_name=supplier_name,
+            description=supplier_desc
         )
         new_supplier.save()
 
+        # Fetch suppliers again to ensure the list is up to date
+        lab_suppliers = suppliers.objects.filter(laboratory=selected_laboratory_id)
         return redirect('inventory_manageSuppliers')
 
-    return render(request, 'mod_inventory/inventory_manageSuppliers.html',{
-        'suppliers':lab_suppliers,
+    return render(request, 'mod_inventory/inventory_manageSuppliers.html', {
+        'suppliers': lab_suppliers,
     })
+
+
+def inventory_supplierDetails_view(request, supplier_id):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
+    # Get the supplier details using the supplier_id
+    supplier = suppliers.objects.get(suppliers_id=supplier_id)
+
+    return render(request, 'mod_inventory/inventory_supplierDetails.html', {
+        'supplier': supplier
+    })
+
+
 
 def inventory_config_view(request):
     return render(request, 'mod_inventory/inventory_config.html')
