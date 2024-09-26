@@ -99,6 +99,17 @@
                                             <select class="js-example-basic-single form-control" id="itemSupplier" name="item_supplier" required></select>
                                         </div>
                                     </div>
+                                    <div class="row mb-3"></div>
+                                        <div class="col-sm-10">
+                                            <input type="checkbox" id="expirationCheckbox" onclick="toggleExpirationDate()"> Do you want to add an expiration date?
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3" id="expirationDateRow" style="display:none;">
+                                        <label for="expirationDate" class="col-sm-2 col-form-label">Expiration Date:</label>
+                                        <div class="col-sm-10">
+                                            <input type="date" class="form-control" name="expiration_date" id="expirationDate">
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- Remove from Inventory Field -->
@@ -179,7 +190,26 @@
                 </button>
             </div>
             <div class="modal-body">
-                
+                <p>Please confirm the following details before saving:</p>
+                <table class="table">
+                    <tr><th>Action</th><td id="confirmAction"></td></tr>
+                    <tr><th>Item Name</th><td id="confirmItemName"></td></tr>
+                    <tr id="confirmAddFields">
+                        <th>Quantity</th><td id="confirmAmount"></td>
+                    </tr>
+                    <tr id="confirmAddFields2">
+                        <th>Unit Price</th><td id="confirmUnitPrice"></td>
+                    </tr>
+                    <tr id="confirmAddFields3">
+                        <th>Supplier</th><td id="confirmSupplier"></td>
+                    </tr>
+                    <tr id="confirmRemoveFields" style="display:none;">
+                        <th>Quantity Removed</th><td id="confirmRemovedQty"></td>
+                    </tr>
+                    <tr id="confirmExpirationRow" style="display:none;">
+                        <th>Expiration Date</th><td id="confirmExpirationDate"></td>
+                    </tr>
+                </table>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -192,6 +222,42 @@
 <script>
     // Show confirmation modal
     function showConfirmationModal() {
+        const actionType = document.getElementById('actionType').value;
+        const itemName = $('#itemName').select2('data')[0].text;
+        const amount = document.getElementById('amount').value;
+        const unitPrice = document.getElementById('unit_price').value;
+        const supplierText = $('#itemSupplier').select2('data')[0].text;
+        const expirationCheckbox = document.getElementById('expirationCheckbox').checked;
+        const expirationDate = document.getElementById('expirationDate').value;
+
+        document.getElementById('confirmAction').innerText = actionType === 'add' ? 'Add to Inventory' : 'Remove from Inventory';
+        document.getElementById('confirmItemName').innerText = itemName;
+
+        if (actionType === 'add') {
+            document.getElementById('confirmAmount').innerText = amount;
+            document.getElementById('confirmUnitPrice').innerText = unitPrice;
+            document.getElementById('confirmSupplier').innerText = supplierText;
+
+            if (expirationCheckbox) {
+                document.getElementById('confirmExpirationDate').innerText = expirationDate;
+                document.getElementById('confirmExpirationRow').style.display = '';
+            } else {
+                document.getElementById('confirmExpirationRow').style.display = 'none';
+            }
+
+            document.getElementById('confirmAddFields').style.display = '';
+            document.getElementById('confirmAddFields2').style.display = '';
+            document.getElementById('confirmAddFields3').style.display = '';
+            document.getElementById('confirmRemoveFields').style.display = 'none';
+        } else {
+            document.getElementById('confirmRemovedQty').innerText = document.getElementById('quantity_removed').value;
+            document.getElementById('confirmRemoveFields').style.display = '';
+            document.getElementById('confirmAddFields').style.display = 'none';
+            document.getElementById('confirmAddFields2').style.display = 'none';
+            document.getElementById('confirmAddFields3').style.display = 'none';
+            document.getElementById('confirmExpirationRow').style.display = 'none';
+        }
+
         $('#confirmationModal').modal('show');
     }
 
@@ -201,24 +267,6 @@
         $('#updateForm').submit();  // Submit the form
     }
 
-    // Function to show success message on form submission
-    function saveTransaction() {
-        alert('Transaction saved successfully!');
-    }
-
-    function toggleActionFields() {
-        const actionType = document.getElementById('actionType').value;
-        const addFields = document.getElementById('addFields');
-        const removeFields = document.getElementById('removeFields');
-
-        if (actionType === 'add') {
-            addFields.style.display = 'block';
-            removeFields.style.display = 'none';
-        } else {
-            addFields.style.display = 'none';
-            removeFields.style.display = 'block';
-        }
-    }
 
     $(document).ready(function() {
         $('#itemName').select2({
@@ -330,6 +378,12 @@
     function saveTransaction() {
         // You can implement logic here to save the entire transaction when the user clicks "Save"
         alert('Transaction saved!');
+    }
+
+    function toggleExpirationDate() {
+        const expirationCheckbox = document.getElementById('expirationCheckbox');
+        const expirationDateRow = document.getElementById('expirationDateRow');
+        expirationDateRow.style.display = expirationCheckbox.checked ? '' : 'none';
     }
 </script>
 

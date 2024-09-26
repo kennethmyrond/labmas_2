@@ -6,7 +6,7 @@ from django.utils import timezone
 from django import forms
 from django.http import HttpResponse, JsonResponse
 from .forms import LoginForm, InventoryItemForm
-from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, item_transactions, user, suppliers
+from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, item_transactions, user, suppliers, item_expirations
 import json
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, HttpResponse
@@ -191,6 +191,9 @@ def inventory_updateItem_view(request):
         item_price = request.POST.get('item_price')
         item_supplier_id = request.POST.get('item_supplier')
 
+        # Expiration date logic
+        expiration_date = request.POST.get('expiration_date') if 'expiration_date' in request.POST else None
+
         # Fetch item and supplier
         item_description_instance = get_object_or_404(item_description, item_id=item_id)
         current_user = get_object_or_404(user, user_id=request.user.id)
@@ -212,17 +215,24 @@ def inventory_updateItem_view(request):
                 purchase_price=item_price,
                 transaction=transaction,
                 qty=amount,
-                remarks = "add"
+                remarks="add"
             )
             item_description_instance.qty += int(amount)
+
+            # If expiration date is provided, save it
+            if expiration_date:
+                item_expirations.objects.create(
+                    inventory_item=new_inventory_item,
+                    expired_date=expiration_date
+                )
         else:
             new_inventory_item = item_inventory.objects.create(
                 item=item_description_instance,
-                transaction = transaction,
-                remarks = "remove",
-                qty= 0 - int(amount)
+                transaction=transaction,
+                remarks="remove",
+                qty=0 - int(amount)
             )
-            item_description_instance.qty = item_description_instance.qty - int(amount)
+            item_description_instance.qty -= int(amount)
 
         item_description_instance.save()
 
@@ -234,7 +244,6 @@ def inventory_updateItem_view(request):
         return render(request, 'mod_inventory/inventory_updateItem.html', context)
 
     return render(request, 'mod_inventory/inventory_updateItem.html')
-
 
 
 def inventory_itemDetails_view(request, item_id):
@@ -254,7 +263,8 @@ def inventory_itemDetails_view(request, item_id):
     lab = get_object_or_404(laboratory, laboratory_id=item.laboratory_id)
 
     # Get all item_inventory entries for the specified item_id
-    item_inventories = item_inventory.objects.filter(item=item).select_related('supplier')
+    item_inventories = item_inventory.objects.filter(item=item).select_related('supplier','transaction')
+    # item_expiration = item_expirations.objects.filter(inventory_item=item_inventories)
 
     # Calculate the total quantity
     total_qty = item_inventories.aggregate(Sum('qty'))['qty__sum'] or 0
@@ -265,6 +275,7 @@ def inventory_itemDetails_view(request, item_id):
         'itemType_name': item_type.itemType_name if item_type else None,
         'laboratory_name': lab.name if lab else None,
         'item_inventories': item_inventories,
+        #  'item_expirations': item_expiration,
         'total_qty': total_qty,
         'add_cols_data': add_cols_data,
         'is_edit_mode': False,  # Not in edit mode

@@ -3,6 +3,10 @@
 {% block title %}Item Detail{% endblock %}
 {% block content %}
 <head>
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
   <style type="text/css">
     .cardinfo {
       display: flex;
@@ -70,7 +74,6 @@
               <tr>
                 <td style="padding-right:10px">{{ label }}:</td>
                 <td>{{ value }}</td>
-                
               </tr>
               {% endfor %}
               <tr>
@@ -101,28 +104,85 @@
           <thead>
             <tr>
               <th>Qty</th>
-              <th>Date Purchased</th>
-              <th>Date Received</th>
-              <th>Purchase Price</th>
+              <th>Date Created</th>
               <th>Remarks</th>
-              <th>Supplier Name</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {% for inventory in item_inventories %}
             <tr>
-              <td class="{% if inventory.qty|default:0 > 0 %}qty-positive{% else %}qty-negative{% endif %}">
+              <!-- Quantity (positive or negative) -->
+              <td class="{% if inventory.qty|default:0 > 0 %}qty-positive {&else %}qty-negative{% endif %}">
                 {% if inventory.qty|default:0 > 0 %}
                   +{{ inventory.qty }}
                 {% else %}
-                  -{{ inventory.qty }}
+                  {{ inventory.qty }}
                 {% endif %}
               </td>
-              <td>{{ inventory.date_purchased }}</td>
-              <td>{{ inventory.date_received }}</td>
-              <td>{{ inventory.purchase_price }}</td>
+              <td>
+                {% if inventory.transaction %}
+                  {{ inventory.transaction.timestamp|date:"Y-m-d H:i" }}
+                {% else %}
+                  N/A
+                {% endif %}
+              </td>
               <td>{{ inventory.remarks }}</td>
-              <td>{{ inventory.supplier.suppliername }}</td>
+              <td>
+                <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#inventoryDetailsModal{{ inventory.inventory_item_id }}">
+                  View More
+                </button>
+
+                <!-- Modal for More Details -->
+                <div class="modal fade" id="inventoryDetailsModal{{ inventory.inventory_item_id }}" tabindex="-1" role="dialog" aria-labelledby="inventoryDetailsModalLabel{{ inventory.inventory_item_id }}" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="inventoryDetailsModalLabel{{ inventory.inventory_item_id }}">Inventory Details</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+                      </div>
+                      <div class="modal-body">
+                        <h6>Item: {{ item.item_name }}</h6>
+                        <ul>
+                          <li><strong>Quantity:</strong> {{ inventory.qty }}</li>
+                          <li><strong>Purchase Price:</strong> {{ inventory.purchase_price }}</li>
+                          <li><strong>Date Purchased:</strong> {{ inventory.date_purchased|date:"Y-m-d" }}</li>
+                          <li><strong>Date Received:</strong> {{ inventory.date_received|date:"Y-m-d" }}</li>
+                          <li><strong>Supplier:</strong> 
+                            {% if inventory.supplier %}
+                                {{ inventory.supplier.supplier_name }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </li>
+                          <li><strong>Remarks:</strong> {{ inventory.remarks }}</li>
+                        </ul>
+                        {% if inventory.transaction %}
+                        <hr>
+                        <h6>Transaction Info</h6>
+                        <ul>
+                          <li><strong>User:</strong> 
+                            {% if inventory.transaction.user %}
+                                {{ inventory.transaction.user.email }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                          </li>
+                          <li><strong>Transaction Date:</strong> {{ inventory.transaction.timestamp|date:"Y-m-d H:i" }}</li>
+                          <li><strong>Transaction Remarks:</strong> {{ inventory.transaction.remarks }}</li>
+                        </ul>
+                        {% endif %}
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- End Modal -->
+              </td>
             </tr>
             {% empty %}
             <tr>
@@ -137,6 +197,8 @@
     </div>
   </div>
 </section>
+
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 

@@ -143,15 +143,26 @@ class item_inventory(models.Model):
     purchase_price = models.FloatField(null=True, blank=True)
     remarks = models.CharField(max_length=45, null=True, blank=True)
     transaction = models.ForeignKey('item_transactions', on_delete=models.SET_NULL, null=True, blank=True)
-    qty = models.IntegerField()  # Quantity; required field
+    qty = models.IntegerField()
     
     def __str__(self):
         return f"Inventory Item {self.inventory_item_id}"
+    
+# class item_remove_inventory(models.Model):
+#     inventory_item_id = models.AutoField(primary_key=True)
+#     user = models.ForeignKey('users', on_delete=models.CASCADE)
+#     remarks = models.CharField(max_length=45, null=True, blank=True)
+
+class item_expirations(models.Model):
+    inventory_item = models.ForeignKey('item_inventory', on_delete=models.CASCADE)
+    expired_date = models.DateField(primary_key=True)
 
 class suppliers(models.Model):
     suppliers_id = models.AutoField(primary_key=True)
     supplier_name = models.CharField(max_length=45)
-    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE, null=True, blank=True)
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
+    contactPerson = models.CharField(max_length=45, null=True, blank=True)
+    address = models.CharField(max_length=45, null=True, blank=True)
     description = models.CharField(max_length=45, null=True, blank=True)
 
     def __str__(self):

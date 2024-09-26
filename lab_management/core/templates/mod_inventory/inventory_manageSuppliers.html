@@ -16,6 +16,11 @@
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
+        <div class="row mb-3">
+          <div class="col-sm-10">
+            <button type="submit" class="btn btn-primary" id="add" data-bs-toggle="modal" data-bs-target="#addSupplierModal">Add Supplier</button>
+          </div>
+        </div>
 
         <div class="card">
           <div class="card-body">
@@ -28,6 +33,7 @@
                           <tr>
                             <th>Supplier Name</th>
                             <th>Description</th>
+                            <th>Supplied Items</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -35,6 +41,7 @@
                           <tr>
                               <td><a href="{% url 'inventory_supplierDetails' supplier.suppliers_id %}">{{ supplier.supplier_name }}</a></td>
                               <td>{{ supplier.description }}</td>
+                              <td>4</td>
                           </tr>
                           {% endfor %}
                       </tbody>
@@ -88,11 +95,7 @@
 </form>
 
 
-    <div class="row mb-3">
-      <div class="col-sm-10">
-        <button type="submit" class="btn btn-primary" id="add" data-bs-toggle="modal" data-bs-target="#addSupplierModal">Add Supplier</button>
-      </div>
-    </div>
+    
   </section>
 
 
@@ -111,10 +114,7 @@
         // Add a new row to the table (can also send the data to the backend using AJAX)
         const table = document.querySelector('.datatable tbody');
         const newRow = document.createElement('tr');
-        newRow.innerHTML = 
-          <td>${supplierName}</td>
-          <td>${description}</td>
-        ;
+        newRow.innerHTML = "<td>${supplierName}</td><td>${description}</td>";
         table.appendChild(newRow);
     
         // Clear the form fields
