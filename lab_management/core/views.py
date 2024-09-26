@@ -116,49 +116,49 @@ def inventory_addNewItem_view(request):
         'selected_lab_name': request.session.get('selected_lab_name'),
     })
 
-def suggest_items(request):
-    if not request.user.is_authenticated:
-        return redirect('userlogin')
-    
-    query = request.GET.get('query', '')
-    selected_laboratory_id = request.session.get('selected_lab')
-    suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id, disabled=0)[:5]  # Get up to 5 matching items
-
-    data = []
-    for item in suggestions:
-        # Parse add_cols from item_description if it's available
-        try:
-            add_cols = json.loads(item.add_cols) if item.add_cols else {}
-        except json.JSONDecodeError:
-            add_cols = {}
-
-        # Add item details including add_cols to the response data
-        data.append({
-            'item_id':item.item_id,
-            'item_name': item.item_name,
-            'amount': item.amount,
-            'dimension': item.dimension,
-            'add_cols': add_cols,  # Pass the parsed add_cols
-            'qty': item.qty  # Assuming qty is now in item_description
-        })
-    
-    return JsonResponse(data, safe=False)
-
 # def suggest_items(request):
+#     if not request.user.is_authenticated:
+#         return redirect('userlogin')
+    
 #     query = request.GET.get('query', '')
 #     selected_laboratory_id = request.session.get('selected_lab')
-#     suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id)[:5]
+#     suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id, disabled=0)[:5]  # Get up to 5 matching items
 
 #     data = []
 #     for item in suggestions:
+#         # Parse add_cols from item_description if it's available
+#         try:
+#             add_cols = json.loads(item.add_cols) if item.add_cols else {}
+#         except json.JSONDecodeError:
+#             add_cols = {}
+
+#         # Add item details including add_cols to the response data
 #         data.append({
-#             'item_id': item.item_id,
+#             'item_id':item.item_id,
 #             'item_name': item.item_name,
 #             'amount': item.amount,
-#             'dimension': item.dimension
+#             'dimension': item.dimension,
+#             'add_cols': add_cols,  # Pass the parsed add_cols
+#             'qty': item.qty  # Assuming qty is now in item_description
 #         })
     
 #     return JsonResponse(data, safe=False)
+
+def suggest_items(request):
+    query = request.GET.get('query', '')
+    selected_laboratory_id = request.session.get('selected_lab')
+    suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id, disabled=0)[:5]
+
+    data = []
+    for item in suggestions:
+        data.append({
+            'item_id': item.item_id,
+            'item_name': item.item_name,
+            'amount': item.amount,
+            'dimension': item.dimension
+        })
+    
+    return JsonResponse(data, safe=False)
 
 def suggest_suppliers(request):
     if not request.user.is_authenticated:
@@ -183,50 +183,46 @@ def inventory_updateItem_view(request):
         return redirect('userlogin')
 
     if request.method == 'POST':
-        item_name = request.POST.get('item_name')
+        item_id = request.POST.get('item_name')
         action_type = request.POST.get('action_type')
         amount = request.POST.get('amount') if action_type == 'add' else request.POST.get('quantity_removed')
         item_date_purchased = request.POST.get('item_date_purchased')
         item_date_received = request.POST.get('item_date_received')
         item_price = request.POST.get('item_price')
-        print("Test1")
         item_supplier_id = request.POST.get('item_supplier')
-        print("Test2")
+
         # Fetch item and supplier
-        item_description_instance = get_object_or_404(item_description, item_name=item_name)
-
-
-        if action_type =='add':
-            supplier_instance = get_object_or_404(suppliers, suppliers_id=item_supplier_id)
-        else:
-            supplier_instance = get_object_or_404(suppliers, suppliers_id=1)
-
+        item_description_instance = get_object_or_404(item_description, item_id=item_id)
         current_user = get_object_or_404(user, user_id=request.user.id)
-        print("Test4")
         # Create a new item transaction
         transaction = item_transactions.objects.create(
             user=current_user,
             timestamp=timezone.now(),
             remarks="Add to inventory" if action_type == 'add' else "Remove from inventory"
-        )
-        print("Test")
-        new_inventory_item = item_inventory.objects.create(
+        ) 
+
+        # Add or remove inventory logic
+        if action_type == 'add':
+            supplier_instance = get_object_or_404(suppliers, suppliers_id=item_supplier_id)
+            new_inventory_item = item_inventory.objects.create(
                 item=item_description_instance,
                 supplier=supplier_instance,
                 date_purchased=item_date_purchased,
                 date_received=item_date_received,
                 purchase_price=item_price,
                 transaction=transaction,
-                qty=amount
+                qty=amount,
+                remarks = "add"
             )
-
-        # Add or remove inventory logic
-        if action_type == 'add':
-
             item_description_instance.qty += int(amount)
         else:
-        
-            item_description_instance.qty -= int(amount)
+            new_inventory_item = item_inventory.objects.create(
+                item=item_description_instance,
+                transaction = transaction,
+                remarks = "remove",
+                qty= 0 - int(amount)
+            )
+            item_description_instance.qty = item_description_instance.qty - int(amount)
 
         item_description_instance.save()
 

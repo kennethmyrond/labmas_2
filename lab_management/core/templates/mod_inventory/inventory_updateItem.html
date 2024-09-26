@@ -52,11 +52,18 @@
                                 </div>
 
                                 <!-- Item Name -->
-                                <div class="row mb-3">
+                                <!-- <div class="row mb-3">
                                     <label for="itemName" class="col-sm-2 col-form-label">Item Name:</label>
                                     <div class="col-sm-10">
                                         <input type="text" class="form-control" name="item_name" id="itemName" required oninput="suggestItems(this.value)">
                                         <div id="suggestions" class="suggestions"></div>
+                                    </div>
+                                </div> -->
+
+                                <div class="row mb-3">
+                                    <label for="itemName" class="col-sm-2 col-form-label">Item Name:</label>
+                                    <div class="col-sm-10">
+                                        <select class="js-example-basic-single form-control" id="itemName" name="item_name" required></select>
                                     </div>
                                 </div>
 
@@ -114,10 +121,9 @@
                         </div>
                     </form><!-- End General Form Elements -->
 
-                    
-
                     <!-- Items Table -->
-                    <section class="section">
+
+                    <!-- <section class="section">
                         <div class="row">
                             <div class="col-lg-12">
                                 <div class="card">
@@ -154,13 +160,10 @@
                                 </div>
                             </div>
                         </div>
-                    </section>
-
-                    
+                    </section> -->
 
                 </div>
             </div>
-
         </div>
     </div>
 </section>
@@ -218,6 +221,31 @@
     }
 
     $(document).ready(function() {
+        $('#itemName').select2({
+            ajax: {
+                url: '/suggest_items/',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        query: params.term // Search term
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data.map(function(item) {
+                            return {
+                                id: item.item_id,
+                                text: `${item.item_name} - ${item.amount}${item.dimension}`  // Format item name and amount/dimension
+                            };
+                        })
+                    };
+                },
+                placeholder: 'Search for an item',
+                minimumInputLength: 2
+            }
+        });
+
         $('#itemSupplier').select2({
             ajax: {
                 url: '/suggest_suppliers',  // Your URL endpoint to fetch supplier suggestions
