@@ -433,6 +433,8 @@ def inventory_manageSuppliers_view(request):
 
 def inventory_supplierDetails_view(request):
     return render(request, 'mod_inventory/inventory_supplierDetails.html')
+def inventory_config_view(request):
+    return render(request, 'mod_inventory/inventory_config.html')
 
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
