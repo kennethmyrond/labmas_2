@@ -181,44 +181,36 @@ def suggest_suppliers(request):
 def inventory_updateItem_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
-    
-    print(request.user.id)
+
     if request.method == 'POST':
         item_name = request.POST.get('item_name')
-        # item_id = request.POST.get("item_id")
         action_type = request.POST.get('action_type')
         amount = request.POST.get('amount') if action_type == 'add' else request.POST.get('quantity_removed')
         item_date_purchased = request.POST.get('item_date_purchased')
         item_date_received = request.POST.get('item_date_received')
         item_price = request.POST.get('item_price')
-        item_supplier_id = request.POST.get('item_supplier')  # This is now the supplier_id from the dropdown
-
-        # Check if user is authenticated
-        if not request.user.is_authenticated:
-            return HttpResponse("You are not authenticated.", status=403)
-
-        # Find the item based on the item_name
+        print("Test1")
+        item_supplier_id = request.POST.get('item_supplier')
+        print("Test2")
+        # Fetch item and supplier
         item_description_instance = get_object_or_404(item_description, item_name=item_name)
 
-        # Ensure the supplier exists by its ID
-        supplier_instance = get_object_or_404(suppliers, suppliers_id=item_supplier_id)
 
+        if action_type =='add':
+            supplier_instance = get_object_or_404(suppliers, suppliers_id=item_supplier_id)
+        else:
+            supplier_instance = get_object_or_404(suppliers, suppliers_id=1)
 
-
-        # Retrieve the current user instance
         current_user = get_object_or_404(user, user_id=request.user.id)
-
+        print("Test4")
         # Create a new item transaction
         transaction = item_transactions.objects.create(
             user=current_user,
             timestamp=timezone.now(),
             remarks="Add to inventory" if action_type == 'add' else "Remove from inventory"
         )
-
-        # Add to inventory logic
-        if action_type == 'add':
-            # Create a new item_inventory entry
-            new_inventory_item = item_inventory.objects.create(
+        print("Test")
+        new_inventory_item = item_inventory.objects.create(
                 item=item_description_instance,
                 supplier=supplier_instance,
                 date_purchased=item_date_purchased,
@@ -228,22 +220,25 @@ def inventory_updateItem_view(request):
                 qty=amount
             )
 
-            item_description_instance.qty += int(amount)
-            item_description_instance.save()
-        else:
-            # Remove from inventory: Decrease the qty from item_description
-            item_description_instance.qty -= int(amount)
-            item_description_instance.save()
+        # Add or remove inventory logic
+        if action_type == 'add':
 
-        # Prepare the context to render the new item
+            item_description_instance.qty += int(amount)
+        else:
+        
+            item_description_instance.qty -= int(amount)
+
+        item_description_instance.save()
+
+        # Success message
         context = {
             'success_message': f"Item {'added to' if action_type == 'add' else 'removed from'} inventory successfully!"
         }
 
         return render(request, 'mod_inventory/inventory_updateItem.html', context)
 
-    # If the request method is not POST, render the form
     return render(request, 'mod_inventory/inventory_updateItem.html')
+
 
 
 def inventory_itemDetails_view(request, item_id):
