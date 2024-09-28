@@ -3,14 +3,14 @@
 {% load qr_code %}
 {% load custom_filters %}
 
-{% block title %}Borrow - Pre Book{% endblock %}
+{% block title %}Borrow - Walk-In{% endblock %}
 
 {% block content %}
 <div class="pagetitle">
     <h1>Inventory</h1>
     <nav>
         <ol class="breadcrumb">
-            <li class="breadcrumb-item active">Borrow - Pre Book</li>
+            <li class="breadcrumb-item active">Borrow - Walk-In</li>
         </ol>
     </nav>
 </div><!-- End Page Title -->
@@ -20,7 +20,7 @@
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Borrow - Pre Book</h5>
+                    <h5 class="card-title">Borrow - Walk-In</h5>
                     
                     <!-- General Form Elements -->
                     <form method="POST">
@@ -40,27 +40,7 @@
                             </div>
                         </div>
 
-                        <div class="row mb-3">
-                          <label class="col-sm-2 col-form-label">1-Day or Long-Term Borrowing</label>
-                          <div class="col-sm-10">
-                            <select class="form-select" id="borrowing-type" aria-label="Default select example">
-                              <option value="oneday">One Day</option>
-                              <option value="longterm">Long-Term</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <!-- Hidden date inputs for Long-Term Borrowing -->
-                        <div class="row mb-3 d-none" id="long-term-dates">
-                          <div class="col-sm-6">
-                            <label for="from-date" class="col-form-label">Date Needed (From):</label>
-                            <input type="date" class="form-control" id="from-date" name="from_date">
-                          </div>
-                          <div class="col-sm-6">
-                            <label for="to-date" class="col-form-label">Date Needed (To):</label>
-                            <input type="date" class="form-control" id="to-date" name="to_date">
-                          </div>
-                        </div>
+            
 
                         <div class="row mb-3">
                           <label for="inputNumber" class="col-sm-2 col-form-label">Purpose of Borrowing:</label>
@@ -113,23 +93,10 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    const borrowingTypeSelect = document.getElementById('borrowing-type');
-    const longTermDatesRow = document.getElementById('long-term-dates');
-    
-    // Show/Hide the long-term date inputs based on selection
-    borrowingTypeSelect.addEventListener('change', function () {
-      if (this.value === 'longterm') {
-        longTermDatesRow.classList.remove('d-none');
-      } else {
-        longTermDatesRow.classList.add('d-none');
-      }
-    });
-
-
     const equipmentRowsContainer = document.getElementById('equipment-rows');
     const addEquipmentBtn = document.getElementById('add-equipment-btn');
 
-
+    // Function to add a new equipment row
     function addEquipmentRow() {
       const newRow = document.createElement('div');
       newRow.classList.add('row', 'mb-3', 'equipment-row');
@@ -153,7 +120,7 @@
       updateDeleteButtons();
     }
 
-
+    // Function to handle deleting a row
     function deleteEquipmentRow(event) {
       const rowToDelete = event.target.closest('.equipment-row');
       rowToDelete.remove();
@@ -172,7 +139,7 @@
       }
     }
 
-
+    // Event listener for adding new equipment rows
     addEquipmentBtn.addEventListener('click', addEquipmentRow);
 
     // Event delegation for deleting equipment rows
@@ -182,6 +149,7 @@
       }
     });
 
+    // Initial setup for delete buttons
     updateDeleteButtons();
   });
 </script>

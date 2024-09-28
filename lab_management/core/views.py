@@ -541,6 +541,8 @@ def borrowing_view(request):
 def borrowing_student_prebookview(request):
     return render(request, 'mod_borrowing/borrowing_studentPrebook.html')
 
+def borrowing_student_walkinview(request):
+    return render(request, 'mod_borrowing/borrowing_studentWalkin.html')
 
 def clearance_view(request):
     return render(request, 'mod_clearance/clearance.html')
