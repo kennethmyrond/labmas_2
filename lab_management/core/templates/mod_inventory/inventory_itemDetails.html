@@ -111,83 +111,91 @@
           </thead>
           <tbody>
             {% for inventory in item_inventories %}
-            <tr>
-              <!-- Quantity (positive or negative) -->
-              <td class="{% if inventory.qty|default:0 > 0 %}qty-positive {&else %}qty-negative{% endif %}">
-                {% if inventory.qty|default:0 > 0 %}
-                  +{{ inventory.qty }}
-                {% else %}
-                  {{ inventory.qty }}
-                {% endif %}
-              </td>
-              <td>
-                {% if inventory.transaction %}
-                  {{ inventory.transaction.timestamp|date:"Y-m-d H:i" }}
-                {% else %}
-                  N/A
-                {% endif %}
-              </td>
-              <td>{{ inventory.remarks }}</td>
-              <td>
-                <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#inventoryDetailsModal{{ inventory.inventory_item_id }}">
-                  View More
-                </button>
+              {% for handling in inventory.item_handling_set.all %}
+              <tr>
+                <!-- Quantity (positive or negative) -->
+                <td class="{% if  handling.changes == 'A' %}qty-positive {% else %}qty-negative{% endif %}">
+                  {% if handling.changes == 'A' %}
+                    +{{ handling.qty }}
+                  {% else %}
+                    -{{ handling.qty }}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if handling.updatedon %}
+                    {{ handling.updatedon|date:"Y-m-d H:i" }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </td>
+                <td>
+                  {% if handling.changes == 'A' %}
+                    Add to inventory
+                  {% else %}
+                    remove from inventory
+                  {% endif %}
+                </td>
+                <td>
+                  <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#inventoryDetailsModal{{ inventory.inventory_item_id }}">
+                    View More
+                  </button>
 
-                <!-- Modal for More Details -->
-                <div class="modal fade" id="inventoryDetailsModal{{ inventory.inventory_item_id }}" tabindex="-1" role="dialog" aria-labelledby="inventoryDetailsModalLabel{{ inventory.inventory_item_id }}" aria-hidden="true">
-                  <div class="modal-dialog modal-dialog-centered" role="document">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="inventoryDetailsModalLabel{{ inventory.inventory_item_id }}">Inventory Details</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                          <span aria-hidden="true">&times;</span>
-                        </button>
-                      </div>
-                      <div class="modal-body">
-                        <h6>Item: {{ item.item_name }}</h6>
-                        <ul>
-                          <li><strong>Quantity:</strong> {{ inventory.qty }}</li>
-                          <li><strong>Purchase Price:</strong> {{ inventory.purchase_price }}</li>
-                          <li><strong>Date Purchased:</strong> {{ inventory.date_purchased|date:"Y-m-d" }}</li>
-                          <li><strong>Date Received:</strong> {{ inventory.date_received|date:"Y-m-d" }}</li>
-                          <li><strong>Supplier:</strong> 
-                            {% if inventory.supplier %}
-                                {{ inventory.supplier.supplier_name }}
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </li>
-                          <li><strong>Remarks:</strong> {{ inventory.remarks }}</li>
-                        </ul>
-                        {% if inventory.transaction %}
-                        <hr>
-                        <h6>Transaction Info</h6>
-                        <ul>
-                          <li><strong>User:</strong> 
-                            {% if inventory.transaction.user %}
-                                {{ inventory.transaction.user.email }}
-                            {% else %}
-                                N/A
-                            {% endif %}
+                  <!-- Modal for More Details -->
+                  <div class="modal fade" id="inventoryDetailsModal{{ inventory.inventory_item_id }}" tabindex="-1" role="dialog" aria-labelledby="inventoryDetailsModalLabel{{ inventory.inventory_item_id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="inventoryDetailsModalLabel{{ inventory.inventory_item_id }}">Inventory Details</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                          </button>
+                        </div>
+                        <div class="modal-body">
+                          <h6>Item: {{ item.item_name }}</h6>
+                          <ul>
+                            <li><strong>Quantity:</strong> {{ inventory.qty }}</li>
+                            <li><strong>Purchase Price:</strong> {{ inventory.purchase_price }}</li>
+                            <li><strong>Date Purchased:</strong> {{ inventory.date_purchased|date:"Y-m-d" }}</li>
+                            <li><strong>Date Received:</strong> {{ inventory.date_received|date:"Y-m-d" }}</li>
+                            <li><strong>Supplier:</strong> 
+                              {% if inventory.supplier %}
+                                  {{ inventory.supplier.supplier_name }}
+                              {% else %}
+                                  N/A
+                              {% endif %}
                           </li>
-                          <li><strong>Transaction Date:</strong> {{ inventory.transaction.timestamp|date:"Y-m-d H:i" }}</li>
-                          <li><strong>Transaction Remarks:</strong> {{ inventory.transaction.remarks }}</li>
-                        </ul>
-                        {% endif %}
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <li><strong>Remarks:</strong> {{ inventory.remarks }}</li>
+                          </ul>
+                          {% if inventory.transaction %}
+                          <hr>
+                          <h6>Transaction Info</h6>
+                          <ul>
+                            <li><strong>User:</strong> 
+                              {% if inventory.transaction.user %}
+                                  {{ inventory.transaction.user.email }}
+                              {% else %}
+                                  N/A
+                              {% endif %}
+                            </li>
+                            <li><strong>Transaction Date:</strong> {{ inventory.transaction.timestamp|date:"Y-m-d H:i" }}</li>
+                            <li><strong>Transaction Remarks:</strong> {{ inventory.transaction.remarks }}</li>
+                          </ul>
+                          {% endif %}
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                <!-- End Modal -->
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="6">No inventory records found for this item.</td>
-            </tr>
+                  <!-- End Modal -->
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6">No inventory records found for this item.</td>
+              </tr>
+              {% endfor %}
             {% endfor %}
           </tbody>
         </table>

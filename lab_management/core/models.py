@@ -1,7 +1,10 @@
-import json
+import json, qrcode
 from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from io import BytesIO
+from django.core.files import File
+from PIL import Image, ImageDraw
 
 class laboratory(models.Model):
     laboratory_id = models.AutoField(primary_key=True)
@@ -34,6 +37,23 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
 
         return self.create_user(email, firstname, lastname, password, **extra_fields)
+
+# class user(AbstractBaseUser):
+#     user = models.OneToOneField(User, on_delete=models.CASCADE)
+#     role = models.ForeignKey(role, null=True, blank=True, on_delete=models.SET_NULL)  # ForeignKey to Role
+#     is_deactivated = models.BooleanField(default=False)
+#     is_guest = models.BooleanField(default=False)
+
+#     is_active = models.BooleanField(default=True)
+
+
+#     objects = UserManager()
+
+#     USERNAME_FIELD = 'email'
+#     REQUIRED_FIELDS = ['firstname', 'lastname']
+
+#     def __str__(self):
+#         return self.email
 
 class user(AbstractBaseUser):
     user_id = models.AutoField(primary_key=True)
@@ -95,35 +115,14 @@ class item_description(models.Model):
     itemType = models.ForeignKey('item_types', on_delete=models.SET_NULL, null=True, blank=True)
     amount = models.FloatField(null=True, blank=True)
     dimension = models.CharField(max_length=10, null=True, blank=True)
-    qty = models.IntegerField()
-    alert_qty = models.IntegerField()
+    # qty = models.IntegerField()
+    alert_qty = models.IntegerField(null=True, blank=True)
     add_cols = models.CharField(max_length=45, null=True, blank=True)
-    disabled = models.BooleanField(default=False)  # New field to mark as disabled
+    rec_expiration = models.BooleanField(default=False)
+    is_disabled = models.BooleanField(default=False)
     
-
     def __str__(self):
         return self.item_name
-
-class item_handling(models.Model):
-    item_handling_id = models.AutoField(primary_key=True)
-    inventory_item = models.ForeignKey('item_inventory', on_delete=models.SET_NULL, null=True, blank=True)
-    updatedon = models.DateTimeField(null=True, blank=True)
-    updatedby = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
-    changes = models.CharField(max_length=1, null=True, blank=True)
-    qty = models.IntegerField(null=True, blank=True)
-    action = models.CharField(max_length=45, null=True, blank=True)
-
-    def __str__(self):
-        return f"Item Handling {self.item_handling_id}"
-
-class item_transactions(models.Model):
-    transaction_id = models.AutoField(primary_key=True)
-    user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
-    timestamp = models.DateTimeField(null=True, blank=True)
-    remarks = models.CharField(max_length=45, null=True, blank=True)
-
-    def __str__(self):
-        return f"Transaction {self.transaction_id}"
 
 class item_types(models.Model):
     itemType_id = models.AutoField(primary_key=True)
@@ -142,20 +141,30 @@ class item_inventory(models.Model):
     date_received = models.DateTimeField(null=True, blank=True)
     purchase_price = models.FloatField(null=True, blank=True)
     remarks = models.CharField(max_length=45, null=True, blank=True)
-    transaction = models.ForeignKey('item_transactions', on_delete=models.SET_NULL, null=True, blank=True)
     qty = models.IntegerField()
     
     def __str__(self):
         return f"Inventory Item {self.inventory_item_id}"
+
+class item_handling(models.Model):
+    item_handling_id = models.AutoField(primary_key=True)
+    inventory_item = models.ForeignKey('item_inventory', on_delete=models.SET_NULL, null=True, blank=True)
+    updatedon = models.DateTimeField(default='9999-99-99 99:99')
+    updatedby = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
+    changes = models.CharField(max_length=1) # 'A' for add, 'R' for remove
+    qty = models.IntegerField()
+    action = models.CharField(max_length=45, null=True, blank=True)
+
+    def __str__(self):
+        return f"Item Handling {self.item_handling_id}"
     
-# class item_remove_inventory(models.Model):
-#     inventory_item_id = models.AutoField(primary_key=True)
-#     user = models.ForeignKey('users', on_delete=models.CASCADE)
-#     remarks = models.CharField(max_length=45, null=True, blank=True)
 
 class item_expirations(models.Model):
     inventory_item = models.ForeignKey('item_inventory', on_delete=models.CASCADE)
     expired_date = models.DateField(primary_key=True)
+
+    def __str__(self):
+        return f"Expiration for Inventory Item {self.inventory_item_id}"
 
 class suppliers(models.Model):
     suppliers_id = models.AutoField(primary_key=True)
@@ -167,5 +176,19 @@ class suppliers(models.Model):
 
     def __str__(self):
         return self.suppliername
+    
+# class item_remove_inventory(models.Model):
+#     inventory_item_id = models.AutoField(primary_key=True)
+#     remarks = models.CharField(max_length=45, null=True, blank=True)
+#     end_username = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
+#     end_userreason = models.CharField(max_length=45, null=True, blank=True)
 
 
+class item_transactions(models.Model):
+    transaction_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True)
+    timestamp = models.DateTimeField(null=True, blank=True)
+    remarks = models.CharField(max_length=45, null=True, blank=True)
+
+    def __str__(self):
+        return f"Transaction {self.transaction_id}"

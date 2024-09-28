@@ -42,7 +42,6 @@
               <thead>
                 <tr>
                   <th>Status</th>
-                  <th>Item ID</th>
                   <th>Item Name</th>
                   <th>Amount</th>
                   <th>Dimension</th>
@@ -56,8 +55,7 @@
                 {% for item in inventory_items %}
                 <tr>
                   <td>Available</td>
-                  <td><a href="{% url 'inventory_itemDetails_view' item.item_id %}">{{ item.item_id }}</a></td>
-                  <td>{{ item.item_name }}</td>
+                  <td><a href="{% url 'inventory_itemDetails_view' item.item_id %}">{{ item.item_name }}</a></td>
                   <td>{{ item.amount }}</td>
                   <td>{{ item.dimension }}</td>
                   <td class="{% if item.total_qty > 0 %}qty-positive{% else %}qty-negative{% endif %}">

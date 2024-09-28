@@ -1,263 +1,175 @@
 {% extends 'temp_navbar.html' %}
 {% load socialaccount %}
+{% load qr_code %}
+{% load custom_filters %}
+
 {% block title %}Add New Item in Inventory{% endblock %}
 
 {% block content %}
-  <div class="pagetitle">
+<div class="pagetitle">
     <h1>Inventory</h1>
     <nav>
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item active">Add New Item</li>
-      </ol>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active">Add New Item</li>
+        </ol>
     </nav>
-  </div><!-- End Page Title -->
+</div><!-- End Page Title -->
 
-  <section class="section">
+<section class="section">
     <div class="row">
-      <div class="col-lg-12">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Add New Item</h5>
+                    
+                    <!-- General Form Elements -->
+                    <form method="POST">
+                        {% csrf_token %}
 
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Add New Item</h5>
+                        <div class="row mb-3">
+                            <label for="inputText" class="col-sm-2 col-form-label">Type:</label>
+                            <div class="col-sm-10">
+                                <select class="form-select" id="item_type" name="item_type" onchange="handleItemTypeChange()" required>
+                                    {% for type in item_types %}
+                                        <option value="{{ type.itemType_id }}" data-add-cols="{{ type.add_cols }}">{{ type.itemType_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
 
-            <!-- General Form Elements -->
-            <form method="POST">
-              {% csrf_token %}
+                        <div class="row mb-3">
+                            <label for="inputText" class="col-sm-2 col-form-label">Item Name:</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="item_name" name="item_name" required>
+                            </div>
+                        </div>
 
-              <div class="row mb-3">
-                <label for="inputText" class="col-sm-2 col-form-label">Type:</label>
-                <div class="col-sm-10">
-                  <select class="form-select" id="item_type" name="item_type" onchange="handleItemTypeChange()" required>
-                    {% for type in item_types %}
-                      <option value="{{ type.itemType_id }}" data-add-cols="{{ type.add_cols }}">{{ type.itemType_name }}</option>
-                    {% endfor %}
-                  </select>
+                        <div class="row mb-3">
+                            <label for="inputNumber" class="col-sm-2 col-form-label">Amount:</label>
+                            <div class="col-sm-10">
+                                <input type="number" class="form-control" id="amount" name="amount">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="inputText" class="col-sm-2 col-form-label">Dimension:</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="item_dimension" name="item_dimension">
+                            </div>
+                        </div>
+
+                        <!-- Additional columns -->
+                        <div id="additional_fields_container"></div>
+
+                        <div class="row mb-5 ">
+                            <div class="col-sm-10 d-flex align-items-center">
+                                <button type="submit" class="btn btn-primary me-3" id="submit">Add New Item</button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-              </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-              <div class="row mb-3">
-                <label for="inputText" class="col-sm-2 col-form-label">Item Name:</label>
-                <div class="col-sm-10">
-                  <input type="text" class="form-control" id="item_name" name="item_name" required>
+<!-- Success Modal -->
+{% if show_modal %}
+<div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="successModalLabel">Item Added Successfully</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Item "<strong>{{ new_item.item_name }} - {{ new_item.amount }}{{ new_item.dimension }}</strong>" has been successfully added to the inventory.</p>
+                <p>Download the QR code below for quick inventory:</p>
+                <div class="text-center">
+                    {% if qr_code_image %}
+                        <img src="data:image/png;base64,{{ qr_code_image.read|b64encode }}" alt="QR Code" class="img-fluid">
+                    {% else %}
+                        <p>No QR code available.</p>
+                    {% endif %}
                 </div>
-              </div>
-
-              <div class="row mb-3">
-                <label for="inputNumber" class="col-sm-2 col-form-label">Amount:</label>
-                <div class="col-sm-10">
-                  <input type="number" class="form-control" id="amount" name="amount">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label for="inputText" class="col-sm-2 col-form-label">Dimension:</label>
-                <div class="col-sm-10">
-                  <input type="text" class="form-control" id="item_dimension" name="item_dimension">
-                </div>
-              </div>
-
-              <!-- Additional columns -->
-              <div id="additional_fields_container"></div>
-              <!-- end of additional columns -->
-
-
-              <div class="row mb-5 ">
-                <div class="col-sm-10 d-flex align-items-center"> <!-- Center items vertically -->
-                  <button type="submit" class="btn btn-primary me-3" id="generate_button">Generate Barcode</button>
-                  <input type="text" class="form-control" value="Barcode Value" disabled>
-                </div>
-              </div>
-              
-
-
-                <div class="row mb-3">
-                {% comment %} <label class="col-sm-2 col-form-label">Submit Button</label> {% endcomment %}
-                <div class="col-sm-10" justify-content-center>
-                  <button type="submit" class="btn btn-primary" id="submit">Submit Form</button>
-                </div>
-              </div>
-
-
-              {% comment %} <div class="row mb-3">
-                <label for="inputEmail" class="col-sm-2 col-form-label">Email</label>
-                <div class="col-sm-10">
-                  <input type="email" class="form-control">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label for="inputPassword" class="col-sm-2 col-form-label">Password</label>
-                <div class="col-sm-10">
-                  <input type="password" class="form-control">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label for="inputNumber" class="col-sm-2 col-form-label">Number</label>
-                <div class="col-sm-10">
-                  <input type="number" class="form-control">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label for="inputNumber" class="col-sm-2 col-form-label">File Upload</label>
-                <div class="col-sm-10">
-                  <input class="form-control" type="file" id="formFile">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label for="inputDate" class="col-sm-2 col-form-label">Date</label>
-                <div class="col-sm-10">
-                  <input type="date" class="form-control">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label for="inputTime" class="col-sm-2 col-form-label">Time</label>
-                <div class="col-sm-10">
-                  <input type="time" class="form-control">
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <label for="inputColor" class="col-sm-2 col-form-label">Color Picker</label>
-                <div class="col-sm-10">
-                  <input type="color" class="form-control form-control-color" id="exampleColorInput" value="#4154f1" title="Choose your color">
-                </div>
-              </div>
-              <div class="row mb-3">
-                <label for="inputPassword" class="col-sm-2 col-form-label">Textarea</label>
-                <div class="col-sm-10">
-                  <textarea class="form-control" style="height: 100px"></textarea>
-                </div>
-              </div>
-              <fieldset class="row mb-3">
-                <legend class="col-form-label col-sm-2 pt-0">Radios</legend>
-                <div class="col-sm-10">
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="gridRadios" id="gridRadios1" value="option1" checked>
-                    <label class="form-check-label" for="gridRadios1">
-                      First radio
-                    </label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="radio" name="gridRadios" id="gridRadios2" value="option2">
-                    <label class="form-check-label" for="gridRadios2">
-                      Second radio
-                    </label>
-                  </div>
-                  <div class="form-check disabled">
-                    <input class="form-check-input" type="radio" name="gridRadios" id="gridRadios" value="option" disabled>
-                    <label class="form-check-label" for="gridRadios3">
-                      Third disabled radio
-                    </label>
-                  </div>
-                </div>
-              </fieldset>
-              <div class="row mb-3">
-                <legend class="col-form-label col-sm-2 pt-0">Checkboxes</legend>
-                <div class="col-sm-10">
-
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="gridCheck1">
-                    <label class="form-check-label" for="gridCheck1">
-                      Example checkbox
-                    </label>
-                  </div>
-
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="gridCheck2" checked>
-                    <label class="form-check-label" for="gridCheck2">
-                      Example checkbox 2
-                    </label>
-                  </div>
-
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <label class="col-sm-2 col-form-label">Disabled</label>
-                <div class="col-sm-10">
-                  <input type="text" class="form-control" value="Read only / Disabled" disabled>
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <label class="col-sm-2 col-form-label">Select</label>
-                <div class="col-sm-10">
-                  <select class="form-select" aria-label="Default select example">
-                    <option selected>Open this select menu</option>
-                    <option value="1">One</option>
-                    <option value="2">Two</option>
-                    <option value="3">Three</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <label class="col-sm-2 col-form-label">Multi Select</label>
-                <div class="col-sm-10">
-                  <select class="form-select" multiple aria-label="multiple select example">
-                    <option selected>Open this select menu</option>
-                    <option value="1">One</option>
-                    <option value="2">Two</option>
-                    <option value="3">Three</option>
-                  </select>
-                </div>
-              </div> {% endcomment %}
-
-            
-
-            </form><!-- End General Form Elements -->
-
+            </div>
+            <div class="modal-footer">
+              <!-- Download Button -->
+              <a id="downloadQrCode" class="btn btn-success" download="qr_code.png">Download QR Code</a>
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           </div>
         </div>
+    </div>
+</div>
 
-      </div>
+<!-- Trigger modal on page load -->
+<script>
+    $(document).ready(function() {
+        $('#successModal').modal('show');
+    });
 
-      <script>
-        function handleItemTypeChange() {
-          const selectElement = document.getElementById('item_type');
-          const selectedOption = selectElement.options[selectElement.selectedIndex];
-          const addColsJson = selectedOption.getAttribute('data-add-cols');
-          
-          // Parse the add_cols JSON string
-          let addCols = [];
-          if (addColsJson) {
+    document.addEventListener('DOMContentLoaded', function() {
+        // This function will be triggered when the modal is shown
+        $('#successModal').on('shown.bs.modal', function () {
+            // Get the base64 image data from the img tag
+            const qrCodeImage = document.getElementById('qrCodeImage').src;
+
+            // Set the download attribute of the download link
+            const downloadLink = document.getElementById('downloadQrCode');
+            downloadLink.href = qrCodeImage;
+        });
+    });
+</script>
+{% endif %}
+
+<script>
+    function handleItemTypeChange() {
+        const selectElement = document.getElementById('item_type');
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const addColsJson = selectedOption.getAttribute('data-add-cols');
+        
+        // Parse the add_cols JSON string
+        let addCols = [];
+        if (addColsJson) {
             try {
-              addCols = JSON.parse(addColsJson);
+                addCols = JSON.parse(addColsJson);
             } catch (e) {
-              console.error('Invalid JSON format in add_cols:', e);
+                console.error('Invalid JSON format in add_cols:', e);
             }
-          }
-      
-          // Clear the additional fields container
-          const additionalFieldsContainer = document.getElementById('additional_fields_container');
-          additionalFieldsContainer.innerHTML = '';
-      
-          // Dynamically generate new fields if add_cols is present
-          if (addCols.length > 0) {
-            addCols.forEach((col) => {
-              const rowDiv = document.createElement('div');
-              rowDiv.className = 'row mb-3';
-      
-              const labelDiv = document.createElement('label');
-              labelDiv.className = 'col-sm-2 col-form-label';
-              labelDiv.textContent = col + ':';
-              rowDiv.appendChild(labelDiv);
-      
-              const inputDiv = document.createElement('div');
-              inputDiv.className = 'col-sm-10';
-              const inputElement = document.createElement('input');
-              inputElement.type = 'text';
-              inputElement.className = 'form-control';
-              inputElement.name = `add_col_${col.toLowerCase()}`; // Naming convention for inputs
-              inputDiv.appendChild(inputElement);
-      
-              rowDiv.appendChild(inputDiv);
-              additionalFieldsContainer.appendChild(rowDiv);
-            });
-          }
         }
-      
-        // Initialize the form based on the default selection
-        document.addEventListener('DOMContentLoaded', handleItemTypeChange);
-      </script>
+    
+        // Clear the additional fields container
+        const additionalFieldsContainer = document.getElementById('additional_fields_container');
+        additionalFieldsContainer.innerHTML = '';
+    
+        // Dynamically generate new fields if add_cols is present
+        if (addCols.length > 0) {
+            addCols.forEach((col) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row mb-3';
+    
+                const labelDiv = document.createElement('label');
+                labelDiv.className = 'col-sm-2 col-form-label';
+                labelDiv.textContent = col + ':';
+                rowDiv.appendChild(labelDiv);
+    
+                const inputDiv = document.createElement('div');
+                inputDiv.className = 'col-sm-10';
+                const inputElement = document.createElement('input');
+                inputElement.type = 'text';
+                inputElement.className = 'form-control';
+                inputElement.name = `add_col_${col.toLowerCase()}`;
+                inputDiv.appendChild(inputElement);
+    
+                rowDiv.appendChild(inputDiv);
+                additionalFieldsContainer.appendChild(rowDiv);
+            });
+        }
+    }
+
+    // Initialize the form based on the default selection
+    document.addEventListener('DOMContentLoaded', handleItemTypeChange);
+</script>
 
 {% endblock %}
-
