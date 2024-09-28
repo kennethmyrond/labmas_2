@@ -21,8 +21,16 @@ urlpatterns = [
     path('suggest_suppliers/', views.suggest_suppliers, name='suggest_suppliers'),
     path('inventory/manageSuppliers/', views.inventory_manageSuppliers_view, name='inventory_manageSuppliers'),
     path('inventory/supplierDetails/<int:supplier_id>/', views.inventory_supplierDetails_view, name='inventory_supplierDetails'),
+    path('inventory_config/', views.inventory_config_view, name='inventory_config'),
+    path('add_category/', views.add_category, name='add_category'),
+    path('add_attributes/', views.add_attributes, name='add_attributes'),
+    path('delete_category/<int:category_id>/', views.delete_category, name='delete_category'),
+    path('delete_attribute/<int:category_id>/<str:attribute_name>/', views.delete_attribute, name='delete_attribute'),
+    path('get_fixed_choices/<int:category_id>/', views.get_fixed_choices, name='get_fixed_choices'),
 
-    
+    # New URL for fetching add_cols
+    path('get_add_cols/<int:category_id>/', views.get_add_cols, name='get_add_cols'),
+
     # borrowing
     path('borrowing/', views.borrowing_view, name='borrowing'),
     path('borrowing/student/borrow_prebook', views.borrowing_student_prebookview, name='borrowing_studentPrebook'),
@@ -33,7 +41,6 @@ urlpatterns = [
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),
     path('reports/', views.reports_view, name='reports'),
     path('user-settings/', views.user_settings_view, name='user_settings'),
-    
 
     # Superuser URLs
     path('login/superuser/', views.superuser_login, name='superuser_login'),  # Added trailing slash
