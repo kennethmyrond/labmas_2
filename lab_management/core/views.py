@@ -13,12 +13,13 @@ import qrcode
 from pyzbar.pyzbar import decode
 from PIL import Image 
 from io import BytesIO
+import base64
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
 # functions
 def get_inventory_history(item_description_instance):
     inventory_items = item_inventory.objects.filter(item=item_description_instance)
-    history = item_handling.objects.filter(inventory_item__in=inventory_items).order_by('-updatedon')
+    history = item_handling.objects.filter(inventory_item__in=inventory_items).order_by('-updated_on')
     return history
 
 def check_item_expiration(request, item_id):
@@ -72,14 +73,39 @@ def remove_item_from_inventory(item_inventory_instance, qty, user):
         # Log the removal
         item_handling.objects.create(
             inventory_item=item_inventory_instance,
-            updatedon=timezone.now(),
-            updatedby=user,
+            updated_on=timezone.now(),
+            updated_by=user,
             changes='R',
             qty=qty,
-            action='Removed from inventory'
         )
     else:
         raise ValueError("Not enough quantity in inventory")
+
+def generate_qr_code(item_id):
+    # Create a QR code instance
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+
+    # Add data to the QR code (in this case, the item_id)
+    qr.add_data(f'Item ID: {item_id}')
+    qr.make(fit=True)
+
+    # Create an image from the QR code
+    img = qr.make_image(fill='black', back_color='white')
+
+    # Convert the image to a byte stream
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    qr_code_img = buffer.getvalue()
+
+    # Encode the byte stream to base64
+    qr_code_b64 = base64.b64encode(qr_code_img).decode('utf-8')
+
+    return qr_code_b64  # Return the base64 encoded string
 
 
 # views
@@ -163,6 +189,8 @@ def inventory_itemDetails_view(request, item_id):
     # Calculate the total quantity
     total_qty = item_inventories.aggregate(Sum('qty'))['qty__sum'] or 0
 
+    qr_code_data = generate_qr_code(item.item_id)
+
     # Prepare context for rendering
     context = {
         'item': item,
@@ -173,6 +201,7 @@ def inventory_itemDetails_view(request, item_id):
         'total_qty': total_qty,
         'add_cols_data': add_cols_data,
         'is_edit_mode': False,  # Not in edit mode
+        'qr_code_data': qr_code_data,
     }
 
     return render(request, 'mod_inventory/inventory_itemDetails.html', context)
@@ -195,6 +224,8 @@ def inventory_addNewItem_view(request):
         item_type_id = request.POST.get('item_type')
         amount = request.POST.get('amount')
         dimension = request.POST.get('item_dimension')
+        rec_expiration = request.POST.get('rec_expiration') == 'on'
+        alert_qty = request.POST.get('alert_qty')
 
         # Dynamic fields from additional columns (based on the selected item_type)
         item_type = item_types.objects.get(itemType_id=item_type_id)
@@ -216,32 +247,16 @@ def inventory_addNewItem_view(request):
             amount=amount,
             dimension=dimension,
             add_cols=add_cols_json,
-            alert_qty=0,
+            alert_qty=alert_qty,
+            rec_expiration = rec_expiration,
         )
         new_item.save()
 
-        # Generate QR code for the new item's item_id
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(new_item.item_id)
-        qr.make(fit=True)
-
-        img = qr.make_image(fill='black', back_color='white')
-
-        # Convert to in-memory file for passing to template
-        buffer = BytesIO()
-        img.save(buffer)
-        buffer.seek(0)
-        qr_code_image = InMemoryUploadedFile(buffer, None, f"qr_{new_item.item_id}.png", 'image/png', buffer.getbuffer().nbytes, None)
-
+        qr_code_data = generate_qr_code(new_item.item_id)
         # Render the page with QR code and modal trigger
         return render(request, 'mod_inventory/inventory_addNewItem.html', {
             'item_types': item_types_list,
-            'qr_code_image': qr_code_image,
+            'qr_code_data': qr_code_data,
             'new_item': new_item,  # Pass new item details for modal
             'show_modal': True,    # Flag to show the modal
         })
@@ -286,8 +301,8 @@ def inventory_updateItem_view(request):
             )
             item_handling.objects.create(
                 inventory_item=new_inventory_item,
-                updatedon=timezone.now(),
-                updatedby=current_user,
+                updated_on=timezone.now(),
+                updated_by=current_user,
                 changes='A',
                 qty=amount,
             )
@@ -299,18 +314,27 @@ def inventory_updateItem_view(request):
                 )
         else:
            # Filter item_inventory by item, join with item_expirations, filter by quantity, and order by expired_date
-            item_inventory_queryset = item_inventory.objects.filter(
-                item=item_description_instance,
-                qty__gt=0
-            ).annotate(
-                expired_date=F('item_expirations__expired_date')
-            ).order_by('expired_date')
+            if item_description_instance.rec_expiration == 1:
+                item_inventory_queryset = item_inventory.objects.filter(
+                    item=item_description_instance,
+                    qty__gt=0
+                ).annotate(
+                    expired_date=F('item_expirations__expired_date')
+                ).order_by('expired_date')
+            else:
+                item_inventory_queryset = item_inventory.objects.filter(
+                    item=item_description_instance,
+                    qty__gt=0
+                ).order_by('inventory_item_id')
 
             # Initialize the amount to be removed
-            remaining_amount = amount
+            remaining_amount = int(amount)
 
             # Iterate through the queryset and deduct the quantity
             for item_inventory_instance in item_inventory_queryset:
+                print(item_inventory_instance.qty)
+                print(remaining_amount)
+
                 if remaining_amount <= 0:
                     break
 
@@ -527,10 +551,20 @@ def inventory_supplierDetails_view(request, supplier_id):
     # Get the supplier details using the supplier_id
     supplier = suppliers.objects.get(suppliers_id=supplier_id)
 
-    return render(request, 'mod_inventory/inventory_supplierDetails.html', {
-        'supplier': supplier
-    })
+    # Get all item_inventory instances associated with the supplier
+    items = item_inventory.objects.filter(supplier=supplier)
+    
+    # Get item_handling entries where changes is 'A' (Add to inventory) and the related item belongs to the supplier
+    item_handling_entries = item_handling.objects.filter(
+        inventory_item__supplier=supplier,
+        changes='A'
+    ).select_related('inventory_item')  # Use select_related to reduce DB queries
 
+    return render(request, 'mod_inventory/inventory_supplierDetails.html', {
+        'supplier': supplier,
+        'items': items,
+        'item_handling_entries': item_handling_entries
+    })
 
 def inventory_config_view(request):
     return render(request, 'mod_inventory/inventory_config.html')

@@ -60,6 +60,25 @@
                         <!-- Additional columns -->
                         <div id="additional_fields_container"></div>
 
+                        <div class="row mb-3">
+                          <label for="inputText" class="col-sm-2 col-form-label">Record Expiration Date?</label>
+                          <div class="col-sm-10">
+                              <input type="checkbox" id="rec_expiration" name="rec_expiration">
+                        </div>
+                        <div class="row mb-3">
+                          <label for="inputText" class="col-sm-2 col-form-label">Alert Minimum Quantity?</label>
+                          <div class="col-sm-10">
+                              <input type="checkbox" id="min_qty" name="min_qty" onchange="toggleAlertQty()">
+                          </div>
+                        </div>
+                        <div class="row mb-3" id="alert_qty_container" style="display: none;">
+                            <label for="inputNumber" class="col-sm-2 col-form-label">Minimum Quantity Level:</label>
+                            <div class="col-sm-10">
+                                <input type="number" class="form-control" id="alert_qty" name="alert_qty" value="0">
+                            </div>
+                        </div>
+                      </div>
+
                         <div class="row mb-5 ">
                             <div class="col-sm-10 d-flex align-items-center">
                                 <button type="submit" class="btn btn-primary me-3" id="submit">Add New Item</button>
@@ -87,8 +106,8 @@
                 <p>Item "<strong>{{ new_item.item_name }} - {{ new_item.amount }}{{ new_item.dimension }}</strong>" has been successfully added to the inventory.</p>
                 <p>Download the QR code below for quick inventory:</p>
                 <div class="text-center">
-                    {% if qr_code_image %}
-                        <img src="data:image/png;base64,{{ qr_code_image.read|b64encode }}" alt="QR Code" class="img-fluid">
+                    {% if qr_code_data %}
+                        <img id="qrCodeImage" src="data:image/png;base64,{{ qr_code_data}}" alt="QR Code" class="img-fluid">
                     {% else %}
                         <p>No QR code available.</p>
                     {% endif %}
@@ -170,6 +189,19 @@
 
     // Initialize the form based on the default selection
     document.addEventListener('DOMContentLoaded', handleItemTypeChange);
+
+  function toggleAlertQty() {
+    var minQtyCheckbox = document.getElementById('min_qty');
+    var alertQtyContainer = document.getElementById('alert_qty_container');
+    var alertQtyInput = document.getElementById('alert_qty');
+
+    if (minQtyCheckbox.checked) {
+        alertQtyContainer.style.display = 'block';
+    } else {
+        alertQtyContainer.style.display = 'none';
+        alertQtyInput.value = 0;
+    }
+  }
 </script>
 
 {% endblock %}

@@ -149,11 +149,11 @@ class item_inventory(models.Model):
 class item_handling(models.Model):
     item_handling_id = models.AutoField(primary_key=True)
     inventory_item = models.ForeignKey('item_inventory', on_delete=models.SET_NULL, null=True, blank=True)
-    updatedon = models.DateTimeField(default='9999-99-99 99:99')
-    updatedby = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
+    updated_on = models.DateTimeField(default='9999-99-99 99:99')
+    updated_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
     changes = models.CharField(max_length=1) # 'A' for add, 'R' for remove
     qty = models.IntegerField()
-    action = models.CharField(max_length=45, null=True, blank=True)
+    # action = models.CharField(max_length=45, null=True, blank=True)
 
     def __str__(self):
         return f"Item Handling {self.item_handling_id}"

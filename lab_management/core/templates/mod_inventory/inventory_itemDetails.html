@@ -1,5 +1,8 @@
 {% extends 'temp_navbar.html' %}
 {% load socialaccount %}
+{% load qr_code %}
+{% load custom_filters %}
+
 {% block title %}Item Detail{% endblock %}
 {% block content %}
 <head>
@@ -59,16 +62,8 @@
           <div class="cardinfo">
             <table class="iteminfo">
               <tr>
-                <td style="padding-right:10px">Item ID:</td>
-                <td id="itemID">{{ item.item_id }}</td>
-              </tr>
-              <tr>
-                <td style="padding-right:10px">Amount:</td>
-                <td id="itemAmount">{{ item.amount }}</td>
-              </tr>
-              <tr>
-                <td style="padding-right:10px">Dimension:</td>
-                <td id="itemDimension">{{ item.dimension }}</td>
+                <td style="padding-right:10px">Amount & Dimension:</td>
+                <td id="itemAmount">{{ item.amount }} {{ item.dimension }}</td>
               </tr>
               {% for label, value in add_cols_data.items %}
               <tr>
@@ -90,8 +85,16 @@
                   {% endif %}
                 </td>
               </tr>
+              {%if item.alert_qty > 0%}
+              <tr></tr>
+                <td style="padding-right:10px"><strong>Minimum Quantity Level: </strong></td>
+                <td id="itemAlertQty">{{item.alert_qty}}</td>
+              </tr>
+              {% endif %}
             </table>
+            <img id="qrCodeImage" src="data:image/png;base64,{{ qr_code_data }}" alt="QR Code" class="img-fluid">
             <div class="buttoncontainer">
+              <a id="downloadQrCode" class="btn btn-success">Download QR Code</a>
               <a id="editbtn" href="{% url 'inventory_itemEdit_view' item.item_id %}">Edit</a>
               <a id="deletebtn" href="{% url 'inventory_itemDelete_view' item.item_id %}">Delete</a>
             </div>
@@ -209,5 +212,55 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const downloadLink = document.getElementById('downloadQrCode');
+    const qrCodeImage = document.getElementById('qrCodeImage');
+
+    downloadLink.addEventListener('click', function(e) {
+      e.preventDefault(); // Prevent default behavior
+
+      try {
+        // Extract the base64 image data
+        const base64Image = qrCodeImage.src.split(',')[1];  // Get the base64 part of the image data
+        const mimeType = 'image/png';  // Define the mime type for the image
+
+        if (!base64Image) {
+          console.error("Failed to extract base64 image data.");
+          return;
+        }
+
+        // Convert base64 to raw binary data held in a string
+        const byteCharacters = atob(base64Image);
+        const byteNumbers = new Array(byteCharacters.length);
+
+        // Convert each character to the corresponding character code
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mimeType });
+
+        // Create a temporary URL for the blob
+        const blobUrl = URL.createObjectURL(blob);
+
+        // Set the href of the link to the blob URL and trigger the download
+        downloadLink.href = blobUrl;
+        downloadLink.setAttribute('download', 'qr_code.png');
+
+        // Programmatically trigger the download
+        downloadLink.click();
+
+        // Revoke the object URL after the download is triggered
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+      } catch (error) {
+        console.error("Error generating QR code download:", error);
+      }
+    });
+  });
+</script>
+
 
 {% endblock %}
