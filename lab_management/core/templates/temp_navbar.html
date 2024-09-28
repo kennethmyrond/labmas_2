@@ -219,7 +219,7 @@
         <a class="nav-link {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin' %}active{% else %}collapsed{% endif %}" data-bs-target="#borrow-nav" data-bs-toggle="collapse" href="#">
             <i class="bi bi-journal-text"></i><span>Borrowing</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="borrow-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+        <ul id="borrow-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_studentviewWalkInRequests' %}show{% endif %}" data-bs-parent="#sidebar-nav">
             <li>
                 <a href="{% url 'borrowing_studentPrebook' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentPrebook' %}active{% endif %}">
                     <i class="bi bi-circle"></i><span>STUDENT- Borrow(Pre-Book)</span>
@@ -231,12 +231,12 @@
                 </a>
             </li>
             <li>
-                <a href="forms-editors.html" class="{% if request.resolver_match.url_name == 'borrowing_viewPrebookRequests' %}active{% endif %}">
+                <a href="{% url 'borrowing_studentviewPreBookRequests' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentviewPreBookRequests' %}active{% endif %}">
                     <i class="bi bi-circle"></i><span>STUDENT - View Pre-Book Requests</span>
                 </a>
             </li>
             <li>
-                <a href="forms-validation.html" class="{% if request.resolver_match.url_name == 'borrowing_viewWalkinRequests' %}active{% endif %}">
+                <a href="{% url 'borrowing_studentviewWalkInRequests' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentviewWalkInRequests' %}active{% endif %}">
                     <i class="bi bi-circle"></i><span>STUDENT - View Walk-In Requests</span>
                 </a>
             </li>

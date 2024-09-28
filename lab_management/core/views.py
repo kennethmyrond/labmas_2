@@ -535,6 +535,8 @@ def inventory_supplierDetails_view(request, supplier_id):
 def inventory_config_view(request):
     return render(request, 'mod_inventory/inventory_config.html')
 
+
+#BORROWING
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
 
@@ -542,8 +544,17 @@ def borrowing_student_prebookview(request):
     return render(request, 'mod_borrowing/borrowing_studentPrebook.html')
 
 def borrowing_student_walkinview(request):
-    return render(request, 'mod_borrowing/borrowing_studentWalkin.html')
+    return render(request, 'mod_borrowing/borrowing_studentWalkIn.html')
 
+def borrowing_student_viewPreBookRequestsview(request):
+    return render(request, 'mod_borrowing/borrowing_studentViewPreBookRequests.html')
+
+def borrowing_student_WalkInRequestsview(request):
+    return render(request, 'mod_borrowing/borrowing_studentViewWalkInRequests.html')
+
+
+
+#CLEARANCE
 def clearance_view(request):
     return render(request, 'mod_clearance/clearance.html')
 
