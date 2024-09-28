@@ -25,6 +25,7 @@ urlpatterns = [
     
     # borrowing
     path('borrowing/', views.borrowing_view, name='borrowing'),
+    path('borrowing/student/borrow_prebook', views.borrowing_student_prebookview, name='borrowing_studentPrebook'),
     path('clearance/', views.clearance_view, name='clearance'),
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),
     path('reports/', views.reports_view, name='reports'),

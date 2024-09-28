@@ -538,6 +538,10 @@ def inventory_config_view(request):
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
 
+def borrowing_student_prebookview(request):
+    return render(request, 'mod_borrowing/borrowing_studentPrebook.html')
+
+
 def clearance_view(request):
     return render(request, 'mod_clearance/clearance.html')
 
