@@ -125,51 +125,85 @@
 
 <script>
     function handleItemTypeChange() {
-        const selectElement = document.getElementById('item_type');
-        const selectedOption = selectElement.options[selectElement.selectedIndex];
-        const addColsJson = selectedOption.getAttribute('data-add-cols');
-        
-        // Parse the add_cols JSON string
-        let addCols = [];
-        if (addColsJson) {
-            try {
-                addCols = JSON.parse(addColsJson);
-            } catch (e) {
-                console.error('Invalid JSON format in add_cols:', e);
-            }
+    const selectElement = document.getElementById('item_type');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const addColsJson = selectedOption.getAttribute('data-add-cols');
+    
+    // Parse the add_cols JSON string
+    let addCols = [];
+    if (addColsJson) {
+        try {
+            addCols = JSON.parse(addColsJson);
+        } catch (e) {
+            console.error('Invalid JSON format in add_cols:', e);
         }
-    
-        // Clear the additional fields container
-        const additionalFieldsContainer = document.getElementById('additional_fields_container');
-        additionalFieldsContainer.innerHTML = '';
-    
-        // Dynamically generate new fields if add_cols is present
-        if (addCols.length > 0) {
-            addCols.forEach((col) => {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'row mb-3';
-    
-                const labelDiv = document.createElement('label');
-                labelDiv.className = 'col-sm-2 col-form-label';
-                labelDiv.textContent = col + ':';
-                rowDiv.appendChild(labelDiv);
-    
-                const inputDiv = document.createElement('div');
-                inputDiv.className = 'col-sm-10';
+    }
+
+    // Clear the additional fields container
+    const additionalFieldsContainer = document.getElementById('additional_fields_container');
+    additionalFieldsContainer.innerHTML = '';
+
+    // Dynamically generate new fields if add_cols is present
+    if (addCols.length > 0) {
+        addCols.forEach((col) => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'row mb-3';
+
+            // Extract field name and potential dropdown options
+            const regex = /(.*)\s\((.*)\)/;
+            const match = col.match(regex);
+
+            let fieldName = col;
+            let isDropdown = false;
+            let options = [];
+
+            if (match) {
+                fieldName = match[1]; // Use only the name before the parentheses (e.g., "Status")
+                isDropdown = true;
+                options = match[2].split(',').map(option => option.trim()); // Split the options (e.g., "Status 1, Status 2, Status 3")
+            }
+
+            const labelDiv = document.createElement('label');
+            labelDiv.className = 'col-sm-2 col-form-label';
+            labelDiv.textContent = fieldName + ':'; // Only display the field name (e.g., "Status")
+            rowDiv.appendChild(labelDiv);
+
+            const inputDiv = document.createElement('div');
+            inputDiv.className = 'col-sm-10';
+
+            if (isDropdown) {
+                // Create a dropdown (select) element if the field has fixed options
+                const selectElement = document.createElement('select');
+                selectElement.className = 'form-select';
+                selectElement.name = `add_col_${fieldName.toLowerCase()}`;
+
+                options.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option;
+                    optionElement.textContent = option;
+                    selectElement.appendChild(optionElement);
+                });
+
+                inputDiv.appendChild(selectElement);
+            } else {
+                // Create a text input for fields without fixed options
                 const inputElement = document.createElement('input');
                 inputElement.type = 'text';
                 inputElement.className = 'form-control';
                 inputElement.name = `add_col_${col.toLowerCase()}`;
                 inputDiv.appendChild(inputElement);
-    
-                rowDiv.appendChild(inputDiv);
-                additionalFieldsContainer.appendChild(rowDiv);
-            });
-        }
-    }
+            }
 
-    // Initialize the form based on the default selection
-    document.addEventListener('DOMContentLoaded', handleItemTypeChange);
+            rowDiv.appendChild(inputDiv);
+            additionalFieldsContainer.appendChild(rowDiv);
+        });
+    }
+}
+
+// Initialize the form based on the default selection
+document.addEventListener('DOMContentLoaded', handleItemTypeChange);
+
+
 </script>
 
 {% endblock %}

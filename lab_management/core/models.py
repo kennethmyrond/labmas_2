@@ -1,6 +1,7 @@
 import json, qrcode
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from io import BytesIO
 from django.core.files import File
@@ -126,12 +127,14 @@ class item_description(models.Model):
 
 class item_types(models.Model):
     itemType_id = models.AutoField(primary_key=True)
-    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)  # Since it's a VARCHAR
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)  # Implicitly creates a laboratory_id field
     itemType_name = models.CharField(max_length=45, null=True, blank=True)
-    add_cols = models.CharField(max_length=45, null=True, blank=True)
+    add_cols = models.TextField(default='[]')  # Stores JSON attributes
+    
 
     def __str__(self):
         return self.itemType_name
+
 
 class item_inventory(models.Model):
     inventory_item_id = models.AutoField(primary_key=True)
@@ -149,7 +152,7 @@ class item_inventory(models.Model):
 class item_handling(models.Model):
     item_handling_id = models.AutoField(primary_key=True)
     inventory_item = models.ForeignKey('item_inventory', on_delete=models.SET_NULL, null=True, blank=True)
-    updatedon = models.DateTimeField(default='9999-99-99 99:99')
+    updatedon = models.DateTimeField(default='9999-12-31 23:59')
     updatedby = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
     changes = models.CharField(max_length=1) # 'A' for add, 'R' for remove
     qty = models.IntegerField()
