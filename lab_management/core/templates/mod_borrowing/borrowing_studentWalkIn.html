@@ -1,0 +1,157 @@
+{% extends 'temp_navbar.html' %}
+{% load socialaccount %}
+{% load qr_code %}
+{% load custom_filters %}
+
+{% block title %}Borrow - Walk-In{% endblock %}
+
+{% block content %}
+<div class="pagetitle">
+    <h1>Inventory</h1>
+    <nav>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active">Borrow - Walk-In</li>
+        </ol>
+    </nav>
+</div><!-- End Page Title -->
+
+<section class="section">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Borrow - Walk-In</h5>
+                    
+                    <!-- General Form Elements -->
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="row mb-3">
+                        <label for="inputDate" class="col-sm-2 col-form-label">Date Requested:</label>
+                        <div class="col-sm-10">
+                          <input type="date" class="form-control" value="Read only / Disabled" disabled>
+                        </div>
+                      </div>
+
+                        <div class="row mb-3">
+                            <label for="inputNumber" class="col-sm-2 col-form-label">Student Name:</label>
+                            <div class="col-sm-10">
+                                <input type="number" class="form-control" id="studentname" name="studentname"> 
+                            </div>
+                        </div>
+
+            
+
+                        <div class="row mb-3">
+                          <label for="inputNumber" class="col-sm-2 col-form-label">Purpose of Borrowing:</label>
+                          <div class="col-sm-10">
+                              <input type="number" class="form-control" id="purpose" name="purpose"> 
+                          </div>
+                      </div>
+
+                      <!-- Equipment Rows -->
+                      <div id="equipment-rows">
+                        <div class="row mb-3 equipment-row">
+                          <label class="col-sm-2 col-form-label">Equipment</label>
+                          <div class="col-sm-5">
+                            <select class="form-select" aria-label="Default select example">
+                              <option value="sample1">Sample Equipment 1</option>
+                              <option value="sample2">Sample Equipment 2</option>
+                            </select>
+                          </div>
+                          <label for="inputNumber" class="col-sm-1 col-form-label text-end">Qty:</label>
+                          <div class="col-sm-2">
+                            <input type="number" class="form-control" min="0" value="0">
+                          </div>
+                          <!-- Delete button (hidden for the first row) -->
+                          <div class="col-sm-2 d-none delete-btn-container">
+                            <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- Add Equipment Button -->
+                      <div class="row mb-3">
+                        <div class="col-sm-10">
+                          <button type="button" id="add-equipment-btn" class="btn btn-primary">Add Equipment</button>
+                        </div>
+                      </div>
+
+                      <div class="row mb-3">
+                        <label for="inputNumber" class="col-sm-2 col-form-label">Add Attachment:</label>
+                        <div class="col-sm-10">
+                          <input class="form-control" type="file" id="formFile">
+                        </div>
+                      </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const equipmentRowsContainer = document.getElementById('equipment-rows');
+    const addEquipmentBtn = document.getElementById('add-equipment-btn');
+
+    // Function to add a new equipment row
+    function addEquipmentRow() {
+      const newRow = document.createElement('div');
+      newRow.classList.add('row', 'mb-3', 'equipment-row');
+      newRow.innerHTML = `
+        <label class="col-sm-2 col-form-label">Equipment</label>
+        <div class="col-sm-5">
+          <select class="form-select" aria-label="Default select example">
+            <option value="sample1">Sample Equipment 1</option>
+            <option value="sample2">Sample Equipment 2</option>
+          </select>
+        </div>
+        <label for="inputNumber" class="col-sm-1 col-form-label text-end">Qty:</label>
+        <div class="col-sm-2">
+          <input type="number" class="form-control" min="0" value="0">
+        </div>
+        <div class="col-sm-2 delete-btn-container">
+          <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
+        </div>
+      `;
+      equipmentRowsContainer.appendChild(newRow);
+      updateDeleteButtons();
+    }
+
+    // Function to handle deleting a row
+    function deleteEquipmentRow(event) {
+      const rowToDelete = event.target.closest('.equipment-row');
+      rowToDelete.remove();
+      updateDeleteButtons();
+    }
+
+    // Update visibility of delete buttons (hide if only 1 row)
+    function updateDeleteButtons() {
+      const allRows = equipmentRowsContainer.querySelectorAll('.equipment-row');
+      const deleteButtons = equipmentRowsContainer.querySelectorAll('.delete-equipment-btn');
+
+      if (allRows.length > 1) {
+        deleteButtons.forEach(btn => btn.closest('.delete-btn-container').classList.remove('d-none'));
+      } else {
+        deleteButtons.forEach(btn => btn.closest('.delete-btn-container').classList.add('d-none'));
+      }
+    }
+
+    // Event listener for adding new equipment rows
+    addEquipmentBtn.addEventListener('click', addEquipmentRow);
+
+    // Event delegation for deleting equipment rows
+    equipmentRowsContainer.addEventListener('click', function (event) {
+      if (event.target.classList.contains('delete-equipment-btn')) {
+        deleteEquipmentRow(event);
+      }
+    });
+
+    // Initial setup for delete buttons
+    updateDeleteButtons();
+  });
+</script>
+
+{% endblock %}

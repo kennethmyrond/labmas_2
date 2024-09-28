@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.db.models import Q, Sum , Prefetch, F
 from django.utils import timezone
 from django import forms
@@ -567,11 +568,181 @@ def inventory_supplierDetails_view(request, supplier_id):
     })
 
 def inventory_config_view(request):
-    return render(request, 'mod_inventory/inventory_config.html')
+    if not request.user.is_authenticated:
+        return redirect('login')
 
+    # Retrieve the selected laboratory ID from the session
+    selected_lab = request.session.get('selected_lab')
+    
+    # Query categories based on the selected laboratory ID
+    if selected_lab:
+        categories = item_types.objects.filter(laboratory_id=selected_lab)
+    else:
+        categories = item_types.objects.none()  # No categories if no lab is selected
+
+    # Get attributes for the first category if it exists
+    attributes = json.loads(categories[0].add_cols) if categories.exists() else []
+
+    # Prepare the context for rendering the template
+    context = {
+        'categories': categories,
+        'attributes': attributes
+    }
+
+    return render(request, 'mod_inventory/inventory_config.html', context)
+
+
+
+def add_category(request):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+
+    # Get laboratory_id from the session
+    laboratory_id = request.session.get('selected_lab')
+
+    if not laboratory_id:
+        messages.error(request, "No laboratory selected.")
+        return redirect('inventory_config')
+
+    if request.method == 'POST':
+        category_name = request.POST.get('category')  # Change 'category_name' to 'category'
+        add_cols = request.POST.get('add_cols')  # Ensure you have this input field in your form
+
+        # Debugging output to check what is received
+        print(f"Received category_name: {category_name}, add_cols: {add_cols}")  
+
+        if not category_name:  # Check if category_name is empty
+            messages.error(request, "Category name cannot be empty.")
+            return redirect('inventory_config')
+
+        new_category = item_types(
+            laboratory_id=laboratory_id,
+            itemType_name=category_name,
+            add_cols=add_cols
+        )
+        new_category.save()
+
+        messages.success(request, 'Category added successfully!')
+        return redirect('inventory_config')
+
+    return render(request, 'mod_inventory/add_category.html')
+
+def delete_category(request, category_id):
+    if request.method == 'POST':
+        category = get_object_or_404(item_types, pk=category_id)
+
+        # Optional: Ensure that the category belongs to the selected laboratory
+        selected_lab = request.session.get('selected_lab')
+        if category.laboratory_id != selected_lab:
+            return JsonResponse({'success': False, 'message': "Category does not belong to the selected laboratory."}, status=400)
+
+        category.delete()  # Delete the category from item_types
+        messages.success(request, 'Category deleted successfully!')
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False}, status=400)
+
+
+def add_attributes(request):
+    if request.method == 'POST':
+        category_id = request.POST['category']
+        attribute_name = request.POST['attributeName']
+        
+        # Gather all fixed values from the inputs
+        fixed_values = request.POST.getlist('fixedValues')
+
+        category = get_object_or_404(item_types, pk=category_id)
+
+        # Check if the category belongs to the selected laboratory
+        selected_lab = request.session.get('selected_lab')
+        if category.laboratory_id != selected_lab:
+            return JsonResponse({'success': False, 'message': "Category does not belong to the selected laboratory."}, status=400)
+
+        # Initialize add_cols if necessary
+        if category.add_cols is None:
+            add_cols = []  # Initialize to empty list
+        else:
+            add_cols = json.loads(category.add_cols)
+
+        # Create a combined attribute string with fixed values if any
+        if fixed_values:
+            combined_attribute = f"{attribute_name} ({', '.join(fixed_values)})"
+        else:
+            combined_attribute = attribute_name
+
+        if combined_attribute not in add_cols:  # Prevent duplicate attributes
+            add_cols.append(combined_attribute)
+            category.add_cols = json.dumps(add_cols)
+            category.save()
+            return JsonResponse({'success': True, 'attribute': combined_attribute})
+        else:
+            return JsonResponse({'success': False, 'message': "Attribute already exists."})
+
+    return JsonResponse({'success': False, 'message': "Invalid request."})
+
+
+
+
+def get_fixed_choices(request, category_id):
+    category = get_object_or_404(item_types, pk=category_id)
+    return JsonResponse({'fixed_choices': category.fixed_choices})
+
+
+def delete_attribute(request, category_id, attribute_name):
+    if request.method == 'POST':
+        category = get_object_or_404(item_types, pk=category_id)
+
+        # Check if the category belongs to the selected laboratory
+        selected_lab = request.session.get('selected_lab')
+        if category.laboratory_id != selected_lab:
+            return JsonResponse({'success': False, 'message': "Category does not belong to the selected laboratory."}, status=400)
+
+        # Load the current add_cols and ensure it is a valid list
+        try:
+            add_cols = json.loads(category.add_cols) if category.add_cols else []
+        except json.JSONDecodeError:
+            add_cols = []  # Handle case where add_cols might not be valid JSON
+        
+        # Remove the attribute if it exists
+        if attribute_name in add_cols:
+            add_cols.remove(attribute_name)
+            category.add_cols = json.dumps(add_cols)
+            category.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'message': 'Attribute not found.'}, status=404)
+
+    return JsonResponse({'success': False}, status=400)
+
+
+
+    
+def get_add_cols(request, category_id):
+    category = get_object_or_404(item_types, pk=category_id)
+    add_cols = json.loads(category.add_cols) if category.add_cols else []
+    return JsonResponse({'add_cols': add_cols})
+
+
+
+#BORROWING
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
 
+def borrowing_student_prebookview(request):
+    return render(request, 'mod_borrowing/borrowing_studentPrebook.html')
+
+def borrowing_student_walkinview(request):
+    return render(request, 'mod_borrowing/borrowing_studentWalkIn.html')
+
+def borrowing_student_viewPreBookRequestsview(request):
+    return render(request, 'mod_borrowing/borrowing_studentViewPreBookRequests.html')
+
+def borrowing_student_WalkInRequestsview(request):
+    return render(request, 'mod_borrowing/borrowing_studentViewWalkInRequests.html')
+
+
+
+#CLEARANCE
 def clearance_view(request):
     return render(request, 'mod_clearance/clearance.html')
 
