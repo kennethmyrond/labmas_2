@@ -591,8 +591,6 @@ def inventory_config_view(request):
 
     return render(request, 'mod_inventory/inventory_config.html', context)
 
-
-
 def add_category(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -618,7 +616,7 @@ def add_category(request):
         new_category = item_types(
             laboratory_id=laboratory_id,
             itemType_name=category_name,
-            add_cols=add_cols
+            # add_cols=add_cols
         )
         new_category.save()
 

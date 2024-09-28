@@ -130,7 +130,6 @@ class item_types(models.Model):
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)  # Implicitly creates a laboratory_id field
     itemType_name = models.CharField(max_length=45, null=True, blank=True)
     add_cols = models.TextField(default='[]')  # Stores JSON attributes
-    
 
     def __str__(self):
         return self.itemType_name
@@ -152,7 +151,7 @@ class item_inventory(models.Model):
 class item_handling(models.Model):
     item_handling_id = models.AutoField(primary_key=True)
     inventory_item = models.ForeignKey('item_inventory', on_delete=models.SET_NULL, null=True, blank=True)
-    updated_on = models.DateTimeField(default='9999-99-99 99:99')
+    updated_on = models.DateTimeField(null=True, blank=True)
     updated_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
     changes = models.CharField(max_length=1) # 'A' for add, 'R' for remove
     qty = models.IntegerField()

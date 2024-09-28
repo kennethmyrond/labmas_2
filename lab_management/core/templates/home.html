@@ -4,6 +4,9 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
+
+    <h1>Welcome to Labmas, {{user.first_name}}</h1>
+
     <a class="form-select d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">    
         <span class="d-none d-md-block dropdown-toggle ps-2">{{ selected_lab_name|default:"Choose Laboratory" }}</span>
     </a>
