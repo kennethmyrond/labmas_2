@@ -37,6 +37,8 @@ urlpatterns = [
     path('borrowing/student/borrow_walkin', views.borrowing_student_walkinview, name='borrowing_studentWalkin'),
     path('borrowing/student/viewPreBookRequests', views.borrowing_student_viewPreBookRequestsview, name='borrowing_studentviewPreBookRequests'),
     path('borrowing/student/viewWalkInRequests', views.borrowing_student_WalkInRequestsview, name='borrowing_studentviewWalkInRequests'),
+    path('borrowing/labcoord/prebookrequests', views.borrowing_labcoord_prebookrequests, name='borrowing_labcoord_prebookrequests'),
+
     path('clearance/', views.clearance_view, name='clearance'),
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),
     path('reports/', views.reports_view, name='reports'),
