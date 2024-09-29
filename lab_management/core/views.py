@@ -741,6 +741,9 @@ def borrowing_student_WalkInRequestsview(request):
 def borrowing_labcoord_prebookrequests(request):
     return render(request, 'mod_borrowing/borrowing_labcoord_prebookrequests.html')
 
+def borrowing_labcoord_borrowconfig(request):
+    return render(request, 'mod_borrowing/borrowing_labcoord_borrowconfig.html')
+
 
 
 #CLEARANCE
