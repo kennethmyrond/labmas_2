@@ -240,6 +240,16 @@
                     <i class="bi bi-circle"></i><span>STUDENT - View Walk-In Requests</span>
                 </a>
             </li>
+            <li>
+              <a href="{% url 'borrowing_labcoord_prebookrequests' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentviewWalkInRequests' %}active{% endif %}">
+                  <i class="bi bi-circle"></i><span>LAB COORD - Pre-Book Requests</span>
+              </a>
+          </li>
+          <li>
+            <a href="{% url 'borrowing_labcoord_borrowconfig' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentviewWalkInRequests' %}active{% endif %}">
+                <i class="bi bi-circle"></i><span>LAB COORD - Borrowing Configuration</span>
+            </a>
+        </li>
         </ul>
     </li><!-- End Borrowing Nav -->
     
