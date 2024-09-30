@@ -44,7 +44,6 @@
               <table class="table datatable" id="itemsTable">
                 <thead>
                   <tr>
-                    <th>Item ID</th>
                     <th>Item Name</th>
                     <th>Amount</th>
                     <th>Dimension</th>
@@ -54,7 +53,6 @@
                 <tbody>
                   {% for item in inventory_items %}
                     <tr>
-                      <td>{{ item.item_id }}</td> <!-- Item ID -->
                       <td>{{ item.item_name }}</td> <!-- Item Name -->
                       <td>{{ item.amount }}</td> <!-- Amount -->
                       <td>{{ item.dimension }}</td> <!-- Dimension -->

@@ -108,6 +108,12 @@ def generate_qr_code(item_id):
 
     return qr_code_b64  # Return the base64 encoded string
 
+# forms
+class ItemEditForm(forms.ModelForm):
+    class Meta:
+        model = item_description
+        fields = ['item_name', 'amount', 'dimension']
+
 
 # views
 def userlogin(request):
@@ -154,7 +160,7 @@ def inventory_view(request):
     else:
         inventory_items = item_description.objects.filter(
             laboratory_id=selected_laboratory_id,
-            is_disabled=0  # Only get items that are enabled
+            is_disabled=0  # Only get items that are enabled 
         ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
         add_cols = []
 
@@ -333,8 +339,9 @@ def inventory_updateItem_view(request):
 
             # Iterate through the queryset and deduct the quantity
             for item_inventory_instance in item_inventory_queryset:
-                print(item_inventory_instance.qty)
-                print(remaining_amount)
+                print(item_inventory_instance)
+                print('inv qty: ' + str(item_inventory_instance.qty))
+                print('rem: ' + str(remaining_amount))
 
                 if remaining_amount <= 0:
                     break
@@ -348,8 +355,8 @@ def inventory_updateItem_view(request):
                         break
                 else:
                     try:
+                        remaining_amount = remaining_amount - int(item_inventory_instance.qty)
                         remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user)
-                        remaining_amount -= item_inventory_instance.qty
                     except ValueError as e:
                         print(e)
                         break
@@ -367,12 +374,6 @@ def inventory_updateItem_view(request):
         return render(request, 'mod_inventory/inventory_updateItem.html', context)
 
     return render(request, 'mod_inventory/inventory_updateItem.html')
-
-# Create a form for editing the item
-class ItemEditForm(forms.ModelForm):
-    class Meta:
-        model = item_description
-        fields = ['item_name', 'amount', 'dimension']
 
 def inventory_itemEdit_view(request, item_id):
     if not request.user.is_authenticated:
@@ -496,15 +497,15 @@ def inventory_physicalCount_view(request):
                             break
 
                 # Create a new item_inventory record for the discrepancy
-                item_handling.objects.create(
-                    item=item,
-                    supplier=None,  # Set the supplier as None since it's not relevant for the physical count
-                    date_purchased=None,  # Optional; set to None for now
-                    date_received=None,  # Optional; set to None for now
-                    purchase_price=None,  # Optional; set to None for now
-                    remarks="physcount",  # Remark as "physcount"
-                    qty=discrepancy_qty,  # Record the difference
-                )
+                # item_handling.objects.create(
+                #     item=item,
+                #     supplier=None,  # Set the supplier as None since it's not relevant for the physical count
+                #     date_purchased=None,  # Optional; set to None for now
+                #     date_received=None,  # Optional; set to None for now
+                #     purchase_price=None,  # Optional; set to None for now
+                #     remarks="physcount",  # Remark as "physcount"
+                #     qty=discrepancy_qty,  # Record the difference
+                # )
 
                 # Step 4: Update the item_description.qty with the new count qty
                 item.qty = count_qty
@@ -640,7 +641,6 @@ def delete_category(request, category_id):
 
     return JsonResponse({'success': False}, status=400)
 
-
 def add_attributes(request):
     if request.method == 'POST':
         category_id = request.POST['category']
@@ -678,13 +678,9 @@ def add_attributes(request):
 
     return JsonResponse({'success': False, 'message': "Invalid request."})
 
-
-
-
 def get_fixed_choices(request, category_id):
     category = get_object_or_404(item_types, pk=category_id)
     return JsonResponse({'fixed_choices': category.fixed_choices})
-
 
 def delete_attribute(request, category_id, attribute_name):
     if request.method == 'POST':
@@ -711,9 +707,6 @@ def delete_attribute(request, category_id, attribute_name):
             return JsonResponse({'success': False, 'message': 'Attribute not found.'}, status=404)
 
     return JsonResponse({'success': False}, status=400)
-
-
-
     
 def get_add_cols(request, category_id):
     category = get_object_or_404(item_types, pk=category_id)
