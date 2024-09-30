@@ -26,37 +26,29 @@
           <div class="card-body">
             <h5 class="card-title">Manage Suppliers</h5>
 
-      
-                      <!-- Table with stripped rows -->
-                      <table class="table datatable">
-                        <thead>
-                          <tr>
-                            <th>Supplier Name</th>
-                            <th>Description</th>
-                            <th>Supplied Items</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {% for supplier in suppliers %}
-                          <tr>
-                              <td><a href="{% url 'inventory_supplierDetails' supplier.suppliers_id %}">{{ supplier.supplier_name }}</a></td>
-                              <td>{{ supplier.description }}</td>
-                              <td>4</td>
-                          </tr>
-                          {% endfor %}
-                      </tbody>
-                      
-                      </table>
-                      <!-- End Table with stripped rows -->
-        
-                    </div>
-                  </div>
-        
-                </div>
-              </div>
-              
-            </section>
-            
+            <!-- Table with stripped rows -->
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>Supplier Name</th>
+                  <th>Description</th>
+                  <th>Supplied Items</th>
+                  <th style="display:none;"></th> <!-- Hidden column -->
+                  <th style="display:none;"></th> <!-- Hidden column -->
+                </tr>
+              </thead>
+              <tbody>
+                {% for supplier in suppliers %}
+                <tr>
+                  <td><a href="{% url 'inventory_supplierDetails' supplier.suppliers_id %}">{{ supplier.supplier_name }}</a></td>
+                  <td>{{ supplier.description }}</td>
+                  <td>4</td>
+                  <td style="display:none;"></td> <!-- Hidden cell -->
+                  <td style="display:none;"></td> <!-- Hidden cell -->
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
             <!-- End Table with stripped rows -->
 
           </div>
@@ -64,71 +56,43 @@
 
       </div>
     </div>
-    <!-- Add Supplier Modal -->
-<form method="POST">
-<div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="addSupplierModalLabel">Add Supplier</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-          {% csrf_token %}
-          <div class="mb-3">
-            <label for="supplierName" class="form-label">Supplier Name</label>
-            <input type="text" class="form-control" id="supplierName" name="supplier_name" required>
+  </section>
+  
+  <!-- Add Supplier Modal -->
+  <form method="POST">
+    <div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addSupplierModalLabel">Add Supplier</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="mb-3">
-            <label for="supplierDescription" class="form-label">Description</label>
-            <textarea class="form-control" id="supplierDescription" name="description" rows="3" required></textarea>
+          <div class="modal-body">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="supplierName" class="form-label">Supplier Name</label>
+              <input type="text" class="form-control" id="supplierName" name="supplier_name" required>
+            </div>
+            <div class="mb-3">
+              <label for="supplierDescription" class="form-label">Description</label>
+              <textarea class="form-control" id="supplierDescription" name="description" rows="3" required></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="submit" class="btn btn-primary" id="submit">Add Supplier</button>
+            </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="submit" class="btn btn-primary" id="submit">Add Supplier</button>
-          </div>
-        
+        </div>
       </div>
     </div>
-  </div>
-</div>
-</form>
-
-
-    
-  </section>
-
+  </form>
 
   <script>
       document.addEventListener('DOMContentLoaded', function() {
         const dataTable = new simpleDatatables.DataTable(".datatable");
       });
       
-      document.getElementById('addSupplierForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-    
-        // Get form data
-        const supplierName = document.getElementById('supplierName').value;
-        const description = document.getElementById('supplierDescription').value;
-    
-        // Add a new row to the table (can also send the data to the backend using AJAX)
-        const table = document.querySelector('.datatable tbody');
-        const newRow = document.createElement('tr');
-        newRow.innerHTML = "<td>${supplierName}</td><td>${description}</td>";
-        table.appendChild(newRow);
-    
-        // Clear the form fields
-        document.getElementById('addSupplierForm').reset();
-    
-        // Re-render the DataTable after adding the new row
-        dataTable.update();
-    
-        // Hide the modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('addSupplierModal'));
-        modal.hide();
-      });
-    
-  </script>
   
-{% endblock %}
+  </script>
 
+{% endblock %}
