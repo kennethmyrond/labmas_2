@@ -48,6 +48,7 @@
                     <th>Unit</th>
                     <th>Dimension</th>
                     <th>Count Qty</th>
+                    <th style="display:none;"></th> <!-- Hidden column -->
                   </tr>
                 </thead>
                 <tbody>
@@ -56,6 +57,7 @@
                       <td>{{ item.item_name }}</td> <!-- Item Name -->
                       <td>{{ item.amount }}</td> <!-- Amount -->
                       <td>{{ item.dimension }}</td> <!-- Dimension -->
+                      <td style="display:none;"></td> <!-- Hidden cell -->
                       <td>
                         <input type="number" name="count_qty_{{ item.item_id }}" class="form-control" placeholder="Enter count" required>
                       </td> <!-- Count Qty input field -->
