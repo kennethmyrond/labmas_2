@@ -15,7 +15,6 @@
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
-
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Inventory</h5>
@@ -43,8 +42,6 @@
                 <tr>
                   <th>Status</th>
                   <th>Item Name</th>
-                  <th>Unit</th>
-                  <th>Dimension</th>
                   <th>Qty</th>
                   {% for col in add_cols %}
                     <th>{{ col }}</th>
@@ -54,10 +51,8 @@
               <tbody>
                 {% for item in inventory_items %}
                 <tr>
-                  <td>{%if item.total_qty > item.alert_qty%}Available{%else%}Low Stock{%endif%}</td>
+                  <td>{% if item.total_qty > item.alert_qty %}Available{% else %}Low Stock{% endif %}</td>
                   <td><a href="{% url 'inventory_itemDetails_view' item.item_id %}">{{ item.item_name }}</a></td>
-                  <td>{{ item.amount }}</td>
-                  <td>{{ item.dimension }}</td>
                   <td class="{% if item.total_qty > 0 %}qty-positive{% else %}qty-negative{% endif %}">
                     {{ item.total_qty }}
                   </td>
@@ -67,12 +62,11 @@
                 </tr>
                 {% empty %}
                 <tr>
-                  <td colspan="6">No items found.</td>
+                  <td colspan="4">No items found.</td>
                 </tr>
                 {% endfor %}
               </tbody>
             </table>
-            
             <!-- End Table with stripped rows -->
 
           </div>
@@ -81,4 +75,25 @@
       </div>
     </div>
   </section>
+
+  <script>
+    document.getElementById('item_type').addEventListener('change', function() {
+      const selectedItemType = this.value;
+      if (selectedItemType) {
+        fetch(`/get_add_cols/${selectedItemType}/`)  // Adjust the URL based on your URL configuration
+          .then(response => response.json())
+          .then(data => {
+            const addColDisplay = document.getElementById('addColsDisplay');
+            addColDisplay.innerHTML = ''; // Clear previous values
+  
+            data.add_cols.forEach(col => {
+              const colElement = document.createElement('div');
+              colElement.innerText = col; // Display each additional column
+              addColDisplay.appendChild(colElement);
+            });
+          });
+      }
+    });
+  </script>
+  
 {% endblock %}

@@ -114,16 +114,14 @@ class item_description(models.Model):
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE, null=True, blank=True)
     item_name = models.CharField(max_length=45, null=True, blank=True)
     itemType = models.ForeignKey('item_types', on_delete=models.SET_NULL, null=True, blank=True)
-    amount = models.FloatField(null=True, blank=True)
-    dimension = models.CharField(max_length=10, null=True, blank=True)
-    # qty = models.IntegerField()
     alert_qty = models.IntegerField(null=True, blank=True)
-    add_cols = models.CharField(max_length=45, null=True, blank=True)
+    add_cols = models.CharField(max_length=45, null=True, blank=True)  # This will now contain values for unit and dimension
     rec_expiration = models.BooleanField(default=False)
     is_disabled = models.BooleanField(default=False)
     
     def __str__(self):
         return self.item_name
+
 
 class item_types(models.Model):
     itemType_id = models.AutoField(primary_key=True)

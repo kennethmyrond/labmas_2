@@ -61,10 +61,7 @@
           <h5 class="card-title">{{ item.item_name }}</h5> <!-- Display the item name -->
           <div class="cardinfo">
             <table class="iteminfo">
-              <tr>
-                <td style="padding-right:10px">Unit & Dimension:</td>
-                <td id="itemAmount">{{ item.amount }} {{ item.dimension }}</td>
-              </tr>
+              
               {% for label, value in add_cols_data.items %}
               <tr>
                 <td style="padding-right:10px">{{ label }}:</td>

@@ -39,11 +39,12 @@ def suggest_items(request):
 
     data = []
     for item in suggestions:
+        add_cols_data = json.loads(item.add_cols) if item.add_cols else {}
         data.append({
             'item_id': item.item_id,
             'item_name': item.item_name,
-            'amount': item.amount,
-            'dimension': item.dimension,
+            'unit': add_cols_data.get('unit', ''),  # Assuming 'unit' is one of the keys in add_cols
+            'dimension': add_cols_data.get('dimension', ''),  # Assuming 'dimension' is another key
             'rec_expiration': item.rec_expiration
         })
     
@@ -112,7 +113,7 @@ def generate_qr_code(item_id):
 class ItemEditForm(forms.ModelForm):
     class Meta:
         model = item_description
-        fields = ['item_name', 'amount', 'dimension']
+        fields = ['item_name']
 
 
 # views
@@ -153,16 +154,30 @@ def inventory_view(request):
         inventory_items = item_description.objects.filter(
             itemType_id=selected_item_type,
             laboratory_id=selected_laboratory_id,
-            is_disabled=0  # Only get items that are enabled
+            is_disabled=False  # Only get items that are enabled
         ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
-        selected_item_type_instance = item_types.objects.get(pk=selected_item_type)
-        add_cols = json.loads(selected_item_type_instance.add_cols)
     else:
         inventory_items = item_description.objects.filter(
             laboratory_id=selected_laboratory_id,
-            is_disabled=0  # Only get items that are enabled 
+            is_disabled=False  # Only get items that are enabled 
         ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
-        add_cols = []
+
+    # Prepare add_cols for the selected item_type if specified
+    add_cols = []
+    if selected_item_type:
+        selected_item_type_instance = get_object_or_404(item_types, pk=selected_item_type)
+        add_cols = json.loads(selected_item_type_instance.add_cols) if selected_item_type_instance.add_cols else []
+    
+    # Add parsed values from add_cols to each inventory item
+    for item in inventory_items:
+        if item.add_cols:
+            try:
+                add_cols_data = json.loads(item.add_cols)  # Parse JSON string
+                item.add_cols_data = add_cols_data  # Store parsed add_cols in an attribute
+            except json.JSONDecodeError:
+                item.add_cols_data = {}  # Set to empty dict on error
+        else:
+            item.add_cols_data = {}  # No add_cols provided
 
     return render(request, 'mod_inventory/view_inventory.html', {
         'inventory_items': inventory_items,
@@ -229,10 +244,8 @@ def inventory_addNewItem_view(request):
         # Extract form data
         item_name = request.POST.get('item_name')
         item_type_id = request.POST.get('item_type')
-        amount = request.POST.get('amount')
-        dimension = request.POST.get('item_dimension')
-        rec_expiration = request.POST.get('rec_expiration') == 'on'
         alert_qty = request.POST.get('alert_qty')
+        rec_expiration = request.POST.get('rec_expiration') == 'on'
 
         # Dynamic fields from additional columns (based on the selected item_type)
         item_type = item_types.objects.get(itemType_id=item_type_id)
@@ -251,11 +264,9 @@ def inventory_addNewItem_view(request):
             laboratory_id=selected_lab,
             item_name=item_name,
             itemType_id=item_type_id,
-            amount=amount,
-            dimension=dimension,
             add_cols=add_cols_json,
             alert_qty=alert_qty,
-            rec_expiration = rec_expiration,
+            rec_expiration=rec_expiration,
         )
         new_item.save()
 

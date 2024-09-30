@@ -38,8 +38,7 @@ class ModuleForm(forms.ModelForm):
 class InventoryItemForm(forms.Form):
     item_name = forms.CharField(max_length=45, required=True)
     item_type = forms.CharField(max_length=45, required=True)
-    amount = forms.FloatField(required=True)
-    dimension = forms.CharField(max_length=10, required=True)
+    add_cols = forms.CharField(max_length=45, required=True)  # Adjusted to reflect the change
     nature = forms.CharField(max_length=45, required=True)
     grade = forms.CharField(max_length=45, required=True)
     location = forms.CharField(max_length=45, required=True)

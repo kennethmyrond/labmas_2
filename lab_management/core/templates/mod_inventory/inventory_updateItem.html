@@ -5,18 +5,13 @@
 {% block title %}Update Item in Inventory{% endblock %}
 
 {% block content %}
-<head>
-    {% comment %} <!-- jQuery and Bootstrap for Modal -->
-     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script> {% endcomment %}
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 
-    <!-- Inline CSS -->
-    <style>
-  
-        
-    </style>
-</head>
+<!-- Bootstrap Modal for Confirmation -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
 <div class="pagetitle">
     <h1>Inventory</h1>
     <nav>
@@ -291,10 +286,6 @@
     }
 
     $(document).ready(function() {
-         // Ensure modal close buttons work
-    $('#confirmationModal').on('click', '.close, .btn-secondary', function() {
-        $('#confirmationModal').modal('hide');
-    });
         // Initialize select2 for item and supplier fields
         $('#itemName').select2({
             ajax: {
