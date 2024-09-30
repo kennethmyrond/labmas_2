@@ -134,7 +134,6 @@ class item_types(models.Model):
     def __str__(self):
         return self.itemType_name
 
-
 class item_inventory(models.Model):
     inventory_item_id = models.AutoField(primary_key=True)
     item = models.ForeignKey('item_description', on_delete=models.CASCADE)
@@ -160,7 +159,6 @@ class item_handling(models.Model):
     def __str__(self):
         return f"Item Handling {self.item_handling_id}"
     
-
 class item_expirations(models.Model):
     inventory_item = models.ForeignKey('item_inventory', on_delete=models.CASCADE)
     expired_date = models.DateField(primary_key=True)
@@ -185,8 +183,7 @@ class suppliers(models.Model):
 #     end_username = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
 #     end_userreason = models.CharField(max_length=45, null=True, blank=True)
 
-
-class item_transactions(models.Model):
+class item_transactions(models.Model): 
     transaction_id = models.AutoField(primary_key=True)
     user = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True)
     timestamp = models.DateTimeField(null=True, blank=True)
@@ -194,3 +191,31 @@ class item_transactions(models.Model):
 
     def __str__(self):
         return f"Transaction {self.transaction_id}"
+
+
+# borrowing
+class borrow_info(models.Model):
+    borrow_id = models.AutoField(primary_key=True)
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='borrowed_by')
+    request_date = models.DateTimeField(null=True, blank=True)
+    borrow_date = models.DateField(null=True, blank=True)
+    due_date = models.DateField(null=True, blank=True)
+    # class_id = models.ForeignKey('Class', on_delete=models.SET_NULL, null=True, blank=True)
+    # faculty_id = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='faculty')
+    status = models.CharField(max_length=1, null=True, blank=True)
+
+    def __str__(self):
+        return f"Borrow Info {self.borrow_id}"
+
+class borrowed_items(models.Model):
+    borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE)
+    item = models.ForeignKey('item_description', on_delete=models.CASCADE)
+    qty = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        unique_together = (('borrow', 'item'),)
+
+    def __str__(self):
+        return f"Borrowed Item {self.borrow_id} - {self.item_id}"
+

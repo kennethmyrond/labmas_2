@@ -8,11 +8,11 @@
     <nav>
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'inventory_view'%}">View Inventory</a></li>
-        <li class="breadcrumb-item active"><a href="{% url 'inventory_itemDetails_view' item.item_id%}">Item Details</a></li>
-        <li class="breadcrumb-item active">Physical Count</li>
+        <li class="breadcrumb-item active"><a href="{% url 'inventory_itemDetails_view' item.item_id %}">Item Details</a></li>
+        <li class="breadcrumb-item active">Edit Item</li>
       </ol>
     </nav>
-  </div>
+</div>
 
 <section class="section">
     <div class="row">
@@ -22,16 +22,35 @@
                     <h5 class="card-title">Edit Item Details</h5>
                     <form method="POST">
                         {% csrf_token %}
-                        {{ form.as_p }} <!-- Render the main form fields -->
-                        
+                        {{ form.as_p }} <!-- Main form fields -->
+
                         <h6>Additional Columns:</h6>
                         <div class="additional-columns">
                             {% for label, value in add_cols_data.items %}
-                                <div style="padding-left: 20px;">  <!-- Indentation for clarity -->
+                                <div style="padding-left: 20px;">  <!-- Indent the additional columns -->
                                     <strong>{{ label }}:</strong>
                                     <input type="text" name="{{ label }}" value="{{ value }}" class="form-control">
                                 </div>
                             {% endfor %}
+                        </div>
+
+                        <h6>Item Settings:</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="recExpiration" name="rec_expiration" {% if item.rec_expiration %}checked{% endif %}>
+                            <label class="form-check-label" for="recExpiration">Requires Expiration Date</label>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="disableAlertQty" name="disable_alert_qty" {% if is_alert_disabled %}checked{% endif %} onchange="toggleAlertQtyField()">
+                            <label class="form-check-label" for="disableAlertQty">Disable Alert Quantity</label>
+                        </div>
+
+                        <!-- Only show the alert quantity field if it's not disabled -->
+                        <div class="row mb-3" id="alertQtyField" {% if is_alert_disabled %}style="display: none;"{% endif %}>
+                            <label for="alertQty" class="col-sm-2 col-form-label">Alert Quantity:</label>
+                            <div class="col-sm-10">
+                                <input type="number" class="form-control" id="alertQty" name="alert_qty" value="{{ item.alert_qty }}">
+                            </div>
                         </div>
 
                         <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -42,5 +61,18 @@
         </div>
     </div>
 </section>
+
+<script>
+    // Toggle visibility of the alert quantity field based on the checkbox
+    function toggleAlertQtyField() {
+        const alertQtyField = document.getElementById('alertQtyField');
+        const disableAlertQty = document.getElementById('disableAlertQty');
+        if (disableAlertQty.checked) {
+            alertQtyField.style.display = 'none';
+        } else {
+            alertQtyField.style.display = 'block';
+        }
+    }
+</script>
 
 {% endblock %}

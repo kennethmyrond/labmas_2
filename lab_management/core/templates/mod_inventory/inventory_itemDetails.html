@@ -117,7 +117,7 @@
               {% for handling in inventory.item_handling_set.all %}
               <tr>
                 <!-- Quantity (positive or negative) -->
-                <td class="{% if  handling.changes == 'A' %}qty-positive {% else %}qty-negative{% endif %}">
+                <td class="{% if  handling.changes == 'A' %}qty-positive {% else %}qty-negative{% endif %}" text-align="left" >
                   {% if handling.changes == 'A' %}
                     +{{ handling.qty }}
                   {% else %}
@@ -125,8 +125,8 @@
                   {% endif %}
                 </td>
                 <td>
-                  {% if handling.updatedon %}
-                    {{ handling.updatedon|date:"Y-m-d H:i" }}
+                  {% if handling.updated_on %}
+                    {{ handling.updated_on|date:"Y-m-d H:i" }}
                   {% else %}
                     N/A
                   {% endif %}
@@ -134,8 +134,10 @@
                 <td>
                   {% if handling.changes == 'A' %}
                     Add to inventory
-                  {% else %}
+                  {% elif handling.changes == 'R' %}
                     remove from inventory
+                  {% elif handling.changes == 'P' or handling.changes == 'Y' %}
+                    Physical Count Adjustment
                   {% endif %}
                 </td>
                 <td>

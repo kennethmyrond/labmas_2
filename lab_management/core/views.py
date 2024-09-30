@@ -8,13 +8,10 @@ from django import forms
 from django.http import HttpResponse, JsonResponse
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
-import json
-from django.http import JsonResponse
-import qrcode
+import json, qrcode, base64
 from pyzbar.pyzbar import decode
 from PIL import Image 
 from io import BytesIO
-import base64
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
 # functions
@@ -66,7 +63,7 @@ def suggest_suppliers(request):
 
     return JsonResponse(data, safe=False)
 
-def remove_item_from_inventory(item_inventory_instance, qty, user):
+def remove_item_from_inventory(item_inventory_instance, qty, user, changes):
     if item_inventory_instance.qty >= int(qty):
         item_inventory_instance.qty -= int(qty)
         item_inventory_instance.save()
@@ -76,7 +73,7 @@ def remove_item_from_inventory(item_inventory_instance, qty, user):
             inventory_item=item_inventory_instance,
             updated_on=timezone.now(),
             updated_by=user,
-            changes='R',
+            changes=changes,
             qty=qty,
         )
     else:
@@ -348,7 +345,7 @@ def inventory_updateItem_view(request):
 
                 if item_inventory_instance.qty >= remaining_amount:
                     try:
-                        remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user)
+                        remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'R')
                         remaining_amount = 0
                     except ValueError as e:
                         print(e)
@@ -356,7 +353,7 @@ def inventory_updateItem_view(request):
                 else:
                     try:
                         remaining_amount = remaining_amount - int(item_inventory_instance.qty)
-                        remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user)
+                        remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'R')
                     except ValueError as e:
                         print(e)
                         break
@@ -388,25 +385,41 @@ def inventory_itemEdit_view(request, item_id):
     if request.method == 'POST':
         form = ItemEditForm(request.POST, instance=item)
         
+        # Handle additional form fields (rec_expiration, alert_qty)
+        rec_expiration = request.POST.get('rec_expiration', 'off') == 'on'  # True if checked, False if not
+        alert_qty_disabled = request.POST.get('disable_alert_qty', 'off') == 'on'  # Is alert_qty disabled?
+
         if form.is_valid():
+            # Save the main form fields
             form.save()
-            # Update the additional columns
+
+            # Update additional columns
             for label in add_cols_data.keys():
-                add_cols_data[label] = request.POST.get(label, '')  # Get the updated value or set to empty
+                add_cols_data[label] = request.POST.get(label, '')
             
-            # Save the updated add_cols data back to the item
             item.add_cols = json.dumps(add_cols_data)
-            item.save()
             
-            return redirect('inventory_itemDetails_view', item_id=item_id)  # Redirect to item details after saving
+            # Handle rec_expiration and alert_qty logic
+            item.rec_expiration = rec_expiration
+            if alert_qty_disabled:
+                item.alert_qty = 0  # If disabled, set alert_qty to 0
+            else:
+                item.alert_qty = request.POST.get('alert_qty', item.alert_qty)  # Update alert_qty if not disabled
+            
+            # Save the item
+            item.save()
+
+            return redirect('inventory_itemDetails_view', item_id=item_id)
     else:
         form = ItemEditForm(instance=item)
 
     return render(request, 'mod_inventory/inventory_itemEdit.html', {
         'form': form,
         'item': item,
-        'add_cols_data': add_cols_data,  # Pass the add_cols_data to the template
+        'add_cols_data': add_cols_data,
+        'is_alert_disabled': item.alert_qty == 0,  # Alert if disabled
     })
+
 
 def inventory_itemDelete_view(request, item_id):
     if not request.user.is_authenticated:
@@ -433,17 +446,14 @@ def inventory_itemDelete_view(request, item_id):
 
     return render(request, 'mod_inventory/inventory_itemDelete.html', context)
 
+
 def inventory_physicalCount_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
     
     # Get the selected laboratory from the session
     selected_laboratory_id = request.session.get('selected_lab')
-
-    # Get all item types for the selected laboratory
     item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
-
-    # Get the selected item_type from the GET parameters
     selected_item_type = request.GET.get('item_type')
     current_user = get_object_or_404(user, user_id=request.user.id)
 
@@ -455,70 +465,103 @@ def inventory_physicalCount_view(request):
             is_disabled=0
         ).annotate(total_qty=Sum('item_inventory__qty'))
     else:
-        inventory_items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=0).annotate(total_qty=Sum('item_inventory__qty'))
-
+        inventory_items = item_description.objects.filter(
+            laboratory_id=selected_laboratory_id, 
+            is_disabled=0
+        ).annotate(total_qty=Sum('item_inventory__qty'))
+    
+    # Check if the form is submitted
     if request.method == "POST":
         for item in inventory_items:
-            count_qty = int(request.POST.get(f'count_qty_{item.item_id}'))  # Get the count qty from the form
-            current_qty = item.total_qty  # total qty from item_inventory
+            c_qty = request.POST.get(f'count_qty_{item.item_id}')
+            print(f'Item ID: {item.item_id}, Count Qty: {c_qty}')  # For debugging
+            
+            # Ensure the count_qty is not None and convert it to an integer
+            if c_qty is not None and c_qty != '':
+                count_qty = int(c_qty)  # Get the count qty from the form
+                current_qty = item.total_qty or 0  # total qty from item_inventory
 
-            # Step 3: If there's a discrepancy, create a new item_inventory record
-            if count_qty != current_qty:
-                discrepancy_qty = count_qty - current_qty
+                if count_qty != current_qty:
+                    discrepancy_qty = count_qty - current_qty
 
-                item_inventory_queryset = item_inventory.objects.filter(
-                item=item,
-                qty__gt=0
-                ).annotate(
-                    expired_date=F('item_expirations__expired_date')
-                ).order_by('expired_date')
+                    # If discrepancy_qty is positive, add items to the inventory
+                    if discrepancy_qty > 0:
+                        # Add the discrepancy_qty to the item
+                        item_inventory_instance = item_inventory.objects.create(
+                            item=item,
+                            qty=discrepancy_qty,
+                            date_purchased=timezone.now(),
+                            date_received=timezone.now(),
+                            remarks="Physical count adjustment",
+                            supplier=None  # Supplier can be left as None for physical adjustments
+                        )
+                        # Log this addition in item_handling
+                        item_handling.objects.create(
+                            inventory_item=item_inventory_instance,
+                            updated_on=timezone.now(),
+                            updated_by=current_user,
+                            changes='Y',  # A for Add
+                            qty=discrepancy_qty
+                        )
 
-                # Initialize the amount to be removed
-                remaining_amount = discrepancy_qty
+                    # If discrepancy_qty is negative, remove items from the inventory
+                    elif discrepancy_qty < 0:
+                        remaining_amount = abs(discrepancy_qty)  # Calculate how many items to remove
 
-                # Iterate through the queryset and deduct the quantity
-                for item_inventory_instance in item_inventory_queryset:
-                    if remaining_amount <= 0:
-                        break
+                        # Query item_inventory instances with positive qty and order by expiration date (if any)
+                        item_inventory_queryset = item_inventory.objects.filter(
+                            item=item,
+                            qty__gt=0
+                        ).annotate(
+                            expired_date=F('item_expirations__expired_date')
+                        ).order_by('expired_date')
 
-                    if item_inventory_instance.qty >= remaining_amount:
-                        try:
-                            remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user)
-                            remaining_amount = 0
-                        except ValueError as e:
-                            print(e)
-                            break
-                    else:
-                        try:
-                            remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user)
-                            remaining_amount -= item_inventory_instance.qty
-                        except ValueError as e:
-                            print(e)
-                            break
+                        item_description_instance = get_object_or_404(item_description, item_id=item.item_id)
+                        if item_description_instance.rec_expiration == 1:
+                            item_inventory_queryset = item_inventory.objects.filter(
+                                item=item_description_instance,
+                                qty__gt=0
+                            ).annotate(
+                                expired_date=F('item_expirations__expired_date')
+                            ).order_by('expired_date')
+                        else:
+                            item_inventory_queryset = item_inventory.objects.filter(
+                                item=item_description_instance,
+                                qty__gt=0
+                            ).order_by('inventory_item_id')
 
-                # Create a new item_inventory record for the discrepancy
-                # item_handling.objects.create(
-                #     item=item,
-                #     supplier=None,  # Set the supplier as None since it's not relevant for the physical count
-                #     date_purchased=None,  # Optional; set to None for now
-                #     date_received=None,  # Optional; set to None for now
-                #     purchase_price=None,  # Optional; set to None for now
-                #     remarks="physcount",  # Remark as "physcount"
-                #     qty=discrepancy_qty,  # Record the difference
-                # )
+                        # Iterate through item_inventory instances to remove the items
+                        for item_inventory_instance in item_inventory_queryset:
+                            if remaining_amount <= 0:
+                                break
 
-                # Step 4: Update the item_description.qty with the new count qty
-                item.qty = count_qty
-                item.save()
+                            if item_inventory_instance.qty >= remaining_amount:
+                                try:
+                                    remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'P')
+                                    remaining_amount = 0
+                                except ValueError as e:
+                                    print(e)
+                                    break
+                            else:
+                                try:
+                                    remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'P')
+                                    remaining_amount -= item_inventory_instance.qty
+                                except ValueError as e:
+                                    print(e)
+                                    break
 
-        # Redirect to the inventory view after saving the counts
-        return redirect('inventory_view')
+                    # Step 4: Update the item_description.qty with the new count qty
+                    item.qty = count_qty
+                    item.save()
+
+        messages.success(request, 'Physical count saved successfully!')
 
     return render(request, 'mod_inventory/inventory_physicalCount.html', {
         'inventory_items': inventory_items,
         'item_types': item_types_list,
-        'selected_item_type': int(selected_item_type) if selected_item_type else None  # Fix comparison issue
+        'selected_item_type': int(selected_item_type) if selected_item_type else None,
     })
+
 
 def inventory_manageSuppliers_view(request):
     if not request.user.is_authenticated:
@@ -730,6 +773,12 @@ def borrowing_student_viewPreBookRequestsview(request):
 
 def borrowing_student_WalkInRequestsview(request):
     return render(request, 'mod_borrowing/borrowing_studentViewWalkInRequests.html')
+
+def borrowing_labcoord_prebookrequests(request):
+    return render(request, 'mod_borrowing/borrowing_labcoord_prebookrequests.html')
+
+def borrowing_labcoord_borrowconfig(request):
+    return render(request, 'mod_borrowing/borrowing_labcoord_borrowconfig.html')
 
 
 
