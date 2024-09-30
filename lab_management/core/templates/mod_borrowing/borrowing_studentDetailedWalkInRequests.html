@@ -1,0 +1,83 @@
+{% extends 'temp_navbar.html' %}
+{% load socialaccount inventory_extras %}
+{% block title %}View Walk-In Requests{% endblock %}
+
+{% block content %}
+  <div class="pagetitle">
+    <h1>Borrowing</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{%url 'borrowing_studentviewWalkInRequests' %}">View Walk-In Requests</a></li>
+        <li class="breadcrumb-item active">INSERT REFERENCE NUMBER HERE</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+
+  <section class="section">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">INSERT REF NUMBER</h5>
+                    
+                    <!-- General Form Elements -->
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="row mb-3">
+                          <label for="inputDate" class="col-sm-2 col-form-label">Date Requested:</label>
+                          <div class="col-sm-10">
+                            <input type="date" class="form-control" value="2024-09-01" readonly>
+                          </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <label for="inputNumber" class="col-sm-2 col-form-label">Student Name:</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" id="studentname" name="studentname" value="Juan" readonly> 
+                            </div>
+                        </div>
+
+                        
+
+                        <div class="row mb-3">
+                          <label for="inputNumber" class="col-sm-2 col-form-label">Purpose of Borrowing:</label>
+                          <div class="col-sm-10">
+                              <input type="text" class="form-control" id="purpose" name="purpose" value="Thesis" readonly> 
+                          </div>
+                      </div>
+
+                      <!-- Equipment Rows -->
+                      <div id="equipment-rows">
+                        <div class="row mb-3 equipment-row">
+                          <label class="col-sm-2 col-form-label">Equipment</label>
+                          <div class="col-sm-5">
+                            <input type="text" class="form-control" value="Sample Equipment 1" readonly>
+                          </div>
+                          <label for="inputNumber" class="col-sm-1 col-form-label text-end">Qty:</label>
+                          <div class="col-sm-2">
+                            <input type="number" class="form-control" value="2" readonly>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Add hidden fields for extra columns (hidden) -->
+                      <input type="hidden" name="hidden_column_1" value="Extra Value 1">
+                      <input type="hidden" name="hidden_column_2" value="Extra Value 2">
+                      
+                      <div class="row mb-3">
+                        <label for="inputNumber" class="col-sm-2 col-form-label">Add Attachment:</label>
+                        <div class="col-sm-10">
+                          <input class="form-control" type="file" id="formFile" disabled>
+                        </div>
+                      </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+{% endblock %}

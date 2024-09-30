@@ -29,7 +29,7 @@
                         <div class="row mb-3">
                         <label for="inputDate" class="col-sm-2 col-form-label">Date Requested:</label>
                         <div class="col-sm-10">
-                          <input type="date" class="form-control" value="Read only / Disabled" disabled>
+                          <input type="date" class="form-control" value="Read only / Disabled" readonly>
                         </div>
                       </div>
 
@@ -49,26 +49,34 @@
                             </select>
                           </div>
                         </div>
-
-                        <!-- Hidden date inputs for Long-Term Borrowing -->
-                        <div class="row mb-3 d-none" id="long-term-dates">
+                       <!-- One-day borrowing date -->
+                        <div class="row mb-3 d-none" id="one-day-date">
                           <div class="col-sm-6">
-                            <label for="from-date" class="col-form-label">Date Needed (From):</label>
-                            <input type="date" class="form-control" id="from-date" name="from_date">
-                          </div>
-                          <div class="col-sm-6">
-                            <label for="to-date" class="col-form-label">Date Needed (To):</label>
-                            <input type="date" class="form-control" id="to-date" name="to_date">
+                              <label for="one-day-booking-date" class="col-form-label">Date for One-Day Borrowing:</label>
+                              <input type="date" class="form-control" id="one-day-booking-date" name="one_day_booking_date">
                           </div>
                         </div>
 
+                        <!-- Long-term borrowing dates -->
+                        <div class="row mb-3 d-none" id="long-term-dates">
+                          <div class="col-sm-6">
+                              <label for="from-date" class="col-form-label">Date for Booking (From):</label>
+                              <input type="date" class="form-control" id="from-date" name="from_date">
+                          </div>
+                          <div class="col-sm-6">
+                              <label for="to-date" class="col-form-label">Date for Booking (To):</label>
+                              <input type="date" class="form-control" id="to-date" name="to_date">
+                          </div>
+                        </div>
+
+                        
                         <div class="row mb-3">
                           <label for="inputNumber" class="col-sm-2 col-form-label">Purpose of Borrowing:</label>
                           <div class="col-sm-10">
-                              <input type="number" class="form-control" id="purpose" name="purpose"> 
+                              <input type="text" class="form-control" id="purpose" name="purpose" > 
                           </div>
                       </div>
-
+                      
                       <!-- Equipment Rows -->
                       <div id="equipment-rows">
                         <div class="row mb-3 equipment-row">
@@ -89,13 +97,16 @@
                           </div>
                         </div>
                       </div>
-                      
+
+                    
                       <!-- Add Equipment Button -->
                       <div class="row mb-3">
                         <div class="col-sm-10">
                           <button type="button" id="add-equipment-btn" class="btn btn-primary">Add Equipment</button>
                         </div>
                       </div>
+
+
 
                       <div class="row mb-3">
                         <label for="inputNumber" class="col-sm-2 col-form-label">Add Attachment:</label>
@@ -112,18 +123,33 @@
 </section>
 
 <script>
+
   document.addEventListener('DOMContentLoaded', function () {
     const borrowingTypeSelect = document.getElementById('borrowing-type');
     const longTermDatesRow = document.getElementById('long-term-dates');
+    const oneDayDateRow = document.getElementById('one-day-date');
     
-    // Show/Hide the long-term date inputs based on selection
-    borrowingTypeSelect.addEventListener('change', function () {
-      if (this.value === 'longterm') {
-        longTermDatesRow.classList.remove('d-none');
-      } else {
-        longTermDatesRow.classList.add('d-none');
-      }
-    });
+    // Function to toggle visibility based on selected borrowing type
+    function toggleDateInputs() {
+        if (borrowingTypeSelect.value === 'longterm') {
+            longTermDatesRow.classList.remove('d-none'); // Show long-term date input
+            oneDayDateRow.classList.add('d-none');      // Hide one-day date input
+        } else if (borrowingTypeSelect.value === 'oneday') {
+            oneDayDateRow.classList.remove('d-none');   // Show one-day date input
+            longTermDatesRow.classList.add('d-none');   // Hide long-term date input
+        }
+    }
+
+    // Run the function on page load to ensure the correct date input is shown
+    toggleDateInputs();
+
+    // Add event listener to toggle date inputs on change
+    borrowingTypeSelect.addEventListener('change', toggleDateInputs);
+});
+
+
+
+  
 
 
     const equipmentRowsContainer = document.getElementById('equipment-rows');
@@ -183,7 +209,7 @@
     });
 
     updateDeleteButtons();
-  });
+ 
 </script>
 
 {% endblock %}
