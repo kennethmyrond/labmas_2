@@ -171,7 +171,7 @@
     <ul class="sidebar-nav" id="sidebar-nav">
 
       <li class="nav-item">
-        <a class="nav-link collapsed" href="{%url 'superuser_setup'%}">
+        <a class="nav-link {% if request.resolver_match.url_name in 'superuser_setup' %}active{% else %}collapsed{% endif %}" href="{%url 'superuser_setup'%}">
           <i class="bi bi-grid"></i>
           <span>Setup</span>
         </a>
