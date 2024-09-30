@@ -1,10 +1,87 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>View Pre-Book Requests</title>
-</head>
-<body>
+{% extends 'temp_navbar.html' %}
+{% load socialaccount inventory_extras %}
+{% block title %}View Pre-Book Requests{% endblock %}
 
-</body>
-</html>
+{% block content %}
+  <div class="pagetitle">
+    <h1>Borrowing</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item active">View Pre-Book Requests</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+
+        <div class="card">
+          <div class="card-body">
+           
+            <!-- Table with stripped rows -->
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>RF Number</th>
+                  <th data-type="date" data-format="YYYY/DD/MM">Date Requested</th>
+                  <th data-type="date" data-format="YYYY/DD/MM">Date Needed</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Action</th> 
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1000</td>
+                  <td>2005/02/11</td>
+                  <td>2005/02/12</td>
+                  <td>Long-Term</td>
+                  <td>Approved</td>
+                  <td></td> 
+                </tr>
+                <tr>
+                  <td>1001</td>
+                  <td>2005/02/15</td>
+                  <td>2005/02/17</td>
+                  <td>Long-Term</td>
+                  <td>Borrowed</td>
+                  <td></td> 
+                </tr>
+                <tr>
+                  <td>1002</td>
+                  <td>2005/04/16</td>
+                  <td>2005/02/23</td>
+                  <td>One-Day</td>
+                  <td>Pending</td>
+                  <td class="action-cell"> 
+                    <button class="btn btn-danger btn-sm custom-cancel-btn" onclick="cancelRequest(1002)">Cancel</button>
+                  </td> <!-- Cancel button for Pending -->
+                </tr>
+              </tbody>
+            </table>
+            <!-- End Table with stripped rows -->
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+<script>
+  function cancelRequest(rfNumber) {
+    // Add your cancellation logic here (e.g., make an AJAX request to cancel the booking)
+    alert('Cancel request for RF Number: ' + rfNumber);
+  }
+</script>
+
+<style>
+
+  .custom-cancel-btn {
+    padding: 0.2rem 0.5rem; 
+    font-size: 0.75rem; 
+  }
+</style>
+
+{% endblock %}

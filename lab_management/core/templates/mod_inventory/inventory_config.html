@@ -17,7 +17,12 @@
         background-color: white;
     }
     #deletebtn {
-        color: red;
+        background: red;
+        border: 0;
+        padding: 10px 20px;
+        color: #fff;
+        transition: 0.4s;
+        border-radius: 4px;
     }
     #deletebtn:hover {
         text-decoration: underline;
@@ -176,7 +181,7 @@
                                     <table class="entrytable" id="attributesTable">
                                         <tr class="defaultattribute"><td>Item Name</td><td></td></tr>
                                         <tr class="defaultattribute"><td>Type</td><td></td></tr>
-                                        <tr class="defaultattribute"><td>Amount</td><td></td></tr>
+                                        <tr class="defaultattribute"><td>Unit</td><td></td></tr>
                                         <tr class="defaultattribute"><td>Dimension</td><td></td></tr>
 
                                         {% for attribute in attributes %}
