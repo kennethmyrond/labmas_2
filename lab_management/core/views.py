@@ -160,7 +160,7 @@ def inventory_view(request):
     else:
         inventory_items = item_description.objects.filter(
             laboratory_id=selected_laboratory_id,
-            is_disabled=0  # Only get items that are enabled 
+            is_disabled=0  # Only get items that are enabled
         ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
         add_cols = []
 
@@ -730,12 +730,6 @@ def borrowing_student_viewPreBookRequestsview(request):
 
 def borrowing_student_WalkInRequestsview(request):
     return render(request, 'mod_borrowing/borrowing_studentViewWalkInRequests.html')
-
-def borrowing_labcoord_prebookrequests(request):
-    return render(request, 'mod_borrowing/borrowing_labcoord_prebookrequests.html')
-
-def borrowing_labcoord_borrowconfig(request):
-    return render(request, 'mod_borrowing/borrowing_labcoord_borrowconfig.html')
 
 
 

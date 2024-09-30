@@ -80,14 +80,14 @@
                 <div class="card-body">
                     
                     <!-- ADD CATEGORY -->
-                    <h5 class="card-title">Add Category</h5>
+                    <h5 class="card-title">Add Item Type</h5>
                     <form id="updateForm" method="POST" action="{% url 'add_category' %}">
                         {% csrf_token %}
                         <div id="form-container">
                             <div class="form-set">
                                 <div id="flexbox">
                                     <div class="row mb-3" id="inputbox">
-                                        <label for="category" class="col-sm-2 col-form-label">Category:</label>
+                                        <label for="category" class="col-sm-2 col-form-label">Item Type:</label>
                                         <div class="col-sm-10">
                                             <input type="text" class="form-control" name="category" id="category" required>
                                         </div>
@@ -120,13 +120,13 @@
                     <hr>
 
                     <!-- ADD COLUMNS -->
-                    <h5 class="card-title">Add Category Attributes</h5>
+                    <h5 class="card-title">Add Item Type Attributes</h5>
                     <form id="attributeForm" method="POST" action="{% url 'add_attributes' %}">
                         {% csrf_token %}
                         <div id="form-container">
                             <div class="form-set">
                                 <div class="row mb-3">
-                                    <label for="categorySelect" class="col-sm-2 col-form-label">Category:</label>
+                                    <label for="categorySelect" class="col-sm-2 col-form-label">Item Type:</label>
                                     <div class="col-sm-10">
                                         <select class="form-select" id="categorySelect" name="category" required>
                                             {% for category in categories %}
