@@ -204,6 +204,7 @@ class borrow_info(models.Model):
     # class_id = models.ForeignKey('Class', on_delete=models.SET_NULL, null=True, blank=True)
     # faculty_id = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='faculty')
     status = models.CharField(max_length=1, null=True, blank=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"Borrow Info {self.borrow_id}"
