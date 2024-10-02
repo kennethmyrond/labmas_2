@@ -1,6 +1,132 @@
-<html>
-    <head><title>Lab Coord Pre Book Requests</title></head>
-    <body>
-        <h1>pre book request lab coord</h1>
-    </body>
-</html>
+{% extends 'temp_navbar.html' %}
+{% block title %}Pre-Book Requests{% endblock %}
+
+{% block content %}
+  <style>
+    #approve{
+      background-color: rgb(108, 193, 108);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-right: 5px;
+    }
+    #reject{
+      background-color: rgb(199, 75, 75);
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    #approve:hover{
+      background-color: rgb(80, 160, 80);
+    }
+    #reject:hover{
+      background-color: rgb(179, 61, 61);
+    }
+  </style>
+
+  <div class="pagetitle">
+    <h1>Borrowing</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Pre-Book Requests</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Pre-Book Requests</h5>
+
+            <!-- Dropdown to select item_type -->
+            <form method="GET" id="itemTypeForm">
+              <div class="row mb-3">
+                <label for="item_type" class="col-sm-2 col-form-label">Filter Status:</label>
+                <div class="col-sm-10">
+                  <select class="form-select" id="item_type" name="item_type" onchange="document.getElementById('itemTypeForm').submit()">
+                    <option value="">All</option>
+                  </select>
+                </div>
+              </div>
+            </form>
+
+            <!-- Table with stripped rows -->
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Date of Request</th>
+                  <th>Date for Booking</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>RF111111</td>
+                  <td>Dela Cruz, Juan</td>
+                  <td>2023-12-12</td>
+                  <td>2024-01-12</td>
+                  <td>Short-Term</td>
+                  <td>Pending</td>
+                  <td>
+                    <table id="actionstable">
+                      <tr>
+                        <td><button class="btn1" id="approve">Approve</button></td>
+                        <td><button class="btn1" id="reject">Reject</button></td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <!--approved-->
+                <tr>
+                  <td>RF111112</td>
+                  <td>Dela Crooz, Two</td>
+                  <td>2023-08-09</td>
+                  <td>2024-08-12</td>
+                  <td>Long-Term</td>
+                  <td style="color:green">Approved</td>
+                  <td>
+                    <table id="actionstable">
+                      <tr>
+                        <td style="display:none"><button class="btn1" id="approve">Approve</button></td>
+                        <td style="display:none"><button class="btn1" id="reject">Reject</button></td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <!--rejected-->
+                <tr>
+                  <td>RF111113</td>
+                  <td>Cruz, Jan</td>
+                  <td>2023-04-12</td>
+                  <td>2024-04-17</td>
+                  <td>Short-Term</td>
+                  <td style="color:red">Rejected</td>
+                  <td>
+                    <table id="actionstable">
+                      <tr>
+                        <td style="display:none"><button class="btn1" id="approve">Approve</button></td>
+                        <td style="display:none"><button class="btn1" id="reject">Reject</button></td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <!-- End Table with stripped rows -->
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+{% endblock %}
