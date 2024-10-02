@@ -1,6 +1,73 @@
-<html>
-    <head><title>Lab Coord Borrowing Configuration</title></head>
-    <body>
-        <h1>Borrowing Configuration</h1>
-    </body>
-</html>
+{% extends 'temp_navbar.html' %}
+{% block title %}Pre-Book Requests{% endblock %}
+
+{% block content %}
+  <style>
+    .btncontainer{
+     text-align: right;
+    }
+  </style>
+
+  <div class="pagetitle">
+    <h1>Borrowing</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Borrowing Configurations</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Configurations</h5>
+
+            <!-- Dropdown to select item_type -->
+            <form method="GET" id="configForm">
+              <div class="row mb-3">
+                <label for="walkin" class="col-sm-2 col-form-label">Allow Walk-Ins:</label>
+                <div class="col-sm-10">
+                  <input type="checkbox" id="walkin" name="walkin" value="1">
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="prebook" class="col-sm-2 col-form-label">Allow Pre-Booking:</label>
+                <div class="col-sm-10">
+                  <input type="checkbox" id="prebook" name="prebook" value="1">
+                </div>
+                <div class="col-sm-10" style="margin-left:3%;">
+                  <label for="leadtime" class="col-sm-2 col-form-label">Set Lead Time:</label>
+                  <input type="time" id="leadtime" name="leadtime">
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="shortterm" class="col-sm-2 col-form-label">Allow Short-Term Booking:</label>
+                <div class="col-sm-10">
+                  <input type="checkbox" id="shortterm" name="shortterm" value="1">
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="longterm" class="col-sm-2 col-form-label">Allow Long-Term Booking:</label>
+                <div class="col-sm-10">
+                  <input type="checkbox" id="longterm" name="longterm" value="1">
+                </div>
+              </div>
+
+              <div class="btncontainer">
+                <button class="btn btn-primary" id="savebtn">Save</button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+{% endblock %}
