@@ -6,6 +6,7 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('set_lab/<int:laboratory_id>/', views.set_lab, name='set_lab'),
     path('logout/', views.logout_view, name='logout'),  # Added trailing slash
+    path('error/', views.error_page, name='error_page'),
 
     # inventory
     path('inventory/', views.inventory_view, name='inventory_view'),

@@ -6,10 +6,10 @@ from django.contrib import messages
 from django.db.models import Q, Sum , Prefetch, F
 from django.utils import timezone
 from django import forms
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
-from .models import borrow_info, borrowed_items
+from .models import borrow_info, borrowed_items, borrowing_config
 import json, qrcode, base64
 from pyzbar.pyzbar import decode
 from PIL import Image 
@@ -116,6 +116,8 @@ class ItemEditForm(forms.ModelForm):
 
 
 # views
+
+# misc views
 def userlogin(request):
     return render(request,"user_login.html")
 
@@ -133,6 +135,16 @@ def set_lab(request, laboratory_id):
 def logout_view(request):
     logout(request)
     return redirect("/login")
+
+
+def error_page(request, message=None):
+    """
+    Renders a generic error page.
+    :param request: HTTP request
+    :param message: The error message to display (optional)
+    """
+    return render(request, 'error_page.html', {'message': message})
+
 
 def inventory_view(request):
     if not request.user.is_authenticated:
@@ -763,60 +775,67 @@ def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
 
 def borrowing_student_prebookview(request):
-    laboratory_id = request.session.get('selected_lab')
-    user_id = request.user.id
+    try:
+        laboratory_id = request.session.get('selected_lab')
+        user_id = request.user.id
+        lab = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
+        if not lab.allow_prebook:
+            return render(request, 'error_page.html', {'message': 'Pre-booking is not allowed for this laboratory.'})
 
-    if request.method == 'POST':
-        # Fetch necessary data from the form
-        borrowing_type = request.POST.get('borrowing-type')
-        one_day_date = request.POST.get('one_day_booking_date')
-        from_date = request.POST.get('from_date')
-        to_date = request.POST.get('to_date')
-        purpose = request.POST.get('purpose')
 
-        # Set request date to the current date and time
-        request_date = timezone.now()
+        if request.method == 'POST':
+            # Fetch necessary data from the form
+            borrowing_type = request.POST.get('borrowing-type')
+            one_day_date = request.POST.get('one_day_booking_date')
+            from_date = request.POST.get('from_date')
+            to_date = request.POST.get('to_date')
+            purpose = request.POST.get('purpose')
 
-        # Determine borrow and due dates based on borrowing type
-        if borrowing_type == 'oneday':
-            borrow_date = one_day_date
-            due_date = one_day_date
-        else:
-            borrow_date = from_date
-            due_date = to_date
+            # Set request date to the current date and time
+            request_date = timezone.now()
 
-        # Insert into core_borrow_info
-        borrow_entry = borrow_info.objects.create(
-            laboratory_id=laboratory_id,
-            user_id=user_id,
-            request_date=request_date,
-            borrow_date=borrow_date,
-            due_date=due_date,
-            status='P',  # Set initial status to 'Pending'
-        )
+            # Determine borrow and due dates based on borrowing type
+            if borrowing_type == 'oneday':
+                borrow_date = one_day_date
+                due_date = one_day_date
+            else:
+                borrow_date = from_date
+                due_date = to_date
 
-        # Process equipment details
-        equipment_rows = request.POST.getlist('equipment')  # List of equipment items
-        quantities = request.POST.getlist('quantity')       # Corresponding quantities
-
-        for i, item_id in enumerate(equipment_rows):
-            quantity = int(quantities[i])
-
-            # Fetch the item from core_item_description
-            item = item_description.objects.get(item_id=item_id)
-
-            # Insert the item into borrowed_items table
-            borrowed_items.objects.create(
-                borrow=borrow_entry,
-                item=item,
-                qty=quantity
+            # Insert into core_borrow_info
+            borrow_entry = borrow_info.objects.create(
+                laboratory_id=laboratory_id,
+                user_id=user_id,
+                request_date=request_date,
+                borrow_date=borrow_date,
+                due_date=due_date,
+                status='P',  # Set initial status to 'Pending'
             )
 
-        return redirect('borrowing_studentviewPreBookRequests')
+            # Process equipment details
+            equipment_rows = request.POST.getlist('equipment')  # List of equipment items
+            quantities = request.POST.getlist('quantity')       # Corresponding quantities
 
-    # Fetch the current date and all equipment items including chemicals
-    current_date = timezone.now().date()
-    equipment_list = item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1)  # No exclusion, show all items
+            for i, item_id in enumerate(equipment_rows):
+                quantity = int(quantities[i])
+                # Fetch the item from core_item_description
+                item = item_description.objects.get(item_id=item_id)
+                # Insert the item into borrowed_items table
+                borrowed_items.objects.create(
+                    borrow=borrow_entry,
+                    item=item,
+                    qty=quantity
+                )
+
+            return redirect('borrowing_studentviewPreBookRequests')
+
+        # Fetch the current date and all equipment items including chemicals
+        current_date = timezone.now().date()
+        equipment_list = item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1)  # No exclusion, show all items
+    except Http404:
+        # If the laboratory is not found, render the error page with a different message
+        return render(request, 'error_page.html', {'message': 'The laboratory was not found.'})
+
 
     return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
         'current_date': current_date,
@@ -827,6 +846,10 @@ def borrowing_student_walkinview(request):
         # Get session details
     laboratory_id = request.session.get('selected_lab')
     user_id = request.user.id
+
+    lab = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
+    if not lab.allow_walkin:
+       return render(request, 'error_page.html', {'message': 'Walk-ins are not allowed for this laboratory.'})
 
     if request.method == 'POST':
         request_date = timezone.now()
@@ -986,8 +1009,55 @@ def borrowing_labcoord_prebookrequests(request):
         'selected_status': selected_status,  # Pass the selected status to the template
     })
 
+
 def borrowing_labcoord_borrowconfig(request):
-    return render(request, 'mod_borrowing/borrowing_labcoord_borrowconfig.html')
+    selected_laboratory_id = request.session.get('selected_lab')  # Example way to get the lab ID
+
+    # Fetch all active (not disabled) items under the selected laboratory
+    items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
+
+    # Fetch all item types under the selected laboratory
+    item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
+
+    # Fetch the lab's borrowing configuration
+    lab = get_object_or_404(borrowing_config, laboratory_id=selected_laboratory_id)
+
+    if request.method == 'POST':
+        if 'lab_config_form' in request.POST:
+            # Update the lab's borrowing configuration settings
+            lab.allow_walkin = 'allow_walkin' in request.POST
+            lab.allow_prebook = 'allow_prebook' in request.POST
+            lab.prebook_lead_time = request.POST.get('prebook_lead_time') or None
+            lab.allow_shortterm = 'allow_shortterm' in request.POST
+            lab.allow_longterm = 'allow_longterm' in request.POST
+            lab.save()
+            messages.success(request, 'Borrowing configurations updated successfully!')
+            return redirect('borrowing_labcoord_borrowconfig')
+
+        elif 'borrow_config_form' in request.POST:
+            # Handle specific item and item type borrowability updates
+            allowed_items = request.POST.getlist('borrow_item')
+            allowed_item_types = request.POST.getlist('borrow_item_type')
+
+            # Reset borrowability for all items
+            item_description.objects.filter(laboratory_id=selected_laboratory_id).update(allow_borrow=False)
+
+            # Set allow_borrow=True for checked items
+            if allowed_items:
+                item_description.objects.filter(item_id__in=allowed_items).update(allow_borrow=True)
+
+            # Set allow_borrow=True for items under the checked item types
+            if allowed_item_types:
+                item_description.objects.filter(itemType_id__in=allowed_item_types).update(allow_borrow=True)
+
+            messages.success(request, "Borrowing configuration updated successfully!")
+            return redirect('borrowing_labcoord_borrowconfig')
+
+    return render(request, 'mod_borrowing/borrowing_labcoord_borrowconfig.html', {
+        'items': items,
+        'item_types_list': item_types_list,
+        'lab': lab,
+    })
 
 
 

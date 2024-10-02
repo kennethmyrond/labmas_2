@@ -195,6 +195,19 @@ class item_transactions(models.Model):
 
 
 # borrowing
+class borrowing_config(models.Model):
+    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE, primary_key=True, unique=True)
+    
+    # Borrowing configuration fields
+    allow_walkin = models.BooleanField(default=False)  # Walk-ins allowed or not
+    allow_prebook = models.BooleanField(default=False)  # Pre-booking allowed or not
+    prebook_lead_time = models.TimeField(null=True, blank=True)  # Lead time for pre-booking (e.g., 24 hours)
+    allow_shortterm = models.BooleanField(default=True)  # Short-term borrowing allowed
+    allow_longterm = models.BooleanField(default=True)  # Long-term borrowing allowed
+
+    def __str__(self):
+        return self.laboratory
+    
 class borrow_info(models.Model):
     borrow_id = models.AutoField(primary_key=True)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)

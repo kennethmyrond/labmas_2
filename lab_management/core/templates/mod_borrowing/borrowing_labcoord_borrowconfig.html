@@ -17,70 +17,84 @@
     </nav>
   </div><!-- End Page Title -->
 
+  {% if messages %}
+  <div class="alert alert-success">
+    {% for message in messages %}
+      {{ message }}
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
-
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Configurations</h5>
 
-            <!-- Dropdown to select item_type -->
-            <form method="GET" id="configForm">
+            <!-- Form for General Laboratory Configurations -->
+            <form method="POST" id="labConfigForm">
+              {% csrf_token %}
+              <input type="hidden" name="lab_config_form" value="1"> <!-- Hidden input to differentiate forms -->
+
               <div class="row mb-3">
                 <label for="walkin" class="col-sm-2 col-form-label">Allow Walk-Ins:</label>
                 <div class="col-sm-10">
-                  <input type="checkbox" id="walkin" name="walkin" value="1">
+                  <input type="checkbox" id="walkin" name="allow_walkin" value="on" {% if lab.allow_walkin %}checked{% endif %}>
                 </div>
               </div>
 
               <div class="row mb-3">
                 <label for="prebook" class="col-sm-2 col-form-label">Allow Pre-Booking:</label>
                 <div class="col-sm-10">
-                  <input type="checkbox" id="prebook" name="prebook" value="1">
-                </div>
-                <div class="col-sm-10" style="margin-left:3%;">
-                  <label for="leadtime" class="col-sm-2 col-form-label">Set Lead Time:</label>
-                  <input type="time" id="leadtime" name="leadtime">
+                  <input type="checkbox" id="prebook" name="allow_prebook" value="on" {% if lab.allow_prebook %}checked{% endif %} onchange="toggleAlertQty()">
                 </div>
               </div>
-
+              {% if lab.allow_prebook %}
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label">Pre-Booking Lead Time:</label>
+                <div class="col-sm-10">
+                  <input type="number" name="prebook_lead_time" value="{{ lab.prebook_lead_time|default_if_none:'' }}">
+                  <small>Set a lead time for pre-booking (e.g., 24 hours)</small>
+                </div>
+              </div>
+              {% endif %}
               <div class="row mb-3">
                 <label for="shortterm" class="col-sm-2 col-form-label">Allow Short-Term Booking:</label>
                 <div class="col-sm-10">
-                  <input type="checkbox" id="shortterm" name="shortterm" value="1">
+                  <input type="checkbox" id="shortterm" name="allow_shortterm" value="on" {% if lab.allow_shortterm %}checked{% endif %}>
                 </div>
               </div>
 
               <div class="row mb-3">
                 <label for="longterm" class="col-sm-2 col-form-label">Allow Long-Term Booking:</label>
                 <div class="col-sm-10">
-                  <input type="checkbox" id="longterm" name="longterm" value="1">
+                  <input type="checkbox" id="longterm" name="allow_longterm" value="on" {% if lab.allow_longterm %}checked{% endif %}>
                 </div>
               </div>
 
               <div class="btncontainer">
-                <button class="btn btn-primary" id="savebtn-item-type-config">Save</button>
+                <button class="btn btn-primary" id="savebtn-lab-config">Save</button>
               </div>
             </form>
-
           </div>
         </div>
-
       </div>
     </div>
   </section>
 
-  <section class="section">
+  <!-- Form for Borrowing Configuration by Item or Item Type -->
+  <section class="section item-config-section">
     <div class="row">
       <div class="col-lg-12">
-
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Borrowing Mode</h5>
 
-            <!-- Choose between configuration by Item or Item Type -->
-            <form id="borrowingModeForm">
+            <form method="POST" id="borrowConfigForm">
+              {% csrf_token %}
+              <input type="hidden" name="borrow_config_form" value="1"> <!-- Hidden input to differentiate forms -->
+
               <div class="form-group">
                 <label>Select Borrowing Configuration Mode:</label><br>
                 <input type="radio" id="itemMode" name="borrowMode" value="item" checked>
@@ -88,115 +102,76 @@
                 <input type="radio" id="typeMode" name="borrowMode" value="type">
                 <label for="typeMode">By Item Type</label><br>
               </div>
+
+              <!-- Section to configure by specific items -->
+              <section id="itemConfigSection">
+                <h5 class="card-title">Borrowable Items Configurations</h5>
+                <table class="table datatable">
+                  <thead>
+                    <tr>
+                      <th>Item Name</th>
+                      <th>Make Borrowable?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in items %}
+                    <tr>
+                      <td>{{ item.item_name }}</td>
+                      <td>
+                        <input type="checkbox" name="borrow_item" value="{{ item.item_id }}" 
+                               {% if item.allow_borrow %}checked{% endif %}>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </section>
+
+              <!-- Section to configure by item types -->
+              <section id="itemTypeConfigSection" style="display:none;">
+                <h5 class="card-title">Borrowable Item Types Configurations</h5>
+                <table class="table datatable">
+                  <thead>
+                    <tr>
+                      <th>Item Type</th>
+                      <th>Make Borrowable?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for type in item_types_list %}
+                    <tr>
+                      <td>{{ type.itemType_name }}</td>
+                      <td>
+                        <input type="checkbox" name="borrow_item_type" value="{{ type.itemType_id }}">
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </section>
+
+              <div class="btncontainer">
+                <button class="btn btn-primary" id="savebtn-borrow-config">Save</button>
+              </div>
             </form>
-
           </div>
         </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- Section to configure borrowing based on specific items -->
-  <section class="section item-config-section">
-    <div class="row">
-      <div class="col-lg-12">
-
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Borrowable Items Configurations</h5>
-
-            <!-- Table with stripped rows -->
-            <table class="table datatable">
-              <thead>
-                <tr>
-                  <th>Item Name</th>
-                  <th>Make Borrowable?</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Ethanol</td>
-                  <td><input type="checkbox" class="borrow-toggle" data-item-id="ethanol"></td>
-                </tr>
-                <tr>
-                  <td>Beaker</td>
-                  <td><input type="checkbox" class="borrow-toggle" data-item-id="beaker"></td>
-                </tr>
-                <tr>
-                  <td>Ethanol2</td>
-                  <td><input type="checkbox" class="borrow-toggle" data-item-id="ethanol2"></td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="btncontainer">
-              <button class="btn btn-primary" id="savebtn-item-config">Save</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- Section to configure borrowing based on item types -->
-  <section class="section type-config-section" style="display:none;">
-    <div class="row">
-      <div class="col-lg-12">
-
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Borrowable Item Types Configurations</h5>
-
-            <!-- Table with item types -->
-            <table class="table datatable">
-              <thead>
-                <tr>
-                  <th>Item Type</th>
-                  <th>Make Borrowable?</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Chemicals</td>
-                  <td><input type="checkbox" class="borrow-toggle-type" data-type-id="chemicals"></td>
-                </tr>
-                <tr>
-                  <td>Glassware</td>
-                  <td><input type="checkbox" class="borrow-toggle-type" data-type-id="glassware"></td>
-                </tr>
-                <tr>
-                  <td>Electronics</td>
-                  <td><input type="checkbox" class="borrow-toggle-type" data-type-id="electronics"></td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="btncontainer">
-              <button class="btn btn-primary" id="savebtn">Save</button>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   </section>
 
   <script>
-    // JavaScript to toggle between Item and Item Type configuration modes
-    document.getElementById('itemMode').addEventListener('change', function() {
-      if (this.checked) {
-        document.querySelector('.item-config-section').style.display = 'block';
-        document.querySelector('.type-config-section').style.display = 'none';
-      }
-    });
-
-    document.getElementById('typeMode').addEventListener('change', function() {
-      if (this.checked) {
-        document.querySelector('.item-config-section').style.display = 'none';
-        document.querySelector('.type-config-section').style.display = 'block';
-      }
+    // Function to toggle between item and item type config
+    document.querySelectorAll('input[name="borrowMode"]').forEach(function(input) {
+      input.addEventListener('change', function() {
+        if (this.value === 'item') {
+          document.getElementById('itemConfigSection').style.display = 'block';
+          document.getElementById('itemTypeConfigSection').style.display = 'none';
+        } else {
+          document.getElementById('itemConfigSection').style.display = 'none';
+          document.getElementById('itemTypeConfigSection').style.display = 'block';
+        }
+      });
     });
   </script>
 
