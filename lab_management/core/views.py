@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
+from django.db.models.functions import TruncDate
 from django.contrib import messages
 from django.db.models import Q, Sum , Prefetch, F
 from django.utils import timezone
@@ -8,11 +9,13 @@ from django import forms
 from django.http import HttpResponse, JsonResponse
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
+from .models import borrow_info, borrowed_items
 import json, qrcode, base64
 from pyzbar.pyzbar import decode
 from PIL import Image 
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db import connection
 
 # functions
 def get_inventory_history(item_description_instance):
@@ -562,7 +565,6 @@ def inventory_physicalCount_view(request):
         'selected_item_type': int(selected_item_type) if selected_item_type else None,
     })
 
-
 def inventory_manageSuppliers_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -767,20 +769,78 @@ def borrowing_student_prebookview(request):
 
 def borrowing_student_walkinview(request):
     return render(request, 'mod_borrowing/borrowing_studentWalkIn.html')
-
+        # booking requests
 def borrowing_student_viewPreBookRequestsview(request):
-    return render(request, 'mod_borrowing/borrowing_studentViewPreBookRequests.html')
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+
+    current_user = get_object_or_404(user, user_id=request.user.id)
+
+    # Annotate the request date as truncated date (without time) and exclude records where dates match
+    prebook_requests = borrow_info.objects.annotate(
+        truncated_request_date=TruncDate('request_date')
+    ).filter(
+        user=current_user,
+        request_date__isnull=False,
+        borrow_date__isnull=False
+    ).exclude(
+        truncated_request_date=F('borrow_date')
+    ).order_by('-request_date')
+
+    return render(request, 'mod_borrowing/borrowing_studentViewPreBookRequests.html', {
+        'prebook_requests': prebook_requests,
+    })
 
 def borrowing_student_WalkInRequestsview(request):
-    return render(request, 'mod_borrowing/borrowing_studentViewWalkInRequests.html')
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
 
-def borrowing_student_detailedPreBookRequestsview(request):
-    return render(request, 'mod_borrowing/borrowing_studentDetailedPreBookRequests.html')
+    current_user = get_object_or_404(user, user_id=request.user.id)
+
+    # Annotate the request date as truncated date (without time) and exclude records where dates match
+    prebook_requests = borrow_info.objects.annotate(
+        truncated_request_date=TruncDate('request_date')
+    ).filter(
+        user=current_user,
+        request_date__isnull=False,
+        borrow_date__isnull=False
+    ).exclude(
+        truncated_request_date=F('borrow_date')
+    ).order_by('-request_date')
+
+    return render(request, 'mod_borrowing/borrowing_studentViewWalkInRequests.html', {
+        'prebook_requests': prebook_requests,
+    })
+
+def borrowing_student_detailedPreBookRequestsview(request, borrow_id):
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+
+    # Get the borrow_info instance using the borrow_id
+    borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id)
+
+    # Get all the items that were borrowed under this request
+    borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_request)
+
+    return render(request, 'mod_borrowing/borrowing_studentDetailedPreBookRequests.html', {
+        'borrow_request': borrow_request,
+        'borrowed_items': borrowed_items_list,
+    })
 
 def borrowing_student_detailedWalkInRequestsview(request):
-    return render(request, 'mod_borrowing/borrowing_studentDetailedWalkInRequests.html')
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
 
+    # Get the borrow_info instance using the borrow_id
+    borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id)
 
+    # Get all the items that were borrowed under this request
+    borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_request)
+
+    return render(request, 'mod_borrowing/borrowing_studentDetailedWalkInRequests.html', {
+        'borrow_request': borrow_request,
+        'borrowed_items': borrowed_items_list,
+    })
 
 
 def borrowing_labcoord_prebookrequests(request):

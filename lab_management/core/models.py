@@ -121,6 +121,7 @@ class item_description(models.Model):
     add_cols = models.CharField(max_length=45, null=True, blank=True)
     rec_expiration = models.BooleanField(default=False)
     is_disabled = models.BooleanField(default=False)
+    allow_borrow = models.BooleanField(default=False)
     
     def __str__(self):
         return self.item_name
@@ -197,7 +198,7 @@ class item_transactions(models.Model):
 class borrow_info(models.Model):
     borrow_id = models.AutoField(primary_key=True)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='borrowed_by')
+    user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='borrowed_by')
     request_date = models.DateTimeField(null=True, blank=True)
     borrow_date = models.DateField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)

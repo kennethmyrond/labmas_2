@@ -1,5 +1,5 @@
 {% extends 'temp_navbar.html' %}
-{% load socialaccount inventory_extras %}
+{% load socialaccount %}
 {% block title %}View Pre-Book Requests{% endblock %}
 
 {% block content %}
@@ -15,10 +15,8 @@
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
-
         <div class="card">
           <div class="card-body">
-           
             <!-- Table with stripped rows -->
             <table class="table datatable">
               <thead>
@@ -32,39 +30,43 @@
                 </tr>
               </thead>
               <tbody>
+                {% for request in prebook_requests %}
                 <tr>
-                  <td><a href="{%url 'borrowing_studentDetailedPreBookRequests' %}">1000</a></td>
-                  <td>2005/02/11</td>
-                  <td>2005/02/12</td>
-                  <td>Long-Term</td>
-                  <td>Approved</td>
-                  <td></td> 
+                  <td>
+                    <a href="{% url 'borrowing_studentDetailedPreBookRequests' request.borrow_id %}">
+                      {{ request.borrow_id }}
+                    </a>
+                  </td>
+                  <td>{{ request.request_date|date:"Y/m/d" }}</td>
+                  <td>{{ request.borrow_date|date:"Y/m/d" }}</td>
+                  <td>
+                    {% if request.due_date %}
+                      Long-Term
+                    {% else %}
+                      One-Day
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if request.status == 'P' %}
+                      Pending
+                    {% elif request.status == 'A' %}
+                      Approved
+                    {% elif request.status == 'D' %}
+                      Declined
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if request.status == 'P' %}
+                      <button class="btn btn-danger btn-sm custom-cancel-btn" onclick="cancelRequest('{{ request.borrow_id }}')">Cancel</button>
+                    {% endif %}
+                  </td> 
                 </tr>
-                <tr>
-                  <td><a href="{%url 'borrowing_studentDetailedPreBookRequests' %}">1001</a></td>
-                  <td>2005/02/15</td>
-                  <td>2005/02/17</td>
-                  <td>Long-Term</td>
-                  <td>Borrowed</td>
-                  <td></td> 
-                </tr>
-                <tr>
-                 <td><a href="{%url 'borrowing_studentDetailedPreBookRequests' %}">1002</a></td>
-                  <td>2005/04/16</td>
-                  <td>2005/02/23</td>
-                  <td>One-Day</td>
-                  <td>Pending</td>
-                  <td class="action-cell"> 
-                    <button class="btn btn-danger btn-sm custom-cancel-btn" onclick="cancelRequest(1002)">Cancel</button>
-                  </td> <!-- Cancel button for Pending -->
-                </tr>
+                {% endfor %}
               </tbody>
             </table>
             <!-- End Table with stripped rows -->
-
           </div>
         </div>
-
       </div>
     </div>
   </section>
@@ -77,7 +79,6 @@
 </script>
 
 <style>
-
   .custom-cancel-btn {
     padding: 0.2rem 0.5rem; 
     font-size: 0.75rem; 
