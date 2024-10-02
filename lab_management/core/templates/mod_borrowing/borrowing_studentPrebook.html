@@ -24,41 +24,36 @@
                     
                     <!-- General Form Elements -->
                     <form method="POST">
-                        {% csrf_token %}
-
-                        <div class="row mb-3">
-                        <label for="inputDate" class="col-sm-2 col-form-label">Date Requested:</label>
-                        <div class="col-sm-10">
-                          <input type="date" class="form-control" value="Read only / Disabled" readonly>
-                        </div>
-                      </div>
-
-                        <div class="row mb-3">
-                            <label for="inputNumber" class="col-sm-2 col-form-label">Student Name:</label>
-                            <div class="col-sm-10">
-                                <input type="number" class="form-control" id="studentname" name="studentname"> 
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                          <label class="col-sm-2 col-form-label">1-Day or Long-Term Borrowing</label>
+                      {% csrf_token %}
+                      
+                      <div class="row mb-3">
+                          <label for="inputDate" class="col-sm-2 col-form-label">Date Requested:</label>
                           <div class="col-sm-10">
-                            <select class="form-select" id="borrowing-type" aria-label="Default select example">
-                              <option value="oneday">One Day</option>
-                              <option value="longterm">Long-Term</option>
-                            </select>
+                              <input type="text" class="form-control" value="{{ current_date }}" readonly>
+                              <input type="hidden" name="request_date" value="{{ current_date }}">
                           </div>
-                        </div>
-                       <!-- One-day borrowing date -->
-                        <div class="row mb-3 d-none" id="one-day-date">
+                      </div>
+                  
+                      <div class="row mb-3">
+                          <label for="borrowing-type" class="col-sm-2 col-form-label">1-Day or Long-Term Borrowing</label>
+                          <div class="col-sm-10">
+                              <select class="form-select" id="borrowing-type" name="borrowing-type">
+                                  <option value="oneday">One Day</option>
+                                  <option value="longterm">Long-Term</option>
+                              </select>
+                          </div>
+                      </div>
+                  
+                      <!-- One-day borrowing date -->
+                      <div class="row mb-3 d-none" id="one-day-date">
                           <div class="col-sm-6">
                               <label for="one-day-booking-date" class="col-form-label">Date for One-Day Borrowing:</label>
                               <input type="date" class="form-control" id="one-day-booking-date" name="one_day_booking_date">
                           </div>
-                        </div>
-
-                        <!-- Long-term borrowing dates -->
-                        <div class="row mb-3 d-none" id="long-term-dates">
+                      </div>
+                  
+                      <!-- Long-term borrowing dates -->
+                      <div class="row mb-3 d-none" id="long-term-dates">
                           <div class="col-sm-6">
                               <label for="from-date" class="col-form-label">Date for Booking (From):</label>
                               <input type="date" class="form-control" id="from-date" name="from_date">
@@ -67,55 +62,34 @@
                               <label for="to-date" class="col-form-label">Date for Booking (To):</label>
                               <input type="date" class="form-control" id="to-date" name="to_date">
                           </div>
-                        </div>
-
-                        
-                        <div class="row mb-3">
-                          <label for="inputNumber" class="col-sm-2 col-form-label">Purpose of Borrowing:</label>
-                          <div class="col-sm-10">
-                              <input type="text" class="form-control" id="purpose" name="purpose" > 
-                          </div>
                       </div>
-                      
-                      <!-- Equipment Rows -->
+                  
+                      <!-- Equipment selection -->
                       <div id="equipment-rows">
-                        <div class="row mb-3 equipment-row">
-                          <label class="col-sm-2 col-form-label">Equipment</label>
-                          <div class="col-sm-5">
-                            <select class="form-select" aria-label="Default select example">
-                              <option value="sample1">Sample Equipment 1</option>
-                              <option value="sample2">Sample Equipment 2</option>
-                            </select>
+                          <div class="row mb-3 equipment-row">
+                              <label class="col-sm-2 col-form-label">Equipment</label>
+                              <div class="col-sm-5">
+                                  <select class="form-select" name="equipment">
+                                      {% for item in equipment_list %}
+                                      <option value="{{ item.item_id }}">{{ item.item_name }}</option>
+                                      {% endfor %}
+                                  </select>
+                              </div>
+                              <label for="quantity" class="col-sm-1 col-form-label text-end">Qty:</label>
+                              <div class="col-sm-2">
+                                  <input type="number" class="form-control" name="quantity" min="0" value="0">
+                              </div>
                           </div>
-                          <label for="inputNumber" class="col-sm-1 col-form-label text-end">Qty:</label>
-                          <div class="col-sm-2">
-                            <input type="number" class="form-control" min="0" value="0">
-                          </div>
-                          <!-- Delete button (hidden for the first row) -->
-                          <div class="col-sm-2 d-none delete-btn-container">
-                            <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
-                          </div>
-                        </div>
                       </div>
-
-                    
-                      <!-- Add Equipment Button -->
+                  
                       <div class="row mb-3">
-                        <div class="col-sm-10">
-                          <button type="button" id="add-equipment-btn" class="btn btn-primary">Add Equipment</button>
-                        </div>
+                          <div class="col-sm-10">
+                              <button type="button" id="add-equipment-btn" class="btn btn-primary">Add Equipment</button>
+                          </div>
                       </div>
-
-
-
-                      <div class="row mb-3">
-                        <label for="inputNumber" class="col-sm-2 col-form-label">Add Attachment:</label>
-                        <div class="col-sm-10">
-                          <input class="form-control" type="file" id="formFile">
-                        </div>
-                      </div>
-
-                    </form>
+                  
+                      <button type="submit" class="btn btn-success">Submit</button>
+                  </form>
                 </div>
             </div>
         </div>
@@ -124,28 +98,28 @@
 
 <script>
 
-  document.addEventListener('DOMContentLoaded', function () {
-    const borrowingTypeSelect = document.getElementById('borrowing-type');
-    const longTermDatesRow = document.getElementById('long-term-dates');
-    const oneDayDateRow = document.getElementById('one-day-date');
-    
-    // Function to toggle visibility based on selected borrowing type
-    function toggleDateInputs() {
-        if (borrowingTypeSelect.value === 'longterm') {
-            longTermDatesRow.classList.remove('d-none'); // Show long-term date input
-            oneDayDateRow.classList.add('d-none');      // Hide one-day date input
-        } else if (borrowingTypeSelect.value === 'oneday') {
-            oneDayDateRow.classList.remove('d-none');   // Show one-day date input
-            longTermDatesRow.classList.add('d-none');   // Hide long-term date input
+document.addEventListener('DOMContentLoaded', function () {
+        const borrowingTypeSelect = document.getElementById('borrowing-type');
+        const longTermDatesRow = document.getElementById('long-term-dates');
+        const oneDayDateRow = document.getElementById('one-day-date');
+
+        // Function to toggle visibility based on selected borrowing type
+        function toggleDateInputs() {
+            if (borrowingTypeSelect.value === 'longterm') {
+                longTermDatesRow.classList.remove('d-none'); // Show long-term date input
+                oneDayDateRow.classList.add('d-none');      // Hide one-day date input
+            } else if (borrowingTypeSelect.value === 'oneday') {
+                oneDayDateRow.classList.remove('d-none');   // Show one-day date input
+                longTermDatesRow.classList.add('d-none');   // Hide long-term date input
+            }
         }
-    }
 
-    // Run the function on page load to ensure the correct date input is shown
-    toggleDateInputs();
+        // Run the function on page load to ensure the correct date input is shown
+        toggleDateInputs();
 
-    // Add event listener to toggle date inputs on change
-    borrowingTypeSelect.addEventListener('change', toggleDateInputs);
-});
+        // Add event listener to toggle date inputs on change
+        borrowingTypeSelect.addEventListener('change', toggleDateInputs);
+    });
 
 
 
