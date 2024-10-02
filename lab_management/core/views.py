@@ -423,7 +423,6 @@ def inventory_itemEdit_view(request, item_id):
         'is_alert_disabled': item.alert_qty == 0,  # Alert if disabled
     })
 
-
 def inventory_itemDelete_view(request, item_id):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -448,7 +447,6 @@ def inventory_itemDelete_view(request, item_id):
     
 
     return render(request, 'mod_inventory/inventory_itemDelete.html', context)
-
 
 def inventory_physicalCount_view(request):
     if not request.user.is_authenticated:
@@ -765,13 +763,117 @@ def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
 
 def borrowing_student_prebookview(request):
-    return render(request, 'mod_borrowing/borrowing_studentPrebook.html')
+    laboratory_id = request.session.get('selected_lab')
+    user_id = request.user.id
+
+    if request.method == 'POST':
+        # Fetch necessary data from the form
+        borrowing_type = request.POST.get('borrowing-type')
+        one_day_date = request.POST.get('one_day_booking_date')
+        from_date = request.POST.get('from_date')
+        to_date = request.POST.get('to_date')
+        purpose = request.POST.get('purpose')
+
+        # Set request date to the current date and time
+        request_date = timezone.now()
+
+        # Determine borrow and due dates based on borrowing type
+        if borrowing_type == 'oneday':
+            borrow_date = one_day_date
+            due_date = one_day_date
+        else:
+            borrow_date = from_date
+            due_date = to_date
+
+        # Insert into core_borrow_info
+        borrow_entry = borrow_info.objects.create(
+            laboratory_id=laboratory_id,
+            user_id=user_id,
+            request_date=request_date,
+            borrow_date=borrow_date,
+            due_date=due_date,
+            status='P',  # Set initial status to 'Pending'
+        )
+
+        # Process equipment details
+        equipment_rows = request.POST.getlist('equipment')  # List of equipment items
+        quantities = request.POST.getlist('quantity')       # Corresponding quantities
+
+        for i, item_id in enumerate(equipment_rows):
+            quantity = int(quantities[i])
+
+            # Fetch the item from core_item_description
+            item = item_description.objects.get(item_id=item_id)
+
+            # Insert the item into borrowed_items table
+            borrowed_items.objects.create(
+                borrow=borrow_entry,
+                item=item,
+                qty=quantity
+            )
+
+        return redirect('borrowing_studentviewPreBookRequests')
+
+    # Fetch the current date and all equipment items including chemicals
+    current_date = timezone.now().date()
+    equipment_list = item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1)  # No exclusion, show all items
+
+    return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
+        'current_date': current_date,
+        'equipment_list': equipment_list
+    })
 
 def borrowing_student_walkinview(request):
-    return render(request, 'mod_borrowing/borrowing_studentWalkIn.html')
+        # Get session details
+    laboratory_id = request.session.get('selected_lab')
+    user_id = request.user.id
+
+    if request.method == 'POST':
+        request_date = timezone.now()
+        borrow_date = request_date
+        due_date = request_date
+
+        # Insert into core_borrow_info
+        borrow_entry = borrow_info.objects.create(
+            laboratory_id=laboratory_id,
+            user_id=user_id,
+            request_date=request_date,
+            borrow_date=borrow_date,
+            due_date=due_date,
+            status='P',  # Set initial status to 'Pending'
+        )
+
+        # Process equipment details
+        equipment_rows = request.POST.getlist('equipment')  # List of equipment items
+        quantities = request.POST.getlist('quantity')       # Corresponding quantities
+
+        for i, item_id in enumerate(equipment_rows):
+            quantity = int(quantities[i])
+
+            # Fetch the item from core_item_description
+            item = item_description.objects.get(item_id=item_id)
+
+            # Insert the item into borrowed_items table
+            borrowed_items.objects.create(
+                borrow=borrow_entry,
+                item=item,
+                qty=quantity
+            )
+
+        return redirect('borrowing_studentviewWalkInRequests')
+
+    # Fetch the current date and all equipment items including chemicals
+    current_date = timezone.now().date()
+    equipment_list = item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1)  # No exclusion, show all items
+
+    return render(request, 'mod_borrowing/borrowing_studentWalkIn.html', {
+        'current_date': current_date,
+        'equipment_list': equipment_list
+    })
         
         
         # booking requests
+
 def borrowing_student_viewPreBookRequestsview(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -843,7 +945,6 @@ def borrowing_student_detailedWalkInRequestsview(request):
         'borrow_request': borrow_request,
         'borrowed_items': borrowed_items_list,
     })
-
 
 def borrowing_labcoord_prebookrequests(request):
     if not request.user.is_authenticated:

@@ -232,17 +232,17 @@
             </li>
             <li>
                 <a href="{% url 'borrowing_studentviewPreBookRequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_studentviewPreBookRequests borrowing_studentDetailedPreBookRequests' %}active{% endif %}">
-                    <i class="bi bi-circle"></i><span>STUDENT - View Pre-Book Requests</span>
+                    <i class="bi bi-circle"></i><span>STUDENT - View Borrows</span>
                 </a>
             </li>
-            <li>
+            <!-- <li>
                 <a href="{% url 'borrowing_studentviewWalkInRequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_studentviewWalkInRequests borrowing_studentDetailedWalkInRequests' %}active{% endif %}">
                     <i class="bi bi-circle"></i><span>STUDENT - View Walk-In Requests</span>
                 </a>
-            </li>
+            </li> -->
             <li>
               <a href="{% url 'borrowing_labcoord_prebookrequests' %}" class="{% if request.resolver_match.url_name == 'borrowing_labcoord_prebookrequests' %}active{% endif %}">
-                  <i class="bi bi-circle"></i><span>LAB COORD - Pre-Book Requests</span>
+                  <i class="bi bi-circle"></i><span>LAB COORD - Booking Requests</span>
               </a>
           </li>
           <li>
