@@ -769,6 +769,8 @@ def borrowing_student_prebookview(request):
 
 def borrowing_student_walkinview(request):
     return render(request, 'mod_borrowing/borrowing_studentWalkIn.html')
+        
+        
         # booking requests
 def borrowing_student_viewPreBookRequestsview(request):
     if not request.user.is_authenticated:
@@ -844,7 +846,44 @@ def borrowing_student_detailedWalkInRequestsview(request):
 
 
 def borrowing_labcoord_prebookrequests(request):
-    return render(request, 'mod_borrowing/borrowing_labcoord_prebookrequests.html')
+    if not request.user.is_authenticated:
+        return redirect('userlogin')
+    
+    # Get selected status from the GET request, default to 'P' (Pending)
+    selected_status = request.GET.get('status', 'P')
+
+    # Filter borrowing requests based on the selected status
+    if selected_status == 'all':
+        borrowing_requests = borrow_info.objects.all().order_by('request_date')
+    else:
+        borrowing_requests = borrow_info.objects.filter(status=selected_status).order_by('request_date')
+
+    if request.method == 'POST':
+        # Get borrow_id and action from form submission
+        borrow_id = request.POST.get('borrow_id')
+        action = request.POST.get('action')
+
+        # Retrieve the borrow_info object
+        borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id)
+
+        # Update status based on the action
+        if action == 'approve':
+            borrow_request.status = 'A'
+            borrow_request.approved_by = request.user  # Set the approving lab coordinator
+            borrow_request.save()
+            messages.success(request, f"Borrow request {borrow_id} has been approved.")
+        elif action == 'reject':
+            borrow_request.status = 'D'
+            borrow_request.approved_by = request.user
+            borrow_request.save()
+            messages.success(request, f"Borrow request {borrow_id} has been rejected.")
+
+        return redirect('borrowing_labcoord_prebookrequests')
+
+    return render(request, 'mod_borrowing/borrowing_labcoord_prebookrequests.html', {
+        'borrowing_requests': borrowing_requests,
+        'selected_status': selected_status,  # Pass the selected status to the template
+    })
 
 def borrowing_labcoord_borrowconfig(request):
     return render(request, 'mod_borrowing/borrowing_labcoord_borrowconfig.html')

@@ -3,23 +3,23 @@
 
 {% block content %}
   <style>
-    #approve{
+    #approve {
       background-color: rgb(108, 193, 108);
       color: white;
       border: none;
       border-radius: 5px;
       margin-right: 5px;
     }
-    #reject{
+    #reject {
       background-color: rgb(199, 75, 75);
       color: white;
       border: none;
       border-radius: 5px;
     }
-    #approve:hover{
+    #approve:hover {
       background-color: rgb(80, 160, 80);
     }
-    #reject:hover{
+    #reject:hover {
       background-color: rgb(179, 61, 61);
     }
   </style>
@@ -33,21 +33,32 @@
     </nav>
   </div><!-- End Page Title -->
 
+  <!-- Success message -->
+  {% if messages %}
+    <div class="alert alert-success">
+      {% for message in messages %}
+        {{ message }}
+      {% endfor %}
+    </div>
+  {% endif %}
+
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
-
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Pre-Book Requests</h5>
 
-            <!-- Dropdown to select item_type -->
-            <form method="GET" id="itemTypeForm">
+            <!-- Dropdown to filter by status -->
+            <form method="GET" id="statusFilterForm">
               <div class="row mb-3">
-                <label for="item_type" class="col-sm-2 col-form-label">Filter Status:</label>
+                <label for="status" class="col-sm-2 col-form-label">Filter by Status:</label>
                 <div class="col-sm-10">
-                  <select class="form-select" id="item_type" name="item_type" onchange="document.getElementById('itemTypeForm').submit()">
-                    <option value="">All</option>
+                  <select class="form-select" id="status" name="status" onchange="document.getElementById('statusFilterForm').submit()">
+                    <option value="P" {% if selected_status == 'P' %}selected{% endif %}>Pending</option>
+                    <option value="A" {% if selected_status == 'A' %}selected{% endif %}>Approved</option>
+                    <option value="D" {% if selected_status == 'D' %}selected{% endif %}>Rejected</option>
+                    <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All</option>
                   </select>
                 </div>
               </div>
@@ -67,65 +78,48 @@
                 </tr>
               </thead>
               <tbody>
+                {% for request in borrowing_requests %}
                 <tr>
-                  <td>RF111111</td>
-                  <td>Dela Cruz, Juan</td>
-                  <td>2023-12-12</td>
-                  <td>2024-01-12</td>
-                  <td>Short-Term</td>
-                  <td>Pending</td>
+                  <td>RF{{ request.borrow_id }}</td>
+                  <td>{{ request.user.firstname}} {{ request.user.lastname}}</td>
+                  <td>{{ request.request_date|date:"Y-m-d" }}</td>
+                  <td>{{ request.borrow_date|date:"Y-m-d" }}</td>
                   <td>
-                    <table id="actionstable">
-                      <tr>
-                        <td><button class="btn1" id="approve">Approve</button></td>
-                        <td><button class="btn1" id="reject">Reject</button></td>
-                      </tr>
-                    </table>
+                    {% if request.due_date %}
+                      Long-Term
+                    {% else %}
+                      Short-Term
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if request.status == 'P' %}
+                      Pending
+                    {% elif request.status == 'A' %}
+                      <span style="color:green;">Approved</span>
+                    {% elif request.status == 'D' %}
+                      <span style="color:red;">Rejected</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if request.status == 'P' %}
+                      <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="borrow_id" value="{{ request.borrow_id }}">
+                        <button type="submit" name="action" value="approve" id="approve">Approve</button>
+                        <button type="submit" name="action" value="reject" id="reject">Reject</button>
+                      </form>
+                    {% else %}
+                      <span>Completed</span>
+                    {% endif %}
                   </td>
                 </tr>
-                <!--approved-->
-                <tr>
-                  <td>RF111112</td>
-                  <td>Dela Crooz, Two</td>
-                  <td>2023-08-09</td>
-                  <td>2024-08-12</td>
-                  <td>Long-Term</td>
-                  <td style="color:green">Approved</td>
-                  <td>
-                    <table id="actionstable">
-                      <tr>
-                        <td style="display:none"><button class="btn1" id="approve">Approve</button></td>
-                        <td style="display:none"><button class="btn1" id="reject">Reject</button></td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                <!--rejected-->
-                <tr>
-                  <td>RF111113</td>
-                  <td>Cruz, Jan</td>
-                  <td>2023-04-12</td>
-                  <td>2024-04-17</td>
-                  <td>Short-Term</td>
-                  <td style="color:red">Rejected</td>
-                  <td>
-                    <table id="actionstable">
-                      <tr>
-                        <td style="display:none"><button class="btn1" id="approve">Approve</button></td>
-                        <td style="display:none"><button class="btn1" id="reject">Reject</button></td>
-                      </tr>
-                    </table>
-
-                  </td>
-                </tr>
+                {% endfor %}
               </tbody>
             </table>
-            
             <!-- End Table with stripped rows -->
 
           </div>
         </div>
-
       </div>
     </div>
   </section>
