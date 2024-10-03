@@ -134,7 +134,6 @@ def logout_view(request):
     logout(request)
     return redirect("/login")
 
-
 def error_page(request, message=None):
     """
     Renders a generic error page.
@@ -144,6 +143,7 @@ def error_page(request, message=None):
     return render(request, 'error_page.html', {'message': message})
 
 
+# inventory
 def inventory_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -578,11 +578,15 @@ def inventory_manageSuppliers_view(request):
 
     if request.method == "POST":
         supplier_name = request.POST.get("supplier_name")
+        contact_person = request.POST.get("contact_person")
+        contact_number = request.POST.get("contact_number")
         supplier_desc = request.POST.get("description")
 
         new_supplier = suppliers(
             laboratory_id=selected_laboratory_id,
             supplier_name=supplier_name,
+            contact_person=contact_person,
+            contact_number=contact_number,
             description=supplier_desc
         )
         new_supplier.save()
@@ -1003,9 +1007,8 @@ def borrowing_labcoord_prebookrequests(request):
         'selected_status': selected_status,  # Pass the selected status to the template
     })
 
-
 def borrowing_labcoord_borrowconfig(request):
-    selected_laboratory_id = request.session.get('selected_lab')  # Example way to get the lab ID
+    selected_laboratory_id = request.session.get('selected_lab')
 
     # Fetch all active (not disabled) items under the selected laboratory
     items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
@@ -1015,6 +1018,10 @@ def borrowing_labcoord_borrowconfig(request):
 
     # Fetch the lab's borrowing configuration
     lab = get_object_or_404(borrowing_config, laboratory_id=selected_laboratory_id)
+
+    # Annotate each item type to check if all items under it are borrowable
+    for type in item_types_list:
+        type.all_items_borrowable = item_description.objects.filter(itemType_id=type.itemType_id, allow_borrow=False).count() == 0
 
     if request.method == 'POST':
         if 'lab_config_form' in request.POST:
@@ -1029,20 +1036,32 @@ def borrowing_labcoord_borrowconfig(request):
             return redirect('borrowing_labcoord_borrowconfig')
 
         elif 'borrow_config_form' in request.POST:
-            # Handle specific item and item type borrowability updates
-            allowed_items = request.POST.getlist('borrow_item')
-            allowed_item_types = request.POST.getlist('borrow_item_type')
+            allowed_items = request.POST.getlist('borrow_item')  # Items explicitly checked
+            allowed_item_types = request.POST.getlist('borrow_item_type')  # Item types explicitly checked
 
-            # Reset borrowability for all items
+            # Reset borrowability for all items to False
             item_description.objects.filter(laboratory_id=selected_laboratory_id).update(allow_borrow=False)
 
-            # Set allow_borrow=True for checked items
+            # Handle individual items: Set allow_borrow=True for explicitly checked items
             if allowed_items:
                 item_description.objects.filter(item_id__in=allowed_items).update(allow_borrow=True)
 
-            # Set allow_borrow=True for items under the checked item types
+            # Handle item types: Set allow_borrow=True for all items under the checked item types
             if allowed_item_types:
                 item_description.objects.filter(itemType_id__in=allowed_item_types).update(allow_borrow=True)
+
+            # Update `is_consumable` for item types and handle unchecking of item types
+            for type in item_types_list:
+                # Update the consumable status of the item type
+                type.is_consumable = f'is_consumable_{type.itemType_id}' in request.POST
+                type.save()
+
+                # If the item type is checked in the form, mark all items under this type as borrowable
+                if str(type.itemType_id) in allowed_item_types:
+                    item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=True)
+                else:
+                    # If unchecked, ensure items under this type are set to allow_borrow=False
+                    item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=False)
 
             messages.success(request, "Borrowing configuration updated successfully!")
             return redirect('borrowing_labcoord_borrowconfig')
@@ -1052,8 +1071,6 @@ def borrowing_labcoord_borrowconfig(request):
         'item_types_list': item_types_list,
         'lab': lab,
     })
-
-
 
 #CLEARANCE
 def clearance_view(request):

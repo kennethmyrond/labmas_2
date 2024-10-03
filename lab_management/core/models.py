@@ -119,6 +119,7 @@ class item_description(models.Model):
     rec_expiration = models.BooleanField(default=False)
     is_disabled = models.BooleanField(default=False)
     allow_borrow = models.BooleanField(default=False)
+    is_consumable = models.BooleanField(default=False)
     
     def __str__(self):
         return self.item_name
@@ -128,6 +129,7 @@ class item_types(models.Model):
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)  # Implicitly creates a laboratory_id field
     itemType_name = models.CharField(max_length=45, null=True, blank=True)
     add_cols = models.TextField(default='[]')  # Stores JSON attributes
+    is_consumable = models.BooleanField(default=False)
 
     def __str__(self):
         return self.itemType_name
@@ -168,8 +170,9 @@ class suppliers(models.Model):
     suppliers_id = models.AutoField(primary_key=True)
     supplier_name = models.CharField(max_length=45)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
-    contactPerson = models.CharField(max_length=45, null=True, blank=True)
-    address = models.CharField(max_length=45, null=True, blank=True)
+    contact_person = models.CharField(max_length=45, null=True, blank=True)
+    contact_number = models.IntegerField(null=True, blank=True)
+    # address = models.CharField(max_length=45, null=True, blank=True)
     description = models.CharField(max_length=45, null=True, blank=True)
 
     def __str__(self):
