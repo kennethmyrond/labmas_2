@@ -35,7 +35,7 @@
             <!-- Form for General Laboratory Configurations -->
             <form method="POST" id="labConfigForm">
               {% csrf_token %}
-              <input type="hidden" name="lab_config_form" value="1"> <!-- Hidden input to differentiate forms -->
+              <input type="none" name="lab_config_form" value="1"> <!-- none input to differentiate forms -->
 
               <div class="row mb-3">
                 <label for="walkin" class="col-sm-2 col-form-label">Allow Walk-Ins:</label>
@@ -93,7 +93,7 @@
 
             <form method="POST" id="borrowConfigForm">
               {% csrf_token %}
-              <input type="hidden" name="borrow_config_form" value="1"> <!-- Hidden input to differentiate forms -->
+              <input type="none" name="borrow_config_form" value="1"> <!-- none input to differentiate forms -->
 
               <div class="form-group">
                 <label>Select Borrowing Configuration Mode:</label><br>
@@ -111,6 +111,9 @@
                     <tr>
                       <th>Item Name</th>
                       <th>Allow Borrowing?</th>
+                      <th style="display:none"></th>
+                      <th style="display:none"></th>
+                      <th style="display:none"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -121,6 +124,9 @@
                         <input type="checkbox" name="borrow_item" value="{{ item.item_id }}" 
                                {% if item.allow_borrow %}checked{% endif %}>
                       </td>
+                      <td style="display:none"></td>
+                      <td style="display:none"></td>
+                      <td style="display:none"></td>
                     </tr>
                     {% endfor %}
                   </tbody>
@@ -135,6 +141,9 @@
                     <tr>
                       <th>Item Type</th>
                       <th>Allow Borrowing?</th>
+                      <th>Make Consumable?</th>
+                      <th style="display:none"></th>
+                      <th style="display:none"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -144,6 +153,11 @@
                       <td>
                         <input type="checkbox" name="borrow_item_type" value="{{ type.itemType_id }}">
                       </td>
+                      <td>
+                        <input type="checkbox" name="borrow_item_consumable" value="">
+                      </td>
+                      <td style="display:none"></td>
+                      <td style="display:none"></td>
                     </tr>
                     {% endfor %}
                   </tbody>
