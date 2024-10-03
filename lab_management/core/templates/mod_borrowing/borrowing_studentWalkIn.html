@@ -13,125 +13,169 @@
     </nav>
 </div><!-- End Page Title -->
 
+
 <section class="section">
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Borrow - Walk-In</h5>
+  <div class="row">
+      <div class="col-lg-12">
+          <div class="card">
+              <div class="card-body">
+                  <h5 class="card-title">Borrow - Walk-In</h5>
+
+                  {% if error_message %}
+                  <div class="alert alert-danger">
+                    {{ error_message }}
+                  </div>
+                {% endif %}
+                                  
+                  <!-- General Form Elements -->
+                  <form method="POST">
+                      {% csrf_token %}
+
+                   
+
+                     
+
+                      <div class="row mb-3">
+                        <label for="inputDate" class="col-sm-2 col-form-label">Date Requested:</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" value="{{ current_date }}" readonly>
+                            <input type="hidden" name="request_date" value="{{ current_date }}">
+                        </div>
+                    </div>
+
+                      <div class="row mb-3">
+                          <label for="inputNumber" class="col-sm-2 col-form-label">Student Name:</label>
+                          <div class="col-sm-10">
+                            <input type="text" class="form-control" id="studentname" name="studentname" value="{{user.first_name}} {{user.last_name}}" readonly>  
+                          </div>
+                      </div>
+
+                      <div class="row mb-3">
+                        <label for="inputNumber" class="col-sm-2 col-form-label">Purpose of Borrowing:</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="purpose" name="purpose"> 
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                      <label class="col-sm-2 col-form-label">Item Type:</label>
+                      <div class="col-sm-10">
+                        <select id="item-type-select" class="form-select" onchange="updateItemsByType(this.value)">
+                          <option value="">Select Item Type</option>
+                          {% for item_type in item_types %}
+                            <option value="{{ item_type.itemType_id }}">{{ item_type.itemType_name }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
                     
-                    <!-- General Form Elements -->
-                    <form method="POST">
-                        {% csrf_token %}
-
-                        <div class="row mb-3">
-                          <label for="inputDate" class="col-sm-2 col-form-label">Date Requested:</label>
-                          <div class="col-sm-10">
-                              <input type="text" class="form-control" value="{{ current_date }}" readonly>
-                              <input type="hidden" name="request_date" value="{{ current_date }}">
-                          </div>
+                    <!-- Add Equipment Section -->
+                    <div class="row mb-3">
+                      <label class="col-sm-2 col-form-label">Equipment:</label>
+                      <div class="col-sm-5">
+                          <select id="equipment-select" class="form-select equipment-select" name="equipment" disabled>
+                              <option value="">Select Equipment</option>
+                          </select>
                       </div>
-
-                        <div class="row mb-3">
-                            <label for="inputNumber" class="col-sm-2 col-form-label">Student Name:</label>
-                            <div class="col-sm-10">
-                              <input type="text" class="form-control" id="studentname" name="studentname" value="{{user.first_name}} {{user.last_name}}"readonly>  
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                          <label for="inputNumber" class="col-sm-2 col-form-label">Purpose of Borrowing:</label>
-                          <div class="col-sm-10">
-                              <input type="text" class="form-control" id="purpose" name="purpose"> 
-                          </div>
+                      <label for="inputNumber" class="col-sm-1 col-form-label text-end">Qty:</label>
+                      <div class="col-sm-2">
+                          <input type="number" name="quantity" class="form-control" min="0" value="0" data-available-qty="0" readonly>
                       </div>
+                    </div>
 
-                      <!-- Equipment Rows -->
-                      <div id="equipment-rows">
-                        <div class="row mb-3 equipment-row">
-                          <label class="col-sm-2 col-form-label">Equipment</label>
-                          <div class="col-sm-5">
-                            <select class="form-select" name="equipment">
-                              {% for equipment in equipment_list %}
-                                <option value="{{ equipment.item_id }}">{{ equipment.item_name }}</option>
-                              {% endfor %}
-                            </select>
-                          </div>
-                          <label for="inputNumber" class="col-sm-1 col-form-label text-end">Qty:</label>
-                          <div class="col-sm-2">
-                            <input type="number" name="quantity" class="form-control" min="0" value="0">
-                          </div>
-                          <!-- Delete button (hidden for the first row) -->
-                          <div class="col-sm-2 d-none delete-btn-container">
-                            <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
-                          </div>
-                        </div>
-                      </div>
-                      
+                    <!-- Container for dynamically added equipment rows -->
+                    <div id="equipment-rows"></div>
 
-                      <!-- Add Equipment Button -->
-                      <div class="row mb-3">
-                        <div class="col-sm-10">
+                    <!-- Add Equipment Button -->
+                    <div class="row mb-3">
+                      <div class="col-sm-10">
                           <button type="button" id="add-equipment-btn" class="btn btn-primary">Add Equipment</button>
-                        </div>
                       </div>
+                    </div>
 
-                      <div class="row mb-3">
-                        <label for="inputNumber" class="col-sm-2 col-form-label">Add Attachment:</label>
-                        <div class="col-sm-10">
-                          <input class="form-control" type="file" id="formFile">
-                        </div>
+                    <div class="row mb-3">
+                      <label for="inputNumber" class="col-sm-2 col-form-label">Add Attachment:</label>
+                      <div class="col-sm-10">
+                        <input class="form-control" type="file" id="formFile">
                       </div>
+                    </div>
 
-                      <div class="row mb-3">
-                        <div class="col-sm-10">
-                          <button type="submit" class="btn btn-success">Submit</button>
-                        </div>
+                    <div class="row mb-3">
+                      <div class="col-sm-10">
+                        <button type="submit" class="btn btn-success">Submit</button>
                       </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+                    </div>
+                  </form>
+              </div>
+          </div>
+      </div>
+  </div>
 </section>
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const equipmentRowsContainer = document.getElementById('equipment-rows');
     const addEquipmentBtn = document.getElementById('add-equipment-btn');
+    const equipmentSelect = document.getElementById('equipment-select');
+    const itemTypeSelect = document.getElementById('item-type-select');
 
-    // Function to add a new equipment row
+   
+    function updateItemsByType(itemTypeId) {
+        // Clear the current equipment options
+        equipmentSelect.innerHTML = '<option value="">Select Item Type First</option>';
+        equipmentSelect.disabled = true; // Disable the dropdown until we have data
+
+        if (itemTypeId) {
+          fetch(`/borrowing/student/get-items/${itemTypeId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.item_id;
+                        option.textContent = `${item.item_name} (Qty: ${item.total_qty})`;
+                        equipmentSelect.appendChild(option);
+                    });
+                    equipmentSelect.disabled = false; // Enable the dropdown after data is loaded
+                })
+                .catch(error => console.error('Error fetching items:', error));
+        }
+    }
     function addEquipmentRow() {
-      const newRow = document.createElement('div');
-      newRow.classList.add('row', 'mb-3', 'equipment-row');
-      newRow.innerHTML = `
-        <label class="col-sm-2 col-form-label">Equipment</label>
-        <div class="col-sm-5">
-          <select class="form-select" name="equipment">
-            {% for equipment in equipment_list %}
-              <option value="{{ equipment.item_id }}">{{ equipment.item_name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <label for="inputNumber" class="col-sm-1 col-form-label text-end">Qty:</label>
-        <div class="col-sm-2">
-          <input type="number" name="quantity" class="form-control" min="0" value="0">
-        </div>
-        <div class="col-sm-2 delete-btn-container">
-          <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
-        </div>
-      `;
-      equipmentRowsContainer.appendChild(newRow);
+        const newRow = document.createElement('div');
+        newRow.classList.add('row', 'mb-3', 'equipment-row');
+        newRow.innerHTML = `
+            <label class="col-sm-2 col-form-label">Equipment:</label>
+            <div class="col-sm-5">
+                <select class="form-select equipment-select" name="equipment" onchange="updateAvailableQuantity(this)">
+                    <option value="">Select Equipment</option>
+                    {% for equipment in equipment_list %}
+                        <option value="{{ equipment.item_id }}">{{ equipment.item_name }}/option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-2">
+                <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
+            </div>
+        `;
+        equipmentRowsContainer.appendChild(newRow);
 
-      // Attach event listener for delete button
-      const deleteBtn = newRow.querySelector('.delete-equipment-btn');
-      deleteBtn.addEventListener('click', function() {
-        equipmentRowsContainer.removeChild(newRow);
-      });
+        // Attach event listener for the delete button
+        const deleteBtn = newRow.querySelector('.delete-equipment-btn');
+        deleteBtn.addEventListener('click', function() {
+            equipmentRowsContainer.removeChild(newRow);
+        });
     }
 
     // Attach event listener to the Add Equipment button
     addEquipmentBtn.addEventListener('click', addEquipmentRow);
-  });
+    updateItemsByType('');
+
+    itemTypeSelect.addEventListener('change', function () {
+        updateItemsByType(this.value);
+    });
+
+});
+
 </script>
+
 {% endblock %}
