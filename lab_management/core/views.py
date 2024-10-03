@@ -42,8 +42,6 @@ def suggest_items(request):
         data.append({
             'item_id': item.item_id,
             'item_name': item.item_name,
-            'amount': item.amount,
-            'dimension': item.dimension,
             'rec_expiration': item.rec_expiration
         })
     
@@ -112,7 +110,7 @@ def generate_qr_code(item_id):
 class ItemEditForm(forms.ModelForm):
     class Meta:
         model = item_description
-        fields = ['item_name', 'amount', 'dimension']
+        fields = ['item_name']
 
 
 # views
@@ -241,8 +239,6 @@ def inventory_addNewItem_view(request):
         # Extract form data
         item_name = request.POST.get('item_name')
         item_type_id = request.POST.get('item_type')
-        amount = request.POST.get('amount')
-        dimension = request.POST.get('item_dimension')
         rec_expiration = request.POST.get('rec_expiration') == 'on'
         alert_qty = request.POST.get('alert_qty')
 
@@ -263,8 +259,6 @@ def inventory_addNewItem_view(request):
             laboratory_id=selected_lab,
             item_name=item_name,
             itemType_id=item_type_id,
-            amount=amount,
-            dimension=dimension,
             add_cols=add_cols_json,
             alert_qty=alert_qty,
             rec_expiration = rec_expiration,

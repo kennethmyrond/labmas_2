@@ -43,27 +43,25 @@
                 <tr>
                   <th>Status</th>
                   <th>Item Name</th>
-                  <th>Unit</th>
-                  <th>Dimension</th>
                   <th>Qty</th>
                   {% for col in add_cols %}
                     <th>{{ col }}</th>
                   {% endfor %}
+                  <th>Available Qty</th>
                 </tr>
               </thead>
               <tbody>
                 {% for item in inventory_items %}
                 <tr>
-                  <td>{%if item.total_qty > item.alert_qty%}Available{%else%}Low Stock{%endif%}</td>
+                  <td class="{% if item.total_qty > item.alert_qty %}qty-positive{% else %}qty-negative{% endif %}">{%if item.total_qty > item.alert_qty%}Available{%else%}Low Stock{%endif%}</td>
                   <td><a href="{% url 'inventory_itemDetails_view' item.item_id %}">{{ item.item_name }}</a></td>
-                  <td>{{ item.amount }}</td>
-                  <td>{{ item.dimension }}</td>
                   <td class="{% if item.total_qty > 0 %}qty-positive{% else %}qty-negative{% endif %}">
                     {{ item.total_qty }}
                   </td>
                   {% for col in add_cols %}
                     <td>{{ item.add_cols|get_col_value:col }}</td>
                   {% endfor %}
+                  <td>{{ item.total_qty }}</td>
                 </tr>
                 {% empty %}
                 <tr>
