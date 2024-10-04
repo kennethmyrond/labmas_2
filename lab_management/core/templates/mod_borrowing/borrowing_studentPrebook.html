@@ -28,9 +28,8 @@
                 </div>
                 {% endif %}
 
-                  
                   <!-- General Form Elements -->
-                  <form method="POST" >
+                  <form method="POST" id="borrow-form">
                     {% csrf_token %}
                     
                     <div class="row mb-3">
@@ -41,7 +40,7 @@
                         </div>
                     </div>
 
-                  <div class="row mb-3">
+                    <div class="row mb-3">
                       <label for="inputNumber" class="col-sm-2 col-form-label">Student Name:</label>
                       <div class="col-sm-10">
                           <input type="text" class="form-control" id="studentname" name="studentname" value="{{user.first_name}} {{user.last_name}}" readonly> 
@@ -84,50 +83,55 @@
                       </div>
                     </div>
                 
-                    <!-- Equipment selection -->
-                    <div id="equipment-rows">
-                        <div class="row mb-3 equipment-row">
-                            <label class="col-sm-2 col-form-label">Equipment</label>
-                            <div class="col-sm-5">
-                                <select class="form-select" id="item-type-select" name="item_type">
-                                    <option value="">Select Item Type</option>
-                                    {% for item_type in item_types %}
-                                        <option value="{{ item_type.itemType_id }}" 
-                                                {% if item_type.itemType_id == selected_item_type %} selected {% endif %}>
-                                            {{ item_type.itemType_name }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
+                    <!-- Added Equipment Section -->
+                    <div id="equipment-rows" class="mb-3">
+                        <div class="row mb-3">
+                            <label class="col-sm-2 col-form-label">Added Equipment:</label>
+                            <div class="col-sm-10">
+                                <span id="no-equipment-message" class="text-danger" style="display: none;">No equipment added yet.</span>
                             </div>
-                            <div class="col-sm-5">
-                                <select class="form-select" id="item-name-select" name="equipment">
-                                    <option value="">Select Item Name</option>
-                                    {% for item in item_list_with_qty %}
-                                        <option value="{{ item.item_id }}" 
-                                                {% if item.item_id == selected_item %} selected {% endif %}>
-                                            {{ item.item_name }} (Qty: {{ item.total_qty }})
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            
-                        </div>
-                    </div>
-                    
-                      <!-- Add Equipment Button -->
-                      <div class="row mb-3">
-                        <div class="col-sm-10">
-                            <button type="button" id="add-equipment-btn" class="btn btn-primary">Add Equipment</button>
                         </div>
                       </div>
-
-                    <div class="row mb-3">
-                        <label class="col-sm-2 col-form-label">Quantity:</label>
-                        <div class="col-sm-10">
-                            <input type="number" class="form-control" name="quantity" min="1">
-                        </div>
-                    </div>
-                    
+  
+                        <table class="table datatable">
+                          <thead>
+                              <tr>
+                                  <th>Item Type</th>
+                                  <th>Item Name</th>
+                                  <th>Add Equipment</th>
+                                  <th>Available Qty</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {% regroup inventory_items by itemType.itemType_name as grouped_items %}
+                              {% for group in grouped_items %}
+                                  <tr class="item-type-header">
+                                      <td>{{ group.grouper }}</td>
+                                      <td></td> <!-- Leave empty for the header row -->
+                                      <td></td> <!-- Leave empty for the header row -->
+                                      <td></td> <!-- Leave empty for the header row -->
+                                  </tr>
+                                  {% for item in group.list %}
+                                      <tr>
+                                          <td></td> <!-- Leave empty to align under Item Type -->
+                                          <td>{{ item.item_name }}</td>
+                                          <td>
+                                              <!-- Add Equipment Button -->
+                                              <button type="button" class="add-equipment-btn btn btn-primary" data-item-name="{{ item.item_name }}" data-item-id="{{ item.item_id }}" data-available-qty="{{ item.total_qty }}">Add</button>
+                                          </td>
+                                          <td>{{ item.total_qty }}</td>
+                                      </tr>
+                                  {% endfor %}
+                              {% empty %}
+                                  <tr>
+                                      <td colspan="4">No items found.</td>
+                                  </tr>
+                              {% endfor %}
+                          </tbody>
+                        </table>
+  
+                    <!-- Validation Message -->
+                  <div id="validation-message" class="alert alert-danger" style="display: none;"></div>
                     
                     <div class="row mb-3">
                         <div class="col-sm-10">
@@ -141,68 +145,14 @@
   </div>
 </section>
 
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const borrowingTypeSelect = document.getElementById('borrowing-type');
     const longTermDatesRow = document.getElementById('long-term-dates');
     const oneDayDateRow = document.getElementById('one-day-date');
-    const itemTypeSelect = document.getElementById('item-type-select');
-    const itemNameSelect = document.getElementById('item-name-select');
-    const totalQty = document.getElementById('total-qty');
     const equipmentRowsContainer = document.getElementById('equipment-rows');
-    const addEquipmentBtn = document.getElementById('add-equipment-btn');
-
-    // Initialize item name select to be disabled
-    itemNameSelect.disabled = true;
-
-    // Event listener for item type selection
-    itemTypeSelect.addEventListener('change', function () {
-        const selectedType = this.value;
-
-        // Clear the item_name dropdown if no item_type is selected
-        if (!selectedType) {
-            itemNameSelect.innerHTML = '<option value="">Select Item Type First</option>';
-            itemNameSelect.disabled = true; // Disable the dropdown
-            totalQty.textContent = ''; // Clear the total quantity display as well
-            return; // Exit the function if no item_type is selected
-        }
-
-        itemNameSelect.disabled = false; // Enable the dropdown
-        // Fetch items based on selected type
-        fetch(`/borrowing/student/get-items/${selectedType}/`)
-            .then(response => response.json())
-            .then(data => {
-                itemNameSelect.innerHTML = '<option value="">Select Item Name</option>'; // Clear previous options
-                data.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.item_id;
-                    option.textContent = `${item.item_name} (Qty: ${item.total_qty})`; // Display qty in dropdown
-                    itemNameSelect.appendChild(option);
-                });
-            })
-            .catch(error => console.error('Error fetching items:', error));
-    });
-
-    // Event listener for item name selection to fetch quantity
-    itemNameSelect.addEventListener('change', function () {
-        const selectedItem = this.value;
-
-        if (selectedItem) {
-            fetch(`/borrowing/student/get-quantity/${selectedItem}/`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.total_qty !== undefined) {
-                        totalQty.textContent = `Total Quantity: ${data.total_qty}`;
-                    } else {
-                        totalQty.textContent = 'Error fetching quantity';
-                    }
-                })
-                .catch(error => console.error('Error fetching quantity:', error));
-        } else {
-            totalQty.textContent = ''; // Clear quantity if no item is selected
-        }
-    });
+    const validationMessage = document.getElementById('validation-message');
+    const borrowForm = document.getElementById('borrow-form');
 
     // Function to toggle date input visibility based on borrowing type
     function toggleDateInputs() {
@@ -215,44 +165,113 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function addEquipmentRow() {
+    // Function to add a new equipment row
+    function addEquipmentRow(itemName, itemId, availableQty) {
         const newRow = document.createElement('div');
         newRow.classList.add('row', 'mb-3', 'equipment-row');
         newRow.innerHTML = `
             <label class="col-sm-2 col-form-label">Equipment:</label>
             <div class="col-sm-5">
-                <select class="form-select equipment-select" name="equipment">
-                    <option value="">Select Equipment</option>
-                    {% for item_type in item_types %}
-                      <optgroup label="{{ item_type.itemType_name }}">
-                        {% for item in item_list_with_qty %}
-                          <option value="{{ item.item_id }}">{{ item.item_name }}</option>
-                        {% endfor %}
-                      </optgroup>
-                    {% endfor %}
-                </select>
+                <input type="text" class="form-control" value="${itemName}" readonly>
+                <input type="hidden" name="equipment_ids[]" value="${itemId}">
+            </div>
+            <label for="inputNumber" class="col-sm-1 col-form-label text-end">Qty:</label>
+            <div class="col-sm-2">
+                <input type="number" name="quantities[]" class="form-control" min="0" value="0" data-available-qty="${availableQty}">
             </div>
             <div class="col-sm-2">
                 <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
             </div>
         `;
         equipmentRowsContainer.appendChild(newRow);
+        updateNoEquipmentMessage(); // Update message visibility after adding a row
 
-        // Attach event listener for the delete button
-        const deleteBtn = newRow.querySelector('.delete-equipment-btn');
-        deleteBtn.addEventListener('click', function() {
+        // Attach delete event to the delete button
+        const deleteButton = newRow.querySelector('.delete-equipment-btn');
+        deleteButton.addEventListener('click', function () {
             equipmentRowsContainer.removeChild(newRow);
+            updateNoEquipmentMessage(); // Update message visibility after deleting a row
         });
     }
+  
+    // Function to update the visibility of the no equipment message
+    function updateNoEquipmentMessage() {
+        const noEquipmentMessage = document.getElementById('no-equipment-message');
+        const equipmentRows = equipmentRowsContainer.getElementsByClassName('equipment-row');
+        if (equipmentRows.length === 0) {
+            noEquipmentMessage.style.display = 'block';
+        } else {
+            noEquipmentMessage.style.display = 'none';
+        }
+    }
 
-    // Attach event listener to the Add Equipment button
-    addEquipmentBtn.addEventListener('click', addEquipmentRow);
+    // Add click event listeners to all "Add" buttons
+    document.querySelectorAll('.add-equipment-btn').forEach(button => {
+          button.addEventListener('click', function () {
+              const itemName = this.getAttribute('data-item-name');
+              const itemId = this.getAttribute('data-item-id');
+              const availableQty = parseInt(this.getAttribute('data-available-qty'));
 
-    // Initialize visibility and set up event listener
-    toggleDateInputs();
+              // Check if equipment is already added to prevent duplicates
+              const existingEquipmentRows = equipmentRowsContainer.getElementsByClassName('equipment-row');
+              let equipmentExists = false;
+
+              for (let row of existingEquipmentRows) {
+                  const equipmentInput = row.querySelector('input[type="text"]');
+                  if (equipmentInput.value === itemName) {
+                      equipmentExists = true;
+                      break;
+                  }
+              }
+
+              if (!equipmentExists) {
+                  addEquipmentRow(itemName, itemId, availableQty);
+              } else {
+                  displayValidationMessage('This equipment is already added.');
+              }
+          });
+      });
+
+    // Function to display validation message
+    function displayValidationMessage(message) {
+        validationMessage.innerText = message;
+        validationMessage.style.display = 'block';
+        setTimeout(() => {
+            validationMessage.style.display = 'none'; // Hide message after a delay
+        }, 3000); // Adjust time as needed
+    }
+
+    // Toggle date inputs on selection change
     borrowingTypeSelect.addEventListener('change', toggleDateInputs);
-});
-    </script>
+    toggleDateInputs(); // Initial toggle
+
+    // Validation before form submission
     
+    borrowForm.addEventListener('submit', function (event) {
+          const equipmentRows = equipmentRowsContainer.getElementsByClassName('equipment-row');
+          let valid = true; // Assume valid until proven otherwise
+          let errorMessage = '';
+
+          for (let row of equipmentRows) {
+              const qtyInput = row.querySelector('input[name="quantities[]"]');
+              const availableQty = parseInt(qtyInput.getAttribute('data-available-qty'));
+              const enteredQty = parseInt(qtyInput.value);
+
+              if (enteredQty > availableQty) {
+                  valid = false;
+                  errorMessage = `Entered quantity (${enteredQty}) for ${row.querySelector('input[type="text"]').value} exceeds available quantity (${availableQty}).`;
+                  break; // Exit the loop if we find an invalid entry
+              }
+          }
+
+          if (!valid) {
+              event.preventDefault(); // Prevent form submission
+              displayValidationMessage(errorMessage);
+          }
+      });
+
+    updateNoEquipmentMessage();
+});
+</script>
 
 {% endblock %}
