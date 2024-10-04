@@ -42,7 +42,9 @@ urlpatterns = [
     path('borrowing/student/detailedWalkInRequests', views.borrowing_student_detailedWalkInRequestsview, name='borrowing_studentDetailedWalkInRequests'),
     path('borrowing/labcoord/prebookrequests', views.borrowing_labcoord_prebookrequests, name='borrowing_labcoord_prebookrequests'),
     path('borrowing/labcoord/borrowconfig', views.borrowing_labcoord_borrowconfig, name='borrowing_labcoord_borrowconfig'),
-
+    path('borrowing/student/get-items/<int:item_type_id>/', views.get_items_by_type, name='get_items_by_type'),
+    path('borrowing/student/get-quantity/<int:item_id>/', views.get_quantity_for_item, name='get_quantity_for_item'),
+    
     path('clearance/', views.clearance_view, name='clearance'),
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),
     path('reports/', views.reports_view, name='reports'),

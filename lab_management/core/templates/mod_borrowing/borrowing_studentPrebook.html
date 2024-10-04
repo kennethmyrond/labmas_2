@@ -16,188 +16,243 @@
 </div><!-- End Page Title -->
 
 <section class="section">
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Borrow - Pre Book</h5>
+  <div class="row">
+      <div class="col-lg-12">
+          <div class="card">
+              <div class="card-body">
+                  <h5 class="card-title">Borrow - Pre Book</h5>
+
+                  {% if error_message %}
+                <div class="alert alert-danger">
+                    {{ error_message }}
+                </div>
+                {% endif %}
+
+                  
+                  <!-- General Form Elements -->
+                  <form method="POST" >
+                    {% csrf_token %}
                     
-                    <!-- General Form Elements -->
-                    <form method="POST">
-                      {% csrf_token %}
-                      
+                    <div class="row mb-3">
+                        <label for="inputDate" class="col-sm-2 col-form-label">Date Requested:</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" value="{{ current_date }}" readonly>
+                            <input type="hidden" id="request_date" name="request_date" value="{{ current_date }}">
+                        </div>
+                    </div>
+
+                  <div class="row mb-3">
+                      <label for="inputNumber" class="col-sm-2 col-form-label">Student Name:</label>
+                      <div class="col-sm-10">
+                          <input type="text" class="form-control" id="studentname" name="studentname" value="{{user.first_name}} {{user.last_name}}" readonly> 
+                      </div>
+                  </div>
+                
+                    <div class="row mb-3">
+                        <label for="borrowing-type" class="col-sm-2 col-form-label">1-Day or Long-Term Borrowing</label>
+                        <div class="col-sm-10">
+                            <select class="form-select" id="borrowing-type" name="borrowing-type">
+                                <option value="oneday">One Day</option>
+                                <option value="longterm">Long-Term</option>
+                            </select>
+                        </div>
+                    </div>
+                
+                    <!-- One-day borrowing date -->
+                    <div class="row mb-3 d-none" id="one-day-date">
+                        <div class="col-sm-6">
+                            <label for="one-day-booking-date" class="col-form-label">Date for One-Day Borrowing:</label>
+                            <input type="date" class="form-control" id="one-day-booking-date" name="one_day_booking_date">
+                        </div>
+                    </div>
+                
+                    <!-- Long-term borrowing dates -->
+                    <div class="row mb-3 d-none" id="long-term-dates">
+                        <div class="col-sm-6">
+                            <label for="from-date" class="col-form-label">Date for Booking (From):</label>
+                            <input type="date" class="form-control" id="from-date" name="from_date">
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="to-date" class="col-form-label">Date for Booking (To):</label>
+                            <input type="date" class="form-control" id="to-date" name="to_date">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                      <label for="inputNumber" class="col-sm-2 col-form-label">Purpose of Borrowing:</label>
+                      <div class="col-sm-10">
+                          <input type="text" class="form-control" id="purpose" name="purpose"> 
+                      </div>
+                    </div>
+                
+                    <!-- Equipment selection -->
+                    <div id="equipment-rows">
+                        <div class="row mb-3 equipment-row">
+                            <label class="col-sm-2 col-form-label">Equipment</label>
+                            <div class="col-sm-5">
+                                <select class="form-select" id="item-type-select" name="item_type">
+                                    <option value="">Select Item Type</option>
+                                    {% for item_type in item_types %}
+                                        <option value="{{ item_type.itemType_id }}" 
+                                                {% if item_type.itemType_id == selected_item_type %} selected {% endif %}>
+                                            {{ item_type.itemType_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-sm-5">
+                                <select class="form-select" id="item-name-select" name="equipment">
+                                    <option value="">Select Item Name</option>
+                                    {% for item in item_list_with_qty %}
+                                        <option value="{{ item.item_id }}" 
+                                                {% if item.item_id == selected_item %} selected {% endif %}>
+                                            {{ item.item_name }} (Qty: {{ item.total_qty }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    
+                      <!-- Add Equipment Button -->
                       <div class="row mb-3">
-                          <label for="inputDate" class="col-sm-2 col-form-label">Date Requested:</label>
-                          <div class="col-sm-10">
-                              <input type="text" class="form-control" value="{{ current_date }}" readonly>
-                              <input type="hidden" name="request_date" value="{{ current_date }}">
-                          </div>
+                        <div class="col-sm-10">
+                            <button type="button" id="add-equipment-btn" class="btn btn-primary">Add Equipment</button>
+                        </div>
                       </div>
 
                     <div class="row mb-3">
-                        <label for="inputNumber" class="col-sm-2 col-form-label">Student Name:</label>
+                        <label class="col-sm-2 col-form-label">Quantity:</label>
                         <div class="col-sm-10">
-                            <input type="text" class="form-control" id="studentname" name="studentname" value="{{user.first_name}} {{user.last_name}}"readonly> 
+                            <input type="number" class="form-control" name="quantity" min="1">
                         </div>
                     </div>
-                  
-                      <div class="row mb-3">
-                          <label for="borrowing-type" class="col-sm-2 col-form-label">1-Day or Long-Term Borrowing</label>
-                          <div class="col-sm-10">
-                              <select class="form-select" id="borrowing-type" name="borrowing-type">
-                                  <option value="oneday">One Day</option>
-                                  <option value="longterm">Long-Term</option>
-                              </select>
-                          </div>
-                      </div>
-                  
-                      <!-- One-day borrowing date -->
-                      <div class="row mb-3 d-none" id="one-day-date">
-                          <div class="col-sm-6">
-                              <label for="one-day-booking-date" class="col-form-label">Date for One-Day Borrowing:</label>
-                              <input type="date" class="form-control" id="one-day-booking-date" name="one_day_booking_date">
-                          </div>
-                      </div>
-                  
-                      <!-- Long-term borrowing dates -->
-                      <div class="row mb-3 d-none" id="long-term-dates">
-                          <div class="col-sm-6">
-                              <label for="from-date" class="col-form-label">Date for Booking (From):</label>
-                              <input type="date" class="form-control" id="from-date" name="from_date">
-                          </div>
-                          <div class="col-sm-6">
-                              <label for="to-date" class="col-form-label">Date for Booking (To):</label>
-                              <input type="date" class="form-control" id="to-date" name="to_date">
-                          </div>
-                      </div>
-                      <div class="row mb-3">
-                        <label for="inputNumber" class="col-sm-2 col-form-label">Purpose of Borrowing:</label>
+                    
+                    
+                    <div class="row mb-3">
                         <div class="col-sm-10">
-                            <input type="text" class="form-control" id="purpose" name="purpose"> 
+                            <button type="submit" class="btn btn-primary">Borrow</button>
                         </div>
-                      </div>
-                  
-                      <!-- Equipment selection -->
-                      <div id="equipment-rows">
-                          <div class="row mb-3 equipment-row">
-                              <label class="col-sm-2 col-form-label">Equipment</label>
-                              <div class="col-sm-5">
-                                  <select class="form-select" name="equipment">
-                                      {% for item in equipment_list %}
-                                      <option value="{{ item.item_id }}">{{ item.item_name }}</option>
-                                      {% endfor %}
-                                  </select>
-                              </div>
-                              <label for="quantity" class="col-sm-1 col-form-label text-end">Qty:</label>
-                              <div class="col-sm-2">
-                                  <input type="number" class="form-control" name="quantity" min="0" value="0">
-                              </div>
-                          </div>
-                      </div>
-                  
-                      <div class="row mb-3">
-                          <div class="col-sm-10">
-                              <button type="button" id="add-equipment-btn" class="btn btn-primary">Add Equipment</button>
-                          </div>
-                      </div>
-                  
-                      <button type="submit" class="btn btn-success">Submit</button>
+                    </div>
                   </form>
-                </div>
-            </div>
-        </div>
-    </div>
+              </div>
+          </div>
+      </div>
+  </div>
 </section>
 
+
 <script>
-
 document.addEventListener('DOMContentLoaded', function () {
-        const borrowingTypeSelect = document.getElementById('borrowing-type');
-        const longTermDatesRow = document.getElementById('long-term-dates');
-        const oneDayDateRow = document.getElementById('one-day-date');
-
-        // Function to toggle visibility based on selected borrowing type
-        function toggleDateInputs() {
-            if (borrowingTypeSelect.value === 'longterm') {
-                longTermDatesRow.classList.remove('d-none'); // Show long-term date input
-                oneDayDateRow.classList.add('d-none');      // Hide one-day date input
-            } else if (borrowingTypeSelect.value === 'oneday') {
-                oneDayDateRow.classList.remove('d-none');   // Show one-day date input
-                longTermDatesRow.classList.add('d-none');   // Hide long-term date input
-            }
-        }
-
-        // Run the function on page load to ensure the correct date input is shown
-        toggleDateInputs();
-
-        // Add event listener to toggle date inputs on change
-        borrowingTypeSelect.addEventListener('change', toggleDateInputs);
-    });
-
-
-
-  
-
-
+    const borrowingTypeSelect = document.getElementById('borrowing-type');
+    const longTermDatesRow = document.getElementById('long-term-dates');
+    const oneDayDateRow = document.getElementById('one-day-date');
+    const itemTypeSelect = document.getElementById('item-type-select');
+    const itemNameSelect = document.getElementById('item-name-select');
+    const totalQty = document.getElementById('total-qty');
     const equipmentRowsContainer = document.getElementById('equipment-rows');
     const addEquipmentBtn = document.getElementById('add-equipment-btn');
 
+    // Initialize item name select to be disabled
+    itemNameSelect.disabled = true;
 
-    function addEquipmentRow() {
-      const newRow = document.createElement('div');
-      newRow.classList.add('row', 'mb-3', 'equipment-row');
-      newRow.innerHTML = `
-        <label class="col-sm-2 col-form-label">Equipment</label>
-        <div class="col-sm-5">
-          <select class="form-select" aria-label="Default select example">
-            {% for equipment in equipment_list %}
-              <option value="{{ equipment.item_id }}">{{ equipment.item_name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <label for="inputNumber" class="col-sm-1 col-form-label text-end">Qty:</label>
-        <div class="col-sm-2">
-          <input type="number" class="form-control" min="0" value="0">
-        </div>
-        <div class="col-sm-2 delete-btn-container">
-          <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
-        </div>
-      `;
-      equipmentRowsContainer.appendChild(newRow);
-      updateDeleteButtons();
-    }
+    // Event listener for item type selection
+    itemTypeSelect.addEventListener('change', function () {
+        const selectedType = this.value;
 
+        // Clear the item_name dropdown if no item_type is selected
+        if (!selectedType) {
+            itemNameSelect.innerHTML = '<option value="">Select Item Type First</option>';
+            itemNameSelect.disabled = true; // Disable the dropdown
+            totalQty.textContent = ''; // Clear the total quantity display as well
+            return; // Exit the function if no item_type is selected
+        }
 
-    function deleteEquipmentRow(event) {
-      const rowToDelete = event.target.closest('.equipment-row');
-      rowToDelete.remove();
-      updateDeleteButtons();
-    }
-
-    // Update visibility of delete buttons (hide if only 1 row)
-    function updateDeleteButtons() {
-      const allRows = equipmentRowsContainer.querySelectorAll('.equipment-row');
-      const deleteButtons = equipmentRowsContainer.querySelectorAll('.delete-equipment-btn');
-
-      if (allRows.length > 1) {
-        deleteButtons.forEach(btn => btn.closest('.delete-btn-container').classList.remove('d-none'));
-      } else {
-        deleteButtons.forEach(btn => btn.closest('.delete-btn-container').classList.add('d-none'));
-      }
-    }
-
-
-    addEquipmentBtn.addEventListener('click', addEquipmentRow);
-
-    // Event delegation for deleting equipment rows
-    equipmentRowsContainer.addEventListener('click', function (event) {
-      if (event.target.classList.contains('delete-equipment-btn')) {
-        deleteEquipmentRow(event);
-      }
+        itemNameSelect.disabled = false; // Enable the dropdown
+        // Fetch items based on selected type
+        fetch(`/borrowing/student/get-items/${selectedType}/`)
+            .then(response => response.json())
+            .then(data => {
+                itemNameSelect.innerHTML = '<option value="">Select Item Name</option>'; // Clear previous options
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.item_id;
+                    option.textContent = `${item.item_name} (Qty: ${item.total_qty})`; // Display qty in dropdown
+                    itemNameSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching items:', error));
     });
 
-    updateDeleteButtons();
- 
-</script>
+    // Event listener for item name selection to fetch quantity
+    itemNameSelect.addEventListener('change', function () {
+        const selectedItem = this.value;
+
+        if (selectedItem) {
+            fetch(`/borrowing/student/get-quantity/${selectedItem}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.total_qty !== undefined) {
+                        totalQty.textContent = `Total Quantity: ${data.total_qty}`;
+                    } else {
+                        totalQty.textContent = 'Error fetching quantity';
+                    }
+                })
+                .catch(error => console.error('Error fetching quantity:', error));
+        } else {
+            totalQty.textContent = ''; // Clear quantity if no item is selected
+        }
+    });
+
+    // Function to toggle date input visibility based on borrowing type
+    function toggleDateInputs() {
+        if (borrowingTypeSelect.value === 'longterm') {
+            longTermDatesRow.classList.remove('d-none');
+            oneDayDateRow.classList.add('d-none');
+        } else if (borrowingTypeSelect.value === 'oneday') {
+            oneDayDateRow.classList.remove('d-none');
+            longTermDatesRow.classList.add('d-none');
+        }
+    }
+
+    function addEquipmentRow() {
+        const newRow = document.createElement('div');
+        newRow.classList.add('row', 'mb-3', 'equipment-row');
+        newRow.innerHTML = `
+            <label class="col-sm-2 col-form-label">Equipment:</label>
+            <div class="col-sm-5">
+                <select class="form-select equipment-select" name="equipment">
+                    <option value="">Select Equipment</option>
+                    {% for item_type in item_types %}
+                      <optgroup label="{{ item_type.itemType_name }}">
+                        {% for item in item_list_with_qty %}
+                          <option value="{{ item.item_id }}">{{ item.item_name }}</option>
+                        {% endfor %}
+                      </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-2">
+                <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
+            </div>
+        `;
+        equipmentRowsContainer.appendChild(newRow);
+
+        // Attach event listener for the delete button
+        const deleteBtn = newRow.querySelector('.delete-equipment-btn');
+        deleteBtn.addEventListener('click', function() {
+            equipmentRowsContainer.removeChild(newRow);
+        });
+    }
+
+    // Attach event listener to the Add Equipment button
+    addEquipmentBtn.addEventListener('click', addEquipmentRow);
+
+    // Initialize visibility and set up event listener
+    toggleDateInputs();
+    borrowingTypeSelect.addEventListener('change', toggleDateInputs);
+});
+    </script>
+    
 
 {% endblock %}
