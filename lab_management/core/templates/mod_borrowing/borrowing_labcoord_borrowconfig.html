@@ -35,7 +35,7 @@
             <!-- Form for General Laboratory Configurations -->
             <form method="POST" id="labConfigForm">
               {% csrf_token %}
-              <input type="none" name="lab_config_form" value="1"> <!-- none input to differentiate forms -->
+              <input type="none" name="lab_config_form" value="1" hidden> <!-- none input to differentiate forms -->
 
               <div class="row mb-3">
                 <label for="walkin" class="col-sm-2 col-form-label">Allow Walk-Ins:</label>
@@ -93,7 +93,7 @@
 
             <form method="POST" id="borrowConfigForm">
               {% csrf_token %}
-              <input type="none" name="borrow_config_form" value="1"> <!-- none input to differentiate forms -->
+              <input type="none" name="borrow_config_form" value="1" hidden> <!-- none input to differentiate forms -->
 
               <div class="form-group">
                 <label>Select Borrowing Configuration Mode:</label><br>
@@ -159,9 +159,6 @@
                       <td>
                         <input type="checkbox" name="is_consumable_{{ type.itemType_id }}" 
                                {% if type.is_consumable %}checked{% endif %}>
-                      </td>
-                      <td>
-                        <input type="checkbox" name="borrow_item_consumable" value="">
                       </td>
                       <td style="display:none"></td>
                       <td style="display:none"></td>
