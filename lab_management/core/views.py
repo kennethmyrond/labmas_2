@@ -1163,7 +1163,6 @@ def borrowing_labcoord_borrowconfig(request):
 
     if request.method == 'POST':
         if 'lab_config_form' in request.POST:
-            # Update the lab's borrowing configuration settings
             lab.allow_walkin = 'allow_walkin' in request.POST
             lab.allow_prebook = 'allow_prebook' in request.POST
             lab.prebook_lead_time = request.POST.get('prebook_lead_time') or None
@@ -1183,12 +1182,15 @@ def borrowing_labcoord_borrowconfig(request):
             # Handle individual items: Set allow_borrow=True for explicitly checked items
             if allowed_items:
                 item_description.objects.filter(item_id__in=allowed_items).update(allow_borrow=True)
+                # p2=get_object_or_404(item_description, item_id__in=allowed_items)
+                # print(p2.item_name)
+                # print(p2.allow_borrow)
 
             # Handle item types: Set allow_borrow=True for all items under the checked item types
             if allowed_item_types:
                 item_description.objects.filter(itemType_id__in=allowed_item_types).update(allow_borrow=True)
 
-            # Update `is_consumable` for item types and handle unchecking of item types
+            # Update is_consumable for item types and handle unchecking of item types
             for type in item_types_list:
                 # Update the consumable status of the item type
                 type.is_consumable = f'is_consumable_{type.itemType_id}' in request.POST
@@ -1203,11 +1205,40 @@ def borrowing_labcoord_borrowconfig(request):
 
             messages.success(request, "Borrowing configuration updated successfully!")
             return redirect('borrowing_labcoord_borrowconfig')
+        
+        elif 'add_question_form' in request.POST:
+            question_text = request.POST.get('question_text')
+            input_type = request.POST.get('input_type')
+            borrowing_mode = request.POST.get('borrowing_mode')  # New: borrow mode (walk-in, pre-book, both)
+            dropdown_choices = request.POST.get('dropdown_choices', '').split(',') if input_type == 'dropdown' else None
+
+            lab.add_question(question_text, input_type, borrowing_mode, dropdown_choices)
+            messages.success(request, 'Question added successfully!')
+            return redirect('borrowing_labcoord_borrowconfig')
+
+        elif 'update_question_form' in request.POST:
+            index = int(request.POST.get('question_index'))
+            question_text = request.POST.get('question_text')
+            input_type = request.POST.get('input_type')
+            borrowing_mode = request.POST.get('borrowing_mode')  # New: borrow mode (walk-in, pre-book, both)
+            dropdown_choices = request.POST.get('dropdown_choices', '').split(',') if input_type == 'dropdown' else None
+
+            lab.update_question(index, question_text, input_type, borrowing_mode, dropdown_choices)
+            messages.success(request, 'Question updated successfully!')
+            return redirect('borrowing_labcoord_borrowconfig')
+
+        elif 'remove_question_form' in request.POST:
+            index = int(request.POST.get('question_index'))
+
+            lab.remove_question(index)
+            messages.success(request, 'Question removed successfully!')
+            return redirect('borrowing_labcoord_borrowconfig')
 
     return render(request, 'mod_borrowing/borrowing_labcoord_borrowconfig.html', {
         'items': items,
         'item_types_list': item_types_list,
         'lab': lab,
+        'questions': lab.get_questions()  # Get the questions to display them
     })
 
 #CLEARANCE

@@ -6,6 +6,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from io import BytesIO
 from django.core.files import File
 from PIL import Image, ImageDraw
+from django.contrib.postgres.fields import JSONField
 
 class laboratory(models.Model):
     laboratory_id = models.AutoField(primary_key=True)
@@ -196,17 +197,62 @@ class item_transactions(models.Model):
 
 # borrowing
 class borrowing_config(models.Model):
-    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE, primary_key=True, unique=True)
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE, primary_key=True, unique=True)
     
-    # Borrowing configuration fields
-    allow_walkin = models.BooleanField(default=False)  # Walk-ins allowed or not
-    allow_prebook = models.BooleanField(default=False)  # Pre-booking allowed or not
-    prebook_lead_time = models.TimeField(null=True, blank=True)  # Lead time for pre-booking (e.g., 24 hours)
-    allow_shortterm = models.BooleanField(default=True)  # Short-term borrowing allowed
-    allow_longterm = models.BooleanField(default=True)  # Long-term borrowing allowed
+    allow_walkin = models.BooleanField(default=False)
+    allow_prebook = models.BooleanField(default=False)
+    prebook_lead_time = models.TimeField(null=True, blank=True)
+    allow_shortterm = models.BooleanField(default=True)
+    allow_longterm = models.BooleanField(default=True)
+
+    # Questions config as JSON
+    questions_config = models.JSONField(default=list)  # Should always be a list
+
+    def add_question(self, question_text, input_type, borrowing_mode, dropdown_choices=None):
+        # Ensure that questions_config is a list
+        if not isinstance(self.questions_config, list):
+            self.questions_config = []
+
+        new_question = {
+            'question_text': question_text,
+            'input_type': input_type,
+            'borrowing_mode': borrowing_mode,
+            'choices': dropdown_choices if dropdown_choices else []
+        }
+        self.questions_config.append(new_question)
+        self.save()
+
+    def update_question(self, index, question_text, input_type, borrowing_mode, dropdown_choices=None):
+        if not isinstance(self.questions_config, list):
+            self.questions_config = []
+
+        if 0 <= index < len(self.questions_config):
+            self.questions_config[index] = {
+                'question_text': question_text,
+                'input_type': input_type,
+                'borrowing_mode': borrowing_mode,
+                'choices': dropdown_choices if dropdown_choices else []
+            }
+            self.save()
+
+    def remove_question(self, index):
+        if not isinstance(self.questions_config, list):
+            self.questions_config = []
+
+        if 0 <= index < len(self.questions_config):
+            del self.questions_config[index]
+            self.save()
+
+    def get_questions(self, mode=None):
+        if not isinstance(self.questions_config, list):
+            self.questions_config = []
+
+        if mode:
+            return [q for q in self.questions_config if q['borrowing_mode'] == mode or q['borrowing_mode'] == 'both']
+        return self.questions_config
 
     def __str__(self):
-        return self.laboratory
+        return str(self.laboratory)
     
 class borrow_info(models.Model):
     borrow_id = models.AutoField(primary_key=True)
