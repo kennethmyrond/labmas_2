@@ -1241,6 +1241,9 @@ def borrowing_labcoord_borrowconfig(request):
         'questions': lab.get_questions()  # Get the questions to display them
     })
 
+def borrowing_labcoord_detailedPrebookrequests(request):
+    return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html')
+
 def borrowing_labtech_prebookrequests(request):
     return render(request, 'mod_borrowing/borrowing_labtech_prebookrequests.html')
 

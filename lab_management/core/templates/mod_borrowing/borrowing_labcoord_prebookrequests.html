@@ -80,7 +80,7 @@
               <tbody>
                 {% for request in borrowing_requests %}
                 <tr>
-                  <td>RF{{ request.borrow_id }}</td>
+                  <td><a href="{% url 'borrowing_labcoord_detailedPrebookrequests' %}">RF{{ request.borrow_id }}</a></td>
                   <td>{{ request.user.firstname}} {{ request.user.lastname}}</td>
                   <td>{{ request.request_date|date:"Y-m-d" }}</td>
                   <td>{{ request.borrow_date|date:"Y-m-d" }}</td>
