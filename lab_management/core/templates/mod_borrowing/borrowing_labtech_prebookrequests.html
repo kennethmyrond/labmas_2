@@ -3,7 +3,7 @@
 
 {% block content %}
   <style>
-    #approve {
+    #approve, #markascomplete {
       background-color: rgb(108, 193, 108);
       color: white;
       border: none;
@@ -11,6 +11,12 @@
       margin-right: 5px;
     }
     #reject {
+      background-color: rgb(199, 75, 75);
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    #markasborrowed{
       background-color: rgb(199, 75, 75);
       color: white;
       border: none;
@@ -80,7 +86,7 @@
               <tbody>
                 {% for request in borrowing_requests %}
                 <tr>
-                  <td><a href="{% url 'borrowing_labcoord_detailedPrebookrequests' %}">RF{{ request.borrow_id }}</a></td>
+                  <td>RF{{ request.borrow_id }}</td>
                   <td>{{ request.user.firstname}} {{ request.user.lastname}}</td>
                   <td>{{ request.request_date|date:"Y-m-d" }}</td>
                   <td>{{ request.borrow_date|date:"Y-m-d" }}</td>
@@ -108,6 +114,14 @@
                         <button type="submit" name="action" value="approve" id="approve">Approve</button>
                         <button type="submit" name="action" value="reject" id="reject">Reject</button>
                       </form>
+                    {% elif request.status == 'A' %} 
+                        <form method="POST">
+                            <button type="submit" name="action" value="markasborrowed" id="markasborrowed">Mark As Borrowed</button>
+                        </form>
+                    {% elif request.status == 'B' %} 
+                        <form method="POST">
+                            <button type="submit" name="action" value="markascomplete" id="markascomplete">Mark As Complete</button>
+                        </form>
                     {% else %}
                       <span>Completed</span>
                     {% endif %}

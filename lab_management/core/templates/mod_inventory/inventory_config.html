@@ -6,8 +6,13 @@
   <style type="text/css">
     .entrytable {
         border-collapse: collapse; 
-        width: 40%;
+        width: 100%;
         background-color: rgb(240, 240, 240);
+    }
+    .wrapper{
+        height: 220px;
+        overflow-y: auto;
+        width: 40%;
     }
     td {
         padding: 10px;
@@ -15,6 +20,7 @@
     }
     #deletecol {
         background-color: white;
+        width: 100px;
     }
     #deletebtn {
         background: red;
@@ -66,7 +72,11 @@
     min-width: 100px;
 }
 
-  </style>
+#space{
+    padding: 5px;
+}
+
+</style>
 </head>
 
 <div class="pagetitle">
@@ -97,6 +107,7 @@
                                             <input type="text" class="form-control" name="category" id="category" required>
                                         </div>
                                     </div>
+
                                     <div class="row mb-3" id="childflex">
                                         <div class="col-sm-10 d-flex">
                                             <button type="submit" class="btn btn-primary me-2" id="add">Add</button>
@@ -105,7 +116,7 @@
                                 </div>
 
                                 <!-- Display existing categories -->
-                                <div class="">
+                                <div class="wrapper">
                                     <table class="entrytable" id="categoryTable">
                                       <!-- Inside your category loop -->
                                     {% for category in categories %}
@@ -131,6 +142,8 @@
                         <div id="form-container">
                             <div class="form-set">
                                 <div class="row mb-3">
+
+                                    <!-- Select Category-->
                                     <label for="categorySelect" class="col-sm-2 col-form-label">Item Type:</label>
                                     <div class="col-sm-10">
                                         <select class="form-select" id="categorySelect" name="category" required>
@@ -139,25 +152,26 @@
                                             {% endfor %}
                                         </select>
                                     </div>
+
+                                    <div id="space"></div>
+
+                                    <!-- Attributes -->
+                                    <label for="attributeName" class="col-sm-2 col-form-label">Attribute Name:</label>  
+                                    <div class="col-sm-10">
+                                        <input type="text" class="form-control" name="attributeName" id="attributeName" required>
+                                    </div>
+
+                                    <div id="space"></div>
+
+                                    <!-- Number of Fixed Values -->
+                                    <label for="numFixedValues" class="col-sm-2 col-form-label">Number of Fixed Values:</label>
+                                    <div class="col-sm-10">
+                                        <input type="number" class="form-control" name="numFixedValues" id="numFixedValues" min="0" oninput="generateFixedValueInputs()">
+                                    </div>
+
                                 </div>
 
                                 <div id="flexbox">
-                                    <!-- Attribute Name -->
-                                    <div class="row mb-3" id="inputbox">
-                                        <label for="attributeName" class="col-sm-2 col-form-label">Attribute Name:</label>
-                                        <div class="col-sm-10">
-                                            <input type="text" class="form-control" name="attributeName" id="attributeName" required>
-                                        </div>
-                                    </div>
-                                
-                                    <!-- Number of Fixed Values -->
-                                    <div class="row mb-3" id="inputbox">
-                                        <label for="numFixedValues" class="col-sm-2 col-form-label">Number of Fixed Values:</label>
-                                        <div class="col-sm-10">
-                                            <input type="number" class="form-control" name="numFixedValues" id="numFixedValues" min="0" oninput="generateFixedValueInputs()">
-                                        </div>
-                                    </div>
-                                
                                     <!-- Fixed Values (dynamically generated, hidden by default) -->
                                     <div class="row mb-3" id="fixedValuesContainer" style="display:none;">
                                         <label for="fixedValues" class="col-sm-2 col-form-label">Fixed Values:</label>
@@ -177,10 +191,10 @@
                                 
 
                                 <!-- Existing attributes display -->
-                                <div>
+                                <div class="wrapper">
                                     <table class="entrytable" id="attributesTable">
-                                        <tr class="defaultattribute"><td>Type</td><td></td></tr>
-                                        <tr class="defaultattribute"><td>Item Name</td><td></td></tr>
+                                        <tr class="defaultattribute"><td>Type</td><td id="deletecol"></td></tr>
+                                        <tr class="defaultattribute"><td>Item Name</td><td id="deletecol"></td></tr>
                                         {% for attribute in attributes %}
                                         <tr>
                                             <td>{{ attribute }}</td>
