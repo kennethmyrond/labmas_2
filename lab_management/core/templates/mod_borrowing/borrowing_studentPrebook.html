@@ -46,6 +46,26 @@
                           <input type="text" class="form-control" id="studentname" name="studentname" value="{{user.first_name}} {{user.last_name}}" readonly> 
                       </div>
                   </div>
+
+                  <!-- Dynamic Questions based on prebook_questions -->
+                  {% for question in prebook_questions %}
+                  <div class="row mb-3">
+                      <label for="{{ question.question_text }}" class="col-sm-2 col-form-label">{{ question.question_text }}</label>
+                      <div class="col-sm-10">
+                          {% if question.input_type == 'textbox' %}
+                              <input type="text" class="form-control" id="{{ question.question_text }}" name="{{ question.question_text }}">
+                          {% elif question.input_type == 'dropdown' %}
+                              <select class="form-select" id="{{ question.question_text }}" name="{{ question.question_text }}">
+                                  {% for choice in question.choices %}
+                                      <option value="{{ choice }}">{{ choice }}</option>
+                                  {% endfor %}
+                              </select>
+                          {% elif question.input_type == 'checkbox' %}
+                              <input type="checkbox" class="form-check-input" id="{{ question.question_text }}" name="{{ question.question_text }}">
+                          {% endif %}
+                      </div>
+                  </div>
+              {% endfor %}
                 
                     <div class="row mb-3">
                         <label for="borrowing-type" class="col-sm-2 col-form-label">1-Day or Long-Term Borrowing</label>
@@ -94,6 +114,7 @@
                                   <th>Item Name</th>
                                   <th>Add Equipment</th>
                                   <th>Available Qty</th>
+                                  <th hidden></th>
                               </tr>
                           </thead>
                           <tbody>
@@ -104,6 +125,7 @@
                                       <td></td> <!-- Leave empty for the header row -->
                                       <td></td> <!-- Leave empty for the header row -->
                                       <td></td> <!-- Leave empty for the header row -->
+                                      <td hidden></td>
                                   </tr>
                                   {% for item in group.list %}
                                       <tr>
@@ -114,6 +136,7 @@
                                               <button type="button" class="add-equipment-btn btn btn-primary" data-item-name="{{ item.item_name }}" data-item-id="{{ item.item_id }}" data-available-qty="{{ item.total_qty }}">Add</button>
                                           </td>
                                           <td>{{ item.total_qty }}</td>
+                                          <td hidden></td>
                                       </tr>
                                   {% endfor %}
                               {% empty %}
@@ -127,17 +150,78 @@
                     <!-- Validation Message -->
                   <div id="validation-message" class="alert alert-danger" style="display: none;"></div>
                     
-                    <div class="row mb-3">
+                    <!-- <div class="row mb-3">
                         <div class="col-sm-10">
                             <button type="submit" class="btn btn-primary">Borrow</button>
                         </div>
+                    </div> -->
+
+                    <!-- Confirmation Modal Trigger -->
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#confirmBorrowModal">
+                        Review & Confirm Borrow
+                    </button>
+
+                    <!-- Confirmation Modal -->
+                    <div class="modal fade" id="confirmBorrowModal" tabindex="-1" role="dialog" aria-labelledby="confirmBorrowLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="confirmBorrowLabel">Confirm Borrow Details</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <h6>Borrow Type: <span id="confirmBorrowType"></span></h6>
+                                    <h6>Borrow Date: <span id="confirmBorrowDate"></span></h6>
+                                    <h6>Due Date: <span id="confirmDueDate"></span></h6>
+                                    <h6>Equipment List:</h6>
+                                    <ul id="confirmEquipmentList"></ul>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Confirm Borrow</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
                   </form>
               </div>
           </div>
       </div>
   </div>
 </section>
+
+<script>
+    // Function to populate modal with borrow details
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('borrow-form');
+        const confirmBorrowType = document.getElementById('confirmBorrowType');
+        const confirmBorrowDate = document.getElementById('confirmBorrowDate');
+        const confirmDueDate = document.getElementById('confirmDueDate');
+        const confirmPurpose = document.getElementById('confirmPurpose');
+        const confirmEquipmentList = document.getElementById('confirmEquipmentList');
+    
+        document.querySelector('[data-target="#confirmBorrowModal"]').addEventListener('click', function() {
+            confirmBorrowType.innerText = document.getElementById('borrowing-type').value;
+            confirmBorrowDate.innerText = document.getElementById('one-day-booking-date').value || document.getElementById('from-date').value;
+            confirmDueDate.innerText = document.getElementById('to-date').value || document.getElementById('one-day-booking-date').value;
+            confirmPurpose.innerText = form.querySelector('[name="purpose"]').value;
+    
+            // Populate equipment list
+            confirmEquipmentList.innerHTML = '';
+            const equipmentRows = document.querySelectorAll('.equipment-row');
+            equipmentRows.forEach(function(row) {
+                const equipmentName = row.querySelector('input[type="text"]').value;
+                const equipmentQty = row.querySelector('input[name="quantities[]"]').value;
+                const li = document.createElement('li');
+                li.innerText = `${equipmentName} - Quantity: ${equipmentQty}`;
+                confirmEquipmentList.appendChild(li);
+            });
+        });
+    });
+    </script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

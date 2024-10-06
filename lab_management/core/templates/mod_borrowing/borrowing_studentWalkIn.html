@@ -50,7 +50,28 @@
                               <input type="text" class="form-control" name="studentname" value="{{ user.first_name }} {{ user.last_name }}" readonly>
                           </div>
                       </div>
+
+                      <!-- Dynamically Render Walk-In Questions -->
+                      {% for question in walkin_questions %}
+                        <div class="row mb-3">
+                            <label for="{{ question.question_text }}" class="col-sm-2 col-form-label">{{ question.question_text }}</label>
+                            <div class="col-sm-10">
+                                {% if question.input_type == 'textbox' %}
+                                    <input type="text" class="form-control" id="{{ question.question_text }}" name="{{ question.question_text }}">
+                                {% elif question.input_type == 'dropdown' %}
+                                    <select class="form-select" id="{{ question.question_text }}" name="{{ question.question_text }}">
+                                        {% for choice in question.choices %}
+                                            <option value="{{ choice }}">{{ choice }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% elif question.input_type == 'checkbox' %}
+                                    <input type="checkbox" class="form-check-input" id="{{ question.question_text }}" name="{{ question.question_text }}">
+                                {% endif %}
+                            </div>
+                        </div>
+                      {% endfor %}
                       <hr>
+
                      <!-- Added Equipment Section -->
                     <div id="equipment-rows" class="mb-3">
                       <div class="row mb-3">
@@ -68,6 +89,7 @@
                                 <th>Item Name</th>
                                 <th>Add Equipment</th>
                                 <th>Available Qty</th>
+                                <th hidden></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -78,6 +100,7 @@
                                     <td></td> <!-- Leave empty for the header row -->
                                     <td></td> <!-- Leave empty for the header row -->
                                     <td></td> <!-- Leave empty for the header row -->
+                                    <td hidden></td>
                                 </tr>
                                 {% for item in group.list %}
                                     <tr>
@@ -88,6 +111,7 @@
                                             <button type="button" class="add-equipment-btn btn btn-primary" data-item-name="{{ item.item_name }}" data-item-id="{{ item.item_id }}" data-available-qty="{{ item.total_qty }}">Add</button>
                                         </td>
                                         <td>{{ item.total_qty }}</td>
+                                        <td hidden></td>
                                     </tr>
                                 {% endfor %}
                             {% empty %}

@@ -201,7 +201,7 @@ class borrowing_config(models.Model):
     
     allow_walkin = models.BooleanField(default=False)
     allow_prebook = models.BooleanField(default=False)
-    prebook_lead_time = models.TimeField(null=True, blank=True)
+    prebook_lead_time = models.IntegerField(default=0)
     allow_shortterm = models.BooleanField(default=True)
     allow_longterm = models.BooleanField(default=True)
 
@@ -265,6 +265,7 @@ class borrow_info(models.Model):
     # faculty_id = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='faculty')
     status = models.CharField(max_length=1, null=True, blank=True)
     approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    questions_responses = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return f"Borrow Info {self.borrow_id}"

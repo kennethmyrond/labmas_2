@@ -773,31 +773,149 @@ def get_add_cols(request, category_id):
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
 
+# def borrowing_student_prebookview(request):
+#     try:
+#         laboratory_id = request.session.get('selected_lab')
+#         user_id = request.user.id
+#         lab = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
+#         if not lab.allow_prebook:
+#             return render(request, 'error_page.html', {'message': 'Pre-booking is not allowed for this laboratory.'})
+
+#         # Fetch all equipment items including their total quantities
+#         equipment_list = item_description.objects.filter(
+#             laboratory_id=laboratory_id,
+#             is_disabled=0,
+#             allow_borrow=1  # Only include items that can be borrowed
+#         ).annotate(total_qty=Sum('item_inventory__qty'))  # Annotate with total quantity
+
+#         # Get all item types for the selected laboratory
+#         item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
+#         borrow_config = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
+
+#         # Fetch inventory items and order them by item type name
+#         inventory_items = item_description.objects.filter(
+#             laboratory_id=laboratory_id,
+#             is_disabled=0,  # Only get items that are enabled
+#             allow_borrow=1  # Only get items that can be borrowed
+#         ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
+#         inventory_items = inventory_items.select_related('itemType').order_by('itemType__itemType_name')  # Order by itemType name
+
+#         if request.method == 'POST':
+#             # Fetch form data
+#             borrowing_type = request.POST.get('borrowing-type')
+#             one_day_date = request.POST.get('one_day_booking_date')
+#             from_date = request.POST.get('from_date')
+#             to_date = request.POST.get('to_date')
+#             purpose = request.POST.get('purpose')
+
+#             # Set request date to the current date and time
+#             request_date = timezone.now().date()
+#             print(borrow_config.prebook_lead_time)
+
+#             # Determine borrow and due dates based on borrowing type
+#             error_message = None
+#             if borrowing_type == 'oneday':
+#                 borrow_date = one_day_date
+#                 due_date = one_day_date
+
+#                 # Validate that the borrowing date is not in the past
+#                 if one_day_date < request_date.strftime('%Y-%m-%d'):
+#                     error_message = 'The borrowing date cannot be earlier than today for one-day borrowing.'
+
+#                 # Validate the one-day borrowing: must be at least 3 days from the request date
+#                 min_borrow_date = request_date + timedelta(days=int(borrow_config.prebook_lead_time))
+#                 if one_day_date < min_borrow_date.strftime('%Y-%m-%d'):
+#                     error_message = f'For one-day borrowing, the requested date must be at least {borrow_config.prebook_lead_time} days from today.'
+#             else:
+#                 borrow_date = from_date
+#                 due_date = to_date
+
+#                 # Validate the long-term borrowing
+#                 min_from_date = request_date + timedelta(days=int(borrow_config.prebook_lead_time))
+#                 if from_date < min_from_date.strftime('%Y-%m-%d'):
+#                     error_message = f'The "From" date for long-term borrowing must be at least {borrow_config.prebook_lead_time} days from the request date.'
+
+#                 if to_date < from_date:
+#                     error_message = '"To" date cannot be earlier than the "From" date.'
+
+#             # If there is an error, re-render the form with the error message
+#             if error_message:
+#                 return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
+#                     'error_message': error_message,
+#                     'current_date': request_date,
+#                     'equipment_list': equipment_list,  # Include equipment_list here
+#                     'inventory_items': inventory_items,  # Include inventory_items here
+#                 })
+
+#             # If validation passes, proceed with insertion
+#             borrow_entry = borrow_info.objects.create(
+#                 laboratory_id=laboratory_id,
+#                 user_id=user_id,
+#                 request_date=timezone.now(),  # Use current timestamp
+#                 borrow_date=borrow_date,
+#                 due_date=due_date,
+#                 status='P',  # Set initial status to 'Pending'
+#             )
+
+#             # Process equipment details
+#             equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
+#             quantities = request.POST.getlist('quantities[]')       # Corresponding quantities
+
+#             for i, item_id in enumerate(equipment_rows):
+#                 quantity = int(quantities[i])
+#                 # Fetch the item from core_item_description
+#                 item = item_description.objects.get(item_id=item_id)
+                
+#                 # Insert the item into borrowed_items table
+#                 borrowed_items.objects.create(
+#                     borrow=borrow_entry,
+#                     item=item,
+#                     qty=quantity
+#                 )
+
+#             # Redirect after successful submission
+#             return redirect('borrowing_studentviewPreBookRequests')
+
+#         # Fetch the current date
+#         current_date = timezone.now().date()
+
+#     except Http404:
+#         # If the laboratory is not found, render the error page with a different message
+#         return render(request, 'error_page.html', {'message': 'The laboratory was not found.'})
+
+#     # Render the form
+#     return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
+#         'current_date': current_date,
+#         'equipment_list': equipment_list,
+#         'inventory_items': inventory_items,
+#     })
+
 def borrowing_student_prebookview(request):
     try:
         laboratory_id = request.session.get('selected_lab')
         user_id = request.user.id
         lab = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
+
+        # Check if pre-booking is allowed
         if not lab.allow_prebook:
             return render(request, 'error_page.html', {'message': 'Pre-booking is not allowed for this laboratory.'})
+
+        # Fetch the prebook-specific questions
+        prebook_questions = lab.get_questions(mode='prebook')
 
         # Fetch all equipment items including their total quantities
         equipment_list = item_description.objects.filter(
             laboratory_id=laboratory_id,
             is_disabled=0,
             allow_borrow=1  # Only include items that can be borrowed
-        ).annotate(total_qty=Sum('item_inventory__qty'))  # Annotate with total quantity
-
-        # Get all item types for the selected laboratory
-        item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
+        ).annotate(total_qty=Sum('item_inventory__qty'))
 
         # Fetch inventory items and order them by item type name
         inventory_items = item_description.objects.filter(
             laboratory_id=laboratory_id,
-            is_disabled=0,  # Only get items that are enabled
+            is_disabled=0,
             allow_borrow=1  # Only get items that can be borrowed
-        ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
-        inventory_items = inventory_items.select_related('itemType').order_by('itemType__itemType_name')  # Order by itemType name
+        ).annotate(total_qty=Sum('item_inventory__qty')).select_related('itemType').order_by('itemType__itemType_name')
 
         if request.method == 'POST':
             # Fetch form data
@@ -805,9 +923,12 @@ def borrowing_student_prebookview(request):
             one_day_date = request.POST.get('one_day_booking_date')
             from_date = request.POST.get('from_date')
             to_date = request.POST.get('to_date')
-            purpose = request.POST.get('purpose')
 
-            # Set request date to the current date and time
+            # Collect responses to the custom questions
+            custom_question_responses = {}
+            for question in prebook_questions:
+                custom_question_responses[question['question_text']] = request.POST.get(question['question_text'])
+
             request_date = timezone.now().date()
 
             # Determine borrow and due dates based on borrowing type
@@ -821,17 +942,17 @@ def borrowing_student_prebookview(request):
                     error_message = 'The borrowing date cannot be earlier than today for one-day borrowing.'
 
                 # Validate the one-day borrowing: must be at least 3 days from the request date
-                min_borrow_date = request_date + timedelta(days=3)
+                min_borrow_date = request_date + timedelta(days=int(lab.prebook_lead_time))
                 if one_day_date < min_borrow_date.strftime('%Y-%m-%d'):
-                    error_message = 'For one-day borrowing, the requested date must be at least 3 days from today.'
+                    error_message = f'For one-day borrowing, the requested date must be at least {lab.prebook_lead_time} days from today.'
             else:
                 borrow_date = from_date
                 due_date = to_date
 
                 # Validate the long-term borrowing
-                min_from_date = request_date + timedelta(days=3)
+                min_from_date = request_date + timedelta(days=int(lab.prebook_lead_time))
                 if from_date < min_from_date.strftime('%Y-%m-%d'):
-                    error_message = 'The "From" date for long-term borrowing must be at least 3 days from the request date.'
+                    error_message = f'The "From" date for long-term borrowing must be at least {lab.prebook_lead_time} days from the request date.'
 
                 if to_date < from_date:
                     error_message = '"To" date cannot be earlier than the "From" date.'
@@ -853,6 +974,7 @@ def borrowing_student_prebookview(request):
                 borrow_date=borrow_date,
                 due_date=due_date,
                 status='P',  # Set initial status to 'Pending'
+                questions_responses=custom_question_responses
             )
 
             # Process equipment details
@@ -870,23 +992,20 @@ def borrowing_student_prebookview(request):
                     item=item,
                     qty=quantity
                 )
-
-            # Redirect after successful submission
             return redirect('borrowing_studentviewPreBookRequests')
 
-        # Fetch the current date
         current_date = timezone.now().date()
 
     except Http404:
-        # If the laboratory is not found, render the error page with a different message
         return render(request, 'error_page.html', {'message': 'The laboratory was not found.'})
 
-    # Render the form
     return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
         'current_date': current_date,
         'equipment_list': equipment_list,
         'inventory_items': inventory_items,
+        'prebook_questions': prebook_questions  # Pass the prebook questions to the template
     })
+
 
 
 def get_items_by_type(request, item_type_id):
@@ -924,14 +1043,26 @@ def borrowing_student_walkinview(request):
     laboratory_id = request.session.get('selected_lab')
     user_id = request.user.id
 
+    # Fetch the lab's borrowing configuration
     lab = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
+
+    # Check if walk-ins are allowed
     if not lab.allow_walkin:
         return render(request, 'error_page.html', {'message': 'Walk-ins are not allowed for this laboratory.'})
+
+    # Fetch the walk-in-specific questions
+    walkin_questions = lab.get_questions(mode='walkin')
 
     if request.method == 'POST':
         request_date = timezone.now()
         borrow_date = request_date
         due_date = request_date
+
+        # Collect responses to the custom walk-in questions
+        custom_question_responses = {}
+        for question in walkin_questions:
+            response = request.POST.get(question['question_text'])
+            custom_question_responses[question['question_text']] = response
 
         # Insert into core_borrow_info
         borrow_entry = borrow_info.objects.create(
@@ -941,6 +1072,7 @@ def borrowing_student_walkinview(request):
             borrow_date=borrow_date,
             due_date=due_date,
             status='P',  # Set initial status to 'Pending'
+            questions_responses=custom_question_responses  # Save the user's responses to the questions
         )
 
         # Process equipment details
@@ -955,7 +1087,7 @@ def borrowing_student_walkinview(request):
                 if quantity <= 0:
                     error_message = 'Quantity must be greater than 0 for each item.'
                     break
-                
+
                 # Check if item exists and is borrowable
                 item = item_description.objects.filter(item_id=item_id, is_disabled=0, allow_borrow=1).first()
                 if not item:
@@ -971,33 +1103,34 @@ def borrowing_student_walkinview(request):
                 'equipment_list': item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1),
                 'error_message': error_message,
                 'inventory_items': inventory_items,
+                'walkin_questions': walkin_questions,  # Pass walk-in questions back to the template
             })
 
         # If validation passes, insert items into borrowed_items
         for i, item_id in enumerate(equipment_rows):
-                quantity = int(quantities[i])
-                if quantity <= 0:
-                    continue  # Skip if quantity is invalid
+            quantity = int(quantities[i])
+            if quantity <= 0:
+                continue  # Skip if quantity is invalid
 
-                item = item_description.objects.get(item_id=item_id)
-                
-                # Check if item already exists in borrowed_items
-                existing_borrowed_item = borrowed_items.objects.filter(borrow=borrow_entry, item=item).first()
-                if existing_borrowed_item:
-                    continue  # Skip insertion if it already exists
+            item = item_description.objects.get(item_id=item_id)
 
-                # Insert the item into borrowed_items table
-                borrowed_item = borrowed_items.objects.create(
-                    borrow=borrow_entry,
-                    item=item,
-                    qty=quantity
-                )
+            # Check if item already exists in borrowed_items
+            existing_borrowed_item = borrowed_items.objects.filter(borrow=borrow_entry, item=item).first()
+            if existing_borrowed_item:
+                continue  # Skip insertion if it already exists
+
+            # Insert the item into borrowed_items table
+            borrowed_item = borrowed_items.objects.create(
+                borrow=borrow_entry,
+                item=item,
+                qty=quantity
+            )
 
         return redirect('borrowing_studentviewWalkInRequests')
 
     # Fetch the current date and all equipment items including chemicals
     current_date = timezone.now().date()
-    
+
     # Get unique item types for dropdown filtering
     item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
 
@@ -1019,18 +1152,15 @@ def borrowing_student_walkinview(request):
     ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
     inventory_items = inventory_items.select_related('itemType').order_by('itemType__itemType_name')  # Order by itemType name
 
-    add_cols = []
-
     return render(request, 'mod_borrowing/borrowing_studentWalkIn.html', {
         'current_date': current_date,
         'equipment_list': equipment_list,
         'item_types': item_types_list,  # Pass item types to the template
         'inventory_items': inventory_items,
-
+        'walkin_questions': walkin_questions,  # Pass the walk-in questions to the template
     })
 
 
-        
 # booking requests
 
 def borrowing_student_viewPreBookRequestsview(request):
@@ -1039,7 +1169,7 @@ def borrowing_student_viewPreBookRequestsview(request):
 
     current_user = get_object_or_404(user, user_id=request.user.id)
 
-    # Annotate the request date as truncated date (without time) and exclude records where dates match
+    # Filter borrow_info based on statuses
     prebook_requests = borrow_info.objects.annotate(
         truncated_request_date=TruncDate('request_date')
     ).filter(
@@ -1050,9 +1180,23 @@ def borrowing_student_viewPreBookRequestsview(request):
         truncated_request_date=F('borrow_date')
     ).order_by('-request_date')
 
+    # Filter by status
+    pending_requests = prebook_requests.filter(status='P')
+    accepted_requests = prebook_requests.filter(status='A')
+    declined_requests = prebook_requests.filter(status='D')
+    borrowed_requests = prebook_requests.filter(status='B')  # Assuming B is for borrowed
+    cancelled_requests = prebook_requests.filter(status='C')  # Assuming C is for canceled
+    completed_requests = prebook_requests.filter(status='X')  # Assuming X is for completed
+
     return render(request, 'mod_borrowing/borrowing_studentViewPreBookRequests.html', {
-        'prebook_requests': prebook_requests,
+        'pending_requests': pending_requests,
+        'accepted_requests': accepted_requests,
+        'declined_requests': declined_requests,
+        'borrowed_requests': borrowed_requests,
+        'cancelled_requests': cancelled_requests,
+        'completed_requests': completed_requests,
     })
+
 
 def borrowing_student_WalkInRequestsview(request):
     if not request.user.is_authenticated:
