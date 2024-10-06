@@ -773,123 +773,6 @@ def get_add_cols(request, category_id):
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
 
-# def borrowing_student_prebookview(request):
-#     try:
-#         laboratory_id = request.session.get('selected_lab')
-#         user_id = request.user.id
-#         lab = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
-#         if not lab.allow_prebook:
-#             return render(request, 'error_page.html', {'message': 'Pre-booking is not allowed for this laboratory.'})
-
-#         # Fetch all equipment items including their total quantities
-#         equipment_list = item_description.objects.filter(
-#             laboratory_id=laboratory_id,
-#             is_disabled=0,
-#             allow_borrow=1  # Only include items that can be borrowed
-#         ).annotate(total_qty=Sum('item_inventory__qty'))  # Annotate with total quantity
-
-#         # Get all item types for the selected laboratory
-#         item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
-#         borrow_config = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
-
-#         # Fetch inventory items and order them by item type name
-#         inventory_items = item_description.objects.filter(
-#             laboratory_id=laboratory_id,
-#             is_disabled=0,  # Only get items that are enabled
-#             allow_borrow=1  # Only get items that can be borrowed
-#         ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
-#         inventory_items = inventory_items.select_related('itemType').order_by('itemType__itemType_name')  # Order by itemType name
-
-#         if request.method == 'POST':
-#             # Fetch form data
-#             borrowing_type = request.POST.get('borrowing-type')
-#             one_day_date = request.POST.get('one_day_booking_date')
-#             from_date = request.POST.get('from_date')
-#             to_date = request.POST.get('to_date')
-#             purpose = request.POST.get('purpose')
-
-#             # Set request date to the current date and time
-#             request_date = timezone.now().date()
-#             print(borrow_config.prebook_lead_time)
-
-#             # Determine borrow and due dates based on borrowing type
-#             error_message = None
-#             if borrowing_type == 'oneday':
-#                 borrow_date = one_day_date
-#                 due_date = one_day_date
-
-#                 # Validate that the borrowing date is not in the past
-#                 if one_day_date < request_date.strftime('%Y-%m-%d'):
-#                     error_message = 'The borrowing date cannot be earlier than today for one-day borrowing.'
-
-#                 # Validate the one-day borrowing: must be at least 3 days from the request date
-#                 min_borrow_date = request_date + timedelta(days=int(borrow_config.prebook_lead_time))
-#                 if one_day_date < min_borrow_date.strftime('%Y-%m-%d'):
-#                     error_message = f'For one-day borrowing, the requested date must be at least {borrow_config.prebook_lead_time} days from today.'
-#             else:
-#                 borrow_date = from_date
-#                 due_date = to_date
-
-#                 # Validate the long-term borrowing
-#                 min_from_date = request_date + timedelta(days=int(borrow_config.prebook_lead_time))
-#                 if from_date < min_from_date.strftime('%Y-%m-%d'):
-#                     error_message = f'The "From" date for long-term borrowing must be at least {borrow_config.prebook_lead_time} days from the request date.'
-
-#                 if to_date < from_date:
-#                     error_message = '"To" date cannot be earlier than the "From" date.'
-
-#             # If there is an error, re-render the form with the error message
-#             if error_message:
-#                 return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
-#                     'error_message': error_message,
-#                     'current_date': request_date,
-#                     'equipment_list': equipment_list,  # Include equipment_list here
-#                     'inventory_items': inventory_items,  # Include inventory_items here
-#                 })
-
-#             # If validation passes, proceed with insertion
-#             borrow_entry = borrow_info.objects.create(
-#                 laboratory_id=laboratory_id,
-#                 user_id=user_id,
-#                 request_date=timezone.now(),  # Use current timestamp
-#                 borrow_date=borrow_date,
-#                 due_date=due_date,
-#                 status='P',  # Set initial status to 'Pending'
-#             )
-
-#             # Process equipment details
-#             equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
-#             quantities = request.POST.getlist('quantities[]')       # Corresponding quantities
-
-#             for i, item_id in enumerate(equipment_rows):
-#                 quantity = int(quantities[i])
-#                 # Fetch the item from core_item_description
-#                 item = item_description.objects.get(item_id=item_id)
-                
-#                 # Insert the item into borrowed_items table
-#                 borrowed_items.objects.create(
-#                     borrow=borrow_entry,
-#                     item=item,
-#                     qty=quantity
-#                 )
-
-#             # Redirect after successful submission
-#             return redirect('borrowing_studentviewPreBookRequests')
-
-#         # Fetch the current date
-#         current_date = timezone.now().date()
-
-#     except Http404:
-#         # If the laboratory is not found, render the error page with a different message
-#         return render(request, 'error_page.html', {'message': 'The laboratory was not found.'})
-
-#     # Render the form
-#     return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
-#         'current_date': current_date,
-#         'equipment_list': equipment_list,
-#         'inventory_items': inventory_items,
-#     })
-
 def borrowing_student_prebookview(request):
     try:
         laboratory_id = request.session.get('selected_lab')
@@ -1005,8 +888,6 @@ def borrowing_student_prebookview(request):
         'inventory_items': inventory_items,
         'prebook_questions': prebook_questions  # Pass the prebook questions to the template
     })
-
-
 
 def get_items_by_type(request, item_type_id):
     try:
@@ -1169,6 +1050,10 @@ def borrowing_student_viewPreBookRequestsview(request):
 
     current_user = get_object_or_404(user, user_id=request.user.id)
 
+    # Get the borrowing configuration for the laboratory
+    laboratory_id = request.session.get('selected_lab')
+    lab_config = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
+
     # Filter borrow_info based on statuses
     prebook_requests = borrow_info.objects.annotate(
         truncated_request_date=TruncDate('request_date')
@@ -1177,16 +1062,32 @@ def borrowing_student_viewPreBookRequestsview(request):
         request_date__isnull=False,
         borrow_date__isnull=False
     ).exclude(
-        truncated_request_date=F('borrow_date')
+        truncated_request_date=F('borrow_date')  # Exclude same-day requests (walk-ins)
     ).order_by('-request_date')
 
-    # Filter by status
+    # Walk-in requests: where request_date == borrow_date
+    walkin_requests = borrow_info.objects.filter(
+        user=current_user,
+        request_date=F('borrow_date'),
+        request_date__isnull=False,
+        borrow_date__isnull=False
+    ).order_by('-request_date')
+
+    # Filter pre-book requests by status
     pending_requests = prebook_requests.filter(status='P')
     accepted_requests = prebook_requests.filter(status='A')
     declined_requests = prebook_requests.filter(status='D')
-    borrowed_requests = prebook_requests.filter(status='B')  # Assuming B is for borrowed
-    cancelled_requests = prebook_requests.filter(status='C')  # Assuming C is for canceled
-    completed_requests = prebook_requests.filter(status='X')  # Assuming X is for completed
+    borrowed_requests = prebook_requests.filter(status='B')
+    cancelled_requests = prebook_requests.filter(status='C')
+    completed_requests = prebook_requests.filter(status='X')
+
+    # Walk-in request statuses
+    walkin_pending_requests = walkin_requests.filter(status='P')
+    walkin_accepted_requests = walkin_requests.filter(status='A')
+    walkin_declined_requests = walkin_requests.filter(status='D')
+    walkin_borrowed_requests = walkin_requests.filter(status='B')
+    walkin_cancelled_requests = walkin_requests.filter(status='C')
+    walkin_completed_requests = walkin_requests.filter(status='X')
 
     return render(request, 'mod_borrowing/borrowing_studentViewPreBookRequests.html', {
         'pending_requests': pending_requests,
@@ -1195,8 +1096,32 @@ def borrowing_student_viewPreBookRequestsview(request):
         'borrowed_requests': borrowed_requests,
         'cancelled_requests': cancelled_requests,
         'completed_requests': completed_requests,
+        'walkin_pending_requests': walkin_pending_requests,
+        'walkin_accepted_requests': walkin_accepted_requests,
+        'walkin_declined_requests': walkin_declined_requests,
+        'walkin_borrowed_requests': walkin_borrowed_requests,
+        'walkin_cancelled_requests': walkin_cancelled_requests,
+        'walkin_completed_requests': walkin_completed_requests,
+        'lab_config': lab_config,  # Pass borrowing config to template
     })
 
+# @require_POST
+def cancel_borrow_request(request):
+    borrow_id = request.POST.get('borrow_id')
+    request_type = request.POST.get('request_type')
+
+    try:
+        borrow_entry = borrow_info.objects.get(borrow_id=borrow_id)
+
+        # Only allow cancel if it's pending
+        if borrow_entry.status == 'P':
+            borrow_entry.status = 'C'  # Set status to canceled
+            borrow_entry.save()
+            return JsonResponse({'success': True, 'message': 'Request successfully canceled.'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Only pending requests can be canceled.'})
+    except borrow_info.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Request not found.'})
 
 def borrowing_student_WalkInRequestsview(request):
     if not request.user.is_authenticated:

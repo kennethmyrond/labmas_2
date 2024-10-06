@@ -12,6 +12,7 @@
     </nav>
   </div><!-- End Page Title -->
 
+  {% if lab_config.allow_prebook %}
   <!-- Tabs for different statuses -->
   <ul class="nav nav-tabs" id="borrowRequestsTabs" role="tablist">
     <li class="nav-item">
@@ -38,38 +39,35 @@
   <div class="tab-content" id="borrowRequestsContent">
     
     <!-- Pending Requests Tab -->
-    <div class="tab-pane fade show active" id="pending" role="tabpanel">
+    <!-- Pending Pre-Book Requests Tab -->
+    <div class="tab-pane fade show active" id="pre-pending" role="tabpanel">
       <section class="section">
-        <div class="card">
-          <div class="card-body">
-            <table class="table datatable">
-              <thead>
-                <tr>
-                  <th>RF Number</th>
-                  <th>Date Requested</th>
-                  <th>Date Needed</th>
-                  <th>Type</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for request in pending_requests %}
-                <tr>
-                  <td>
-                    <a href="{% url 'borrowing_studentDetailedPreBookRequests' request.borrow_id %}">
-                      {{ request.borrow_id }}
-                    </a>
-                  </td>
-                  <td>{{ request.request_date|date:"Y/m/d" }}</td>
-                  <td>{{ request.borrow_date|date:"Y/m/d" }}</td>
-                  <td>{% if request.due_date > request.borrow_date %}Long-Term{% else %}One-Day{% endif %}</td>
-                  <td><button class="btn btn-danger btn-sm" onclick="cancelRequest('{{ request.borrow_id }}')">Cancel</button></td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+          <div class="card">
+              <div class="card-body">
+                  <table class="table datatable">
+                      <thead>
+                          <tr>
+                              <th>RF Number</th>
+                              <th>Date Requested</th>
+                              <th>Date Needed</th>
+                              <th>Type</th>
+                              <th>Action</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {% for request in pending_requests %}
+                          <tr>
+                              <td>{{ request.borrow_id }}</td>
+                              <td>{{ request.request_date|date:"Y/m/d" }}</td>
+                              <td>{{ request.borrow_date|date:"Y/m/d" }}</td>
+                              <td>{% if request.due_date > request.borrow_date %}Long-Term{% else %}One-Day{% endif %}</td>
+                              <td><button class="btn btn-danger btn-sm" onclick="cancelRequest('{{ request.borrow_id }}', 'prebook')">Cancel</button></td>
+                          </tr>
+                          {% endfor %}
+                      </tbody>
+                  </table>
+              </div>
           </div>
-        </div>
       </section>
     </div>
 
@@ -223,12 +221,253 @@
       </section>
     </div>
   </div>
+  {% endif %}
+
+  {% if lab_config.allow_walkin %}
+  <!-- Walk-In Requests Section -->
+  <h3>Walk-In Requests</h3>
+  <!-- Tabs for different statuses -->
+  <ul class="nav nav-tabs" id="walkInRequestsTabs" role="tablist">
+      <li class="nav-item">
+          <a class="nav-link active" id="walkin-pending-tab" data-toggle="tab" href="#walkin-pending" role="tab">Pending</a>
+      </li>
+      <li class="nav-item">
+          <a class="nav-link" id="walkin-accepted-tab" data-toggle="tab" href="#walkin-accepted" role="tab">Accepted</a>
+      </li>
+      <li class="nav-item">
+          <a class="nav-link" id="walkin-declined-tab" data-toggle="tab" href="#walkin-declined" role="tab">Declined</a>
+      </li>
+      <li class="nav-item">
+          <a class="nav-link" id="walkin-borrowed-tab" data-toggle="tab" href="#walkin-borrowed" role="tab">Borrowed</a>
+      </li>
+      <li class="nav-item">
+          <a class="nav-link" id="walkin-cancelled-tab" data-toggle="tab" href="#walkin-cancelled" role="tab">Cancelled</a>
+      </li>
+      <li class="nav-item">
+          <a class="nav-link" id="walkin-completed-tab" data-toggle="tab" href="#walkin-completed" role="tab">Completed</a>
+      </li>
+  </ul>
+
+  <!-- Walk-In Tab content -->
+  <div class="tab-content" id="walkInRequestsContent">
+      <!-- Pending Walk-In Requests Tab -->
+      <div class="tab-pane fade show active" id="walkin-pending" role="tabpanel">
+          <section class="section">
+              <div class="card">
+                  <div class="card-body">
+                      <table class="table datatable">
+                          <thead>
+                              <tr>
+                                  <th>RF Number</th>
+                                  <th>Date Requested</th>
+                                  <th>Date Needed</th>
+                                  <th>Type</th>
+                                  <th>Action</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {% for request in walkin_pending_requests %}
+                              <tr>
+                                  <td>{{ request.borrow_id }}</td>
+                                  <td>{{ request.request_date|date:"Y/m/d" }}</td>
+                                  <td>{{ request.borrow_date|date:"Y/m/d" }}</td>
+                                  <td>{% if request.due_date > request.borrow_date %}Long-Term{% else %}One-Day{% endif %}</td>
+                                  <td><button class="btn btn-danger btn-sm" onclick="cancelRequest('{{ request.borrow_id }}', 'walkin')">Cancel</button></td>
+                              </tr>
+                              {% endfor %}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          </section>
+      </div>
+          <!-- Accepted Requests Tab -->
+    <div class="tab-pane fade" id="accepted" role="tabpanel">
+      <section class="section">
+        <div class="card">
+          <div class="card-body">
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>RF Number</th>
+                  <th>Date Requested</th>
+                  <th>Date Needed</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for request in accepted_requests %}
+                <tr>
+                  <td><a href="{% url 'borrowing_studentDetailedPreBookRequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                  <td>{{ request.request_date|date:"Y/m/d" }}</td>
+                  <td>{{ request.borrow_date|date:"Y/m/d" }}</td>
+                  <td>{% if request.due_date %}Long-Term{% else %}One-Day{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Declined Requests Tab -->
+    <div class="tab-pane fade" id="declined" role="tabpanel">
+      <section class="section">
+        <div class="card">
+          <div class="card-body">
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>RF Number</th>
+                  <th>Date Requested</th>
+                  <th>Date Needed</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for request in declined_requests %}
+                <tr>
+                  <td><a href="{% url 'borrowing_studentDetailedPreBookRequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                  <td>{{ request.request_date|date:"Y/m/d" }}</td>
+                  <td>{{ request.borrow_date|date:"Y/m/d" }}</td>
+                  <td>{% if request.due_date %}Long-Term{% else %}One-Day{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Borrowed Requests Tab -->
+    <div class="tab-pane fade" id="borrowed" role="tabpanel">
+      <section class="section">
+        <div class="card">
+          <div class="card-body">
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>RF Number</th>
+                  <th>Date Requested</th>
+                  <th>Date Needed</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for request in borrowed_requests %}
+                <tr>
+                  <td><a href="{% url 'borrowing_studentDetailedPreBookRequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                  <td>{{ request.request_date|date:"Y/m/d" }}</td>
+                  <td>{{ request.borrow_date|date:"Y/m/d" }}</td>
+                  <td>{% if request.due_date %}Long-Term{% else %}One-Day{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Cancelled Requests Tab -->
+    <div class="tab-pane fade" id="cancelled" role="tabpanel">
+      <section class="section">
+        <div class="card">
+          <div class="card-body">
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>RF Number</th>
+                  <th>Date Requested</th>
+                  <th>Date Needed</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for request in cancelled_requests %}
+                <tr>
+                  <td><a href="{% url 'borrowing_studentDetailedPreBookRequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                  <td>{{ request.request_date|date:"Y/m/d" }}</td>
+                  <td>{{ request.borrow_date|date:"Y/m/d" }}</td>
+                  <td>{% if request.due_date %}Long-Term{% else %}One-Day{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Completed Requests Tab -->
+    <div class="tab-pane fade" id="completed" role="tabpanel">
+      <section class="section">
+        <div class="card">
+          <div class="card-body">
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>RF Number</th>
+                  <th>Date Requested</th>
+                  <th>Date Needed</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for request in completed_requests %}
+                <tr>
+                  <td><a href="{% url 'borrowing_studentDetailedPreBookRequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                  <td>{{ request.request_date|date:"Y/m/d" }}</td>
+                  <td>{{ request.borrow_date|date:"Y/m/d" }}</td>
+                  <td>{% if request.due_date %}Long-Term{% else %}One-Day{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endif %}
+
+<!-- No Requests Allowed -->
+{% if not lab_config.allow_prebook and not lab_config.allow_walkin %}
+    <div class="alert alert-warning">
+        No borrowing requests are allowed for this laboratory.
+    </div>
+{% endif %}
 
 <script>
-  function cancelRequest(rfNumber) {
-    // Add your cancellation logic here
-    alert('Cancel request for RF Number: ' + rfNumber);
-  }
+  function cancelRequest(rfNumber, requestType) {
+    if (confirm('Are you sure you want to cancel this request?')) {
+        // Send AJAX request to cancel
+        fetch("{% url 'cancel_borrow_request' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',  // Django CSRF token
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                borrow_id: rfNumber,
+                request_type: requestType
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();  // Reload the page to update the request statuses
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
+
 </script>
 
 <script>

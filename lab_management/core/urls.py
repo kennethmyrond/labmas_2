@@ -37,6 +37,7 @@ urlpatterns = [
     path('borrowing/student/borrow_prebook', views.borrowing_student_prebookview, name='borrowing_studentPrebook'),
     path('borrowing/student/borrow_walkin', views.borrowing_student_walkinview, name='borrowing_studentWalkin'),
     path('borrowing/student/viewPreBookRequests', views.borrowing_student_viewPreBookRequestsview, name='borrowing_studentviewPreBookRequests'),
+    path('cancel-request/', views.cancel_borrow_request, name='cancel_borrow_request'),
     path('borrowing/student/viewWalkInRequests', views.borrowing_student_WalkInRequestsview, name='borrowing_studentviewWalkInRequests'),
     path('borrowing/student/detailedPreBookRequests/<int:borrow_id>/', views.borrowing_student_detailedPreBookRequestsview, name='borrowing_studentDetailedPreBookRequests'),
     path('borrowing/student/detailedWalkInRequests', views.borrowing_student_detailedWalkInRequestsview, name='borrowing_studentDetailedWalkInRequests'),
