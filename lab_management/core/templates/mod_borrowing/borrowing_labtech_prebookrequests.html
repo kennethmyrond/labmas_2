@@ -17,17 +17,45 @@
       border-radius: 5px;
     }
     #markasborrowed{
-      background-color: rgb(199, 75, 75);
+      background-color: rgb(232, 192, 98);
       color: white;
       border: none;
       border-radius: 5px;
     }
-    #approve:hover {
+    #approve:hover, #markascomplete:hover {
       background-color: rgb(80, 160, 80);
     }
     #reject:hover {
       background-color: rgb(179, 61, 61);
     }
+    #markasborrowed:hover{
+      background-color: rgb(217, 177, 84);
+    }
+
+    #ticketcontainer{
+      background-color: white;
+      padding:10px 0 10px 0;
+      overflow-x: scroll;
+      display: flex;
+    }
+    .ticket{
+      background-color: white;
+      border: 2px solid rgb(99, 99, 99);
+      box-shadow: 2px 2px 2px 2px rgb(179, 179, 179) ;
+      border-radius: 10px;
+      padding:10px;
+      margin-right:5%;
+    }
+
+    .IDlabel{
+      font-size: large;
+      text-align: center;
+    }
+    .label{
+      padding-right:10px;
+      font-weight: bold;
+    }
+
   </style>
 
   <div class="pagetitle">
@@ -70,8 +98,221 @@
               </div>
             </form>
 
+            <!-- ticket visual,, -->
+
+          <div id="ticketcontainer">
+
+            <div class="ticket">
+              <div style="text-align: center;">
+                <a class="IDlabel" href="{% url 'borrowing_labtech_detailedprebookrequests' %}">RF 12345</a>
+              </div>
+              
+
+              <table class="tickettable">
+                <tr>
+                  <td  class="label">Name:</td>
+                  <td>Name</td>
+                </tr>
+                <tr>
+                  <td  class="label">Date of Request:</td>
+                  <td>01/01/2024</td>
+                </tr>
+                <tr>
+                  <td  class="label">Date for Booking:</td>
+                  <td>01/01/2024</td>
+                </tr>
+                <tr>
+                  <td  class="label">Type:</td>
+                  <td>Type</td>
+                </tr>
+                <tr>
+                  <td  class="label">Status:</td>
+                  <td>Status</td>
+                </tr>  
+                <tr>
+                  <td class="label">Items Borrowed:</td>
+                  <td>
+                    <table>
+                      <tr><td>Item 1</td><td>(×3)</td></tr>
+                      <tr><td>Item 2</td><td>(×4)</td></tr>
+                      <tr><td>Item 3</td><td>(×3)</td></tr>
+                      <tr><td>Item 4</td><td>(×6)</td></tr>
+                      <tr><td>Item 5</td><td>(×3)</td></tr>
+                      <tr><td><a href="{% url 'borrowing_labtech_detailedprebookrequests' %}">...more</a></td></tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td  class="label">Actions:</td>
+                  <td>
+                    <table>
+                      <tr><button type="submit" name="action" value="approve" id="approve">Approve</button></tr>
+                      <tr><button type="submit" name="action" value="reject" id="reject">Reject</button></tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <!--extra hardcoded-->
+            <div class="ticket">
+              <div style="text-align: center;">
+                <a class="IDlabel" href="{% url 'borrowing_labtech_detailedprebookrequests' %}">RF 12345</a>
+              </div>
+              
+
+              <table class="tickettable">
+                <tr>
+                  <td  class="label">Name:</td>
+                  <td>Name</td>
+                </tr>
+                <tr>
+                  <td  class="label">Date of Request:</td>
+                  <td>01/01/2024</td>
+                </tr>
+                <tr>
+                  <td  class="label">Date for Booking:</td>
+                  <td>01/01/2024</td>
+                </tr>
+                <tr>
+                  <td  class="label">Type:</td>
+                  <td>Type</td>
+                </tr>
+                <tr>
+                  <td  class="label">Status:</td>
+                  <td>Status</td>
+                </tr>  
+                <tr>
+                  <td class="label">Items Borrowed:</td>
+                  <td>
+                    <table>
+                      <tr><td>Item 1</td><td>(×3)</td></tr>
+                      <tr><td>Item 2</td><td>(×4)</td></tr>
+                      <tr><td>Item 3</td><td>(×3)</td></tr>
+                      <tr><td>Item 4</td><td>(×6)</td></tr>
+                      <tr><td>Item 5</td><td>(×3)</td></tr>
+                      <tr><td><a href="{% url 'borrowing_labtech_detailedprebookrequests' %}">...more</a></td></tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td  class="label">Actions:</td>
+                  <td>
+                    <table>
+                      <tr><button type="submit" name="action" value="markasborrowed" id="markasborrowed">Mark As Borrowed</button></tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+
+            <div class="ticket">
+              <div style="text-align: center;">
+                <a class="IDlabel" href="{% url 'borrowing_labtech_detailedprebookrequests' %}">RF 12345</a>
+              </div>
+              
+
+              <table class="tickettable">
+                <tr>
+                  <td  class="label">Name:</td>
+                  <td>Name</td>
+                </tr>
+                <tr>
+                  <td  class="label">Date of Request:</td>
+                  <td>01/01/2024</td>
+                </tr>
+                <tr>
+                  <td  class="label">Date for Booking:</td>
+                  <td>01/01/2024</td>
+                </tr>
+                <tr>
+                  <td  class="label">Type:</td>
+                  <td>Type</td>
+                </tr>
+                <tr>
+                  <td  class="label">Status:</td>
+                  <td>Status</td>
+                </tr>
+                <tr>
+                  <td class="label">Items Borrowed:</td>
+                  <td>
+                    <table>
+                      <tr><td>Item 1111111</td><td>(×3)</td></tr>
+                      <tr><td>Item 2</td><td>(×4)</td></tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td  class="label">Actions:</td>
+                  <td>
+                    <table>
+                      <tr><button type="submit" name="action" value="markascomplete" id="markascomplete">Mark As Complete</button></tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="ticket">
+              <div style="text-align: center;">
+                <a class="IDlabel" href="{% url 'borrowing_labtech_detailedprebookrequests' %}">RF 12345</a>
+              </div>
+              
+
+              <table class="tickettable">
+                <tr>
+                  <td  class="label">Name:</td>
+                  <td>Name</td>
+                </tr>
+                <tr>
+                  <td  class="label">Date of Request:</td>
+                  <td>01/01/2024</td>
+                </tr>
+                <tr>
+                  <td  class="label">Date for Booking:</td>
+                  <td>01/01/2024</td>
+                </tr>
+                <tr>
+                  <td  class="label">Type:</td>
+                  <td>Type</td>
+                </tr>
+                <tr>
+                  <td  class="label">Status:</td>
+                  <td>Status</td>
+                </tr>
+                <tr>
+                  <td class="label">Items Borrowed:</td>
+                  <td>
+                    <table>
+                      <tr><td>Item 1</td><td>(×3)</td></tr>
+                      <tr><td>Item 2</td><td>(×4)</td></tr>
+                      <tr><td>Item 3</td><td>(×3)</td></tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td  class="label">Actions:</td>
+                  <td>
+                    <table>
+                      <tr><button type="submit" name="action" value="approve" id="approve">Approve</button></tr>
+                      <tr><button type="submit" name="action" value="reject" id="reject">Reject</button></tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- end of hardcoded-->
+
+            
+          </div>
+
+
+
+          <!-- comment out fornow-->
             <!-- Table with stripped rows -->
-            <table class="table datatable">
+           <!-- <table class="table datatable">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -86,7 +327,7 @@
               <tbody>
                 {% for request in borrowing_requests %}
                 <tr>
-                  <td>RF{{ request.borrow_id }}</td>
+                  <td><a href="{% url 'borrowing_labcoord_detailedPrebookrequests' %}"></a>RF{{ request.borrow_id }}</td>
                   <td>{{ request.user.firstname}} {{ request.user.lastname}}</td>
                   <td>{{ request.request_date|date:"Y-m-d" }}</td>
                   <td>{{ request.borrow_date|date:"Y-m-d" }}</td>
@@ -129,7 +370,7 @@
                 </tr>
                 {% endfor %}
               </tbody>
-            </table>
+            </table> -->
             <!-- End Table with stripped rows -->
 
           </div>

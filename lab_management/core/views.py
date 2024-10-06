@@ -1313,6 +1313,9 @@ def borrowing_labcoord_borrowconfig(request):
 def borrowing_labcoord_detailedPrebookrequests(request):
     return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html')
 
+def borrowing_labtech_detailedprebookrequests(request):
+    return render(request, 'mod_borrowing/borrowing_labtech_detailedprebookRequests.html')
+
 def borrowing_labtech_prebookrequests(request):
     return render(request, 'mod_borrowing/borrowing_labtech_prebookrequests.html')
 
