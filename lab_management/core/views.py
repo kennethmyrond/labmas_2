@@ -135,7 +135,6 @@ def logout_view(request):
     logout(request)
     return redirect("/login")
 
-
 def error_page(request, message=None):
     """
     Renders a generic error page.
@@ -145,6 +144,7 @@ def error_page(request, message=None):
     return render(request, 'error_page.html', {'message': message})
 
 
+# inventory
 def inventory_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -579,11 +579,15 @@ def inventory_manageSuppliers_view(request):
 
     if request.method == "POST":
         supplier_name = request.POST.get("supplier_name")
+        contact_person = request.POST.get("contact_person")
+        contact_number = request.POST.get("contact_number")
         supplier_desc = request.POST.get("description")
 
         new_supplier = suppliers(
             laboratory_id=selected_laboratory_id,
             supplier_name=supplier_name,
+            contact_person=contact_person,
+            contact_number=contact_number,
             description=supplier_desc
         )
         new_supplier.save()
@@ -777,6 +781,24 @@ def borrowing_student_prebookview(request):
         if not lab.allow_prebook:
             return render(request, 'error_page.html', {'message': 'Pre-booking is not allowed for this laboratory.'})
 
+        # Fetch all equipment items including their total quantities
+        equipment_list = item_description.objects.filter(
+            laboratory_id=laboratory_id,
+            is_disabled=0,
+            allow_borrow=1  # Only include items that can be borrowed
+        ).annotate(total_qty=Sum('item_inventory__qty'))  # Annotate with total quantity
+
+        # Get all item types for the selected laboratory
+        item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
+
+        # Fetch inventory items and order them by item type name
+        inventory_items = item_description.objects.filter(
+            laboratory_id=laboratory_id,
+            is_disabled=0,  # Only get items that are enabled
+            allow_borrow=1  # Only get items that can be borrowed
+        ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
+        inventory_items = inventory_items.select_related('itemType').order_by('itemType__itemType_name')  # Order by itemType name
+
         if request.method == 'POST':
             # Fetch form data
             borrowing_type = request.POST.get('borrowing-type')
@@ -819,7 +841,8 @@ def borrowing_student_prebookview(request):
                 return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
                     'error_message': error_message,
                     'current_date': request_date,
-                    'equipment_list': item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1),
+                    'equipment_list': equipment_list,  # Include equipment_list here
+                    'inventory_items': inventory_items,  # Include inventory_items here
                 })
 
             # If validation passes, proceed with insertion
@@ -833,13 +856,14 @@ def borrowing_student_prebookview(request):
             )
 
             # Process equipment details
-            equipment_rows = request.POST.getlist('equipment')  # List of equipment items
-            quantities = request.POST.getlist('quantity')       # Corresponding quantities
+            equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
+            quantities = request.POST.getlist('quantities[]')       # Corresponding quantities
 
             for i, item_id in enumerate(equipment_rows):
                 quantity = int(quantities[i])
                 # Fetch the item from core_item_description
                 item = item_description.objects.get(item_id=item_id)
+                
                 # Insert the item into borrowed_items table
                 borrowed_items.objects.create(
                     borrow=borrow_entry,
@@ -850,26 +874,8 @@ def borrowing_student_prebookview(request):
             # Redirect after successful submission
             return redirect('borrowing_studentviewPreBookRequests')
 
-        # Fetch the current date and all equipment items including chemicals
+        # Fetch the current date
         current_date = timezone.now().date()
-        
-        # Inside your borrowing_student_prebookview function
-        equipment_list = item_description.objects.filter(
-            laboratory_id=laboratory_id,
-            is_disabled=0,
-            allow_borrow=1
-        ).annotate(total_qty=Sum('item_inventory__qty'))
-        # Prepare the list of items with quantity for the template
-        item_list_with_qty = [
-            {
-                'item_id': item.item_id,
-                'item_name': f"{item.item_name} (Qty: {item.total_qty})",  # Append quantity to item name
-                'total_qty': item.total_qty
-            }
-            for item in equipment_list
-]
-        # Get unique item types for dropdown filtering
-        item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
 
     except Http404:
         # If the laboratory is not found, render the error page with a different message
@@ -879,9 +885,9 @@ def borrowing_student_prebookview(request):
     return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
         'current_date': current_date,
         'equipment_list': equipment_list,
-        'item_types': item_types_list,  # Pass item types to the template
-        'item_list_with_qty': item_list_with_qty  # Make sure to pass the prepared list
+        'inventory_items': inventory_items,
     })
+
 
 def get_items_by_type(request, item_type_id):
     try:
@@ -938,21 +944,25 @@ def borrowing_student_walkinview(request):
         )
 
         # Process equipment details
-        equipment_rows = request.POST.getlist('equipment')  # List of equipment items
-        quantities = request.POST.getlist('quantity')       # Corresponding quantities
+        equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
+        quantities = request.POST.getlist('quantities[]')       # Corresponding quantities
 
         # Validate equipment quantities and items
         error_message = None
         for i, item_id in enumerate(equipment_rows):
-            quantity = int(quantities[i])
-            if quantity <= 0:
-                error_message = 'Quantity must be greater than 0 for each item.'
-                break
-            
-            # Check if item exists and is borrowable
-            item = item_description.objects.filter(item_id=item_id, is_disabled=0, allow_borrow=1).first()
-            if not item:
-                error_message = f'Item with ID {item_id} is not available for borrowing.'
+            try:
+                quantity = int(quantities[i])
+                if quantity <= 0:
+                    error_message = 'Quantity must be greater than 0 for each item.'
+                    break
+                
+                # Check if item exists and is borrowable
+                item = item_description.objects.filter(item_id=item_id, is_disabled=0, allow_borrow=1).first()
+                if not item:
+                    error_message = f'Item with ID {item_id} is not available for borrowing.'
+                    break
+            except (ValueError, IndexError) as e:
+                error_message = 'Invalid quantity or item ID.'
                 break
 
         if error_message:
@@ -960,19 +970,28 @@ def borrowing_student_walkinview(request):
                 'current_date': request_date.date(),
                 'equipment_list': item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1),
                 'error_message': error_message,
+                'inventory_items': inventory_items,
             })
 
         # If validation passes, insert items into borrowed_items
         for i, item_id in enumerate(equipment_rows):
-            quantity = int(quantities[i])
-            item = item_description.objects.get(item_id=item_id)
+                quantity = int(quantities[i])
+                if quantity <= 0:
+                    continue  # Skip if quantity is invalid
 
-            # Insert the item into borrowed_items table
-            borrowed_items.objects.create(
-                borrow=borrow_entry,
-                item=item,
-                qty=quantity
-            )
+                item = item_description.objects.get(item_id=item_id)
+                
+                # Check if item already exists in borrowed_items
+                existing_borrowed_item = borrowed_items.objects.filter(borrow=borrow_entry, item=item).first()
+                if existing_borrowed_item:
+                    continue  # Skip insertion if it already exists
+
+                # Insert the item into borrowed_items table
+                borrowed_item = borrowed_items.objects.create(
+                    borrow=borrow_entry,
+                    item=item,
+                    qty=quantity
+                )
 
         return redirect('borrowing_studentviewWalkInRequests')
 
@@ -986,15 +1005,30 @@ def borrowing_student_walkinview(request):
     equipment_list = item_description.objects.filter(
         laboratory_id=laboratory_id,
         is_disabled=0,
-        allow_borrow=1
+        allow_borrow=1  # Only include items that can be borrowed
     ).annotate(total_qty=Sum('item_inventory__qty'))  # Annotate with total quantity
+
+    # Get all item types for the selected laboratory
+    item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
+
+    # Fetch inventory items and order them by item type name
+    inventory_items = item_description.objects.filter(
+        laboratory_id=laboratory_id,
+        is_disabled=0,  # Only get items that are enabled
+        allow_borrow=1  # Only get items that can be borrowed
+    ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
+    inventory_items = inventory_items.select_related('itemType').order_by('itemType__itemType_name')  # Order by itemType name
+
+    add_cols = []
 
     return render(request, 'mod_borrowing/borrowing_studentWalkIn.html', {
         'current_date': current_date,
         'equipment_list': equipment_list,
         'item_types': item_types_list,  # Pass item types to the template
-        
+        'inventory_items': inventory_items,
+
     })
+
 
         
 # booking requests
@@ -1111,9 +1145,8 @@ def borrowing_labcoord_prebookrequests(request):
         'selected_status': selected_status,  # Pass the selected status to the template
     })
 
-
 def borrowing_labcoord_borrowconfig(request):
-    selected_laboratory_id = request.session.get('selected_lab')  # Example way to get the lab ID
+    selected_laboratory_id = request.session.get('selected_lab')
 
     # Fetch all active (not disabled) items under the selected laboratory
     items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
@@ -1124,9 +1157,12 @@ def borrowing_labcoord_borrowconfig(request):
     # Fetch the lab's borrowing configuration
     lab = get_object_or_404(borrowing_config, laboratory_id=selected_laboratory_id)
 
+    # Annotate each item type to check if all items under it are borrowable
+    for type in item_types_list:
+        type.all_items_borrowable = item_description.objects.filter(itemType_id=type.itemType_id, allow_borrow=False).count() == 0
+
     if request.method == 'POST':
         if 'lab_config_form' in request.POST:
-            # Update the lab's borrowing configuration settings
             lab.allow_walkin = 'allow_walkin' in request.POST
             lab.allow_prebook = 'allow_prebook' in request.POST
             lab.prebook_lead_time = request.POST.get('prebook_lead_time') or None
@@ -1137,31 +1173,73 @@ def borrowing_labcoord_borrowconfig(request):
             return redirect('borrowing_labcoord_borrowconfig')
 
         elif 'borrow_config_form' in request.POST:
-            # Handle specific item and item type borrowability updates
-            allowed_items = request.POST.getlist('borrow_item')
-            allowed_item_types = request.POST.getlist('borrow_item_type')
+            allowed_items = request.POST.getlist('borrow_item')  # Items explicitly checked
+            allowed_item_types = request.POST.getlist('borrow_item_type')  # Item types explicitly checked
 
-            # Reset borrowability for all items
+            # Reset borrowability for all items to False
             item_description.objects.filter(laboratory_id=selected_laboratory_id).update(allow_borrow=False)
 
-            # Set allow_borrow=True for checked items
+            # Handle individual items: Set allow_borrow=True for explicitly checked items
             if allowed_items:
                 item_description.objects.filter(item_id__in=allowed_items).update(allow_borrow=True)
+                # p2=get_object_or_404(item_description, item_id__in=allowed_items)
+                # print(p2.item_name)
+                # print(p2.allow_borrow)
 
-            # Set allow_borrow=True for items under the checked item types
+            # Handle item types: Set allow_borrow=True for all items under the checked item types
             if allowed_item_types:
                 item_description.objects.filter(itemType_id__in=allowed_item_types).update(allow_borrow=True)
 
+            # Update is_consumable for item types and handle unchecking of item types
+            for type in item_types_list:
+                # Update the consumable status of the item type
+                type.is_consumable = f'is_consumable_{type.itemType_id}' in request.POST
+                type.save()
+
+                # If the item type is checked in the form, mark all items under this type as borrowable
+                if str(type.itemType_id) in allowed_item_types:
+                    item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=True)
+                else:
+                    # If unchecked, ensure items under this type are set to allow_borrow=False
+                    item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=False)
+
             messages.success(request, "Borrowing configuration updated successfully!")
+            return redirect('borrowing_labcoord_borrowconfig')
+        
+        elif 'add_question_form' in request.POST:
+            question_text = request.POST.get('question_text')
+            input_type = request.POST.get('input_type')
+            borrowing_mode = request.POST.get('borrowing_mode')  # New: borrow mode (walk-in, pre-book, both)
+            dropdown_choices = request.POST.get('dropdown_choices', '').split(',') if input_type == 'dropdown' else None
+
+            lab.add_question(question_text, input_type, borrowing_mode, dropdown_choices)
+            messages.success(request, 'Question added successfully!')
+            return redirect('borrowing_labcoord_borrowconfig')
+
+        elif 'update_question_form' in request.POST:
+            index = int(request.POST.get('question_index'))
+            question_text = request.POST.get('question_text')
+            input_type = request.POST.get('input_type')
+            borrowing_mode = request.POST.get('borrowing_mode')  # New: borrow mode (walk-in, pre-book, both)
+            dropdown_choices = request.POST.get('dropdown_choices', '').split(',') if input_type == 'dropdown' else None
+
+            lab.update_question(index, question_text, input_type, borrowing_mode, dropdown_choices)
+            messages.success(request, 'Question updated successfully!')
+            return redirect('borrowing_labcoord_borrowconfig')
+
+        elif 'remove_question_form' in request.POST:
+            index = int(request.POST.get('question_index'))
+
+            lab.remove_question(index)
+            messages.success(request, 'Question removed successfully!')
             return redirect('borrowing_labcoord_borrowconfig')
 
     return render(request, 'mod_borrowing/borrowing_labcoord_borrowconfig.html', {
         'items': items,
         'item_types_list': item_types_list,
         'lab': lab,
+        'questions': lab.get_questions()  # Get the questions to display them
     })
-
-
 
 #CLEARANCE
 def clearance_view(request):

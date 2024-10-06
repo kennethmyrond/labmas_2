@@ -35,7 +35,7 @@
             <!-- Form for General Laboratory Configurations -->
             <form method="POST" id="labConfigForm">
               {% csrf_token %}
-              <input type="none" name="lab_config_form" value="1"> <!-- none input to differentiate forms -->
+              <input type="none" name="lab_config_form" value="1" hidden> <!-- none input to differentiate forms -->
 
               <div class="row mb-3">
                 <label for="walkin" class="col-sm-2 col-form-label">Allow Walk-Ins:</label>
@@ -47,7 +47,7 @@
               <div class="row mb-3">
                 <label for="prebook" class="col-sm-2 col-form-label">Allow Pre-Booking:</label>
                 <div class="col-sm-10">
-                  <input type="checkbox" id="prebook" name="allow_prebook" value="on" {% if lab.allow_prebook %}checked{% endif %} onchange="toggleAlertQty()">
+                  <input type="checkbox" id="prebook" name="allow_prebook" value="on" {% if lab.allow_prebook %}checked{% endif %}>
                 </div>
               </div>
               {% if lab.allow_prebook %}
@@ -93,7 +93,7 @@
 
             <form method="POST" id="borrowConfigForm">
               {% csrf_token %}
-              <input type="none" name="borrow_config_form" value="1"> <!-- none input to differentiate forms -->
+              <input type="none" name="borrow_config_form" value="1" hidden> <!-- none input to differentiate forms -->
 
               <div class="form-group">
                 <label>Select Borrowing Configuration Mode:</label><br>
@@ -110,6 +110,7 @@
                   <thead>
                     <tr>
                       <th>Item Name</th>
+                      <th>Item Type</th>
                       <th>Allow Borrowing?</th>
                       <th style="display:none"></th>
                       <th style="display:none"></th>
@@ -120,6 +121,7 @@
                     {% for item in items %}
                     <tr>
                       <td>{{ item.item_name }}</td>
+                      <td>{{ item.itemType.itemType_name }}</td> <!-- Item Type column -->
                       <td>
                         <input type="checkbox" name="borrow_item" value="{{ item.item_id }}" 
                                {% if item.allow_borrow %}checked{% endif %}>
@@ -151,10 +153,12 @@
                     <tr>
                       <td>{{ type.itemType_name }}</td>
                       <td>
-                        <input type="checkbox" name="borrow_item_type" value="{{ type.itemType_id }}">
+                        <input type="checkbox" class="borrow-type-checkbox" name="borrow_item_type" value="{{ type.itemType_id }}" 
+                               {% if type.all_items_borrowable %}checked{% endif %}>
                       </td>
                       <td>
-                        <input type="checkbox" name="borrow_item_consumable" value="">
+                        <input type="checkbox" name="is_consumable_{{ type.itemType_id }}" 
+                               {% if type.is_consumable %}checked{% endif %}>
                       </td>
                       <td style="display:none"></td>
                       <td style="display:none"></td>
@@ -174,6 +178,155 @@
     </div>
   </section>
 
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Borrowing Questions Configuration</h5>
+  
+            <form method="POST">
+              {% csrf_token %}
+              <input type="hidden" name="add_question_form" value="1">
+
+              <div class="row mb-3">
+                <label for="borrowing_mode" class="col-sm-2 col-form-label">Borrowing Mode:</label>
+                <div class="col-sm-10">
+                  <select id="borrowing_mode" name="borrowing_mode" class="form-select">
+                    <option value="walkin">Walk-In</option>
+                    <option value="prebook">Pre-Book</option>
+                    <option value="both">Both</option>
+                  </select>
+                </div>
+              </div>
+  
+              <div class="row mb-3">
+                <label for="question_text" class="col-sm-2 col-form-label">Question:</label>
+                <div class="col-sm-10">
+                  <input type="text" id="question_text" name="question_text" class="form-control" required>
+                </div>
+              </div>
+  
+              <div class="row mb-3">
+                <label for="input_type" class="col-sm-2 col-form-label">Input Type:</label>
+                <div class="col-sm-10">
+                  <select id="input_type" name="input_type" class="form-select" onchange="toggleDropdownOptions()">
+                    <option value="textbox">Textbox</option>
+                    <option value="dropdown">Dropdown</option>
+                    <option value="true_false">True/False</option>
+                    <option value="number">Number</option>
+                  </select>
+                </div>
+              </div>
+  
+              <!-- Dropdown options will appear only when dropdown is selected -->
+              <div id="dropdownOptions" style="display:none;">
+                <div class="row mb-3">
+                  <label for="dropdown_choices" class="col-sm-2 col-form-label">Dropdown Choices:</label>
+                  <div class="col-sm-10">
+                    <textarea id="dropdown_choices" name="dropdown_choices" class="form-control" placeholder="Enter choices separated by commas"></textarea>
+                  </div>
+                </div>
+              </div>
+  
+              <div class="btncontainer">
+                <button class="btn btn-primary">Add Question</button>
+              </div>
+            </form>
+  
+            <!-- Display existing questions with update and remove buttons -->
+            <h5 class="card-title mt-5">Existing Questions</h5>
+            <ul>
+              {% for question in questions %}
+                <li>
+                  <strong>Question {{ forloop.counter }}:</strong> {{ question.question_text }} ({{ question.input_type }}) - Mode: {{ question.borrowing_mode }}
+                  
+                  {% if question.input_type == 'dropdown' %}
+                    <ul>
+                      {% for choice in question.choices %}
+                        <li>{{ choice }}</li>
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+  
+                  <!-- Update Button (Shows the update form for each question) -->
+                  <form method="POST" class="mb-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="update_question_form" value="1">
+                    <input type="hidden" name="question_index" value="{{ forloop.counter0 }}">
+  
+                    <div class="row mb-3">
+                      <label for="question_text" class="col-sm-2 col-form-label">Update Question:</label>
+                      <div class="col-sm-10">
+                        <input type="text" name="question_text" value="{{ question.question_text }}" class="form-control">
+                      </div>
+                    </div>
+  
+                    <div class="row mb-3">
+                      <label for="input_type" class="col-sm-2 col-form-label">Input Type:</label>
+                      <div class="col-sm-10">
+                        <select name="input_type" class="form-select">
+                          <option value="textbox" {% if question.input_type == 'textbox' %}selected{% endif %}>Textbox</option>
+                          <option value="dropdown" {% if question.input_type == 'dropdown' %}selected{% endif %}>Dropdown</option>
+                          <option value="true_false" {% if question.input_type == 'true_false' %}selected{% endif %}>True/False</option>
+                          <option value="number" {% if question.input_type == 'number' %}selected{% endif %}>Number</option>
+                        </select>
+                      </div>
+                    </div>
+  
+                    <div class="row mb-3">
+                      <label for="borrowing_mode" class="col-sm-2 col-form-label">Borrowing Mode:</label>
+                      <div class="col-sm-10">
+                        <select name="borrowing_mode" class="form-select">
+                          <option value="walkin" {% if question.borrowing_mode == 'walkin' %}selected{% endif %}>Walk-In</option>
+                          <option value="prebook" {% if question.borrowing_mode == 'prebook' %}selected{% endif %}>Pre-Book</option>
+                          <option value="both" {% if question.borrowing_mode == 'both' %}selected{% endif %}>Both</option>
+                        </select>
+                      </div>
+                    </div>
+  
+                    <!-- Update Dropdown Options -->
+                    {% if question.input_type == 'dropdown' %}
+                    <div class="row mb-3">
+                      <label for="dropdown_choices" class="col-sm-2 col-form-label">Dropdown Choices:</label>
+                      <div class="col-sm-10">
+                        <textarea name="dropdown_choices" class="form-control">{{ question.choices|join:',' }}</textarea>
+                      </div>
+                    </div>
+                    {% endif %}
+  
+                    <div class="btncontainer">
+                      <button class="btn btn-primary">Update</button>
+                    </div>
+                  </form>
+  
+                  <!-- Remove Button -->
+                  <form method="POST">
+                    {% csrf_token %}
+                    <div class="btncontainer">
+                      <input type="hidden" name="remove_question_form" value="1">
+                      <input type="hidden" name="question_index" value="{{ forloop.counter0 }}">
+                      <button class="btn btn-danger">Remove</button>
+                    </div>
+                  </form>
+                </li>
+              {% endfor %}
+            </ul>
+  
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <script>
+    function toggleDropdownOptions() {
+      const inputType = document.getElementById('input_type').value;
+      const dropdownOptions = document.getElementById('dropdownOptions');
+      dropdownOptions.style.display = inputType === 'dropdown' ? 'block' : 'none';
+    }
+  </script>
+
   <script>
     // Function to toggle between item and item type config
     document.querySelectorAll('input[name="borrowMode"]').forEach(function(input) {
@@ -187,6 +340,17 @@
         }
       });
     });
+
+    // Handle type borrowability check/uncheck and update all items accordingly
+    document.querySelectorAll('.borrow-type-checkbox').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+          const typeId = this.value;
+          const checkboxes = document.querySelectorAll('input[name="borrow_item"][data-item-type="' + typeId + '"]');
+          checkboxes.forEach(function(itemCheckbox) {
+            itemCheckbox.checked = checkbox.checked; // Set the item's borrowable status to match the type's
+          });
+        });
+      });
   </script>
 
 {% endblock %}

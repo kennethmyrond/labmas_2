@@ -48,6 +48,9 @@
                     <th>{{ col }}</th>
                   {% endfor %}
                   <th>Available Qty</th>
+                  <th style="display:none"></th>
+                  <th style="display:none"></th>
+                  <th style="display:none"></th>
                 </tr>
               </thead>
               <tbody>
@@ -62,6 +65,9 @@
                     <td>{{ item.add_cols|get_col_value:col }}</td>
                   {% endfor %}
                   <td>{{ item.total_qty }}</td>
+                  <td style="display:none"></td>
+                  <td style="display:none"></td>
+                  <td style="display:none"></td>
                 </tr>
                 {% empty %}
                 <tr>

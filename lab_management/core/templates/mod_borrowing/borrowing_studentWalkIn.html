@@ -13,6 +13,11 @@
     </nav>
 </div><!-- End Page Title -->
 
+<style>
+  .table.datatable .item-type-header {
+      font-weight: bold !important; /* Bold text */
+  }
+</style>
 
 <section class="section">
   <div class="row">
@@ -25,87 +30,80 @@
                   <div class="alert alert-danger">
                     {{ error_message }}
                   </div>
-                {% endif %}
-                                  
-                  <!-- General Form Elements -->
-                  <form method="POST">
+                  {% endif %}
+
+                  <!-- Borrow Form -->
+                  <form method="POST" id="borrow-form">
                       {% csrf_token %}
-
-                   
-
                      
-
                       <div class="row mb-3">
-                        <label for="inputDate" class="col-sm-2 col-form-label">Date Requested:</label>
-                        <div class="col-sm-10">
-                            <input type="text" class="form-control" value="{{ current_date }}" readonly>
-                            <input type="hidden" name="request_date" value="{{ current_date }}">
-                        </div>
-                    </div>
-
-                      <div class="row mb-3">
-                          <label for="inputNumber" class="col-sm-2 col-form-label">Student Name:</label>
+                          <label for="inputDate" class="col-sm-2 col-form-label">Date Requested:</label>
                           <div class="col-sm-10">
-                            <input type="text" class="form-control" id="studentname" name="studentname" value="{{user.first_name}} {{user.last_name}}" readonly>  
+                              <input type="text" class="form-control" value="{{ current_date }}" readonly>
+                              <input type="hidden" name="request_date" value="{{ current_date }}">
                           </div>
                       </div>
 
                       <div class="row mb-3">
-                        <label for="inputNumber" class="col-sm-2 col-form-label">Purpose of Borrowing:</label>
-                        <div class="col-sm-10">
-                            <input type="text" class="form-control" id="purpose" name="purpose"> 
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                      <label class="col-sm-2 col-form-label">Item Type:</label>
-                      <div class="col-sm-10">
-                        <select id="item-type-select" class="form-select" onchange="updateItemsByType(this.value)">
-                          <option value="">Select Item Type</option>
-                          {% for item_type in item_types %}
-                            <option value="{{ item_type.itemType_id }}">{{ item_type.itemType_name }}</option>
-                          {% endfor %}
-                        </select>
+                          <label for="inputNumber" class="col-sm-2 col-form-label">Student Name:</label>
+                          <div class="col-sm-10">
+                              <input type="text" class="form-control" name="studentname" value="{{ user.first_name }} {{ user.last_name }}" readonly>
+                          </div>
                       </div>
-                    </div>
-                    
-                    <!-- Add Equipment Section -->
-                    <div class="row mb-3">
-                      <label class="col-sm-2 col-form-label">Equipment:</label>
-                      <div class="col-sm-5">
-                          <select id="equipment-select" class="form-select equipment-select" name="equipment" disabled>
-                              <option value="">Select Equipment</option>
-                          </select>
-                      </div>
-                      <label for="inputNumber" class="col-sm-1 col-form-label text-end">Qty:</label>
-                      <div class="col-sm-2">
-                          <input type="number" name="quantity" class="form-control" min="0" value="0" data-available-qty="0" readonly>
+                      <hr>
+                     <!-- Added Equipment Section -->
+                    <div id="equipment-rows" class="mb-3">
+                      <div class="row mb-3">
+                          <label class="col-sm-2 col-form-label">Added Equipment:</label>
+                          <div class="col-sm-10">
+                              <span id="no-equipment-message" class="text-danger" style="display: none;">No equipment added yet.</span>
+                          </div>
                       </div>
                     </div>
 
-                    <!-- Container for dynamically added equipment rows -->
-                    <div id="equipment-rows"></div>
+                      <table class="table datatable">
+                        <thead>
+                            <tr>
+                                <th>Item Type</th>
+                                <th>Item Name</th>
+                                <th>Add Equipment</th>
+                                <th>Available Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% regroup inventory_items by itemType.itemType_name as grouped_items %}
+                            {% for group in grouped_items %}
+                                <tr class="item-type-header">
+                                    <td>{{ group.grouper }}</td>
+                                    <td></td> <!-- Leave empty for the header row -->
+                                    <td></td> <!-- Leave empty for the header row -->
+                                    <td></td> <!-- Leave empty for the header row -->
+                                </tr>
+                                {% for item in group.list %}
+                                    <tr>
+                                        <td></td> <!-- Leave empty to align under Item Type -->
+                                        <td>{{ item.item_name }}</td>
+                                        <td>
+                                            <!-- Add Equipment Button -->
+                                            <button type="button" class="add-equipment-btn btn btn-primary" data-item-name="{{ item.item_name }}" data-item-id="{{ item.item_id }}" data-available-qty="{{ item.total_qty }}">Add</button>
+                                        </td>
+                                        <td>{{ item.total_qty }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4">No items found.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                      </table>
+                      
+                      <!-- Validation Message -->
+                      <div id="validation-message" class="alert alert-danger" style="display: none;"></div>
 
-                    <!-- Add Equipment Button -->
-                    <div class="row mb-3">
-                      <div class="col-sm-10">
-                          <button type="button" id="add-equipment-btn" class="btn btn-primary">Add Equipment</button>
-                      </div>
-                    </div>
-
-                    <div class="row mb-3">
-                      <label for="inputNumber" class="col-sm-2 col-form-label">Add Attachment:</label>
-                      <div class="col-sm-10">
-                        <input class="form-control" type="file" id="formFile">
-                      </div>
-                    </div>
-
-                    <div class="row mb-3">
-                      <div class="col-sm-10">
+                      <div class="row mb-3">
                         <button type="submit" class="btn btn-success">Submit</button>
                       </div>
-                    </div>
-                  </form>
               </div>
           </div>
       </div>
@@ -114,68 +112,111 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    const equipmentRowsContainer = document.getElementById('equipment-rows');
-    const addEquipmentBtn = document.getElementById('add-equipment-btn');
-    const equipmentSelect = document.getElementById('equipment-select');
-    const itemTypeSelect = document.getElementById('item-type-select');
+      const equipmentRowsContainer = document.getElementById('equipment-rows');
+      const validationMessage = document.getElementById('validation-message');
+      const borrowForm = document.getElementById('borrow-form');
+  
+      // Function to add a new equipment row
+      function addEquipmentRow(itemName, itemId, availableQty) {
+          const newRow = document.createElement('div');
+          newRow.classList.add('row', 'mb-3', 'equipment-row');
+          newRow.innerHTML = `
+              <label class="col-sm-2 col-form-label">Equipment:</label>
+              <div class="col-sm-5">
+                  <input type="text" class="form-control" value="${itemName}" readonly>
+                  <input type="hidden" name="equipment_ids[]" value="${itemId}">
+              </div>
+              <label for="inputNumber" class="col-sm-1 col-form-label text-end">Qty:</label>
+              <div class="col-sm-2">
+                  <input type="number" name="quantities[]" class="form-control" min="0" value="0" data-available-qty="${availableQty}">
+              </div>
+              <div class="col-sm-2">
+                  <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
+              </div>
+          `;
+          equipmentRowsContainer.appendChild(newRow);
+          updateNoEquipmentMessage(); // Update message visibility after adding a row
+  
+          // Attach delete event to the delete button
+          const deleteButton = newRow.querySelector('.delete-equipment-btn');
+          deleteButton.addEventListener('click', function () {
+              equipmentRowsContainer.removeChild(newRow);
+              updateNoEquipmentMessage(); // Update message visibility after deleting a row
+          });
+      }
+  
+      // Function to update the visibility of the no equipment message
+      function updateNoEquipmentMessage() {
+          const noEquipmentMessage = document.getElementById('no-equipment-message');
+          const equipmentRows = equipmentRowsContainer.getElementsByClassName('equipment-row');
+          if (equipmentRows.length === 0) {
+              noEquipmentMessage.style.display = 'block';
+          } else {
+              noEquipmentMessage.style.display = 'none';
+          }
+      }
+  
+      // Attach event listeners to all Add Equipment buttons
+      document.querySelectorAll('.add-equipment-btn').forEach(button => {
+          button.addEventListener('click', function () {
+              const itemName = this.getAttribute('data-item-name');
+              const itemId = this.getAttribute('data-item-id');
+              const availableQty = parseInt(this.getAttribute('data-available-qty'));
 
-   
-    function updateItemsByType(itemTypeId) {
-        // Clear the current equipment options
-        equipmentSelect.innerHTML = '<option value="">Select Item Type First</option>';
-        equipmentSelect.disabled = true; // Disable the dropdown until we have data
+              // Check if equipment is already added to prevent duplicates
+              const existingEquipmentRows = equipmentRowsContainer.getElementsByClassName('equipment-row');
+              let equipmentExists = false;
 
-        if (itemTypeId) {
-          fetch(`/borrowing/student/get-items/${itemTypeId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    data.forEach(item => {
-                        const option = document.createElement('option');
-                        option.value = item.item_id;
-                        option.textContent = `${item.item_name} (Qty: ${item.total_qty})`;
-                        equipmentSelect.appendChild(option);
-                    });
-                    equipmentSelect.disabled = false; // Enable the dropdown after data is loaded
-                })
-                .catch(error => console.error('Error fetching items:', error));
-        }
-    }
-    function addEquipmentRow() {
-        const newRow = document.createElement('div');
-        newRow.classList.add('row', 'mb-3', 'equipment-row');
-        newRow.innerHTML = `
-            <label class="col-sm-2 col-form-label">Equipment:</label>
-            <div class="col-sm-5">
-                <select class="form-select equipment-select" name="equipment" onchange="updateAvailableQuantity(this)">
-                    <option value="">Select Equipment</option>
-                    {% for equipment in equipment_list %}
-                        <option value="{{ equipment.item_id }}">{{ equipment.item_name }}/option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-sm-2">
-                <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
-            </div>
-        `;
-        equipmentRowsContainer.appendChild(newRow);
+              for (let row of existingEquipmentRows) {
+                  const equipmentInput = row.querySelector('input[type="text"]');
+                  if (equipmentInput.value === itemName) {
+                      equipmentExists = true;
+                      break;
+                  }
+              }
 
-        // Attach event listener for the delete button
-        const deleteBtn = newRow.querySelector('.delete-equipment-btn');
-        deleteBtn.addEventListener('click', function() {
-            equipmentRowsContainer.removeChild(newRow);
-        });
-    }
+              if (!equipmentExists) {
+                  addEquipmentRow(itemName, itemId, availableQty);
+              } else {
+                  displayValidationMessage('This equipment is already added.');
+              }
+          });
+      });
 
-    // Attach event listener to the Add Equipment button
-    addEquipmentBtn.addEventListener('click', addEquipmentRow);
-    updateItemsByType('');
+      // Function to display validation message
+      function displayValidationMessage(message) {
+          validationMessage.innerText = message;
+          validationMessage.style.display = 'block';
+          setTimeout(() => {
+              validationMessage.style.display = 'none'; // Hide message after a delay
+          }, 3000); // Adjust time as needed
+      }
 
-    itemTypeSelect.addEventListener('change', function () {
-        updateItemsByType(this.value);
-    });
+      // Validate quantities before submitting the form
+      borrowForm.addEventListener('submit', function (event) {
+          const equipmentRows = equipmentRowsContainer.getElementsByClassName('equipment-row');
+          let valid = true; // Assume valid until proven otherwise
+          let errorMessage = '';
 
-});
+          for (let row of equipmentRows) {
+              const qtyInput = row.querySelector('input[name="quantities[]"]');
+              const availableQty = parseInt(qtyInput.getAttribute('data-available-qty'));
+              const enteredQty = parseInt(qtyInput.value);
 
+              if (enteredQty > availableQty) {
+                  valid = false;
+                  errorMessage = `Entered quantity (${enteredQty}) for ${row.querySelector('input[type="text"]').value} exceeds available quantity (${availableQty}).`;
+                  break; // Exit the loop if we find an invalid entry
+              }
+          }
+
+          if (!valid) {
+              event.preventDefault(); // Prevent form submission
+              displayValidationMessage(errorMessage);
+          }
+      });
+      updateNoEquipmentMessage();
+  });
 </script>
 
 {% endblock %}
