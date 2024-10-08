@@ -1068,10 +1068,11 @@ def borrowing_student_viewPreBookRequestsview(request):
     # Walk-in requests: where request_date == borrow_date
     walkin_requests = borrow_info.objects.filter(
         user=current_user,
-        request_date=F('borrow_date'),
+        request_date=F('borrow_date'),  # Walk-ins: request_date equals borrow_date
         request_date__isnull=False,
         borrow_date__isnull=False
     ).order_by('-request_date')
+
 
     # Filter pre-book requests by status
     pending_requests = prebook_requests.filter(status='P')
@@ -1107,21 +1108,20 @@ def borrowing_student_viewPreBookRequestsview(request):
 
 # @require_POST
 def cancel_borrow_request(request):
-    borrow_id = request.POST.get('borrow_id')
-    request_type = request.POST.get('request_type')
-
     try:
-        borrow_entry = borrow_info.objects.get(borrow_id=borrow_id)
+        data = json.loads(request.body)
+        borrow_id = data.get('borrow_id')
 
-        # Only allow cancel if it's pending
+        borrow_entry = borrow_info.objects.get(borrow_id=borrow_id)
+        # Only allow cancel if the status is pending
         if borrow_entry.status == 'P':
-            borrow_entry.status = 'C'  # Set status to canceled
+            borrow_entry.status = 'C'  # Canceled
             borrow_entry.save()
             return JsonResponse({'success': True, 'message': 'Request successfully canceled.'})
-        else:
-            return JsonResponse({'success': False, 'message': 'Only pending requests can be canceled.'})
+        return JsonResponse({'success': False, 'message': 'Only pending requests can be canceled.'})
     except borrow_info.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Request not found.'})
+
 
 def borrowing_student_WalkInRequestsview(request):
     if not request.user.is_authenticated:
@@ -1316,8 +1316,29 @@ def borrowing_labcoord_detailedPrebookrequests(request):
 def borrowing_labtech_detailedprebookrequests(request):
     return render(request, 'mod_borrowing/borrowing_labtech_detailedprebookRequests.html')
 
+
 def borrowing_labtech_prebookrequests(request):
-    return render(request, 'mod_borrowing/borrowing_labtech_prebookrequests.html')
+    accepted_requests = borrow_info.objects.filter(status='A').select_related('user')
+
+    if request.method == 'POST':
+        borrow_id = request.POST.get('borrow_id')
+        action = request.POST.get('action')
+
+        # Update borrow_info status
+        borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id)
+        if action == 'borrowed':
+            borrow_entry.status = 'B'  # Mark as Borrowed
+        elif action == 'cancel':
+            borrow_entry.status = 'C'  # Mark as Cancelled
+        borrow_entry.save()
+
+        return JsonResponse({'success': True})
+
+    return render(request, 'mod_borrowing/borrowing_labtech_prebookrequests.html', {
+        'accepted_requests': accepted_requests,
+    })
+
+
 
 #CLEARANCE
 def clearance_view(request):

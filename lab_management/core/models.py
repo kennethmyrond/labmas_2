@@ -274,6 +274,8 @@ class borrowed_items(models.Model):
     borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE)
     item = models.ForeignKey('item_description', on_delete=models.CASCADE)
     qty = models.IntegerField(null=True, blank=True)
+    returned_qty = models.IntegerField(null=True, blank=True)
+    remarks = models.CharField(max_length=1, null=True, blank=True)
 
     class Meta:
         unique_together = (('borrow', 'item'),)
