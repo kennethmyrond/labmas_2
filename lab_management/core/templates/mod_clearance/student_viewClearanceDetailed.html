@@ -1,0 +1,65 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}View Clearance{% endblock %}
+
+{% block content %}
+  
+  <div class="pagetitle">
+    <h1>Clearance</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'clearance_student_viewClearance' %}">View Clearance</a></li>
+          <li class="breadcrumb-item active">Clearance Details</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+
+  <!-- Success message -->
+  {% if messages %}
+    <div class="alert alert-success">
+      {% for message in messages %}
+        {{ message }}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Clearance Details</h5>
+
+
+
+            <!-- Table with stripped rows -->
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th style="display:none"></th>
+                  <th style="display:none"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Tripod</td>
+                  <td>Broke one leg of the tripod</td>
+                  <td>Unsettled</td>
+                  <td style="display:none"></td>
+                  <td style="display:none"> </td>
+                </tr>
+                
+              </tbody>
+            </table>
+            <!-- End Table with stripped rows -->
+
+          </div>
+        </div>
+      </div>
+    </div>
+    <p>Kindly Proceed to the Lab to settle payment.</p>
+  </section>
+{% endblock %}

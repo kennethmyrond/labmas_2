@@ -50,6 +50,8 @@ urlpatterns = [
     path('borrowing/labtech/detailedprebookrequests', views.borrowing_labtech_detailedprebookrequests, name='borrowing_labtech_detailedprebookrequests'),
     
     path('clearance/', views.clearance_view, name='clearance'),
+    path('clearance/student/view_clearance', views.clearance_student_viewClearance, name='clearance_student_viewClearance'),
+        path('clearance/student/view_clearance_detailed', views.clearance_student_viewClearanceDetailed, name='clearance_student_viewClearanceDetailed'),
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),
     path('reports/', views.reports_view, name='reports'),
     path('user-settings/', views.user_settings_view, name='user_settings'),
