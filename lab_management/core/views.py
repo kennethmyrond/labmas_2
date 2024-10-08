@@ -9,7 +9,7 @@ from django import forms
 from django.http import HttpResponse, JsonResponse, Http404
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
-from .models import borrow_info, borrowed_items, borrowing_config
+from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from datetime import timedelta
 import json, qrcode, base64
 from pyzbar.pyzbar import decode
@@ -1043,7 +1043,6 @@ def borrowing_student_walkinview(request):
 
 
 # booking requests
-
 def borrowing_student_viewPreBookRequestsview(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -1121,7 +1120,6 @@ def cancel_borrow_request(request):
         return JsonResponse({'success': False, 'message': 'Only pending requests can be canceled.'})
     except borrow_info.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Request not found.'})
-
 
 def borrowing_student_WalkInRequestsview(request):
     if not request.user.is_authenticated:
@@ -1316,6 +1314,74 @@ def borrowing_labcoord_detailedPrebookrequests(request):
 def borrowing_labtech_detailedprebookrequests(request):
     return render(request, 'mod_borrowing/borrowing_labtech_detailedprebookRequests.html')
 
+def return_borrowed_items(request):
+    borrow_id = request.POST.get('borrow_id', '')  # Fetch borrow_id from POST or use empty string
+
+    # Check if the borrow_id is provided and fetch the relevant data
+    borrow_entry = None
+    borrowed_items_list = None
+    consumed_items_list = None
+
+    if borrow_id:
+        try:
+            selected_laboratory_id = request.session.get('selected_lab')
+            borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id, laboratory_id=selected_laboratory_id)
+
+            # Display error message if status is not 'B' (borrowed)
+            if borrow_entry.status != 'B':
+                messages.error(request, 'Status of borrowing request is not applicable for returning')
+            
+            borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_entry, item__is_consumable=False).annotate(remaining_borrowed=F('qty') - F('returned_qty'))
+            consumed_items_list = borrowed_items.objects.filter(borrow=borrow_entry, item__is_consumable=True).annotate(remaining_borrowed=F('qty') - F('returned_qty'))
+        except borrow_info.DoesNotExist:
+            borrow_entry = None  # Show no data if the borrow ID is invalid
+
+    if request.method == 'POST' and 'return_items' in request.POST and borrow_entry and borrow_entry.status == 'B':
+        # Process return and report submission
+        for item in borrowed_items_list:
+            returned_all = request.POST.get(f'returned_all_{item.item.item_id}', False) == 'on'
+            qty_returned = int(request.POST.get(f'return_qty_{item.item.item_id}', 0))
+            hold_clearance = request.POST.get(f'hold_clearance_{item.item.item_id}', False) == 'on'
+            remarks = request.POST.get(f'remarks_{item.item.item_id}', '').strip()
+            amount_to_pay = request.POST.get(f'amount_to_pay_{item.item.item_id}', 0)
+
+            # Handle item returns
+            if returned_all:
+                item.returned_qty = item.qty  # Mark all items as returned
+            else:
+                item.returned_qty = qty_returned  # Only return the specified quantity
+
+            item.save()
+
+            # Handle hold clearance and issue reporting
+            if hold_clearance and remarks:
+                reported_items.objects.create(
+                    borrow=borrow_entry,
+                    item=item.item,
+                    qty_reported=item.qty - item.returned_qty,  # Remaining items not returned
+                    report_reason=remarks,
+                    amount_to_pay=amount_to_pay or 0
+                )
+
+        # Automatically mark all consumed items as returned
+        for consumed_item in consumed_items_list:
+            consumed_item.returned_qty = consumed_item.qty
+            consumed_item.save()
+
+        # Update the status if all items are returned
+        if all(item.qty == item.returned_qty for item in borrowed_items_list) and \
+           all(item.qty == item.returned_qty for item in consumed_items_list):
+            borrow_entry.status = 'X'  # Mark as completed
+            borrow_entry.save()
+
+        return redirect('return_borrowed_items')
+
+    return render(request, 'mod_borrowing/borrowing_return_borrowed_items.html', {
+        'borrow_entry': borrow_entry,
+        'borrowed_items_list': borrowed_items_list,
+        'consumed_items_list': consumed_items_list,
+        'borrow_id': borrow_id,
+    })
 
 def borrowing_labtech_prebookrequests(request):
     accepted_requests = borrow_info.objects.filter(status='A').select_related('user')

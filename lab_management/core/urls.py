@@ -49,7 +49,7 @@ urlpatterns = [
     
     path('borrowing/labtech/prebookrequests', views.borrowing_labtech_prebookrequests, name='borrowing_labtech_prebookrequests'),
     path('borrowing/labtech/detailedprebookrequests/<int:borrow_id>/', views.borrowing_labtech_detailedprebookrequests, name='borrowing_labtech_detailedprebookrequests'),
-    
+    path('borrowing/return-items/', views.return_borrowed_items, name='return_borrowed_items'),
     path('clearance/', views.clearance_view, name='clearance'),
     path('clearance/student/view_clearance', views.clearance_student_viewClearance, name='clearance_student_viewClearance'),
         path('clearance/student/view_clearance_detailed', views.clearance_student_viewClearanceDetailed, name='clearance_student_viewClearanceDetailed'),

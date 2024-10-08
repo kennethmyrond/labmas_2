@@ -26,13 +26,7 @@
             <p><strong>Date Needed:</strong> {{ borrow_request.borrow_date|date:"Y/m/d" }}</p>
             <p><strong>Due Date:</strong> {{ borrow_request.due_date|date:"Y/m/d" }}</p>
             <p><strong>Status:</strong> 
-              {% if borrow_request.status == 'P' %}
-                Pending
-              {% elif borrow_request.status == 'A' %}
-                Approved
-              {% elif borrow_request.status == 'D' %}
-                Declined
-              {% endif %}
+              {{ borrow_request.get_status_display }}
             </p>
 
             <!-- Borrowed Items List -->

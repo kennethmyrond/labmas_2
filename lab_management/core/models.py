@@ -269,12 +269,23 @@ class borrow_info(models.Model):
 
     def __str__(self):
         return f"Borrow Info {self.borrow_id}"
+    
+    def get_status_display(self):
+        status_mapping = {
+            'P': 'Pending',
+            'A': 'Approved',
+            'D': 'Declined',
+            'B': 'Borrowed',
+            'C': 'Cancelled',
+            'X': 'Completed'
+        }
+        return status_mapping.get(self.status, 'Unknown')
 
 class borrowed_items(models.Model):
     borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE)
     item = models.ForeignKey('item_description', on_delete=models.CASCADE)
     qty = models.IntegerField(null=True, blank=True)
-    returned_qty = models.IntegerField(null=True, blank=True)
+    returned_qty = models.IntegerField(default=0)
     remarks = models.CharField(max_length=1, null=True, blank=True)
 
     class Meta:
@@ -282,4 +293,16 @@ class borrowed_items(models.Model):
 
     def __str__(self):
         return f"Borrowed Item {self.borrow_id} - {self.item_id}"
+
+class reported_items(models.Model):
+    borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE)
+    item = models.ForeignKey('item_description', on_delete=models.CASCADE)
+    qty_reported = models.IntegerField(null=False, blank=False)
+    report_reason = models.CharField(max_length=255)
+    amount_to_pay = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    reported_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Reported {self.item.item_name} for Borrow {self.borrow.borrow_id}"
+
 
