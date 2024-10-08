@@ -1344,6 +1344,13 @@ def borrowing_labtech_prebookrequests(request):
 def clearance_view(request):
     return render(request, 'mod_clearance/clearance.html')
 
+def clearance_student_viewClearance(request):
+    return render(request, 'mod_clearance/student_viewClearance.html')
+
+def clearance_student_viewClearanceDetailed(request):
+    return render(request, 'mod_clearance/student_viewClearanceDetailed.html')
+
+
 def lab_reservation_view(request):
     return render(request, 'mod_labRes/lab_reservation.html')
 
