@@ -13,24 +13,33 @@
     </nav>
   </div><!-- End Page Title -->
 
+    <!-- Success message -->
+    {% if messages %}
+    <div class="alert alert-success mt-3">
+      {% for message in messages %}
+        {{ message }}
+      {% endfor %}
+    </div>
+    {% endif %}
+
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Request ID: </h5>
-            <p><strong>Date Requested:</strong> </p>
-            <p><strong>Date Needed:</strong> </p>
-            <p><strong>Due Date:</strong> </p>
-            <p><strong>Status:</strong> 
-              {% comment %} {% if borrow_request.status == 'P' %}
-                Pending
-              {% elif borrow_request.status == 'A' %}
-                Approved
-              {% elif borrow_request.status == 'D' %}
-                Declined
-              {% endif %} {% endcomment %}
-            </p>
+            <h5 class="card-title">Request ID: {{ borrow_request.borrow_id }}</h5>
+            <p><strong>Date Requested:</strong> {{ borrow_request.request_date|date:"Y/m/d H:i:s" }}</p>
+            <p><strong>Date Needed:</strong> {{ borrow_request.borrow_date|date:"Y/m/d" }}</p>
+            <p><strong>Due Date:</strong> {{ borrow_request.due_date|date:"Y/m/d" }}</p>
+            <p><strong>Status:</strong> {{ borrow_request.get_status_display }}</p>
+            {% if borrow_request.questions_responses %}
+            <p><strong>Additional Responses:</strong></p>
+            <ul>
+              {% for question, answer in borrow_request.questions_responses.items %}
+              <li><strong>{{ question }}:</strong> {{ answer }}</li>
+              {% endfor %}
+            </ul>
+            {% endif %}
 
             <!-- Borrowed Items List -->
             <h5 class="card-title">Borrowed Items</h5>
@@ -39,27 +48,80 @@
                 <tr>
                   <th>Item Name</th>
                   <th>Quantity</th>
-                  <th style="display:none;"></th>
-                  <th style="display:none;"></th>
-                  <th style="display:none;"></th>
                 </tr>
               </thead>
               <tbody>
-                {% comment %} {% for item in borrowed_items %} {% endcomment %}
+                {% for item in borrowed_items_list %}
                 <tr>
-                  <td>Beaker</td>
-                  <td>2</td>
-                  <td style="display:none;"></td>
-                  <td style="display:none;"></td>
-                  <td style="display:none;"></td>
+                  <td>{{ item.item.item_name }}</td>
+                  <td>{{ item.qty }}</td>
                 </tr>
+                {% endfor %}
               </tbody>
             </table>
+
+            <!-- Action Buttons -->
+            {% if show_action_buttons %}
+              <div class="mt-4">
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#acceptModal">Accept</button>
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#declineModal">Decline</button>
+              </div>
+            {% else %}
+              <div class="alert alert-info">This request has already been processed.</div>
+            {% endif %}
+
+            <!-- Accept Modal -->
+            <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="acceptModalLabel">Confirm Acceptance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    Are you sure you want to accept this request?
+                  </div>
+                  <div class="modal-footer">
+                    <form method="POST" action="">
+                      {% csrf_token %}
+                      <button type="submit" name="action" value="accept" class="btn btn-success">Yes, Accept</button>
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Decline Modal -->
+            <form method="POST" action="">
+              {% csrf_token %}
+            <div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="declineModalLabel">Confirm Decline</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <label for="decline_reason">Reason for declining:</label>
+                    <textarea class="form-control" id="decline_reason" name="decline_reason" required></textarea>
+                  </div>
+                  <div class="modal-footer">
+                    
+                      
+                      <button type="submit" name="action" value="decline" class="btn btn-danger">Decline</button>
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    
+                  </div>
+                </div>
+              </div>
+            </div>
+            </form>
+
           </div>
         </div>
       </div>
     </div>
   </section>
-
-
+  
 {% endblock %}

@@ -41,9 +41,11 @@ urlpatterns = [
     path('borrowing/student/viewWalkInRequests', views.borrowing_student_WalkInRequestsview, name='borrowing_studentviewWalkInRequests'),
     path('borrowing/student/detailedPreBookRequests/<int:borrow_id>/', views.borrowing_student_detailedPreBookRequestsview, name='borrowing_studentDetailedPreBookRequests'),
     path('borrowing/student/detailedWalkInRequests', views.borrowing_student_detailedWalkInRequestsview, name='borrowing_studentDetailedWalkInRequests'),
+    
     path('borrowing/labcoord/prebookrequests', views.borrowing_labcoord_prebookrequests, name='borrowing_labcoord_prebookrequests'),
-    path('borrowing/labcoord/detailedPrebookrequests', views.borrowing_labcoord_detailedPrebookrequests, name='borrowing_labcoord_detailedPrebookrequests'),
+    path('borrowing/labcoord/detailedPrebookrequests/<int:borrow_id>/', views.borrowing_labcoord_detailedPrebookrequests, name='borrowing_labcoord_detailedPrebookrequests'),
     path('borrowing/labcoord/borrowconfig', views.borrowing_labcoord_borrowconfig, name='borrowing_labcoord_borrowconfig'),
+    
     path('borrowing/student/get-items/<int:item_type_id>/', views.get_items_by_type, name='get_items_by_type'),
     path('borrowing/student/get-quantity/<int:item_id>/', views.get_quantity_for_item, name='get_quantity_for_item'),
     

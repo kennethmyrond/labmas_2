@@ -1308,8 +1308,41 @@ def borrowing_labcoord_borrowconfig(request):
         'questions': lab.get_questions()  # Get the questions to display them
     })
 
-def borrowing_labcoord_detailedPrebookrequests(request):
-    return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html')
+def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
+    borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id)
+    borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_request)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        # Handle declining request
+        if action == 'decline':
+            decline_reason = request.POST.get('decline_reason')
+            if decline_reason:
+                borrow_request.status = 'D'  # Declined
+                borrow_request.remarks = decline_reason
+                borrow_request.save()
+                messages.success(request, 'The request has been declined.')
+            else:
+                messages.error(request, 'Please provide a reason for declining.')
+        
+        # Handle accepting request
+        elif action == 'accept':
+            borrow_request.status = 'A'  # Accepted
+            borrow_request.remarks = "Accepted"
+            borrow_request.save()
+            messages.success(request, 'The request has been accepted.')
+
+        return redirect('borrowing_labcoord_detailedPrebookrequests', borrow_id=borrow_id)
+
+    # Only show action buttons if the request is still pending or if the status is accepted/declined (to allow modification)
+    show_action_buttons = borrow_request.status in ['P', 'A', 'D']
+
+    return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html', {
+        'borrow_request': borrow_request,
+        'borrowed_items_list': borrowed_items_list,
+        'show_action_buttons': show_action_buttons,
+    })
 
 def borrowing_labtech_detailedprebookrequests(request):
     return render(request, 'mod_borrowing/borrowing_labtech_detailedprebookRequests.html')

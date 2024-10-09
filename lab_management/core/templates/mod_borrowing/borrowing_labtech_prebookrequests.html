@@ -130,38 +130,9 @@
   </div>
 </section>
 
-<script>
-  // Handle form submission with AJAX to prevent page reload
-  document.querySelectorAll('.action-form').forEach(form => {
-    form.addEventListener('submit', function(event) {
-      event.preventDefault();
-      const formData = new FormData(this);
-
-      fetch('', {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
-        },
-        body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          alert('Action processed successfully.');
-          location.reload();  // Reload the page to update statuses
-        } else {
-          alert('Action failed.');
-        }
-      })
-      .catch(error => console.error('Error:', error));
-    });
-  });
-</script>
-{% endblock %}
-
-          <!-- comment out fornow-->
+          comment out fornow
             <!-- Table with stripped rows -->
-           <!-- <table class="table datatable">
+           <table class="table datatable">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -219,11 +190,42 @@
                 </tr>
                 {% endfor %}
               </tbody>
-            </table> -->
+            </table> 
             <!-- End Table with stripped rows -->
 
           <!-- </div>
         </div>
       </div>
     </div>
-  </section> -->
+  </section>
+
+<script>
+  // Handle form submission with AJAX to prevent page reload
+  document.querySelectorAll('.action-form').forEach(form => {
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      const formData = new FormData(this);
+
+      fetch('', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+        },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Action processed successfully.');
+          location.reload();  // Reload the page to update statuses
+        } else {
+          alert('Action failed.');
+        }
+      })
+      .catch(error => console.error('Error:', error));
+    });
+  });
+</script>
+{% endblock %}
+
+
