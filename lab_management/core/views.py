@@ -10,7 +10,7 @@ from django.http import HttpResponse, JsonResponse, Http404
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
-from datetime import timedelta
+from datetime import timedelta, date
 import json, qrcode, base64
 from pyzbar.pyzbar import decode
 from PIL import Image 
@@ -1344,8 +1344,6 @@ def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
         'show_action_buttons': show_action_buttons,
     })
 
-def borrowing_labtech_detailedprebookrequests(request):
-    return render(request, 'mod_borrowing/borrowing_labtech_detailedprebookRequests.html')
 
 def return_borrowed_items(request):
     borrow_id = request.POST.get('borrow_id', '')  # Fetch borrow_id from POST or use empty string
@@ -1417,25 +1415,68 @@ def return_borrowed_items(request):
     })
 
 def borrowing_labtech_prebookrequests(request):
-    accepted_requests = borrow_info.objects.filter(status='A').select_related('user')
+    selected_laboratory_id = request.session.get('selected_lab')
+    
+    today = date.today()
+    
+    # Fetch borrowing requests based on their borrow_date
+    today_borrows = borrow_info.objects.filter(borrow_date=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
+    future_borrows = borrow_info.objects.filter(borrow_date__gt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
+    past_borrows = borrow_info.objects.filter(borrow_date__lt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
+    cancelled_borrows = borrow_info.objects.filter(status='L', laboratory_id=selected_laboratory_id).select_related('user')
+    borrowed_borrows = borrow_info.objects.filter(status='B', laboratory_id=selected_laboratory_id).select_related('user')
+
+    # Fetch all accepted borrow requests sorted by request_date
+    accepted_borrows = borrow_info.objects.filter(status='A', laboratory_id=selected_laboratory_id).order_by('-request_date').select_related('user')
 
     if request.method == 'POST':
         borrow_id = request.POST.get('borrow_id')
         action = request.POST.get('action')
+        remarks = request.POST.get('remarks', '')
 
         # Update borrow_info status
         borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id)
+        
         if action == 'borrowed':
             borrow_entry.status = 'B'  # Mark as Borrowed
         elif action == 'cancel':
-            borrow_entry.status = 'C'  # Mark as Cancelled
+            borrow_entry.status = 'L'  # Mark as Cancelled
+            borrow_entry.remarks = remarks  # Save cancellation remarks
         borrow_entry.save()
 
         return JsonResponse({'success': True})
 
     return render(request, 'mod_borrowing/borrowing_labtech_prebookrequests.html', {
-        'accepted_requests': accepted_requests,
+        'today_borrows': today_borrows,
+        'future_borrows': future_borrows,
+        'past_borrows': past_borrows,
+        'cancelled_borrows': cancelled_borrows,
+        'accepted_borrows': accepted_borrows,
+        'borrowed_borrows': borrowed_borrows
     })
+
+def borrowing_labtech_detailedprebookrequests(request, borrow_id):
+    borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id)
+    borrowed_items1 = borrowed_items.objects.filter(borrow=borrow_entry)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        remarks = request.POST.get('remarks', '')
+
+        if action == 'borrowed':
+            borrow_entry.status = 'B'
+        elif action == 'cancel':
+            borrow_entry.status = 'L'
+            borrow_entry.remarks = remarks  # Save cancellation remarks
+        borrow_entry.save()
+
+        return JsonResponse({'success': True})
+
+    return render(request, 'mod_borrowing/borrowing_labtech_detailedprebookrequests.html', {
+        'borrow_entry': borrow_entry,
+        'borrowed_items': borrowed_items1,
+    })
+
 
 
 

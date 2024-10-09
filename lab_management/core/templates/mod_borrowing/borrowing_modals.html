@@ -1,0 +1,70 @@
+<!-- Confirm Borrow Modal -->
+<div class="modal fade" id="confirmBorrowModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirm Mark as Borrowed</h5>
+          <button type="button" class="close" data-bs-dismiss="modal">
+            <span>&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to mark this request as borrowed?
+        </div>
+        <div class="modal-footer">
+          <form method="POST" id="borrowActionForm">
+            {% csrf_token %}
+            <input type="hidden" name="borrow_id" id="borrowActionId" value="">
+            <button type="submit" name="action" value="borrowed" class="btn btn-success">Confirm</button>
+          </form>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Confirm Cancel Modal -->
+  <div class="modal fade" id="confirmCancelModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirm Cancellation</h5>
+          <button type="button" class="close" data-bs-dismiss="modal">
+            <span>&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <textarea name="remarks" form="cancelActionForm" class="form-control" placeholder="Enter remarks for cancellation"></textarea>
+        </div>
+        <div class="modal-footer">
+          <form method="POST" id="cancelActionForm">
+            {% csrf_token %}
+            <input type="hidden" name="borrow_id" id="cancelActionId" value="">
+            <button type="submit" name="action" value="cancel" class="btn btn-danger">Confirm Cancellation</button>
+          </form>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var confirmBorrowModal = document.getElementById('confirmBorrowModal');
+      confirmBorrowModal.addEventListener('show.bs.modal', function(event) {
+        var button = event.relatedTarget;
+        var borrowId = button.getAttribute('data-id');
+        var borrowActionInput = document.getElementById('borrowActionId');
+        borrowActionInput.value = borrowId;
+      });
+  
+      var confirmCancelModal = document.getElementById('confirmCancelModal');
+      confirmCancelModal.addEventListener('show.bs.modal', function(event) {
+        var button = event.relatedTarget;
+        var borrowId = button.getAttribute('data-id');
+        var cancelActionInput = document.getElementById('cancelActionId');
+        cancelActionInput.value = borrowId;
+      });
+    });
+  </script>
+  

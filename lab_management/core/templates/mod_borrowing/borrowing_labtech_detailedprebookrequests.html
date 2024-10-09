@@ -1,5 +1,4 @@
 {% extends 'temp_navbar.html' %}
-{% load socialaccount %}
 {% block title %}Detailed Pre-Book Request{% endblock %}
 
 {% block content %}
@@ -7,30 +6,34 @@
     <h1>Borrowing Request Details</h1>
     <nav>
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'borrowing_labcoord_prebookrequests' %}">Pre-Book Requests</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'borrowing_labtech_prebookrequests' %}">Pre-Book Requests</a></li>
         <li class="breadcrumb-item active">Request Details</li>
       </ol>
     </nav>
   </div><!-- End Page Title -->
 
   <section class="section">
+    <!-- Actions -->
     <div class="row">
       <div class="col-lg-12">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Request ID: </h5>
-            <p><strong>Date Requested:</strong> </p>
-            <p><strong>Date Needed:</strong> </p>
-            <p><strong>Due Date:</strong> </p>
-            <p><strong>Status:</strong> 
-              {% comment %} {% if borrow_request.status == 'P' %}
-                Pending
-              {% elif borrow_request.status == 'A' %}
-                Approved
-              {% elif borrow_request.status == 'D' %}
-                Declined
-              {% endif %} {% endcomment %}
-            </p>
+            <div class="mt-3">
+              {%if borrow_entry.status == 'A' or borrow_entry.status == 'B' or borrow_entry.status == 'L'%}
+                {%if borrow_entry.status == 'A' or borrow_entry.status == 'L'%}
+                  <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" data-id="{{ borrow_entry.borrow_id }}">Mark as Borrowed</button>
+                {%elif borrow_entry.status == 'A' or borrow_entry.status == 'B'%}
+                  <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal" data-id="{{ borrow_entry.borrow_id }}">Cancel</button>
+                {%endif%}
+              {%endif%}
+            </div>
+
+            <h5 class="card-title">Request ID: {{ borrow_entry.borrow_id }}</h5>
+            <p><strong>Borrowe Name:</strong> {{ borrow_entry.user.firstname }} {{ borrow_entry.user.lastname }}</p>
+            <p><strong>Date Requested:</strong> {{ borrow_entry.request_date|date:"Y/m/d" }}</p>
+            <p><strong>Date Needed:</strong> {{ borrow_entry.borrow_date|date:"Y/m/d" }}</p>
+            <p><strong>Due Date:</strong> {{ borrow_entry.due_date|date:"Y/m/d" }}</p>
+            <p><strong>Status:</strong> {{ borrow_entry.get_status_display }}</p>
 
             <!-- Borrowed Items List -->
             <h5 class="card-title">Borrowed Items</h5>
@@ -39,27 +42,25 @@
                 <tr>
                   <th>Item Name</th>
                   <th>Quantity</th>
-                  <th style="display:none;"></th>
-                  <th style="display:none;"></th>
-                  <th style="display:none;"></th>
                 </tr>
               </thead>
               <tbody>
-                {% comment %} {% for item in borrowed_items %} {% endcomment %}
+                {% for item in borrowed_items %}
                 <tr>
-                  <td>Beaker</td>
-                  <td>2</td>
-                  <td style="display:none;"></td>
-                  <td style="display:none;"></td>
-                  <td style="display:none;"></td>
+                  <td>{{ item.item.item_name }}</td>
+                  <td>{{ item.qty }}</td>
                 </tr>
+                {% endfor %}
               </tbody>
             </table>
+
+            
           </div>
         </div>
       </div>
     </div>
   </section>
 
+  {% include 'mod_borrowing/borrowing_modals.html' %}
 
 {% endblock %}

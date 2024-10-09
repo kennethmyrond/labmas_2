@@ -278,6 +278,7 @@ class borrow_info(models.Model):
             'D': 'Declined',
             'B': 'Borrowed',
             'C': 'Cancelled',
+            'L': 'Cancelled',
             'X': 'Completed'
         }
         return status_mapping.get(self.status, 'Unknown')

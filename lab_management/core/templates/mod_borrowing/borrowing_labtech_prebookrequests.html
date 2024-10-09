@@ -2,230 +2,368 @@
 {% block title %}Pre-Book Requests{% endblock %}
 
 {% block content %}
-  <style>
-    #approve, #markascomplete {
-      background-color: rgb(108, 193, 108);
-      color: white;
-      border: none;
-      border-radius: 5px;
-      margin-right: 5px;
-    }
-    #reject {
-      background-color: rgb(199, 75, 75);
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
-    #markasborrowed{
-      background-color: rgb(232, 192, 98);
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
-    #approve:hover, #markascomplete:hover {
-      background-color: rgb(80, 160, 80);
-    }
-    #reject:hover {
-      background-color: rgb(179, 61, 61);
-    }
-    #markasborrowed:hover{
-      background-color: rgb(217, 177, 84);
-    }
-
-    #ticketcontainer{
-      background-color: white;
-      padding:10px 0 10px 0;
-      overflow-x: scroll;
-      display: flex;
-    }
-    .ticket{
-      background-color: white;
-      border: 2px solid rgb(99, 99, 99);
-      box-shadow: 2px 2px 2px 2px rgb(179, 179, 179) ;
-      border-radius: 10px;
-      padding:10px;
-      margin-right:5%;
-    }
-
-    .IDlabel{
-      font-size: large;
-      text-align: center;
-    }
-    .label{
-      padding-right:10px;
-      font-weight: bold;
-    }
-
-  </style>
-
-
 <div class="pagetitle">
-  <h1>Borrowing</h1>
-  <nav>
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item active">Pre-Book Requests</li>
-    </ol>
-  </nav>
-</div><!-- End Page Title -->
+  <h1>Borrowing Requests</h1>
+</div>
 
-<!-- Ticket List -->
-<section class="section">
-  <div class="row">
-    <div class="col-lg-12">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Accepted Pre-Book Requests</h5>
+<!-- Tabs for Today, Future, Past, Cancelled, and Accepted borrows -->
+<ul class="nav nav-tabs" id="borrowRequestsTabs" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link active" id="today-tab" data-bs-toggle="tab" href="#today-borrows" role="tab">Today Borrow</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="future-tab" data-bs-toggle="tab" href="#future-borrows" role="tab">Future Borrows</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="past-tab" data-bs-toggle="tab" href="#past-borrows" role="tab">Past Borrows</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="cancelled-tab" data-bs-toggle="tab" href="#borrowed" role="tab">Marked As Borrowed</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="cancelled-tab" data-bs-toggle="tab" href="#cancelled-borrows" role="tab">Cancelled By Lab</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="accepted-tab" data-bs-toggle="tab" href="#accepted-borrows" role="tab">All Requests</a>
+  </li>
+</ul>
 
-          <!-- Ticket Container -->
-          <div id="ticketcontainer">
-            {% for request in accepted_requests %}
-            <div class="ticket">
-              <div style="text-align: center;">
-                <a class="IDlabel" href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">
-                  RF {{ request.borrow_id }}
-                </a>
-              </div>
+<!-- Tab content -->
+<div class="tab-content">
 
-              <table class="tickettable">
-                <tr>
-                  <td class="label">Name:</td>
-                  <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
-                </tr>
-                <tr>
-                  <td class="label">Date of Request:</td>
-                  <td>{{ request.request_date|date:"Y/m/d" }}</td>
-                </tr>
-                <tr>
-                  <td class="label">Date for Booking:</td>
-                  <td>{{ request.borrow_date|date:"Y/m/d" }}</td>
-                </tr>
-                <tr>
-                  <td class="label">Items Borrowed:</td>
-                  <td>
-                    <table>
-
-                    </table>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="label">Actions:</td>
-                  <td>
-                    <form method="POST" class="action-form">
-                      {% csrf_token %}
-                      <input type="hidden" name="borrow_id" value="{{ request.borrow_id }}">
-                      <button type="submit" name="action" value="borrowed" id="markasborrowed">Mark as Borrowed</button>
-                      <button type="submit" name="action" value="cancel" id="cancel">Cancel</button>
-                    </form>
-                  </td>
-                </tr>
+  <!-- Today Borrow Tab -->
+  <div class="tab-pane fade show active" id="today-borrows" role="tabpanel">
+    <section class="section">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Today's Borrows</h5>
+              <table class="table table-striped datatable">
+                <thead>
+                  <tr>
+                    <th>RF Number</th>
+                    <th>Borrower</th>
+                    <th>Items</th>
+                    <th></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for request in today_borrows %}
+                  <tr>
+                    <td><a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                    <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
+                    <td>
+                      <ul>
+                        {% for item in request.borrowed_items_set.all %}
+                        <li>{{ item.item.item_name }} (×{{ item.qty }})</li>
+                        {% endfor %}
+                      </ul>
+                    </td>
+                    <td>
+                      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" data-id="{{ request.borrow_id }}">Mark as Borrowed</button>
+                    </td>
+                    <td>
+                      <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal" data-id="{{ request.borrow_id }}">Cancel</button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
               </table>
             </div>
-            {% empty %}
-            <p>No accepted requests available.</p>
-            {% endfor %}
-          </div><!-- End Ticket Container -->
+          </div>
         </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Future Borrows Tab -->
+  <div class="tab-pane fade" id="future-borrows" role="tabpanel">
+    <section class="section">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Future Borrows</h5>
+              <table class="table table-striped datatable">
+                <thead>
+                  <tr>
+                    <th>RF Number</th>
+                    <th>Borrower</th>
+                    <th>Items</th>
+                    <th></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for request in future_borrows %}
+                  <tr>
+                    <td><a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                    <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
+                    <td>
+                      <ul>
+                        {% for item in request.borrowed_items_set.all %}
+                        <li>{{ item.item.item_name }} (×{{ item.qty }})</li>
+                        {% endfor %}
+                      </ul>
+                    </td>
+                    <td>
+                      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" data-id="{{ request.borrow_id }}">Mark as Borrowed</button>
+                    </td>
+                    <td>
+                      <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal" data-id="{{ request.borrow_id }}">Cancel</button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Past Borrows Tab -->
+  <div class="tab-pane fade" id="past-borrows" role="tabpanel">
+    <section class="section">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Past Borrows</h5>
+              <table class="table table-striped datatable">
+                <thead>
+                  <tr>
+                    <th>RF Number</th>
+                    <th>Borrower</th>
+                    <th>Items</th>
+                    <th></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for request in past_borrows %}
+                  <tr>
+                    <td><a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                    <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
+                    <td>
+                      <ul>
+                        {% for item in request.borrowed_items_set.all %}
+                        <li>{{ item.item.item_name }} (×{{ item.qty }})</li>
+                        {% endfor %}
+                      </ul>
+                    </td>
+                    <td>
+                      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" data-id="{{ request.borrow_id }}">Mark as Borrowed</button>
+                    </td>
+                    <td>
+                      <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal" data-id="{{ request.borrow_id }}">Cancel</button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Cancelled Borrows Tab -->
+  <div class="tab-pane fade" id="cancelled-borrows" role="tabpanel">
+    <section class="section">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Cancelled Borrows</h5>
+              <table class="table table-striped datatable">
+                <thead>
+                  <tr>
+                    <th>RF Number</th>
+                    <th>Borrower</th>
+                    <th>Items</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for request in cancelled_borrows %}
+                  <tr>
+                    <td><a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                    <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
+                    <td>
+                      <ul>
+                        {% for item in request.borrowed_items_set.all %}
+                        <li>{{ item.item.item_name }} (×{{ item.qty }})</li>
+                        {% endfor %}
+                      </ul>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+    <!-- Cancelled Borrows Tab -->
+    <div class="tab-pane fade" id="borrowed" role="tabpanel">
+      <section class="section">
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Marked As Borrowed</h5>
+                <table class="table table-striped datatable">
+                  <thead>
+                    <tr>
+                      <th>RF Number</th>
+                      <th>Borrower</th>
+                      <th>Items</th>
+                      <th hidden></th>
+                      <th hidden></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for request in borrowed_borrows %}
+                    <tr>
+                      <td><a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                      <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
+                      <td>
+                        <ul>
+                          {% for item in request.borrowed_items_set.all %}
+                          <li>{{ item.item.item_name }} (×{{ item.qty }})</li>
+                          {% endfor %}
+                        </ul>
+                      </td>
+                      <td hidden></td>
+                      <td hidden></td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  <!-- Accepted Borrows Tab -->
+  <div class="tab-pane fade" id="accepted-borrows" role="tabpanel">
+    <section class="section">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Accepted Borrows (Sorted by Request Date)</h5>
+              <table class="table table-striped datatable">
+                <thead>
+                  <tr>
+                    <th>RF Number</th>
+                    <th>Borrower</th>
+                    <th>Request Date</th>
+                    <th></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for request in accepted_borrows %}
+                  <tr>
+                    <td><a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                    <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
+                    <td>{{ request.request_date|date:"Y/m/d" }}</td>
+                    <td>
+                      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" data-id="{{ request.borrow_id }}">Mark as Borrowed</button>
+                    </td>
+                    <td>
+                      <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal" data-id="{{ request.borrow_id }}">Cancel</button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Confirm Borrow Modal -->
+<div class="modal fade" id="confirmBorrowModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Mark as Borrowed</h5>
+        <button type="button" class="close" data-bs-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to mark this request as borrowed?
+      </div>
+      <div class="modal-footer">
+        <form method="POST" id="borrowActionForm">
+          {% csrf_token %}
+          <input type="hidden" name="borrow_id" id="borrowActionId" value="">
+          <button type="submit" name="action" value="borrowed" class="btn btn-success">Confirm</button>
+        </form>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
       </div>
     </div>
   </div>
-</section>
+</div>
 
-          comment out fornow
-            <!-- Table with stripped rows -->
-           <table class="table datatable">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Date of Request</th>
-                  <th>Date for Booking</th>
-                  <th>Type</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for request in borrowing_requests %}
-                <tr>
-                  <td><a href="{% url 'borrowing_labcoord_detailedPrebookrequests' %}"></a>RF{{ request.borrow_id }}</td>
-                  <td>{{ request.user.firstname}} {{ request.user.lastname}}</td>
-                  <td>{{ request.request_date|date:"Y-m-d" }}</td>
-                  <td>{{ request.borrow_date|date:"Y-m-d" }}</td>
-                  <td>
-                    {% if request.due_date %}
-                      Long-Term
-                    {% else %}
-                      Short-Term
-                    {% endif %}
-                  </td>
-                  <td>
-                    {% if request.status == 'P' %}
-                      Pending
-                    {% elif request.status == 'A' %}
-                      <span style="color:green;">Approved</span>
-                    {% elif request.status == 'D' %}
-                      <span style="color:red;">Rejected</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    {% if request.status == 'P' %}
-                      <form method="POST">
-                        {% csrf_token %}
-                        <input type="hidden" name="borrow_id" value="{{ request.borrow_id }}">
-                        <button type="submit" name="action" value="approve" id="approve">Approve</button>
-                        <button type="submit" name="action" value="reject" id="reject">Reject</button>
-                      </form>
-                    {% elif request.status == 'A' %} 
-                        <form method="POST">
-                            <button type="submit" name="action" value="markasborrowed" id="markasborrowed">Mark As Borrowed</button>
-                        </form>
-                    {% elif request.status == 'B' %} 
-                        <form method="POST">
-                            <button type="submit" name="action" value="markascomplete" id="markascomplete">Mark As Complete</button>
-                        </form>
-                    {% else %}
-                      <span>Completed</span>
-                    {% endif %}
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table> 
-            <!-- End Table with stripped rows -->
-
-          <!-- </div>
-        </div>
+<!-- Confirm Cancel Modal -->
+<div class="modal fade" id="confirmCancelModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Cancellation</h5>
+        <button type="button" class="close" data-bs-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <textarea name="remarks" form="cancelActionForm" class="form-control" placeholder="Enter remarks for cancellation"></textarea>
+      </div>
+      <div class="modal-footer">
+        <form method="POST" id="cancelActionForm">
+          {% csrf_token %}
+          <input type="hidden" name="borrow_id" id="cancelActionId" value="">
+          <button type="submit" name="action" value="cancel" class="btn btn-danger">Confirm Cancellation</button>
+        </form>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
       </div>
     </div>
-  </section>
+  </div>
+</div>
 
 <script>
-  // Handle form submission with AJAX to prevent page reload
-  document.querySelectorAll('.action-form').forEach(form => {
-    form.addEventListener('submit', function(event) {
-      event.preventDefault();
-      const formData = new FormData(this);
+  document.addEventListener('DOMContentLoaded', function() {
+    var confirmBorrowModal = document.getElementById('confirmBorrowModal');
+    confirmBorrowModal.addEventListener('show.bs.modal', function(event) {
+      var button = event.relatedTarget;
+      var borrowId = button.getAttribute('data-id');
+      var borrowActionInput = document.getElementById('borrowActionId');
+      borrowActionInput.value = borrowId;
+    });
 
-      fetch('', {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
-        },
-        body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          alert('Action processed successfully.');
-          location.reload();  // Reload the page to update statuses
-        } else {
-          alert('Action failed.');
-        }
-      })
-      .catch(error => console.error('Error:', error));
+    var confirmCancelModal = document.getElementById('confirmCancelModal');
+    confirmCancelModal.addEventListener('show.bs.modal', function(event) {
+      var button = event.relatedTarget;
+      var borrowId = button.getAttribute('data-id');
+      var cancelActionInput = document.getElementById('cancelActionId');
+      cancelActionInput.value = borrowId;
     });
   });
 </script>
+
 {% endblock %}
-
-
