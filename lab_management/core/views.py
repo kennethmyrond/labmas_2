@@ -1444,7 +1444,7 @@ def borrowing_labtech_prebookrequests(request):
             borrow_entry.remarks = remarks  # Save cancellation remarks
         borrow_entry.save()
 
-        return JsonResponse({'success': True})
+        return redirect('borrowing_labtech_prebookrequests')
 
     return render(request, 'mod_borrowing/borrowing_labtech_prebookrequests.html', {
         'today_borrows': today_borrows,
@@ -1470,7 +1470,7 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
             borrow_entry.remarks = remarks  # Save cancellation remarks
         borrow_entry.save()
 
-        return JsonResponse({'success': True})
+        return redirect('borrowing_labtech_prebookrequests')
 
     return render(request, 'mod_borrowing/borrowing_labtech_detailedprebookrequests.html', {
         'borrow_entry': borrow_entry,
