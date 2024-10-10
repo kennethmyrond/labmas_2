@@ -1550,8 +1550,18 @@ def clearance_student_viewClearanceDetailed(request, borrow_id):
         reports = reported_items.objects.none()  # If there's an error, return no reports
         print(f"Error fetching reports: {e}")  # Debugging output for error tracking
 
+    # Include borrow details in the context
+    borrow_details = {
+        'borrow_id': user_borrow.borrow_id if user_borrow else None,
+        'request_date': user_borrow.request_date if user_borrow else None,
+        'borrow_date': user_borrow.borrow_date if user_borrow else None,
+        'due_date': user_borrow.due_date if user_borrow else None,
+        'questions_responses': user_borrow.questions_responses if user_borrow else {},
+    }
+
     context = {
         'reports': reports,
+        'borrow_details': borrow_details,
     }
     return render(request, 'mod_clearance/student_viewClearanceDetailed.html', context)
 
