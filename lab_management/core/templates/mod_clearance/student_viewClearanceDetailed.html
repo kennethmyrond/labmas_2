@@ -7,9 +7,8 @@
     <h1>Clearance</h1>
     <nav>
       <ol class="breadcrumb">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="{% url 'clearance_student_viewClearance' %}">View Clearance</a></li>
-          <li class="breadcrumb-item active">Clearance Details</li>
+        <li class="breadcrumb-item"><a href="{% url 'clearance_student_viewClearance' %}">View Clearance</a></li>
+        <li class="breadcrumb-item active">Clearance Details</li>
       </ol>
     </nav>
   </div><!-- End Page Title -->
@@ -30,28 +29,29 @@
           <div class="card-body">
             <h5 class="card-title">Clearance Details</h5>
 
-
-
             <!-- Table with stripped rows -->
             <table class="table datatable">
               <thead>
                 <tr>
                   <th>Item</th>
                   <th>Reason</th>
-                  <th>Status</th>
-                  <th style="display:none"></th>
-                  <th style="display:none"></th>
+                  <th>Quantity</th>
+                  <th>Amount to Pay</th>
                 </tr>
               </thead>
               <tbody>
+                {% for report in reports %}
                 <tr>
-                  <td>Tripod</td>
-                  <td>Broke one leg of the tripod</td>
-                  <td>Unsettled</td>
-                  <td style="display:none"></td>
-                  <td style="display:none"> </td>
+                  <td>{{ report.item.item_name }}</td>
+                  <td>{{ report.report_reason }}</td>
+                  <td>{{ report.qty_reported }}</td>
+                  <td>{{ report.amount_to_pay }}</td>
                 </tr>
-                
+                {% empty %}
+                <tr>
+                  <td colspan="4">No reports available.</td>
+                </tr>
+                {% endfor %}
               </tbody>
             </table>
             <!-- End Table with stripped rows -->
@@ -60,6 +60,6 @@
         </div>
       </div>
     </div>
-    <p>Kindly Proceed to the Lab to settle payment.</p>
+    <p>Kindly proceed to the lab to settle payment.</p>
   </section>
 {% endblock %}

@@ -38,7 +38,7 @@ urlpatterns = [
     path('borrowing/student/borrow_walkin', views.borrowing_student_walkinview, name='borrowing_studentWalkin'),
     path('borrowing/student/viewPreBookRequests', views.borrowing_student_viewPreBookRequestsview, name='borrowing_studentviewPreBookRequests'),
     path('cancel-request/', views.cancel_borrow_request, name='cancel_borrow_request'),
-    path('borrowing/student/viewWalkInRequests', views.borrowing_student_WalkInRequestsview, name='borrowing_studentviewWalkInRequests'),
+    path('borrowing/student/viewWalkInRequests', views.borrowing_student_detailedWalkInRequestsview, name='borrowing_studentviewWalkInRequests'),
     path('borrowing/student/detailedPreBookRequests/<int:borrow_id>/', views.borrowing_student_detailedPreBookRequestsview, name='borrowing_studentDetailedPreBookRequests'),
     path('borrowing/student/detailedWalkInRequests', views.borrowing_student_detailedWalkInRequestsview, name='borrowing_studentDetailedWalkInRequests'),
     
@@ -54,7 +54,7 @@ urlpatterns = [
     path('borrowing/return-items/', views.return_borrowed_items, name='return_borrowed_items'),
     path('clearance/', views.clearance_view, name='clearance'),
     path('clearance/student/view_clearance', views.clearance_student_viewClearance, name='clearance_student_viewClearance'),
-        path('clearance/student/view_clearance_detailed', views.clearance_student_viewClearanceDetailed, name='clearance_student_viewClearanceDetailed'),
+    path('clearance/student/view_clearance_detailed/<int:borrow_id>/', views.clearance_student_viewClearanceDetailed, name='clearance_student_viewClearanceDetailed'),  
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),
     path('reports/', views.reports_view, name='reports'),
     path('user-settings/', views.user_settings_view, name='user_settings'),
