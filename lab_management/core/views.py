@@ -1485,10 +1485,85 @@ def clearance_view(request):
     return render(request, 'mod_clearance/clearance.html')
 
 def clearance_student_viewClearance(request):
-    return render(request, 'mod_clearance/student_viewClearance.html')
+    # Get the currently logged-in user
+    user = request.user
 
-def clearance_student_viewClearanceDetailed(request):
-    return render(request, 'mod_clearance/student_viewClearanceDetailed.html')
+    # Debugging output to verify the user instance
+    if not user.is_authenticated:
+        return render(request, 'mod_clearance/student_viewClearance.html', {'error': 'User is not authenticated.'})
+
+    # Use the user instance's ID for querying
+    user_id = user.id
+
+    try:
+        # Retrieve the borrow_info entries for the current user
+        user_borrows = borrow_info.objects.filter(user_id=user_id)
+
+        # Check if the user has any borrows
+        if user_borrows.exists():
+            reports = reported_items.objects.filter(borrow__in=user_borrows)
+
+            # Handle the filter by status
+            status = request.GET.get('status', 'All')
+            if status != 'All':
+                # For now, all statuses are set to "Unsettled"
+                if status == 'Settled':
+                    reports = reports.filter(borrow__status='Settled')
+                elif status == 'Unpaid':
+                    reports = reports.filter(borrow__status='Unpaid')
+        else:
+            reports = reported_items.objects.none()  # No reports if no borrows
+
+    except Exception as e:
+        reports = reported_items.objects.none()  # If there's an error, return no reports
+        print(f"Error fetching reports: {e}")  # Debugging output for error tracking
+
+    context = {
+        'reports': reports,
+    }
+    return render(request, 'mod_clearance/student_viewClearance.html', context)
+
+
+
+def clearance_student_viewClearanceDetailed(request, borrow_id):
+    # Get the currently logged-in user
+    user = request.user
+
+    # Debugging output to verify the user instance
+    if not user.is_authenticated:
+        return render(request, 'mod_clearance/student_viewClearanceDetailed.html', {'error': 'User is not authenticated.'})
+
+    # Use the user instance's ID for querying
+    user_id = user.id
+
+    try:
+        # Retrieve the borrow_info entries for the current user
+        user_borrow = borrow_info.objects.filter(user=user_id, borrow_id=borrow_id).first()
+
+        if user_borrow:
+            # Retrieve reported items associated with the borrow_info entry
+            reports = reported_items.objects.filter(borrow=user_borrow)
+        else:
+            reports = reported_items.objects.none()  # No reports if no borrows
+
+    except Exception as e:
+        reports = reported_items.objects.none()  # If there's an error, return no reports
+        print(f"Error fetching reports: {e}")  # Debugging output for error tracking
+
+    # Include borrow details in the context
+    borrow_details = {
+        'borrow_id': user_borrow.borrow_id if user_borrow else None,
+        'request_date': user_borrow.request_date if user_borrow else None,
+        'borrow_date': user_borrow.borrow_date if user_borrow else None,
+        'due_date': user_borrow.due_date if user_borrow else None,
+        'questions_responses': user_borrow.questions_responses if user_borrow else {},
+    }
+
+    context = {
+        'reports': reports,
+        'borrow_details': borrow_details,
+    }
+    return render(request, 'mod_clearance/student_viewClearanceDetailed.html', context)
 
 
 def lab_reservation_view(request):

@@ -34,8 +34,9 @@
                 <label for="status" class="col-sm-2 col-form-label">Filter by Status:</label>
                 <div class="col-sm-10">
                   <select class="form-select" id="status" name="status" onchange="document.getElementById('statusFilterForm').submit()">
-                   <option value="Settled" >Settled</option>
-                   <option value="Unpaid" >Unpaid</option>
+                    <option value="All" {% if request.GET.status == "All" %}selected{% endif %}>All</option>
+                    <option value="Settled" {% if request.GET.status == "Settled" %}selected{% endif %}>Settled</option>
+                    <option value="Unpaid" {% if request.GET.status == "Unpaid" %}selected{% endif %}>Unpaid</option>
                   </select>
                 </div>
               </div>
@@ -44,32 +45,22 @@
             <!-- Table with stripped rows -->
             <table class="table datatable">
               <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Reason</th>
-                  <th>Status</th>
-                  <th style="display:none"></th>
-                  <th style="display:none"></th>
-                </tr>
+                  <tr>
+                      <th>RF#</th>
+                      <th>Item</th>
+                      <th>Status</th>
+                  </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td><a href="{% url 'clearance_student_viewClearanceDetailed' %}">Tripod</a></td>
-                  <td>Broke one leg of the tripod</td>
-                  <td>Unsettled</td>
-                  <td style="display:none"></td>
-                  <td style="display:none"> </td>
-                </tr>
-                <tr>
-                    <td><a href="{% url 'clearance_student_viewClearanceDetailed' %}">Tripod 2</a></td>
-                    <td>Broke two legs of the tripod</td>
-                    <td>Paid</td>
-                    <td style="display:none"></td>
-                    <td style="display:none"> </td>
+                  {% for report in reports %}
+                  <tr>
+                      <td>{{ report.borrow.borrow_id }}</td>
+                      <td><a href="{% url 'clearance_student_viewClearanceDetailed' report.borrow.borrow_id %}">{{ report.item.item_name }}</a></td>
+                      <td>Unsettled</td>
                   </tr>
-                
+                  {% endfor %}
               </tbody>
-            </table>
+          </table>
             <!-- End Table with stripped rows -->
 
           </div>
