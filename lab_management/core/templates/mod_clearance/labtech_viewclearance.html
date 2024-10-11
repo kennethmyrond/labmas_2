@@ -1,0 +1,113 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}View Clearance{% endblock %}
+
+{% block content %}
+  
+<style>
+    .greenbtn{
+    background-color: rgb(108, 193, 108);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-right: 5px;
+    }
+    .greenbtn:hover{
+        background-color: rgb(80, 160, 80);
+    }
+</style>
+
+  <div class="pagetitle">
+    <h1>Clearance</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item active">View Clearance</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+
+  <!-- Success message -->
+  {% if messages %}
+    <div class="alert alert-success">
+      {% for message in messages %}
+        {{ message }}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">View Active Clearance</h5>
+
+            <!-- Dropdown to filter by status -->
+            <form method="GET" id="statusFilterForm">
+              <div class="row mb-3">
+                <label for="status" class="col-sm-2 col-form-label">Filter by Status:</label>
+                <div class="col-sm-10">
+                  <select class="form-select" id="status" name="status" onchange="document.getElementById('statusFilterForm').submit()">
+                    <option value="All" {% if request.GET.status == "All" %}selected{% endif %}>All</option>
+                    <option value="Pending" {% if request.GET.status == "Pending" %}selected{% endif %}>Pending</option>
+                    <option value="Cleared" {% if request.GET.status == "Cleared" %}selected{% endif %}>Cleared</option>
+                  </select>
+                </div>
+              </div>
+            </form>
+
+            <!-- Table with stripped rows -->
+            <table class="table datatable">
+              <thead>
+                  <tr>
+                      <th>RF#</th> <!-- Borrowing RF, can appear in multiple entries -->
+                      <th>Name</th>
+                      <th>Item</th>
+                      <th>Reason</th>
+                      <th>Amount Due (₱)</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                  </tr>
+              </thead>
+              <tbody>
+                <!-- hardcoded -->
+                <tr>
+                    <td>RF12345</td>
+                    <td>Student1</td>
+                    <td>Item 1</a></td>
+                    <td>Reason</td>
+                    <td>0.00</td>
+                    <td>Pending</td>
+                    <td><button class="greenbtn" id="markpaid">Mark as Paid</button></td>
+                </tr>
+                <tr>
+                    <td>RF12345</td>
+                    <td>Student1</td>
+                    <td>Item 2</a></td>
+                    <td>Reason</td>
+                    <td>0.00</td>
+                    <td>Cleared</td>
+                    <td><button style="display:none" class="greenbtn" id="markpaid">Mark as Paid</button></td>
+                </tr>
+                <!-- end of hardcoded -->
+
+                  {% for report in reports %}
+                  <tr>
+                      <td>{{ report.borrow.borrow_id }}</td>
+                      <td>Student Name</td>
+                      <td><a href="{% url 'clearance_student_viewClearanceDetailed' report.borrow.borrow_id %}">{{ report.item.item_name }}</a></td>
+                      <td>Reason</td>
+                      <td>0.00</td>
+                      <td>Pending</td>
+                      <td><button class="greenbtn" id="markpaid">Mark as Paid</button></td>
+                  </tr>
+                  {% endfor %}
+              </tbody>
+          </table>
+            <!-- End Table with stripped rows -->
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
