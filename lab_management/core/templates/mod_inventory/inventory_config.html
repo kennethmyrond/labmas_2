@@ -191,6 +191,7 @@
                                 
 
                                 <!-- Existing attributes display -->
+
                                 <div class="wrapper">
                                     <table class="entrytable" id="attributesTable">
                                         <tr class="defaultattribute"><td>Type</td><td id="deletecol"></td></tr>
@@ -234,8 +235,8 @@
                 console.log('Fetched data:', data); // Log the data
 
                 // Clear existing rows except for default attributes
-                while (attributesTable.rows.length > 4) { // Keep the first 4 rows for default attributes
-                    attributesTable.deleteRow(4); // Remove any added attribute rows beyond default attributes
+                while (attributesTable.rows.length > 2) { // Keep the first 2 rows for default attributes
+                    attributesTable.deleteRow(2); // Remove any added attribute rows beyond default attributes
                 }
 
                 // Display the current attributes based on the selected category
