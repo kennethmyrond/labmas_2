@@ -1494,10 +1494,13 @@ def clearance_student_viewClearance(request):
 
     # Use the user instance's ID for querying
     user_id = user.id
+    selected_laboratory_id = request.session.get('selected_lab')
+
+
 
     try:
         # Retrieve the borrow_info entries for the current user
-        user_borrows = borrow_info.objects.filter(user_id=user_id)
+        user_borrows = borrow_info.objects.filter(user_id=user_id, laboratory_id = selected_laboratory_id)
 
         # Check if the user has any borrows
         if user_borrows.exists():
@@ -1522,8 +1525,6 @@ def clearance_student_viewClearance(request):
         'reports': reports,
     }
     return render(request, 'mod_clearance/student_viewClearance.html', context)
-
-
 
 def clearance_student_viewClearanceDetailed(request, borrow_id):
     # Get the currently logged-in user
