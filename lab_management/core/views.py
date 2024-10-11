@@ -1566,6 +1566,8 @@ def clearance_student_viewClearanceDetailed(request, borrow_id):
     }
     return render(request, 'mod_clearance/student_viewClearanceDetailed.html', context)
 
+def clearance_labtech_viewclearance(request):
+    return render(request, 'mod_clearance/labtech_viewclearance.html')
 
 def lab_reservation_view(request):
     return render(request, 'mod_labRes/lab_reservation.html')
