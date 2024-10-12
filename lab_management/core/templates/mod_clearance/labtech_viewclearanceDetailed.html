@@ -1,0 +1,114 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}View Clearance{% endblock %}
+
+{% block content %}
+  
+<style>
+    .btn btn-primary me-3{
+    background-color: rgb(108, 193, 108);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-right: 5px;
+    }
+    .greenbtn:hover{
+        background-color: rgb(80, 160, 80);
+    }
+</style>
+
+  <div class="pagetitle">
+    <h1>Clearance</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item active">View Clearance</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+
+  <!-- Success message -->
+  {% if messages %}
+    <div class="alert alert-success">
+      {% for message in messages %}
+        {{ message }}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">View Active Clearance</h5>
+
+            <!-- Dropdown to filter by status -->
+            <form method="GET" id="statusFilterForm">
+              <div class="row mb-3">
+                <label for="RFno" class="col-sm-2 col-form-label">RF No.:</label>
+                <div class="col-sm-10">
+                  <input type="text"  class="form-control" id="RFno" disabled name="RFno" value="RF12345">
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="studentName" class="col-sm-2 col-form-label">Student Name:</label>
+                <div class="col-sm-10">
+                  <input type="text"  class="form-control" id="studentName" disabled name="studentName" value="Juan Dela Cruz">
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="itemName" class="col-sm-2 col-form-label">Item:</label>
+                <div class="col-sm-10">
+                  <input type="text"  class="form-control" id="itemName" disabled name="itemName" value="Beaker">
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="reason" class="col-sm-2 col-form-label">Reason:</label>
+                <div class="col-sm-10">
+                  <input type="text"  class="form-control" id="reason" disabled name="reason" value="Visible cracks">
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="amtdue" class="col-sm-2 col-form-label">Amount Due (₱):</label>
+                <div class="col-sm-10">
+                  <input type="number"  class="form-control" id="amtdue" disabled name="amtdue" value="100.00">
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="remarks" class="col-sm-2 col-form-label">Remarks:</label>
+                <div class="col-sm-10">
+                  <input type="text"  class="form-control" id="remarks" name="remarks" value="Student replaced item themselves">
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="status" class="col-sm-2 col-form-label">Status:</label>
+                <div class="col-sm-10">
+                    <p style="border:none;" class="form-control" id="status" name="status">Pending</p>
+                </div>
+              </div>
+
+              <div>
+                <br>
+              </div>
+
+              <div class="row mb-5 ">
+                <div class="col-sm-10 d-flex align-items-center">
+                    <button type="submit" class="btn btn-primary me-3" id="submit">Mark as Cleared</button>
+                </div>
+            </div>
+
+            </form>
+
+            
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

@@ -73,11 +73,11 @@
                 <tr>
                     <td>RF12345</td>
                     <td>Student1</td>
-                    <td>Item 1</a></td>
+                    <td><a href="{% url 'clearance_labtech_viewclearanceDetailed' %}">Item 1</a></td>
                     <td>Reason</td>
                     <td>0.00</td>
                     <td>Pending</td>
-                    <td><button class="greenbtn" id="markpaid">Mark as Paid</button></td>
+                    <td><button class="greenbtn" id="markpaid">Mark as Cleared</button></td>
                 </tr>
                 <tr>
                     <td>RF12345</td>
@@ -86,7 +86,7 @@
                     <td>Reason</td>
                     <td>0.00</td>
                     <td>Cleared</td>
-                    <td><button style="display:none" class="greenbtn" id="markpaid">Mark as Paid</button></td>
+                    <td><button style="display:none" class="greenbtn" id="markpaid">Mark as Cleared</button></td>
                 </tr>
                 <!-- end of hardcoded  -->
 
@@ -98,7 +98,7 @@
                       <td>Reason</td>
                       <td>0.00</td>
                       <td>Pending</td>
-                      <td><button class="greenbtn" id="markpaid">Mark as Paid</button></td>
+                      <td><button class="greenbtn" id="markpaid">Mark as Cleared</button></td>
                   </tr>
                   {% endfor %}
               </tbody>
