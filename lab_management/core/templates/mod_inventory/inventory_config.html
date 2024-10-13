@@ -189,7 +189,6 @@
                                 </div>
                                 
                                 
-
                                 <!-- Existing attributes display -->
                                 <div class="wrapper">
                                     <table class="entrytable" id="attributesTable">
@@ -240,6 +239,7 @@
 
                 // Display the current attributes based on the selected category
                 data.add_cols.forEach(attr => {
+                    console.log(attr)
                     const row = attributesTable.insertRow();
                     const cell1 = row.insertCell(0);
                     const cell2 = row.insertCell(1);
