@@ -1,0 +1,127 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}View Clearance{% endblock %}
+
+{% block content %}
+  
+<style>
+  .status-pending {
+      background-color: red;  /* Red background for Pending */
+      color: white;           /* White text for Pending */
+      padding: 5px 10px;     /* Some padding */
+      border-radius: 5px;    /* Rounded corners */
+      display: inline-block;  /* Display as inline-block for padding */
+  }
+
+  .status-cleared {
+      background-color: green; /* Green background for Cleared */
+      color: white;            /* White text for Cleared */
+      padding: 5px 10px;      /* Some padding */
+      border-radius: 5px;     /* Rounded corners */
+      display: inline-block;   /* Display as inline-block for padding */
+  }
+</style>
+
+
+  <div class="pagetitle">
+    <h1>Clearance</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item active">View Clearance</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+
+  <!-- Success message -->
+  {% if messages %}
+    <div class="alert alert-success">
+      {% for message in messages %}
+        {{ message }}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Clearance Details</h5>
+  
+            <form method="POST">
+              {% csrf_token %}
+              
+              <div class="row mb-3">
+                <label for="RFno" class="col-sm-2 col-form-label">RF No.:</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="RFno" disabled name="RFno" value="{{ RFno }}">
+                </div>
+              </div>
+  
+              <div class="row mb-3">
+                <label for="studentName" class="col-sm-2 col-form-label">Student Name:</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="studentName" disabled name="studentName" value="{{ student_name }}">
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="IDNumber" class="col-sm-2 col-form-label">ID Number:</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="IDNumber" disabled name="IDNumber" value="{{ ID_number }}">
+                </div>
+              </div>
+  
+              <div class="row mb-3">
+                <label for="itemName" class="col-sm-2 col-form-label">Item:</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="itemName" disabled name="itemName" value="{{ item_name }}">
+                </div>
+              </div>
+  
+              <div class="row mb-3">
+                <label for="reason" class="col-sm-2 col-form-label">Reason:</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="reason" disabled name="reason" value="{{ reason }}">
+                </div>
+              </div>
+  
+              <div class="row mb-3">
+                <label for="amtdue" class="col-sm-2 col-form-label">Amount Due (₱):</label>
+                <div class="col-sm-10">
+                  <input type="number" class="form-control" id="amtdue" disabled name="amtdue" value="{{ amount_due }}">
+                </div>
+              </div>
+  
+              <div class="row mb-3">
+                <label for="remarks" class="col-sm-2 col-form-label">Remarks:</label>
+                <div class="col-sm-10">
+                  <textarea class="form-control" id="remarks" name="remarks">{{ remarks }}</textarea>
+                </div>
+              </div>
+  
+              <div class="row mb-3">
+                <label for="status" class="col-sm-2 col-form-label">Status:</label>
+                <div class="col-sm-10">
+                    {% if status == 'Pending' %}
+                        <span class="status-pending">{{ status }}</span>
+                    {% else %}
+                        <span class="status-cleared">{{ status }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+  
+              <div class="row mb-5">
+                <div class="col-sm-10 d-flex align-items-center">
+                    <button type="submit" class="btn btn-primary me-3">Mark as Cleared</button>
+                </div>
+            </div>
+            
+            </form>
+  
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

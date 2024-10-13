@@ -190,6 +190,7 @@
                                 
                                 
                                 <!-- Existing attributes display -->
+
                                 <div class="wrapper">
                                     <table class="entrytable" id="attributesTable">
                                         <tr class="defaultattribute"><td>Type</td><td id="deletecol"></td></tr>
@@ -218,10 +219,46 @@
     const categorySelect = document.getElementById('categorySelect');
     const attributesTable = document.getElementById('attributesTable');
 
+    // Function to fetch attributes
+    function fetchAttributes(categoryId) {
+        fetch(`/get_add_cols/${categoryId}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Fetched data:', data);
+
+                // Clear existing rows except for default attributes
+                while (attributesTable.rows.length > 2) {
+                    attributesTable.deleteRow(2);
+                }
+
+                // Display the current attributes based on the selected category
+                data.add_cols.forEach(attr => {
+                    const row = attributesTable.insertRow();
+                    const cell1 = row.insertCell(0);
+                    const cell2 = row.insertCell(1);
+                    cell1.textContent = attr;
+                    cell2.innerHTML = `<button type="button" id="deletebtn" onclick="deleteAttribute('${categoryId}', '${attr}')">Delete</button>`;
+                });
+            })
+            .catch(error => console.error('Error fetching attributes:', error));
+    }
+
+    // Fetch attributes for the default category on page load
+    const initialCategoryId = categorySelect.value;
+    if (initialCategoryId) {
+        fetchAttributes(initialCategoryId);
+    }
+
     // Listen for changes in the category select dropdown
     categorySelect.addEventListener('change', function () {
         const selectedCategoryId = this.value;
-
+        fetchAttributes(selectedCategoryId);
+        
         fetch(`/get_add_cols/${selectedCategoryId}/`)
             .then(response => {
                 if (!response.ok) {
@@ -233,8 +270,8 @@
                 console.log('Fetched data:', data); // Log the data
 
                 // Clear existing rows except for default attributes
-                while (attributesTable.rows.length > 4) { // Keep the first 4 rows for default attributes
-                    attributesTable.deleteRow(4); // Remove any added attribute rows beyond default attributes
+                while (attributesTable.rows.length > 2) { // Keep the first 2 rows for default attributes
+                    attributesTable.deleteRow(2); // Remove any added attribute rows beyond default attributes
                 }
 
                 // Display the current attributes based on the selected category

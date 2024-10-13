@@ -61,10 +61,12 @@ class user(AbstractBaseUser):
     user_id = models.AutoField(primary_key=True)
     firstname = models.CharField(max_length=45, null=True, blank=True)
     lastname = models.CharField(max_length=45, null=True, blank=True)
+    id_number = models.IntegerField(null=True, blank=True) 
     email = models.EmailField(unique=True)
     role = models.ForeignKey(role, null=True, blank=True, on_delete=models.SET_NULL)  # ForeignKey to Role
     is_deactivated = models.BooleanField(default=False)
     is_guest = models.BooleanField(default=False)
+    
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -303,8 +305,17 @@ class reported_items(models.Model):
     report_reason = models.CharField(max_length=255)
     amount_to_pay = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     reported_date = models.DateTimeField(auto_now_add=True)
+    remarks = models.TextField(null=True, blank=True)
+
+    # Add a status field with choices for Pending (1) and Cleared (0)
+    STATUS_CHOICES = [
+        (1, 'Pending'),
+        (0, 'Cleared'),
+    ]
+    status = models.IntegerField(choices=STATUS_CHOICES, default=1)  # Default to Pending
 
     def __str__(self):
         return f"Reported {self.item.item_name} for Borrow {self.borrow.borrow_id}"
+
 
 
