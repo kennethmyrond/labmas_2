@@ -1558,9 +1558,12 @@ def clearance_student_viewClearanceDetailed(request, borrow_id):
         'questions_responses': user_borrow.questions_responses if user_borrow else {},
     }
 
+     
+    
     context = {
         'reports': reports,
         'borrow_details': borrow_details,
+    
     }
     return render(request, 'mod_clearance/student_viewClearanceDetailed.html', context)
 
@@ -1598,6 +1601,7 @@ def clearance_labtech_viewclearance(request):
                 'report_id': report.id,
                 'borrow_id': borrow_info_obj.borrow_id,  # RF#
                 'user_name': f"{user_obj.firstname} {user_obj.lastname}",  # Student's Name
+                'id_number': user_obj.id_number,  # Fetch ID number from user
                 'item_name': item_obj.item_name,  # Item Name
                 'reason': report.report_reason,  # Report Reason
                 'amount_due': report.amount_to_pay,  # Amount to Pay
@@ -1635,6 +1639,7 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
     context = {
         'RFno': report.borrow.borrow_id,  # RF#
         'student_name': f"{report.borrow.user.firstname} {report.borrow.user.lastname}",  # Student's Name
+        'ID_number': report.borrow.user.id_number,  # Student's Name
         'item_name': report.item.item_name,  # Item Name
         'reason': report.report_reason,  # Reason
         'amount_due': report.amount_to_pay,  # Amount Due

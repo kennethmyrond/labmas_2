@@ -61,10 +61,12 @@ class user(AbstractBaseUser):
     user_id = models.AutoField(primary_key=True)
     firstname = models.CharField(max_length=45, null=True, blank=True)
     lastname = models.CharField(max_length=45, null=True, blank=True)
+    id_number = models.IntegerField(null=True, blank=True) 
     email = models.EmailField(unique=True)
     role = models.ForeignKey(role, null=True, blank=True, on_delete=models.SET_NULL)  # ForeignKey to Role
     is_deactivated = models.BooleanField(default=False)
     is_guest = models.BooleanField(default=False)
+    
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

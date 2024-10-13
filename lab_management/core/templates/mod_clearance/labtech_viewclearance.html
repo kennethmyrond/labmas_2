@@ -67,6 +67,7 @@
                 <tr>
                   <th>RF#</th>
                   <th>Name</th>
+                  <th>ID Number</th>
                   <th>Item</th>
                   <th>Reason</th>
                   <th>Amount Due (₱)</th>
@@ -78,6 +79,7 @@
                 <tr>
                   <td>{{ report.borrow_id }}</td>  <!-- RF# (Borrow ID) -->
                   <td>{{ report.user_name }}</td>  <!-- Student's Name -->
+                  <td>{{ report.id_number }}</td>
                   <td><a href="{% url 'clearance_labtech_viewclearanceDetailed' report.report_id %}">{{ report.item_name }}</a></td>  <!-- Item Name -->
                   <td>{{ report.reason }}</td>  <!-- Report Reason -->
                   <td>{{ report.amount_due }}</td>  <!-- Amount to Pay -->
