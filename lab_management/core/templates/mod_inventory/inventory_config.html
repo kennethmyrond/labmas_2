@@ -220,8 +220,8 @@
     const categorySelect = document.getElementById('categorySelect');
     const attributesTable = document.getElementById('attributesTable');
 
-      // Function to fetch attributes
-      function fetchAttributes(categoryId) {
+    // Function to fetch attributes
+    function fetchAttributes(categoryId) {
         fetch(`/get_add_cols/${categoryId}/`)
             .then(response => {
                 if (!response.ok) {
@@ -259,13 +259,7 @@
     categorySelect.addEventListener('change', function () {
         const selectedCategoryId = this.value;
         fetchAttributes(selectedCategoryId);
-    });
-
-    // Listen for changes in the category select dropdown
-    categorySelect.addEventListener('change', function () {
-        const selectedCategoryId = this.value;
-        fetchAttributes(selectedCategoryId);
-
+        
         fetch(`/get_add_cols/${selectedCategoryId}/`)
             .then(response => {
                 if (!response.ok) {
@@ -418,8 +412,6 @@ function getCSRFToken() {
             }
         })
         .catch(error => console.error('Error adding attribute:', error));
-
-    
 
     });
 </script>
