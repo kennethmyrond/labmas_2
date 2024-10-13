@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.db.models import Q, Sum , Prefetch, F
 from django.utils import timezone
 from django import forms
-from django.http import HttpResponse, JsonResponse, Http404
+from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
@@ -1496,11 +1496,9 @@ def clearance_student_viewClearance(request):
     user_id = user.id
     selected_laboratory_id = request.session.get('selected_lab')
 
-
-
     try:
         # Retrieve the borrow_info entries for the current user
-        user_borrows = borrow_info.objects.filter(user_id=user_id, laboratory_id = selected_laboratory_id)
+        user_borrows = borrow_info.objects.filter(user_id=user_id, laboratory_id=selected_laboratory_id)
 
         # Check if the user has any borrows
         if user_borrows.exists():
@@ -1509,11 +1507,10 @@ def clearance_student_viewClearance(request):
             # Handle the filter by status
             status = request.GET.get('status', 'All')
             if status != 'All':
-                # For now, all statuses are set to "Unsettled"
-                if status == 'Settled':
-                    reports = reports.filter(borrow__status='Settled')
-                elif status == 'Unpaid':
-                    reports = reports.filter(borrow__status='Unpaid')
+                if status == 'Pending':
+                    reports = reports.filter(status=0)  # Clear status
+                elif status == 'Cleared':
+                    reports = reports.filter(status=1)  # Pending status
         else:
             reports = reported_items.objects.none()  # No reports if no borrows
 
@@ -1525,6 +1522,7 @@ def clearance_student_viewClearance(request):
         'reports': reports,
     }
     return render(request, 'mod_clearance/student_viewClearance.html', context)
+
 
 def clearance_student_viewClearanceDetailed(request, borrow_id):
     # Get the currently logged-in user
@@ -1567,10 +1565,84 @@ def clearance_student_viewClearanceDetailed(request, borrow_id):
     return render(request, 'mod_clearance/student_viewClearanceDetailed.html', context)
 
 def clearance_labtech_viewclearance(request):
-    return render(request, 'mod_clearance/labtech_viewclearance.html')
+    # Get the currently logged-in user (labtech)
+    user = request.user
 
-def clearance_labtech_viewclearanceDetailed(request):
-    return render(request, 'mod_clearance/labtech_viewclearanceDetailed.html')
+    # Ensure the user is authenticated
+    if not user.is_authenticated:
+        return render(request, 'mod_clearance/labtech_viewclearance.html', {'error': 'User is not authenticated.'})
+
+    # Retrieve the selected laboratory ID from the session
+    selected_laboratory_id = request.session.get('selected_lab')
+
+    try:
+         # Fetch all reported items related to the selected laboratory, regardless of status
+        reports = reported_items.objects.filter(borrow__laboratory_id=selected_laboratory_id)
+
+        # Filter by status if needed
+        status_filter = request.GET.get('status', 'All')
+        if status_filter == 'Cleared':
+            reports = reports.filter(status=0)  # status=0 means Cleared
+        elif status_filter == 'Pending':
+            reports = reports.filter(status=1)  # status=1 means Pending
+
+        # Create a context with the reports
+        report_data = []
+        for report in reports:
+            borrow_info_obj = report.borrow
+            user_obj = borrow_info_obj.user
+            item_obj = report.item
+
+            # Add data to the context
+            report_data.append({
+                'report_id': report.id,
+                'borrow_id': borrow_info_obj.borrow_id,  # RF#
+                'user_name': f"{user_obj.firstname} {user_obj.lastname}",  # Student's Name
+                'item_name': item_obj.item_name,  # Item Name
+                'reason': report.report_reason,  # Report Reason
+                'amount_due': report.amount_to_pay,  # Amount to Pay
+                'status': 'Pending' if report.status == 1 else 'Cleared',  # Status
+            })
+
+    except Exception as e:
+        report_data = []  # In case of an error, show an empty list
+        print(f"Error fetching reports: {e}")
+
+    context = {
+        'reports': report_data,
+    }
+    return render(request, 'mod_clearance/labtech_viewclearance.html', context)
+
+
+def clearance_labtech_viewclearanceDetailed(request, report_id):
+    # Get the reported item by ID
+    report = get_object_or_404(reported_items, id=report_id)
+
+    if request.method == 'POST':
+        # Handle remarks submission and marking as cleared
+        remarks = request.POST.get('remarks', '').strip()
+        if remarks:
+            report.remarks = remarks
+        
+        # Update the status to Cleared
+        report.status = 0  # Assuming status 0 means Cleared
+        report.save()
+
+        # Redirect to the same page or to the view clearance page
+        return HttpResponseRedirect(request.path_info)
+
+     # Prepare the context for rendering
+    context = {
+        'RFno': report.borrow.borrow_id,  # RF#
+        'student_name': f"{report.borrow.user.firstname} {report.borrow.user.lastname}",  # Student's Name
+        'item_name': report.item.item_name,  # Item Name
+        'reason': report.report_reason,  # Reason
+        'amount_due': report.amount_to_pay,  # Amount Due
+        'status': 'Pending' if report.status == 1 else 'Cleared',  # Status
+        'remarks': report.remarks if report.remarks else '',  # Fetch remarks if they exist
+    }
+    
+    return render(request, 'mod_clearance/labtech_viewclearanceDetailed.html', context)
 
 def lab_reservation_view(request):
     return render(request, 'mod_labRes/lab_reservation.html')

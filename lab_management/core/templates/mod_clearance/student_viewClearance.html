@@ -2,70 +2,95 @@
 {% block title %}View Clearance{% endblock %}
 
 {% block content %}
-  
-  <div class="pagetitle">
+
+<style>
+    .status-pending {
+        background-color: red;  /* Red background for Pending */
+        color: white;           /* White text for Pending */
+        padding: 5px 10px;     /* Some padding */
+        border-radius: 5px;    /* Rounded corners */
+        display: inline-block;  /* Display as inline-block for padding */
+    }
+
+    .status-cleared {
+        background-color: green; /* Green background for Cleared */
+        color: white;            /* White text for Cleared */
+        padding: 5px 10px;      /* Some padding */
+        border-radius: 5px;     /* Rounded corners */
+        display: inline-block;   /* Display as inline-block for padding */
+    }
+
+</style>
+
+<div class="pagetitle">
     <h1>Clearance</h1>
     <nav>
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item active">View Clearance</li>
-      </ol>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active">View Clearance</li>
+        </ol>
     </nav>
-  </div><!-- End Page Title -->
+</div><!-- End Page Title -->
 
-  <!-- Success message -->
-  {% if messages %}
+<!-- Success message -->
+{% if messages %}
     <div class="alert alert-success">
-      {% for message in messages %}
-        {{ message }}
-      {% endfor %}
+        {% for message in messages %}
+            {{ message }}
+        {% endfor %}
     </div>
-  {% endif %}
+{% endif %}
 
-  <section class="section">
+<section class="section">
     <div class="row">
-      <div class="col-lg-12">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Check Current Clearance</h5>
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Check Current Clearance</h5>
 
-            <!-- Dropdown to filter by status -->
-            <form method="GET" id="statusFilterForm">
-              <div class="row mb-3">
-                <label for="status" class="col-sm-2 col-form-label">Filter by Status:</label>
-                <div class="col-sm-10">
-                  <select class="form-select" id="status" name="status" onchange="document.getElementById('statusFilterForm').submit()">
-                    <option value="All" {% if request.GET.status == "All" %}selected{% endif %}>All</option>
-                    <option value="Settled" {% if request.GET.status == "Settled" %}selected{% endif %}>Settled</option>
-                    <option value="Unpaid" {% if request.GET.status == "Unpaid" %}selected{% endif %}>Unpaid</option>
-                  </select>
+                    <!-- Dropdown to filter by status -->
+                    <form method="GET" id="statusFilterForm">
+                        <div class="row mb-3">
+                            <label for="status" class="col-sm-2 col-form-label">Filter by Status:</label>
+                            <div class="col-sm-10">
+                                <select class="form-select" id="status" name="status" onchange="document.getElementById('statusFilterForm').submit()">
+                                    <option value="All" {% if request.GET.status == "All" %}selected{% endif %}>All</option>
+                                    <option value="Pending" {% if request.GET.status == "Pending" %}selected{% endif %}>Pending</option>
+                                    <option value="Cleared" {% if request.GET.status == "Cleared" %}selected{% endif %}>Cleared</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Table with stripped rows -->
+                    <table class="table datatable">
+                        <thead>
+                            <tr>
+                                <th>RF#</th>
+                                <th>Item</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in reports %}
+                            <tr>
+                                <td>{{ report.borrow.borrow_id }}</td>
+                                <td><a href="{% url 'clearance_student_viewClearanceDetailed' report.borrow.borrow_id %}">{{ report.item.item_name }}</a></td>
+                                <td>
+                                    {% if report.status == 1 %}  {# If status is 1 (Pending) #}
+                                        <span class="status-pending">Pending</span>
+                                    {% elif report.status == 0 %} {# If status is 0 (Cleared) #}
+                                        <span class="status-cleared">Cleared</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <!-- End Table with stripped rows -->
+
                 </div>
-              </div>
-            </form>
-
-            <!-- Table with stripped rows -->
-            <table class="table datatable">
-              <thead>
-                  <tr>
-                      <th>RF#</th>
-                      <th>Item</th>
-                      <th>Status</th>
-                  </tr>
-              </thead>
-              <tbody>
-                  {% for report in reports %}
-                  <tr>
-                      <td>{{ report.borrow.borrow_id }}</td>
-                      <td><a href="{% url 'clearance_student_viewClearanceDetailed' report.borrow.borrow_id %}">{{ report.item.item_name }}</a></td>
-                      <td>Unsettled</td>
-                  </tr>
-                  {% endfor %}
-              </tbody>
-          </table>
-            <!-- End Table with stripped rows -->
-
-          </div>
+            </div>
         </div>
-      </div>
     </div>
-  </section>
+</section>
 {% endblock %}
