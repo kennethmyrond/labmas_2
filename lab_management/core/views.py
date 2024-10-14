@@ -1507,9 +1507,9 @@ def clearance_student_viewClearance(request):
             # Handle the filter by status
             status = request.GET.get('status', 'All')
             if status != 'All':
-                if status == 'Pending':
+                if status == 'Cleared':
                     reports = reports.filter(status=0)  # Clear status
-                elif status == 'Cleared':
+                elif status == 'Pending':
                     reports = reports.filter(status=1)  # Pending status
         else:
             reports = reported_items.objects.none()  # No reports if no borrows
