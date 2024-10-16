@@ -11,12 +11,71 @@ from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from datetime import timedelta, date
-import json, qrcode, base64
 from pyzbar.pyzbar import decode
 from PIL import Image 
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import connection
+import json, qrcode, base64, threading, time
+
+# thread every midnight query items to check due date if today (for on holding past due date )
+def thread_function():
+    prev_day = timezone.now().day  # Start with the current day
+    
+    while True:
+        # Get current date and time
+        current_datetime = timezone.now()
+        current_day = current_datetime.day
+
+        # Check if the day has changed (execute once every new day)
+        if current_day != prev_day:
+            # Update `prev_day` to track the day change
+            prev_day = current_day
+
+            # 1. Cancel borrows if their `borrow_date` is past today and status is still 'Accepted' ('A')
+            expired_borrows = borrow_info.objects.filter(
+                status='A',  # Accepted borrows
+                borrow_date__lt=current_datetime.date()  # Past borrow dates
+            )
+            for borrow in expired_borrows:
+                borrow.status = 'L'  # Cancel the borrow
+                borrow.remarks = "Automatically cancelled due to expired borrow date."
+                borrow.save()
+
+            # 2. Handle borrowed items with past due dates
+            overdue_borrows = borrow_info.objects.filter(
+                status='B',  # Borrowed status
+                due_date__lt=current_datetime.date()  # Past due dates
+            )
+            for borrow in overdue_borrows:
+                # Get the borrowed items
+                borrowed_items_list = borrowed_items.objects.filter(borrow=borrow)
+
+                for item in borrowed_items_list:
+                    # Check if the item hasn't been fully returned
+                    if item.qty > item.returned_qty:
+                        # Create a reported item for overdue borrowed items
+                        reported_item = reported_items.objects.create(
+                            borrow=borrow,
+                            item=item.item,
+                            qty_reported=item.qty - item.returned_qty,
+                            report_reason="Overdue item",
+                            amount_to_pay=99999,  # You can set an amount if needed
+                            status=1  # Pending
+                        )
+                        reported_item.save()
+
+                # Put borrower's clearance on hold
+                borrow.status = 'B'  # Mark borrow as 'Cancelled/On Hold'
+                borrow.remarks = "Automatically placed on hold due to overdue items."
+                borrow.save()
+
+        # Sleep for 1 hour (3600 seconds)
+        time.sleep(3600)
+
+# Start the thread for daily checking
+x = threading.Thread(target=thread_function)
+x.start()
 
 # functions
 def get_inventory_history(item_description_instance):
@@ -1103,8 +1162,8 @@ def borrowing_student_viewPreBookRequestsview(request):
         'walkin_cancelled_requests': walkin_cancelled_requests,
         'walkin_completed_requests': walkin_completed_requests,
         'lab_config': lab_config,  # Pass borrowing config to template
+        'prebook_requests_all': prebook_requests,
     })
-
 # @require_POST
 def cancel_borrow_request(request):
     try:
@@ -1171,6 +1230,7 @@ def borrowing_student_detailedWalkInRequestsview(request):
         'borrow_request': borrow_request,
         'borrowed_items': borrowed_items_list,
     })
+
 
 def borrowing_labcoord_prebookrequests(request):
     if not request.user.is_authenticated:

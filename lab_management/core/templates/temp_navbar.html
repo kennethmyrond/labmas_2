@@ -272,17 +272,17 @@
     
     
       <li class="nav-item">
-        <a class="nav-link {% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed' %}active{% else %}collapsed{% endif %}" data-bs-target="#tables-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link {% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed' %}active{% else %}collapsed{% endif %}" data-bs-target="#tables-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-layout-text-window-reverse"></i><span>Clearance</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="tables-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed' %}show{% endif %} " data-bs-parent="#sidebar-nav">
+        <ul id="tables-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed'%}show{% endif %} " data-bs-parent="#sidebar-nav">
           <li>
             <a href="{% url 'clearance_student_viewClearance' %}" class = "{% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>STUDENT - View Clearance</span>
             </a>
           </li>
           <li>
-            <a href="{% url 'clearance_labtech_viewclearance' %}">
+            <a href="{% url 'clearance_labtech_viewclearance' %}" class = "{% if request.resolver_match.url_name in 'clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>LAB TECH - View Clearance</span>
             </a>
           </li>

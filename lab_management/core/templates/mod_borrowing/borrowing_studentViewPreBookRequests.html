@@ -34,6 +34,9 @@
     <li class="nav-item">
       <a class="nav-link" id="completed-tab" data-toggle="tab" href="#completed" role="tab">Completed</a>
     </li>
+    <li class="nav-item">
+      <a class="nav-link" id="all-tab" data-toggle="tab" href="#all" role="tab">All</a>
+    </li>
   </ul>
 
   <!-- Tab content -->
@@ -203,6 +206,35 @@
               </thead>
               <tbody>
                 {% for request in completed_requests %}
+                <tr>
+                  <td><a href="{% url 'borrowing_studentDetailedPreBookRequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                  <td>{{ request.request_date|date:"Y/m/d" }}</td>
+                  <td>{{ request.borrow_date|date:"Y/m/d" }}</td>
+                  <td>{% if request.due_date %}Long-Term{% else %}One-Day{% endif %}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+    <!-- All Requests Tab -->
+    <div class="tab-pane fade" id="all" role="tabpanel">
+      <section class="section">
+        <div class="card">
+          <div class="card-body">
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>RF Number</th>
+                  <th>Date Requested</th>
+                  <th>Date Needed</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for request in prebook_requests_all %}
                 <tr>
                   <td><a href="{% url 'borrowing_studentDetailedPreBookRequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
                   <td>{{ request.request_date|date:"Y/m/d" }}</td>

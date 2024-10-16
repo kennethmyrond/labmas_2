@@ -57,7 +57,7 @@
                   <select class="form-select" id="status" name="status" onchange="document.getElementById('statusFilterForm').submit()">
                     <option value="P" {% if selected_status == 'P' %}selected{% endif %}>Pending</option>
                     <option value="A" {% if selected_status == 'A' %}selected{% endif %}>Approved</option>
-                    <option value="D" {% if selected_status == 'D' %}selected{% endif %}>Rejected</option>
+                    <option value="D" {% if selected_status == 'D' %}selected{% endif %}>Declined</option>
                     <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All</option>
                   </select>
                 </div>
@@ -97,7 +97,9 @@
                     {% elif request.status == 'A' %}
                       <span style="color:green;">Approved</span>
                     {% elif request.status == 'D' %}
-                      <span style="color:red;">Rejected</span>
+                      <span style="color:red;">Declined</span>
+                    {% else %}
+                      <span>{{ request.get_status_display }}</span>
                     {% endif %}
                   </td>
                   <td>

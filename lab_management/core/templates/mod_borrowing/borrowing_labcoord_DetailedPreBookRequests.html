@@ -63,8 +63,8 @@
             <!-- Action Buttons -->
             {% if show_action_buttons %}
               <div class="mt-4">
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#acceptModal">Approve</button>
-                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#declineModal">Reject</button>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#acceptModal" {% if borrow_request.status == 'A' %} disabled {% endif %}>Approve</button>
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#declineModal" {% if borrow_request.status == 'D' %} disabled {% endif %}>Decline</button>
               </div>
             {% else %}
               <div class="alert alert-info">This request has already been processed.</div>
