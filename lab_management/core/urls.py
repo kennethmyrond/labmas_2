@@ -61,6 +61,9 @@ urlpatterns = [
     path('clearance/labtech/view_clearance_detailed/<int:report_id>/', views.clearance_labtech_viewclearanceDetailed, name='clearance_labtech_viewclearanceDetailed'),
     
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),
+    path('lab-reservation/student/reserveLabChooseRoom', views.lab_reservation_student_reserveLabChooseRoom, name='lab_reservation_student_reserveLabChooseRoom'),
+    path('lab-reservation/student/reserveLabChooseTime', views.lab_reservation_student_reserveLabChooseTime, name='lab_reservation_student_reserveLabChooseTime'),
+     path('lab-reservation/student/reserveLabSummary', views.lab_reservation_student_reserveLabSummary, name='lab_reservation_student_reserveLabSummary'),
     path('reports/', views.reports_view, name='reports'),
     path('user-settings/', views.user_settings_view, name='user_settings'),
 

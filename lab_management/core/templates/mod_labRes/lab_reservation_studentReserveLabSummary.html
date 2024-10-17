@@ -1,0 +1,38 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}Reservation Summary{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <h1>Reservation Summary</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item active">Reservation Summary</li>
+    </ol>
+  </nav>
+</div>
+<!-- End Page Title -->
+
+<section class="section">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Here are your selected time slots:</h5>
+
+          <!-- Show the list of selected time slots -->
+          <ul>
+            {% for slot in selected_slots %}
+              <li>{{ slot }}</li>
+            {% empty %}
+              <li>No slots selected.</li>
+            {% endfor %}
+          </ul>
+
+          <!-- Button to make another reservation -->
+          <a href="{% url 'lab_reservation_student_reserveLabChooseRoom' %}" class="btn btn-primary">Make Another Reservation</a>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}Reserve Laboratory{% endblock %}
+{% block content %}
+<div class="pagetitle">
+  <h1>Reserve Laboratory</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'lab_reservation_student_reserveLabChooseRoom' %}">Choose Room</a></li>
+      <li class="breadcrumb-item active">Choose Slots</li>
+    </ol>
+  </nav>
+</div>
+<!-- End Page Title -->
+
+<section class="section">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Reservation Details</h5>
+
+          <!-- Create table with time slots, booking status, and checkboxes -->
+          <form id="reservationForm" method="POST"  action="{% url 'lab_reservation_student_reserveLabSummary' %}">
+            {% csrf_token %}
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Select</th>
+                  <th scope="col">Time</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody id="reservationTable">
+                <!-- Table rows will be inserted dynamically by JavaScript -->
+              </tbody>
+            </table>
+            <button type="submit" class="btn btn-primary">Submit Selection</button>
+          </form>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Adding script to handle table generation -->
+<script>
+  // Sample time slots and their status (can be dynamic based on your application logic)
+  const timeSlots = [
+    { time: '09:00 AM - 10:00 AM', status: 'Available' },
+    { time: '10:00 AM - 11:00 AM', status: 'Booked' },
+    { time: '11:00 AM - 12:00 PM', status: 'Available' },
+    { time: '12:00 PM - 01:00 PM', status: 'Booked' },
+    { time: '01:00 PM - 02:00 PM', status: 'Available' },
+    { time: '02:00 PM - 03:00 PM', status: 'Booked' },
+  ];
+
+  // Function to populate the table dynamically
+  function populateTable() {
+    const tableBody = document.getElementById('reservationTable');
+    timeSlots.forEach((slot, index) => {
+      // Create table row
+      const row = document.createElement('tr');
+
+      // Create checkbox cell
+      const checkboxCell = document.createElement('td');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.name = 'timeslot';
+      checkbox.value = slot.time;
+      checkbox.disabled = slot.status === 'Booked'; // Disable checkbox if slot is booked
+      checkboxCell.appendChild(checkbox);
+      row.appendChild(checkboxCell);
+
+      // Create time cell
+      const timeCell = document.createElement('td');
+      timeCell.textContent = slot.time;
+      row.appendChild(timeCell);
+
+      // Create status cell with color based on availability
+      const statusCell = document.createElement('td');
+      statusCell.textContent = slot.status;
+      statusCell.style.color = slot.status === 'Available' ? 'green' : 'red';
+      row.appendChild(statusCell);
+
+      // Append row to the table body
+      tableBody.appendChild(row);
+    });
+  }
+
+  // Populate table when the page loads
+  window.onload = populateTable;
+</script>
+{% endblock %}
