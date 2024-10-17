@@ -19,8 +19,38 @@
         <div class="card-body">
           <h5 class="card-title">Reservation Details</h5>
 
-          <!-- Create table with time slots, booking status, and checkboxes -->
-          <form id="reservationForm" method="POST"  action="{% url 'lab_reservation_student_reserveLabSummary' %}">
+      
+          <div class="row mb-3">
+            <label class="col-sm-2 col-form-label">Reservation Type:</label>
+            <div class="col-sm-10">
+              <input type="radio" id="oneDay" name="reservationType" value="oneDay" checked>
+              <label for="oneDay">One Day</label>
+              <input type="radio" id="multiDay" name="reservationType" value="multiDay">
+              <label for="multiDay">Multi-Day</label>
+            </div>
+          </div>
+
+       
+          <div class="row mb-3" id="oneDayInput">
+            <label class="col-sm-2 col-form-label">Select Date:</label>
+            <div class="col-sm-10">
+              <input type="date" name="reservationDate" class="form-control">
+            </div>
+          </div>
+
+          <div class="row mb-3 d-none" id="multiDayInputs">
+            <label class="col-sm-2 col-form-label">Start Date:</label>
+            <div class="col-sm-4">
+              <input type="date" name="startDate" class="form-control">
+            </div>
+            <label class="col-sm-2 col-form-label">End Date:</label>
+            <div class="col-sm-4">
+              <input type="date" name="endDate" class="form-control">
+            </div>
+          </div>
+
+ 
+          <form id="reservationForm" method="POST" action="{% url 'lab_reservation_student_reserveLabSummary' %}">
             {% csrf_token %}
             <table class="table">
               <thead>
@@ -31,7 +61,7 @@
                 </tr>
               </thead>
               <tbody id="reservationTable">
-                <!-- Table rows will be inserted dynamically by JavaScript -->
+               >
               </tbody>
             </table>
             <button type="submit" class="btn btn-primary">Submit Selection</button>
@@ -43,8 +73,30 @@
   </div>
 </section>
 
-
 <script>
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const oneDayRadio = document.getElementById('oneDay');
+    const multiDayRadio = document.getElementById('multiDay');
+    const oneDayInput = document.getElementById('oneDayInput');
+    const multiDayInputs = document.getElementById('multiDayInputs');
+
+   
+    oneDayRadio.addEventListener('change', function() {
+      if (oneDayRadio.checked) {
+        oneDayInput.classList.remove('d-none');
+        multiDayInputs.classList.add('d-none');
+      }
+    });
+
+    multiDayRadio.addEventListener('change', function() {
+      if (multiDayRadio.checked) {
+        oneDayInput.classList.add('d-none');
+        multiDayInputs.classList.remove('d-none');
+      }
+    });
+  });
+
 
   const timeSlots = [
     { time: '09:00 AM - 10:00 AM', status: 'Available' },
@@ -55,40 +107,38 @@
     { time: '02:00 PM - 03:00 PM', status: 'Booked' },
   ];
 
-  
+
   function populateTable() {
     const tableBody = document.getElementById('reservationTable');
     timeSlots.forEach((slot, index) => {
-     
       const row = document.createElement('tr');
 
-
+    
       const checkboxCell = document.createElement('td');
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.name = 'timeslot';
       checkbox.value = slot.time;
-      checkbox.disabled = slot.status === 'Booked'; // Disable checkbox if slot is booked
+      checkbox.disabled = slot.status === 'Booked'; 
       checkboxCell.appendChild(checkbox);
       row.appendChild(checkboxCell);
 
-    
+      
       const timeCell = document.createElement('td');
       timeCell.textContent = slot.time;
       row.appendChild(timeCell);
 
-      // Create status cell with color based on availability
+      
       const statusCell = document.createElement('td');
       statusCell.textContent = slot.status;
       statusCell.style.color = slot.status === 'Available' ? 'green' : 'red';
       row.appendChild(statusCell);
 
- 
       tableBody.appendChild(row);
     });
   }
 
-  
+ 
   window.onload = populateTable;
 </script>
 {% endblock %}
