@@ -43,9 +43,9 @@
   </div>
 </section>
 
-<!-- Adding script to handle table generation -->
+
 <script>
-  // Sample time slots and their status (can be dynamic based on your application logic)
+
   const timeSlots = [
     { time: '09:00 AM - 10:00 AM', status: 'Available' },
     { time: '10:00 AM - 11:00 AM', status: 'Booked' },
@@ -55,14 +55,14 @@
     { time: '02:00 PM - 03:00 PM', status: 'Booked' },
   ];
 
-  // Function to populate the table dynamically
+  
   function populateTable() {
     const tableBody = document.getElementById('reservationTable');
     timeSlots.forEach((slot, index) => {
-      // Create table row
+     
       const row = document.createElement('tr');
 
-      // Create checkbox cell
+
       const checkboxCell = document.createElement('td');
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
@@ -72,7 +72,7 @@
       checkboxCell.appendChild(checkbox);
       row.appendChild(checkboxCell);
 
-      // Create time cell
+    
       const timeCell = document.createElement('td');
       timeCell.textContent = slot.time;
       row.appendChild(timeCell);
@@ -83,12 +83,12 @@
       statusCell.style.color = slot.status === 'Available' ? 'green' : 'red';
       row.appendChild(statusCell);
 
-      // Append row to the table body
+ 
       tableBody.appendChild(row);
     });
   }
 
-  // Populate table when the page loads
+  
   window.onload = populateTable;
 </script>
 {% endblock %}
