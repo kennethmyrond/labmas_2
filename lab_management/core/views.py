@@ -1787,6 +1787,15 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
 def lab_reservation_view(request):
     return render(request, 'mod_labRes/lab_reservation.html')
 
+def lab_reservation_student_reserveLabChooseRoom(request):     
+     return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html')
+
+def lab_reservation_student_reserveLabChooseTime(request):
+     return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseTime.html')
+
+def lab_reservation_student_reserveLabSummary(request):
+    return render(request, 'mod_labRes/lab_reservation_studentReserveLabSummary.html')
+
 def reports_view(request):
     return render(request, 'mod_reports/reports.html')
 
