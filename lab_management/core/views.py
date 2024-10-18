@@ -10,6 +10,7 @@ from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirec
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
+from .models import rooms
 from datetime import timedelta, date
 from pyzbar.pyzbar import decode
 from PIL import Image 
@@ -74,8 +75,8 @@ def thread_function():
         time.sleep(3600)
 
 # Start the thread for daily checking
-x = threading.Thread(target=thread_function)
-x.start()
+# x = threading.Thread(target=thread_function)
+# x.start()
 
 # functions
 def get_inventory_history(item_description_instance):
@@ -1784,11 +1785,22 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
     
     return render(request, 'mod_clearance/labtech_viewclearanceDetailed.html', context)
 
+
+
+
+# lab reserv ================================================================= 
 def lab_reservation_view(request):
     return render(request, 'mod_labRes/lab_reservation.html')
 
-def lab_reservation_student_reserveLabChooseRoom(request):     
-     return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html')
+def lab_reservation_student_reserveLabChooseRoom(request):
+    # Fetch available rooms from the database
+    available_rooms = rooms.objects.filter(is_disabled=False).order_by('name')
+
+    # Render the template with the available rooms
+    return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html', {
+        'rooms': available_rooms,
+    })
+
 
 def lab_reservation_student_reserveLabChooseTime(request):
      return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseTime.html')

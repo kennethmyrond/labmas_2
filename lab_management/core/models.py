@@ -199,7 +199,7 @@ class item_transactions(models.Model):
         return f"Transaction {self.transaction_id}"
 
 
-# borrowing
+# borrowing & Clearance
 class borrowing_config(models.Model):
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE, primary_key=True, unique=True)
     
@@ -321,4 +321,39 @@ class reported_items(models.Model):
         return f"Reported {self.item.item_name} for Borrow {self.borrow.borrow_id}"
 
 
+# Lab Reservation
+class laboratory_reservations(models.Model):
+    reservation_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='user')
+    room = models.ForeignKey('Rooms', on_delete=models.CASCADE, related_name='rooms')
+    request_date = models.DateTimeField(null=True, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=1, null=True, blank=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    questions_responses = models.JSONField(default=dict, blank=True)
+    remarks = models.CharField(max_length=45, null=True, blank=True)
 
+    def __str__(self):
+        return f"Borrow Info {self.borrow_id}"
+    
+    def get_status_display(self):
+        status_mapping = {
+            'P': 'Pending',
+            'A': 'Approved',
+            'D': 'Declined',
+            'R': 'Reserved',
+            'C': 'Cancelled',
+            'L': 'Cancelled', #cancelled by lab tech
+            'X': 'Completed',
+            'Y': 'Clearance On-hold'
+        }
+        return status_mapping.get(self.status, 'Unknown')
+
+class rooms(models.Model):
+    room_id = models.AutoField(primary_key=True)
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
+    name = models.CharField(max_length=45, null=True, blank=True)
+    capacity = models.IntegerField(default=0)
+    description = models.CharField(max_length=45, null=True, blank=True)
+    is_disabled = models.BooleanField(default=False)
