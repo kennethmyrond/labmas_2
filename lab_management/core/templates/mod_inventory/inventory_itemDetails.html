@@ -129,13 +129,14 @@
                   {% endif %}
                 </td>
                 <td>
-                  {% if handling.changes == 'A' %}
+                  <!-- {% if handling.changes == 'A' %}
                     Add to inventory
                   {% elif handling.changes == 'R' %}
                     remove from inventory
                   {% elif handling.changes == 'P' or handling.changes == 'Y' %}
                     Physical Count Adjustment
-                  {% endif %}
+                  {% endif %} -->
+                  {{handling.remarks}}
                 </td>
                 
                 <td>

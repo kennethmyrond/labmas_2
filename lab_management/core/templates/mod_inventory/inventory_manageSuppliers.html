@@ -7,7 +7,6 @@
     <h1>Inventory</h1>
     <nav>
       <ol class="breadcrumb">
-        {% comment %} <li class="breadcrumb-item"><a href="{% url 'inventory_view' %}">Inventory</a></li> {% endcomment %}
         <li class="breadcrumb-item active">Manage Suppliers</li>
       </ol>
     </nav>
@@ -42,7 +41,7 @@
                 <tr>
                   <td><a href="{% url 'inventory_supplierDetails' supplier.suppliers_id %}">{{ supplier.supplier_name }}</a></td>
                   <td>{{ supplier.description }}</td>
-                  <td>4</td>
+                  <td>{{ supplier.supplied_items_count }}</td>
                   <td style="display:none;"></td> <!-- Hidden cell -->
                   <td style="display:none;"></td> <!-- Hidden cell -->
                 </tr>
@@ -99,8 +98,6 @@
       document.addEventListener('DOMContentLoaded', function() {
         const dataTable = new simpleDatatables.DataTable(".datatable");
       });
-      
-  
   </script>
 
 {% endblock %}

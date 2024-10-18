@@ -15,7 +15,7 @@ from pyzbar.pyzbar import decode
 from PIL import Image 
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.db import connection
+from django.db import connection, models
 import json, qrcode, base64, threading, time
 
 # thread every midnight query items to check due date if today (for on holding past due date )
@@ -113,7 +113,7 @@ def suggest_suppliers(request):
     
     selected_laboratory_id = request.session.get('selected_lab')
     query = request.GET.get('query', '')
-    supplier_suggestions = suppliers.objects.filter(supplier_name__icontains=query, laboratory=selected_laboratory_id)[:5]  # Limit the results to 5
+    supplier_suggestions = suppliers.objects.filter(supplier_name__icontains=query, laboratory=selected_laboratory_id, is_disabled=0)[:5]  # Limit the results to 5
 
     data = []
     for supplier in supplier_suggestions:
@@ -351,6 +351,7 @@ def inventory_updateItem_view(request):
         item_date_received = request.POST.get('item_date_received')
         item_price = request.POST.get('item_price')
         item_supplier_id = request.POST.get('item_supplier')
+        remarks = request.POST.get('remarks', '')  # Additional field for remarks in case of damage/loss
 
         # Fetch item and supplier
         item_description_instance = get_object_or_404(item_description, item_id=item_id)
@@ -378,6 +379,7 @@ def inventory_updateItem_view(request):
                 updated_by=current_user,
                 changes='A',
                 qty=amount,
+                remarks='add'
             )
             # If expiration date is provided, save it
             if expiration_date:
@@ -385,8 +387,9 @@ def inventory_updateItem_view(request):
                     inventory_item=new_inventory_item,
                     expired_date=expiration_date
                 )
-        else:
-           # Filter item_inventory by item, join with item_expirations, filter by quantity, and order by expired_date
+        elif action_type == 'remove':
+            # Handle remove from inventory
+            # Filter item_inventory by item, join with item_expirations, filter by quantity, and order by expired_date
             if item_description_instance.rec_expiration == 1:
                 item_inventory_queryset = item_inventory.objects.filter(
                     item=item_description_instance,
@@ -405,16 +408,12 @@ def inventory_updateItem_view(request):
 
             # Iterate through the queryset and deduct the quantity
             for item_inventory_instance in item_inventory_queryset:
-                print(item_inventory_instance)
-                print('inv qty: ' + str(item_inventory_instance.qty))
-                print('rem: ' + str(remaining_amount))
-
                 if remaining_amount <= 0:
                     break
 
                 if item_inventory_instance.qty >= remaining_amount:
                     try:
-                        remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'R')
+                        remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'R', 'Remove')
                         remaining_amount = 0
                     except ValueError as e:
                         print(e)
@@ -422,7 +421,7 @@ def inventory_updateItem_view(request):
                 else:
                     try:
                         remaining_amount = remaining_amount - int(item_inventory_instance.qty)
-                        remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'R')
+                        remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'R', 'Remove')
                     except ValueError as e:
                         print(e)
                         break
@@ -432,6 +431,47 @@ def inventory_updateItem_view(request):
             else:
                 print("Successfully removed the requested amount.")
 
+        elif action_type == 'damage':
+            # Handle reporting damaged/lost items
+            if item_description_instance.rec_expiration == 1:
+                item_inventory_queryset = item_inventory.objects.filter(
+                    item=item_description_instance,
+                    qty__gt=0
+                ).annotate(
+                    expired_date=F('item_expirations__expired_date')
+                ).order_by('expired_date')
+            else:
+                item_inventory_queryset = item_inventory.objects.filter(
+                    item=item_description_instance,
+                    qty__gt=0
+                ).order_by('inventory_item_id')
+
+            remaining_amount = int(amount)
+
+            # Iterate through the queryset and deduct the quantity
+            for item_inventory_instance in item_inventory_queryset:
+                if remaining_amount <= 0:
+                    break
+                if item_inventory_instance.qty >= remaining_amount:
+                    try:
+                        remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'R', remarks=remarks)
+                        remaining_amount = 0
+                    except ValueError as e:
+                        print(e)
+                        break
+                else:
+                    try:
+                        remaining_amount = remaining_amount - int(item_inventory_instance.qty)
+                        remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'R', remarks=remarks)
+                    except ValueError as e:
+                        print(e)
+                        break
+
+            if remaining_amount > 0:
+                print(f"Could not report the full damaged amount. {remaining_amount} items remaining.")
+            else:
+                print("Successfully reported damaged/lost items.")
+
         # Success message
         context = {
             'success_message': f"Item {'added to' if action_type == 'add' else 'removed from'} inventory successfully!"
@@ -440,6 +480,24 @@ def inventory_updateItem_view(request):
         return render(request, 'mod_inventory/inventory_updateItem.html', context)
 
     return render(request, 'mod_inventory/inventory_updateItem.html')
+
+# Helper function for removing items from inventory
+def remove_item_from_inventory(inventory_item, amount, user, change_type, remarks=''):
+    if inventory_item.qty < amount:
+        raise ValueError("Not enough items in inventory to remove.")
+
+    inventory_item.qty -= amount
+    inventory_item.save()
+
+    # Record the item handling
+    item_handling.objects.create(
+        inventory_item=inventory_item,
+        updated_on=timezone.now(),
+        updated_by=user,
+        changes=change_type,
+        qty=amount,
+        remarks=remarks,
+    )
 
 def inventory_itemEdit_view(request, item_id):
     if not request.user.is_authenticated:
@@ -632,9 +690,13 @@ def inventory_physicalCount_view(request):
 def inventory_manageSuppliers_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
-    
+
     selected_laboratory_id = request.session.get('selected_lab')
-    lab_suppliers = suppliers.objects.filter(laboratory=selected_laboratory_id)
+    
+    # Annotate suppliers with the count of items supplied in item_inventory
+    lab_suppliers = suppliers.objects.filter(laboratory=selected_laboratory_id, is_disabled=0).annotate(
+        supplied_items_count=models.Count('item_inventory')
+    )
 
     if request.method == "POST":
         supplier_name = request.POST.get("supplier_name")
@@ -651,8 +713,6 @@ def inventory_manageSuppliers_view(request):
         )
         new_supplier.save()
 
-        # Fetch suppliers again to ensure the list is up to date
-        lab_suppliers = suppliers.objects.filter(laboratory=selected_laboratory_id)
         return redirect('inventory_manageSuppliers')
 
     return render(request, 'mod_inventory/inventory_manageSuppliers.html', {
@@ -662,23 +722,37 @@ def inventory_manageSuppliers_view(request):
 def inventory_supplierDetails_view(request, supplier_id):
     if not request.user.is_authenticated:
         return redirect('userlogin')
-    
-    # Get the supplier details using the supplier_id
-    supplier = suppliers.objects.get(suppliers_id=supplier_id)
 
-    # Get all item_inventory instances associated with the supplier
-    items = item_inventory.objects.filter(supplier=supplier)
-    
-    # Get item_handling entries where changes is 'A' (Add to inventory) and the related item belongs to the supplier
+    # Get the supplier details using the supplier_id
+    supplier = get_object_or_404(suppliers, suppliers_id=supplier_id)
+
+    # Get item handling entries associated with the supplier
     item_handling_entries = item_handling.objects.filter(
         inventory_item__supplier=supplier,
         changes='A'
-    ).select_related('inventory_item')  # Use select_related to reduce DB queries
+    ).select_related('inventory_item')
+
+    if request.method == "POST":
+        if 'edit_supplier' in request.POST:
+            # Handle supplier edit
+            supplier.supplier_name = request.POST.get("supplier_name")
+            supplier.contact_person = request.POST.get("contact_person") or None
+            supplier.contact_number = request.POST.get("contact_number") or None
+            supplier.description = request.POST.get("description") or None
+            supplier.save()
+
+            return redirect('inventory_supplierDetails', supplier_id=supplier.suppliers_id)
+        
+        elif 'disable_supplier' in request.POST:
+            # Handle supplier disable
+            supplier.is_disabled = True
+            supplier.save()
+
+            return redirect('inventory_manageSuppliers')
 
     return render(request, 'mod_inventory/inventory_supplierDetails.html', {
         'supplier': supplier,
-        'items': items,
-        'item_handling_entries': item_handling_entries
+        'item_handling_entries': item_handling_entries,
     })
 
 def inventory_config_view(request):
@@ -827,6 +901,7 @@ def get_add_cols(request, category_id):
     return JsonResponse({'add_cols': add_cols})
 
 
+# =====================================================
 
 #BORROWING
 def borrowing_view(request):

@@ -18,18 +18,25 @@
       <div class="col-lg-12">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">{{ supplier.supplier_name }}</h5>
+            <h5 class="card-title">{{ supplier.supplier_name }} {% if supplier.is_disabled %}(Disabled){% endif %}</h5>
 
             <!-- Supplier Information -->
             <p><strong>Contact Person:</strong> {{ supplier.contact_person }}</p>
             <p><strong>Contact Number:</strong> {{ supplier.contact_number }}</p>
             <p><strong>Description:</strong> {{ supplier.description }}</p>
+
+            <!-- Edit and Disable Buttons -->
+            <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#editSupplierModal">Edit</button>
+            {% if not supplier.is_disabled %}
+            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#disableSupplierModal">Disable</button>
+            {% endif %}
           </div>
         </div>
       </div>
     </div>
   </section>
 
+  <!-- Supplier Items Section -->
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
@@ -45,7 +52,7 @@
                   <th>Date Purchased</th>
                   <th>Date Received</th>
                   <th>Quantity</th>
-                  <th>Action</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -119,4 +126,63 @@
     </div>
   </section>
   
+  <!-- Edit Supplier Modal -->
+  <form method="POST">
+    {% csrf_token %}
+    <div class="modal fade" id="editSupplierModal" tabindex="-1" aria-labelledby="editSupplierModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editSupplierModalLabel">Edit Supplier</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="supplierName" class="form-label">Supplier Name</label>
+              <input type="text" class="form-control" id="supplierName" name="supplier_name" value="{{ supplier.supplier_name }}" required>
+            </div>
+            <div class="mb-3">
+              <label for="contactPerson" class="form-label">Contact Person</label>
+              <input type="text" class="form-control" id="contactPerson" name="contact_person" value="{{ supplier.contact_person }}">
+            </div>
+            <div class="mb-3">
+              <label for="contactNumber" class="form-label">Contact Number</label>
+              <input type="number" class="form-control" id="contactNumber" name="contact_number" value="{{ supplier.contact_number }}">
+            </div>
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea class="form-control" id="description" name="description">{{ supplier.description }}</textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary" name="edit_supplier">Save changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+  
+  <!-- Disable Supplier Modal -->
+  <form method="POST">
+    {% csrf_token %}
+    <div class="modal fade" id="disableSupplierModal" tabindex="-1" aria-labelledby="disableSupplierModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="disableSupplierModalLabel">Disable Supplier</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to disable this supplier? This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-danger" name="disable_supplier">Disable</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+
 {% endblock %}

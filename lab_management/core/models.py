@@ -157,6 +157,7 @@ class item_handling(models.Model):
     updated_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
     changes = models.CharField(max_length=1) # 'A' for add, 'R' for remove
     qty = models.IntegerField()
+    remarks = models.CharField(max_length=45, null=True, blank=True)
     # action = models.CharField(max_length=45, null=True, blank=True)
 
     def __str__(self):
@@ -177,6 +178,7 @@ class suppliers(models.Model):
     contact_number = models.IntegerField(null=True, blank=True)
     # address = models.CharField(max_length=45, null=True, blank=True)
     description = models.CharField(max_length=45, null=True, blank=True)
+    is_disabled = models.BooleanField(default=False)
 
     def __str__(self):
         return self.suppliername
@@ -299,7 +301,7 @@ class borrowed_items(models.Model):
     def __str__(self):
         return f"Borrowed Item {self.borrow_id} - {self.item_id}"
 
-class reported_items(models.Model):
+class reported_items(models.Model): 
     borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE)
     item = models.ForeignKey('item_description', on_delete=models.CASCADE)
     qty_reported = models.IntegerField(null=False, blank=False)

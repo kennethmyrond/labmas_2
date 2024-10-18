@@ -1,20 +1,15 @@
-
-
 {% extends 'temp_navbar.html' %}
-{% load socialaccount %}
 {% block title %}Update Item in Inventory{% endblock %}
 
 {% block content %}
 <head>
-    {% comment %} <!-- jQuery and Bootstrap for Modal -->
-     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <!-- jQuery and Bootstrap for Modal -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script> {% endcomment %}
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
     <!-- Inline CSS -->
     <style>
-  
-        
     </style>
 </head>
 <div class="pagetitle">
@@ -25,24 +20,22 @@
         </ol>
     </nav>
 </div><!-- End Page Title -->
-
+{% if success_message %}
+    <div class="alert alert-success">
+        {{ success_message }}
+    </div>
+{% endif %}
 <section class="section">
     <div class="row">
         <div class="col-lg-12">
-
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Update Item Quantity</h5>
-                    {% if success_message %}
-                        <div class="alert alert-success">
-                            {{ success_message }}
-                        </div>
-                    {% endif %}
+                    
 
                     <!-- General Form Elements -->
                     <form id="updateForm" method="POST">
                         {% csrf_token %}
-
                         <div id="form-container">
                             <div class="form-set">
                                 <!-- Action Type Dropdown -->
@@ -52,19 +45,12 @@
                                         <select class="form-select" id="actionType" name="action_type" required onchange="toggleActionFields()">
                                             <option value="add">Add to Inventory</option>
                                             <option value="remove">Remove from Inventory</option>
+                                            <option value="damage">Report Damage/Loss</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <!-- Item Name -->
-                                <!-- <div class="row mb-3">
-                                    <label for="itemName" class="col-sm-2 col-form-label">Item Name:</label>
-                                    <div class="col-sm-10">
-                                        <input type="text" class="form-control" name="item_name" id="itemName" required oninput="suggestItems(this.value)">
-                                        <div id="suggestions" class="suggestions"></div>
-                                    </div>
-                                </div> -->
-
                                 <div class="row mb-3">
                                     <label for="itemName" class="col-sm-2 col-form-label">Item Name:</label>
                                     <div class="col-sm-10">
@@ -112,12 +98,28 @@
                                     </div>
                                 </div>
 
-                                <!-- Remove from Inventory Field -->
+                                <!-- Remove from Inventory Fields -->
                                 <div id="removeFields" style="display: none;">
                                     <div class="row mb-3">
                                         <label for="quantityRemoved" class="col-sm-2 col-form-label">Quantity Removed:</label>
                                         <div class="col-sm-10">
                                             <input type="number" class="form-control" name="quantity_removed" id="quantity_removed">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Report Damage/Loss Fields -->
+                                <div id="damageFields" style="display: none;">
+                                    <div class="row mb-3">
+                                        <label for="quantityDamaged" class="col-sm-2 col-form-label">Quantity Damaged/Lost:</label>
+                                        <div class="col-sm-10">
+                                            <input type="number" class="form-control" name="quantity_removed" id="quantityDamaged" placeholder="Enter number of damaged/losst item">
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <label for="damageRemarks" class="col-sm-2 col-form-label">Remarks:</label>
+                                        <div class="col-sm-10">
+                                            <textarea class="form-control" name="remarks" id="damageRemarks" placeholder="Enter details for damage/loss..."></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -131,48 +133,6 @@
                             </div>
                         </div>
                     </form><!-- End General Form Elements -->
-
-                    <!-- Items Table -->
-
-                    <!-- <section class="section">
-                        <div class="row">
-                            <div class="col-lg-12">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">Items</h5>
-                                        <table class="table datatable" id="itemsTable">
-                                            <thead>
-                                                <tr>
-                                                    <th>Item Name</th>
-                                                    <th>Qty</th>
-                                                    <th>Price</th>
-                                                    <th>Supplier</th>
-                                                    <th>Date</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="itemList">
-                                                {% for item in inventory_items %}
-                                                <tr>
-                                                    <td>{{ item.item.item_name }}</td>
-                                                    <td>{{ item.qty }}</td>
-                                                    <td>{{ item.purchase_price }}</td>
-                                                    <td>{{ item.supplier.suppliers_id }}</td>
-                                                    <td>{{ item.date_received }}</td>
-                                                </tr>
-                                                {% endfor %}
-                                                {% if inventory_items.count == 0 %}
-                                                <tr class="no-entries">
-                                                    <td colspan="5" class="text-center">No entries found</td>
-                                                </tr>
-                                                {% endif %}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section> -->
-
                 </div>
             </div>
         </div>
@@ -206,6 +166,10 @@
                     <tr id="confirmRemoveFields" style="display:none;">
                         <th>Quantity Removed</th><td id="confirmRemovedQty"></td>
                     </tr>
+                    <tr id="confirmDamageFields" style="display:none;">
+                        <th>Quantity Damaged/Lost</th><td id="confirmDamagedQty"></td>
+                        <th>Remarks</th><td id="confirmDamageRemarks"></td>
+                    </tr>
                     <tr id="confirmExpirationRow" style="display:none;">
                         <th>Expiration Date</th><td id="confirmExpirationDate"></td>
                     </tr>
@@ -224,23 +188,21 @@
     function showConfirmationModal() {
         const actionType = document.getElementById('actionType').value;
         const itemName = $('#itemName').select2('data')[0].text;
-        const amount = document.getElementById('amount').value;
-        
-        
-        
 
-        document.getElementById('confirmAction').innerText = actionType === 'add' ? 'Add to Inventory' : 'Remove from Inventory';
+        document.getElementById('confirmAction').innerText = actionType === 'add' ? 'Add to Inventory' : actionType === 'remove' ? 'Remove from Inventory' : 'Report Damage/Loss';
         document.getElementById('confirmItemName').innerText = itemName;
 
         if (actionType === 'add') {
+            const amount = document.getElementById('amount').value;
+            const unitPrice = document.getElementById('unit_price').value;
             const supplierText = $('#itemSupplier').select2('data')[0].text;
             const expirationDate = document.getElementById('expirationDate').value;
-            const unitPrice = document.getElementById('unit_price').value;
+            
             document.getElementById('confirmAmount').innerText = amount;
             document.getElementById('confirmUnitPrice').innerText = unitPrice;
             document.getElementById('confirmSupplier').innerText = supplierText;
 
-            if (expirationDate != null) {
+            if (expirationDate) {
                 document.getElementById('confirmExpirationDate').innerText = expirationDate;
                 document.getElementById('confirmExpirationRow').style.display = '';
             } else {
@@ -251,9 +213,24 @@
             document.getElementById('confirmAddFields2').style.display = '';
             document.getElementById('confirmAddFields3').style.display = '';
             document.getElementById('confirmRemoveFields').style.display = 'none';
-        } else {
+            document.getElementById('confirmDamageFields').style.display = 'none';
+        } else if (actionType === 'remove') {
             document.getElementById('confirmRemovedQty').innerText = document.getElementById('quantity_removed').value;
             document.getElementById('confirmRemoveFields').style.display = '';
+            document.getElementById('confirmAddFields').style.display = 'none';
+            document.getElementById('confirmAddFields2').style.display = 'none';
+            document.getElementById('confirmAddFields3').style.display = 'none';
+            document.getElementById('confirmExpirationRow').style.display = 'none';
+            document.getElementById('confirmDamageFields').style.display = 'none';
+        } else if (actionType === 'damage') {
+            const damagedQty = document.getElementById('quantityDamaged').value;
+            const damageRemarks = document.getElementById('damageRemarks').value;
+
+            document.getElementById('confirmDamagedQty').innerText = damagedQty;
+            document.getElementById('confirmDamageRemarks').innerText = damageRemarks;
+
+            document.getElementById('confirmDamageFields').style.display = '';
+            document.getElementById('confirmRemoveFields').style.display = 'none';
             document.getElementById('confirmAddFields').style.display = 'none';
             document.getElementById('confirmAddFields2').style.display = 'none';
             document.getElementById('confirmAddFields3').style.display = 'none';
@@ -291,10 +268,6 @@
     }
 
     $(document).ready(function() {
-         // Ensure modal close buttons work
-    $('#confirmationModal').on('click', '.close, .btn-secondary', function() {
-        $('#confirmationModal').modal('hide');
-    });
         // Initialize select2 for item and supplier fields
         $('#itemName').select2({
             ajax: {
@@ -319,13 +292,13 @@
                 placeholder: 'Search for an item',
                 minimumInputLength: 2
             }
-        }).on('change', checkItemExpiration); // Add onchange event to call checkItemExpiration when item is selected
-        
+        }).on('change', checkItemExpiration);
+
         $('#itemSupplier').select2({
             ajax: {
                 url: '/suggest_suppliers',  // Your URL endpoint to fetch supplier suggestions
                 dataType: 'json',
-                delay: 250,  // Delay in milliseconds to wait before triggering the request
+                delay: 250,
                 data: function(params) {
                     return {
                         query: params.term // The search term that user enters
@@ -335,8 +308,8 @@
                     return {
                         results: data.map(function(supplier) {
                             return {
-                                id: supplier.suppliers_id, // The ID that will be the value of the option
-                                text: supplier.supplier_name // The text that will be displayed in the dropdown
+                                id: supplier.suppliers_id,
+                                text: supplier.supplier_name
                             };
                         })
                     };
@@ -347,64 +320,25 @@
         });
     });
 
-
-    function suggestItems(query) {
-        if (query.length < 2) {
-            document.getElementById('suggestions').innerHTML = '';
-            return;
-        }
-
-        fetch(`/suggest_items?query=${query}`)
-            .then(response => response.json())
-            .then(data => {
-                let suggestions = document.getElementById('suggestions');
-                suggestions.innerHTML = '<table class="table"><thead><tr><th>Item Name</th><th>Amount</th><th>Dimension</th><th>Additional Info</th><th>Qty</th></tr></thead><tbody></tbody></table>';
-                let tbody = suggestions.querySelector('tbody');
-                
-                data.forEach(item => {
-                    let addCols = '';  // String to store formatted add_cols
-                    for (const [key, value] of Object.entries(item.add_cols)) {
-                        addCols += `<strong>${key}:</strong> ${value} <br>`;  // Format add_cols as key-value pairs
-                    }
-
-                    let row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${item.item_name}</td>
-                        <td>${item.amount}</td>
-                        <td>${item.dimension}</td>
-                        <td>${addCols}</td>  <!-- Display add_cols -->
-                        <td>${item.qty}</td>
-                    `;
-                    row.onclick = () => selectItem(item.item_name, item.amount, item.dimension, item.qty, item.add_cols);
-                    tbody.appendChild(row);
-                });
-            });
-    }
-
-    function selectItem(itemName, amount, dimension, qty, addCols) {
-        document.getElementById('itemName').value = itemName;
-        document.getElementById('suggestions').innerHTML = ''; // Clear suggestions
-        // Optionally set other fields, e.g., dimension, qty
-        console.log(addCols);  // You can process addCols if needed
-    }
-
     function toggleActionFields() {
         const actionType = document.getElementById('actionType').value;
         const addFields = document.getElementById('addFields');
         const removeFields = document.getElementById('removeFields');
+        const damageFields = document.getElementById('damageFields');
 
         if (actionType === 'add') {
             addFields.style.display = 'block';
             removeFields.style.display = 'none';
-        } else {
+            damageFields.style.display = 'none';
+        } else if (actionType === 'remove') {
             addFields.style.display = 'none';
             removeFields.style.display = 'block';
+            damageFields.style.display = 'none';
+        } else if (actionType === 'damage') {
+            addFields.style.display = 'none';
+            removeFields.style.display = 'none';
+            damageFields.style.display = 'block';
         }
-    }
-
-    function saveTransaction() {
-        // You can implement logic here to save the entire transaction when the user clicks "Save"
-        alert('Transaction saved!');
     }
 </script>
 
