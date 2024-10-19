@@ -10,8 +10,8 @@ from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirec
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
-from .models import rooms
-from datetime import timedelta, date
+from .models import rooms, laboratory_reservations
+from datetime import timedelta, date, datetime
 from pyzbar.pyzbar import decode
 from PIL import Image 
 from io import BytesIO
@@ -1793,12 +1793,139 @@ def lab_reservation_view(request):
     return render(request, 'mod_labRes/lab_reservation.html')
 
 def lab_reservation_student_reserveLabChooseRoom(request):
-    # Fetch available rooms from the database
-    available_rooms = rooms.objects.filter(is_disabled=False).order_by('name')
+    selected_laboratory_id = request.session.get('selected_lab')
+    today = timezone.now().date()
+    min_reservation_date = today + timedelta(days=3)
 
-    # Render the template with the available rooms
-    return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html', {
-        'rooms': available_rooms,
+    reservation_date = request.GET.get('reservationDate')
+    error_message = None
+
+    if reservation_date:
+        reservation_date = datetime.strptime(reservation_date, '%Y-%m-%d').date()
+        if reservation_date < min_reservation_date:
+            error_message = "Selected date must be at least 3 days from today."
+    else:
+        error_message = "Please select a reservation date."
+
+    if error_message:
+        context = {
+            'error_message': error_message,
+            'min_reservation_date': min_reservation_date,
+        }
+        return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html', context)
+
+    capacity_filter = request.GET.get('capacityFilter', '')
+
+    # Fetch rooms based on selected lab and not disabled
+    rooms_query = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
+
+    # Filter by room capacity if provided
+    if capacity_filter:
+        rooms_query = rooms_query.filter(capacity__gte=capacity_filter)
+
+    # Create time intervals (7AM to 5PM)
+    time_slots = [f"{hour:02d}:00" for hour in range(7, 17)]
+    # time_slots = [(f"{hour:02d}:00", f"{hour + 1:02d}:00") for hour in range(7, 17)] #for start and end
+
+    # Fetch existing reservations for the selected date
+    existing_reservations = laboratory_reservations.objects.filter(
+        room__laboratory_id=selected_laboratory_id, start_date=reservation_date)
+
+    room_availability = {}
+    for room in rooms_query:
+        availability = {}
+        for start in time_slots:
+            slot_key = f"{start}"
+            reserved = existing_reservations.filter(
+                room=room, start_time__lte=start).exists()
+            availability[slot_key] = 'red' if reserved else 'yellow'
+        room_availability[room.room_id] = availability
+
+    context = {
+        'rooms': rooms_query,
+        'time_slots': time_slots,
+        'room_availability': room_availability,  # Flat structure
+        'reservation_date': reservation_date,
+        'min_reservation_date': min_reservation_date,
+        'capacity_filter': capacity_filter,
+        'error_message': error_message,  # Pass the error message to the template if any
+    }
+
+    return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html', context)
+
+
+def lab_reservation_student_reserveLabConfirm(request):
+    if request.method == 'POST':
+        selected_room_id = request.POST.get('selectedRoom')
+        selected_date = request.POST.get('selectedDate')
+        selected_start_time = request.POST.get('selectedStartTime')
+        selected_end_time = request.POST.get('selectedEndTime')
+
+        # Fetch room information
+        selected_room = get_object_or_404(rooms, room_id=selected_room_id)
+
+        # Check if the room is already reserved for the selected date and time
+        existing_reservation = laboratory_reservations.objects.filter(
+            room=selected_room,
+            start_date=selected_date,
+            start_time__lte=selected_start_time,
+            end_time__gte=selected_end_time,
+            status='R'
+        ).exists()
+
+        if existing_reservation:
+            return HttpResponse("The selected time slot for this room is already booked.", status=400)
+
+        # Save the reservation data in session temporarily for confirmation
+        request.session['reservation_data'] = {
+            'room': selected_room.name,
+            'selected_date': selected_date,
+            'start_time': selected_start_time,
+            'end_time': selected_end_time,
+        }
+
+        return redirect('lab_reservation_student_reserveLabConfirmDetails')
+
+    return HttpResponse("Invalid request", status=400)
+
+def lab_reservation_student_reserveLabConfirmDetails(request):
+    reservation_data = request.session.get('reservation_data')
+    current_user = get_object_or_404(user, user_id=request.user.id)
+
+    if not reservation_data:
+        return redirect('lab_reservation_student_reserveLabChooseRoom')
+
+    if request.method == 'POST':
+        # Get user details (if logged in) or allow input from non-logged-in users
+        # user = request.user if request.user.is_authenticated else None
+        contact_name = request.POST.get('contact_name')
+        contact_email = request.POST.get('contact_email')
+        contact_number = request.POST.get('contact_number')
+        num_people = request.POST.get('num_people')
+        purpose = request.POST.get('purpose')
+
+        # Save the reservation to the database
+        reservation = laboratory_reservations.objects.create(
+            user=current_user,
+            room=rooms.objects.get(name=reservation_data['room']),
+            start_date=reservation_data['selected_date'],
+            start_time=reservation_data['start_time'],
+            end_time=reservation_data['end_time'],
+            contact_name=contact_name,
+            contact_email=contact_email,
+            contact_number=contact_number,
+            num_people=num_people,
+            purpose=purpose,
+            status='R'  # Reserved
+        )
+
+        # Clear session data and redirect to the booking list page
+        del request.session['reservation_data']
+        return redirect('lab_reservation_student_reserveLabSummary')
+
+    return render(request, 'mod_labRes/lab_reservation_studentReserveLabConfirm.html', {
+        'reservation_data': reservation_data,
+        'user': request.user if request.user.is_authenticated else None
     })
 
 
@@ -1807,6 +1934,9 @@ def lab_reservation_student_reserveLabChooseTime(request):
 
 def lab_reservation_student_reserveLabSummary(request):
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabSummary.html')
+
+
+
 
 def reports_view(request):
     return render(request, 'mod_reports/reports.html')

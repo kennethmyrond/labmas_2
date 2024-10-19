@@ -325,17 +325,20 @@ class reported_items(models.Model):
 class laboratory_reservations(models.Model):
     reservation_id = models.AutoField(primary_key=True)
     user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='user')
-    room = models.ForeignKey('Rooms', on_delete=models.CASCADE, related_name='rooms')
-    request_date = models.DateTimeField(null=True, blank=True)
+    room = models.ForeignKey('rooms', on_delete=models.CASCADE, related_name='reservations')
+    request_date = models.DateTimeField(auto_now_add=True)
     start_date = models.DateField(null=True, blank=True)
-    end_date = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=1, null=True, blank=True)
-    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    questions_responses = models.JSONField(default=dict, blank=True)
-    remarks = models.CharField(max_length=45, null=True, blank=True)
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    status = models.CharField(max_length=1, default='P')  # Pending by default
+    purpose = models.CharField(max_length=255, null=True, blank=True)
+    num_people = models.IntegerField(null=True, blank=True)
+    contact_email = models.EmailField(null=True, blank=True)
+    contact_name = models.CharField(max_length=255, null=True, blank=True)
+    contact_number = models.CharField(max_length=15, null=True, blank=True)
 
     def __str__(self):
-        return f"Borrow Info {self.borrow_id}"
+        return f"Reservation {self.reservation_id} - {self.room.name}"
     
     def get_status_display(self):
         status_mapping = {
