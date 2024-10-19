@@ -2022,6 +2022,12 @@ def labres_labcoord_configtime(request):
 def labres_lab_schedule(request):
     return render(request, 'mod_labRes/labres_lab_schedule.html')
 
+def labres_lab_reservationreqs(request):
+    return render(request, 'mod_labRes/labres_lab_reservationreqs.html')
+
+def labres_lab_reservationreqsDetailed(request):
+    return render(request, 'mod_labRes/labres_lab_reservationreqsDetailed.html')
+
 #  ================================================================= 
 
 

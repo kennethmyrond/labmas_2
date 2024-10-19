@@ -73,6 +73,8 @@ urlpatterns = [
     path('lab-reservation/labcoord/configRoom', views.labres_labcoord_configroom, name='labres_labcoord_configroom'),
     path('lab-reservation/labcoord/configTimeslot', views.labres_labcoord_configtime, name='labres_labcoord_configtime'),
     path('lab-reservation/lab/schedule', views.labres_lab_schedule, name='labres_lab_schedule'),
+    path('lab-reservation/lab/reservationRequests', views.labres_lab_reservationreqs, name='labres_lab_reservationreqs'),
+    path('lab-reservation/lab/reservationRequests_detailed', views.labres_lab_reservationreqsDetailed, name='labres_lab_reservationreqsDetailed'),
 
     path('reports/', views.reports_view, name='reports'),
     path('user-settings/', views.user_settings_view, name='user_settings'),
