@@ -1999,6 +1999,9 @@ def lab_reservation_detail(request, reservation_id):
 def labres_labcoord_configroom(request):
     return render(request, 'mod_labRes/labres_labcoord_configroom.html')
 
+def labres_labcoord_configtime(request):
+    return render(request, 'mod_labRes/labres_labcoord_configtime.html')
+
 #  ================================================================= 
 
 
