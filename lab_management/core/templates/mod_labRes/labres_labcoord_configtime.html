@@ -1,0 +1,139 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}Reserve Laboratory{% endblock %}
+{% block content %}
+
+<style>
+  #deletebtn {
+        background: red;
+        border: 0;
+        padding: 10px 20px;
+        color: #fff;
+        transition: 0.4s;
+        border-radius: 4px;
+    }
+    #deletebtn:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<div class="pagetitle">
+  <h1>Laboratory Reservation</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item active">Time Slot Configurations</li>
+    </ol>
+  </nav>
+</div>
+<!-- End Page Title -->
+
+<section class="section">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Manage Time Slots</h5>
+
+          <!-- Filters and Search Bar -->
+          <form id="roomForm">
+            {% csrf_token %}
+
+            <div class="row mb-3">
+              <label for="startTime" class="col-sm-2 col-form-label">Start Time:</label>
+              <div class="col-sm-4">
+                <input type="time" id="startTime" name="startTime" class="form-control">
+              </div>
+
+              <label for="endTime" class="col-sm-2 col-form-label">End Time:</label>
+              <div class="col-sm-4">
+                <input type="time" id="endTime" name="endTime" class="form-control">
+              </div>
+            </div>
+
+            <div class="row mb-3">
+                <label for="interval" class="col-sm-2 col-form-label">Interval:</label>
+                <div class="col-sm-4">
+                  <select id="interval" name="interval" class="form-control">
+                    <option value="15">15 minutes</option>
+                    <option value="30">30 minutes</option>
+                    <option value="60">1 hour</option>
+                    <option value="1">Custom Interval</option>
+                  </select>
+                </div>
+
+                <!--custom interval field-->
+                <label id="field" style="display:none;" for="custom" class="col-sm-2 col-form-label">Custom Interval (minutes):</label>
+                <div id="fieldinput"  style="display:none;" class="col-sm-4">
+                    <input type="number" id="custom" name="custom" class="form-control" min="1" oninput="validity.valid||(value='');">
+                </div>
+
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-sm-10 offset-sm-11">
+                <button type="button" class="btn btn-primary" id="addbtn">Add</button>
+              </div>
+            </div>
+          </form>
+
+          <table class="table datatable">
+            <thead>
+              <tr>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Interval</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!--hardcoded-->
+              <tr>
+                <td>7:15AM</td>
+                <td>12:45PM</td>  
+                <td>30 minutes</td>
+                <td>
+                  <button type="button" id="deletebtn">Delete</button>
+                </td> 
+              </tr>
+
+              <tr>
+                <td>2:15PM</td>
+                <td>5:45PM</td>  
+                <td>30 minutes</td>
+                <td>
+                  <button type="button" id="deletebtn">Delete</button>
+                </td> 
+              </tr>
+              <!--end of hardcoded-->
+            </tbody>
+          </table>
+          <div class="row mb-3">
+            <div class="col-sm-10 offset-sm-11">
+              <button type="button" class="btn btn-primary" id="savebtn">Save</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+    const intervalSelect = document.getElementById('interval');
+    const field = document.getElementById('field');
+    const fieldinput = document.getElementById('fieldinput');
+    
+    intervalSelect.addEventListener('change', function() {
+      if (intervalSelect.value === '1') {
+        field.style.display = '';
+        fieldinput.style.display = '';
+      } else {
+        field.style.display = 'none';
+        fieldinput.style.display = 'none';
+      }
+    });
+</script>
+
+
+
+{% endblock %}
