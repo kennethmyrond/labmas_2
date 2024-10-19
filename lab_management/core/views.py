@@ -921,19 +921,20 @@ def borrowing_student_prebookview(request):
         # Fetch the prebook-specific questions
         prebook_questions = lab.get_questions(mode='prebook')
 
-        # Fetch all equipment items including their total quantities
-        equipment_list = item_description.objects.filter(
-            laboratory_id=laboratory_id,
-            is_disabled=0,
-            allow_borrow=1  # Only include items that can be borrowed
-        ).annotate(total_qty=Sum('item_inventory__qty'))
-
-        # Fetch inventory items and order them by item type name
+        # Fetch all inventory items
         inventory_items = item_description.objects.filter(
             laboratory_id=laboratory_id,
             is_disabled=0,
             allow_borrow=1  # Only get items that can be borrowed
-        ).annotate(total_qty=Sum('item_inventory__qty')).select_related('itemType').order_by('itemType__itemType_name')
+        ).select_related('itemType').annotate(total_qty=Sum('item_inventory__qty'))
+
+        # Group items by their itemType
+        items_by_type = {}
+        for item in inventory_items:
+            item_type = item.itemType.itemType_name
+            if item_type not in items_by_type:
+                items_by_type[item_type] = []
+            items_by_type[item_type].append(item)
 
         if request.method == 'POST':
             # Fetch form data
@@ -980,8 +981,7 @@ def borrowing_student_prebookview(request):
                 return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
                     'error_message': error_message,
                     'current_date': request_date,
-                    'equipment_list': equipment_list,  # Include equipment_list here
-                    'inventory_items': inventory_items,  # Include inventory_items here
+                    'items_by_type': items_by_type,  # Include grouped items here
                 })
 
             # If validation passes, proceed with insertion
@@ -1019,10 +1019,10 @@ def borrowing_student_prebookview(request):
 
     return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
         'current_date': current_date,
-        'equipment_list': equipment_list,
-        'inventory_items': inventory_items,
+        'items_by_type': items_by_type,  # Pass grouped items to the template
         'prebook_questions': prebook_questions  # Pass the prebook questions to the template
     })
+
 
 def get_items_by_type(request, item_type_id):
     try:
@@ -1068,6 +1068,21 @@ def borrowing_student_walkinview(request):
 
     # Fetch the walk-in-specific questions
     walkin_questions = lab.get_questions(mode='walkin')
+
+    # Fetch all inventory items
+    inventory_items = item_description.objects.filter(
+        laboratory_id=laboratory_id,
+        is_disabled=0,
+        allow_borrow=1  # Only get items that can be borrowed
+     ).select_related('itemType').annotate(total_qty=Sum('item_inventory__qty'))
+    
+    # Group items by their itemType
+    items_by_type = {}
+    for item in inventory_items:
+        item_type = item.itemType.itemType_name
+        if item_type not in items_by_type:
+            items_by_type[item_type] = []
+        items_by_type[item_type].append(item)
 
     if request.method == 'POST':
         request_date = timezone.now()
@@ -1120,6 +1135,7 @@ def borrowing_student_walkinview(request):
                 'error_message': error_message,
                 'inventory_items': inventory_items,
                 'walkin_questions': walkin_questions,  # Pass walk-in questions back to the template
+                 'items_by_type': items_by_type,  # Pass grouped items to the template
             })
 
         # If validation passes, insert items into borrowed_items
@@ -1174,6 +1190,7 @@ def borrowing_student_walkinview(request):
         'item_types': item_types_list,  # Pass item types to the template
         'inventory_items': inventory_items,
         'walkin_questions': walkin_questions,  # Pass the walk-in questions to the template
+        'items_by_type': items_by_type,  # Pass grouped items to the template
     })
 
 
