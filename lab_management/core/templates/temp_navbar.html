@@ -292,10 +292,10 @@
 
       <li class="nav-item">
         
-        <a class="nav-link {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail' %}active{% else %}collapsed{% endif %}" data-bs-target="#reserve-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule'%}active{% else %}collapsed{% endif %}" data-bs-target="#reserve-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-journal-bookmark"></i><span>Lab Reservation</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="reserve-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail'%}show{% endif %} " data-bs-parent="#sidebar-nav">
+        <ul id="reserve-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule'%}show{% endif %} " data-bs-parent="#sidebar-nav">
           <li>
            
             <a href="{% url 'lab_reservation_student_reserveLabChooseRoom' %}" class = "{% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime' %}active{% endif %}">
@@ -310,7 +310,7 @@
 
           <li>
            
-            <a href="{% url 'labres_labcoord_configroom' %}">
+            <a href="{% url 'labres_labcoord_configroom' %}" class = "{% if request.resolver_match.url_name in 'labres_labcoord_configroom' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>LABCOORD - Configure Room</span>
             </a>
             
@@ -318,8 +318,16 @@
 
           <li>
            
-            <a href="{% url 'labres_labcoord_configtime' %}">
+            <a href="{% url 'labres_labcoord_configtime' %}" class = "{% if request.resolver_match.url_name in 'labres_labcoord_configtime' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>LABCOORD - Configure Time Slot</span>
+            </a>
+            
+          </li>
+
+          <li>
+           
+            <a href="{% url 'labres_lab_schedule' %}" class = "{% if request.resolver_match.url_name in 'labres_lab_schedule' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>LAB - Reservation Schedule</span>
             </a>
             
           </li>
