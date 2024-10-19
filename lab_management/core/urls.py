@@ -68,6 +68,8 @@ urlpatterns = [
     
     path('lab-reservation/student/reserveLabChooseTime', views.lab_reservation_student_reserveLabChooseTime, name='lab_reservation_student_reserveLabChooseTime'),
     path('lab-reservation/student/reserveLabSummary', views.lab_reservation_student_reserveLabSummary, name='lab_reservation_student_reserveLabSummary'),
+    path('lab-reservation/labcoord/configRoom', views.labres_labcoord_configroom, name='labres_labcoord_configroom'),
+
     path('reports/', views.reports_view, name='reports'),
     path('user-settings/', views.user_settings_view, name='user_settings'),
 

@@ -1936,6 +1936,10 @@ def lab_reservation_student_reserveLabSummary(request):
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabSummary.html')
 
 
+def labres_labcoord_configroom(request):
+    return render(request, 'mod_labRes/labres_labcoord_configroom.html')
+
+#  ================================================================= 
 
 
 def reports_view(request):
