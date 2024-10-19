@@ -19,136 +19,113 @@
         <div class="card-body">
           <h5 class="card-title">Search for a Room</h5>
 
-          <!-- Filters and Search Bar -->
-          <form id="filterForm">
+          <!-- Display error message if any -->
+          {% if error_message %}
+          <div class="alert alert-danger">{{ error_message }}</div>
+          {% endif %}
+
+          <!-- Filters Section -->
+          <form id="filterForm" method="GET" action="">
             {% csrf_token %}
             <div class="row mb-3">
               <label for="reservationDate" class="col-sm-2 col-form-label">Select Date:</label>
-              <div class="col-sm-4">
-                <input type="date" id="reservationDate" name="reservationDate" class="form-control">
+              <div class="col-sm-2">
+                <input type="date" id="reservationDate" name="reservationDate" class="form-control" min="{{ min_reservation_date }}" value="{{ reservation_date|date:'Y-m-d' }}">
               </div>
 
-              <label for="startTime" class="col-sm-2 col-form-label">Start Time:</label>
-              <div class="col-sm-4">
-                <input type="time" id="startTime" name="startTime" class="form-control">
-              </div>
-            </div>
-
-            <div class="row mb-3">
-              <label for="endTime" class="col-sm-2 col-form-label">End Time:</label>
-              <div class="col-sm-4">
-                <input type="time" id="endTime" name="endTime" class="form-control">
+              <label for="capacityFilter" class="col-sm-2 col-form-label">Filter by Capacity:</label>
+              <div class="col-sm-2">
+                <input type="number" id="capacityFilter" name="capacityFilter" class="form-control" placeholder="Minimum capacity" value="{{ capacity_filter }}">
               </div>
 
-              <label for="searchRoom" class="col-sm-2 col-form-label">Search Room Name:</label>
-              <div class="col-sm-4">
-                <input type="text" id="searchRoom" name="searchRoom" class="form-control" placeholder="Enter room name">
+              <div class="col-sm-2">
+                <button type="submit" class="btn btn-primary">Search</button>
               </div>
             </div>
+          </form>
 
+          <!-- Room Availability Table -->
+          <div id="roomList">
+            <h5 class="card-title">Available Rooms</h5>
+            <table class="table table-bordered">
+              <thead>
+                  <tr>
+                      <th>Room Name</th>
+                      {% for start in time_slots %}
+                          <th>{{ start }}</th>
+                      {% endfor %}
+                  </tr>
+              </thead>
+              <tbody>
+                {% for room in rooms %}
+                  <tr>
+                    <td>{{ room.name }} (Capacity: {{ room.capacity }})</td>
+                    {% for start in time_slots %}
+                        <td style="background-color: green"></td>
+                    {% endfor %}
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="{{ time_slots}}">No rooms available for the selected criteria.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Form for room and time selection -->
+<section class="section">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Reserve a Room</h5>
+
+          <!-- Reservation Form -->
+          <form method="POST" action="{% url 'lab_reservation_student_reserveLabConfirm' %}">
+            {% csrf_token %}
+            
             <div class="row mb-3">
-              <label for="filterRooms" class="col-sm-2 col-form-label">Filter By:</label>
+              <label for="selectedDate" class="col-sm-2 col-form-label">Selected Date:</label>
               <div class="col-sm-10">
-                <select class="form-select" id="filterRooms" name="filterRooms">
-                  <option value="all">All Rooms</option>
-                  <option value="available">Available Rooms</option>
-                  <option value="fullyBooked">Fully Booked Rooms</option>
+                <input type="date" id="selectedDate" name="selectedDate" class="form-control" value="{{ reservation_date|date:'Y-m-d' }}" readonly="true">
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <label for="selectedRoom" class="col-sm-2 col-form-label">Select Room:</label>
+              <div class="col-sm-10">
+                <select id="selectedRoom" name="selectedRoom" class="form-select" required>
+                  {% for room in rooms %}
+                    <option value="{{ room.room_id }}">{{ room.name }} (Capacity: {{ room.capacity }})</option>
+                  {% endfor %}
                 </select>
               </div>
             </div>
 
             <div class="row mb-3">
+              <label for="selectedStartTime" class="col-sm-2 col-form-label">Start Time:</label>
+              <div class="col-sm-4">
+                <input type="time" id="selectedStartTime" name="selectedStartTime" class="form-control" required>
+              </div>
+
+              <label for="selectedEndTime" class="col-sm-2 col-form-label">End Time:</label>
+              <div class="col-sm-4">
+                <input type="time" id="selectedEndTime" name="selectedEndTime" class="form-control" required>
+              </div>
+            </div>
+
+            <div class="row mb-3">
               <div class="col-sm-10 offset-sm-2">
-                <button type="button" class="btn btn-primary" onclick="filterRooms()">Search</button>
+                <button type="submit" class="btn btn-primary">Confirm Booking</button>
               </div>
             </div>
           </form>
-
-          <!-- Room Listings -->
-          <div id="roomList">
-            <h5 class="card-title">Available Rooms</h5>
-            <div id="roomsContainer">
-              <!-- Room cards will be populated here using JavaScript -->
-            </div>
-          </div>
 
         </div>
       </div>
     </div>
   </div>
 </section>
-
-<script>
-  // Sample data for rooms and their availability
-  const roomsData = [
-    { id: 1, name: 'Room One', slotsAvailable: 3, status: 'Available', details: 'First Floor, Capacity: 20' },
-    { id: 2, name: 'Room Two', slotsAvailable: 0, status: 'Fully Booked', details: 'Second Floor, Capacity: 25' },
-    { id: 3, name: 'Room Three', slotsAvailable: 2, status: 'Available', details: 'Third Floor, Capacity: 15' },
-  ];
-
-  // Function to populate the room cards
-  function populateRooms(rooms) {
-    const roomsContainer = document.getElementById('roomsContainer');
-    roomsContainer.innerHTML = ''; // Clear any existing room cards
-
-    rooms.forEach(room => {
-      const roomCard = `
-        <div class="card mb-3">
-          <div class="card-body">
-            <h5 class="card-title">${room.name}</h5>
-            <p class="card-text">${room.details}</p>
-            <p class="card-text">Slots Available: ${room.slotsAvailable}</p>
-            <p class="card-text" style="color: ${room.status === 'Available' ? 'green' : 'red'};">${room.status}</p>
-            <form method="POST" action="{% url 'lab_reservation_student_reserveLabChooseTime' %}">
-              {% csrf_token %}
-              <input type="hidden" name="room_id" value="${room.id}">
-              <button type="submit" class="btn btn-primary" ${room.slotsAvailable === 0 ? 'disabled' : ''}>
-                Reserve
-              </button>
-            </form>
-          </div>
-        </div>
-      `;
-      roomsContainer.insertAdjacentHTML('beforeend', roomCard);
-    });
-  }
-
-  // Function to filter rooms based on search and filters
-  function filterRooms() {
-    const searchRoom = document.getElementById('searchRoom').value.toLowerCase();
-    const filter = document.getElementById('filterRooms').value;
-    const startTime = document.getElementById('startTime').value;
-    const endTime = document.getElementById('endTime').value;
-
-    let filteredRooms = roomsData.filter(room => {
-      // Filter by room name
-      const matchesSearch = room.name.toLowerCase().includes(searchRoom);
-
-      // Filter based on room availability
-      let matchesFilter = true;
-      if (filter === 'available') {
-        matchesFilter = room.slotsAvailable > 0;
-      } else if (filter === 'fullyBooked') {
-        matchesFilter = room.slotsAvailable === 0;
-      }
-
-      return matchesSearch && matchesFilter;
-    });
-
-    // Sort available rooms alphabetically, followed by fully booked rooms alphabetically
-    filteredRooms.sort((a, b) => {
-      if (a.slotsAvailable > 0 && b.slotsAvailable === 0) return -1;
-      if (a.slotsAvailable === 0 && b.slotsAvailable > 0) return 1;
-      return a.name.localeCompare(b.name);
-    });
-
-    populateRooms(filteredRooms);
-  }
-
-  // Populate the room list on page load
-  window.onload = function() {
-    populateRooms(roomsData);
-  };
-</script>
 
 {% endblock %}

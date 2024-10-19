@@ -1,0 +1,119 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}Confirm Reservation{% endblock %}
+{% block content %}
+
+<div class="pagetitle">
+  <h1>Confirm Reservation</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'lab_reservation_student_reserveLabChooseRoom' %}">Reserve Room</a></li>
+      <li class="breadcrumb-item active">Confirm Booking</li>
+    </ol>
+  </nav>
+</div>
+<!-- End Page Title -->
+
+<section class="section">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Booking Details</h5>
+
+          <!-- Display selected booking details -->
+          <table class="table">
+            <tr>
+              <th>Room</th>
+              <td>{{ reservation_data.room }}</td>
+            </tr>
+            <tr>
+              <th>Date</th>
+              <td>{{ reservation_data.selected_date }}</td>
+            </tr>
+            <tr>
+              <th>Start Time</th>
+              <td>{{ reservation_data.start_time }}</td>
+            </tr>
+            <tr>
+              <th>End Time</th>
+              <td>{{ reservation_data.end_time }}</td>
+            </tr>
+          </table>
+
+          <h5 class="card-title mt-4">User Details</h5>
+
+          <!-- User Details Form -->
+          <form method="POST">
+            {% csrf_token %}
+
+            {% if user %}
+              <!-- If the user is logged in, show pre-filled details -->
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label">Name:</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" value="{{ user.first_name }} {{ user.last_name }}" disabled>
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label">Email:</label>
+                <div class="col-sm-10">
+                  <input type="email" class="form-control" value="{{ user.email }}" disabled>
+                </div>
+              </div>
+            {% else %}
+              <!-- If the user is not logged in, allow input of details -->
+              <div class="row mb-3">
+                <label for="contact_name" class="col-sm-2 col-form-label">Name:</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="contact_name" name="contact_name" required>
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="contact_email" class="col-sm-2 col-form-label">Email:</label>
+                <div class="col-sm-10">
+                  <input type="email" class="form-control" id="contact_email" name="contact_email" required>
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <label for="contact_number" class="col-sm-2 col-form-label">Contact Number:</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="contact_number" name="contact_number" required>
+                </div>
+              </div>
+            {% endif %}
+
+            <div class="row mb-3">
+              <label for="num_people" class="col-sm-2 col-form-label">Number of People:</label>
+              <div class="col-sm-10">
+                <input type="number" class="form-control" id="num_people" name="num_people" required>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <label for="purpose" class="col-sm-2 col-form-label">Purpose:</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" id="purpose" name="purpose" rows="3" required></textarea>
+              </div>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <h5 class="card-title mt-4">Terms and Conditions</h5>
+            <p>Please ensure that you adhere to the lab policies and use the facility responsibly.</p>
+
+            <div class="row mb-3">
+              <div class="col-sm-10 offset-sm-2">
+                <button type="submit" class="btn btn-primary">Submit Booking</button>
+              </div>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
