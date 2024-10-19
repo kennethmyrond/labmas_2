@@ -72,6 +72,7 @@ urlpatterns = [
     path('lab-reservation/student/cancelReservation/<int:reservation_id>/', views.cancel_reservation, name='cancel_reservation'),
     path('lab-reservation/labcoord/configRoom', views.labres_labcoord_configroom, name='labres_labcoord_configroom'),
     path('lab-reservation/labcoord/configTimeslot', views.labres_labcoord_configtime, name='labres_labcoord_configtime'),
+    path('lab-reservation/lab/schedule', views.labres_lab_schedule, name='labres_lab_schedule'),
 
     path('reports/', views.reports_view, name='reports'),
     path('user-settings/', views.user_settings_view, name='user_settings'),

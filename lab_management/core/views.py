@@ -2002,6 +2002,9 @@ def labres_labcoord_configroom(request):
 def labres_labcoord_configtime(request):
     return render(request, 'mod_labRes/labres_labcoord_configtime.html')
 
+def labres_lab_schedule(request):
+    return render(request, 'mod_labRes/labres_lab_schedule.html')
+
 #  ================================================================= 
 
 

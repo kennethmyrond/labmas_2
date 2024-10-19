@@ -31,10 +31,26 @@
     <div class="col-lg-12">
       <div class="card">
         <div class="card-body">
+
+        <h5 class="card-title">Select Room</h5>
+
+            <!-- Select Room -->
+          <form id="roomSelector">
+            <div class="row mb-3">
+                <label for="roomSelect" class="col-sm-2 col-form-label">Select a Room:</label>
+                <div class="col-sm-10">
+                  <select id="roomSelect" name="roomSelect" class="form-control">
+                    <option value="GK302">GK302</option>
+                  </select>
+                </div>
+                <br>
+          </form>  
+
+          <div>
           <h5 class="card-title">Manage Time Slots</h5>
 
-          <!-- Filters and Search Bar -->
-          <form id="roomForm">
+          <!-- Add available time slots and intervals -->
+          <form id="timeForm">
             {% csrf_token %}
 
             <div class="row mb-3">
@@ -69,11 +85,13 @@
             </div>
 
             <div class="row mb-3">
-              <div class="col-sm-10 offset-sm-11">
+              <div class="col-sm-10">
                 <button type="button" class="btn btn-primary" id="addbtn">Add</button>
               </div>
             </div>
           </form>
+        </div>
+        <div>
 
           <table class="table datatable">
             <thead>
@@ -86,6 +104,7 @@
             </thead>
             <tbody>
               <!--hardcoded-->
+              <!-- pretend that their lunch break is between 12:45-2:15, so there's two entries-->
               <tr>
                 <td>7:15AM</td>
                 <td>12:45PM</td>  
@@ -107,11 +126,12 @@
             </tbody>
           </table>
           <div class="row mb-3">
-            <div class="col-sm-10 offset-sm-11">
+            <div class="col-sm-10">
               <button type="button" class="btn btn-primary" id="savebtn">Save</button>
             </div>
           </div>
-
+        
+            </div>
         </div>
       </div>
     </div>
