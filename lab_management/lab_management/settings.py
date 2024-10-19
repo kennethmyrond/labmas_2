@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
 
-    'qr_code'
+    'qr_code',
 ]
 
 SOCIALACCOUNT_PROVIDERS = {

@@ -292,14 +292,18 @@
 
       <li class="nav-item">
         
-        <a class="nav-link {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary' %}active{% else %}collapsed{% endif %}" data-bs-target="#reserve-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail' %}active{% else %}collapsed{% endif %}" data-bs-target="#reserve-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-journal-bookmark"></i><span>Lab Reservation</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="reserve-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary'%}show{% endif %} " data-bs-parent="#sidebar-nav">
+        <ul id="reserve-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail'%}show{% endif %} " data-bs-parent="#sidebar-nav">
           <li>
            
-            <a href="{% url 'lab_reservation_student_reserveLabChooseRoom' %}" class = "{% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary' %}active{% endif %}">
+            <a href="{% url 'lab_reservation_student_reserveLabChooseRoom' %}" class = "{% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>STUDENT - Reserve Laboratory - Choose Room</span>
+            </a>
+
+            <a href="{% url 'lab_reservation_student_reserveLabSummary' %}" class = "{% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabSummary lab_reservation_detail' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>STUDENT - View Reservations</span>
             </a>
             
           </li>

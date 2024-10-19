@@ -1831,16 +1831,24 @@ def lab_reservation_student_reserveLabChooseRoom(request):
     existing_reservations = laboratory_reservations.objects.filter(
         room__laboratory_id=selected_laboratory_id, start_date=reservation_date)
 
+    time_slots = [f"{hour:02d}:00" for hour in range(7, 17)]
+
     room_availability = {}
     for room in rooms_query:
         availability = {}
         for start in time_slots:
             slot_key = f"{start}"
             reserved = existing_reservations.filter(
-                room=room, start_time__lte=start).exists()
-            availability[slot_key] = 'red' if reserved else 'yellow'
+                room=room,
+                start_time__lte=start,
+                end_time__gt=start,
+                status='R'
+            ).exists()
+            availability[slot_key] = 'red' if reserved else 'green'
         room_availability[room.room_id] = availability
 
+
+    print(room_availability)
     context = {
         'rooms': rooms_query,
         'time_slots': time_slots,
@@ -1868,13 +1876,16 @@ def lab_reservation_student_reserveLabConfirm(request):
         existing_reservation = laboratory_reservations.objects.filter(
             room=selected_room,
             start_date=selected_date,
-            start_time__lte=selected_start_time,
-            end_time__gte=selected_end_time,
             status='R'
+        ).filter(
+            start_time__lt=selected_end_time,
+            end_time__gt=selected_start_time
         ).exists()
 
         if existing_reservation:
-            return HttpResponse("The selected time slot for this room is already booked.", status=400)
+            error_message = "The selected time slot for this room is already booked."
+            messages.error(request, error_message)
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
         # Save the reservation data in session temporarily for confirmation
         request.session['reservation_data'] = {
@@ -1921,20 +1932,69 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
 
         # Clear session data and redirect to the booking list page
         del request.session['reservation_data']
-        return redirect('lab_reservation_student_reserveLabSummary')
+        return redirect('lab_reservation_detail', reservation.reservation_id)
 
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabConfirm.html', {
         'reservation_data': reservation_data,
         'user': request.user if request.user.is_authenticated else None
     })
 
-
+# not used for now
 def lab_reservation_student_reserveLabChooseTime(request):
      return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseTime.html')
 
 def lab_reservation_student_reserveLabSummary(request):
-    return render(request, 'mod_labRes/lab_reservation_studentReserveLabSummary.html')
+    # Get the current user
+    # current_user = request.user
+    current_user = get_object_or_404(user, user_id=request.user.id)
+    
+    # Get today's date
+    today = timezone.now().date()
 
+    # Filter reservations by categories
+    tab = request.GET.get('tab', 'all')  # Default to 'today' tab
+    reservations = laboratory_reservations.objects.filter(user=current_user)
+
+    if tab == 'today':
+        reservations = reservations.filter(start_date=today)
+    elif tab == 'previous':
+        reservations = reservations.filter(start_date__lt=today)
+    elif tab == 'future':
+        reservations = reservations.filter(start_date__gt=today)
+    elif tab == 'cancelled':
+        reservations = reservations.filter(status='C')  # Assuming 'C' is the status for cancelled
+    else:
+        reservations = reservations.all()
+
+    context = {
+        'reservations': reservations,
+        'tab': tab,
+    }
+
+    return render(request, 'mod_labRes/lab_reservation_studentReserveLabSummary.html', context)
+
+def cancel_reservation(request, reservation_id):
+    # Get the reservation object by id
+    current_user = get_object_or_404(user, user_id=request.user.id)
+    reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id, user=current_user)
+
+    # Change the status to 'Cancelled' (assuming 'C' represents cancelled)
+    reservation.status = 'C'
+    reservation.save()
+
+    # Redirect to the reservation summary page
+    return redirect('lab_reservation_student_reserveLabSummary')
+
+def lab_reservation_detail(request, reservation_id):
+    # Get the reservation object by its ID
+    current_user = get_object_or_404(user, user_id=request.user.id)
+    reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id, user=current_user)
+
+    context = {
+        'reservation': reservation,
+    }
+
+    return render(request, 'mod_labRes/lab_reservation_detail.html', context)
 
 def labres_labcoord_configroom(request):
     return render(request, 'mod_labRes/labres_labcoord_configroom.html')
