@@ -2,20 +2,6 @@
 {% block title %}Reserve Laboratory{% endblock %}
 {% block content %}
 
-<style>
-  #schedule,th,td{
-    border: 2px solid grey;
-    text-align: center;
-  }
-  th,td{
-    width: 50%;
-  }
-  #schedule{
-    border-collapse: collapse;
-    width:100%;
-  }
-</style>
-
 <div class="pagetitle">
   <h1>Laboratory Reservation</h1>
   <nav>
@@ -24,7 +10,6 @@
     </ol>
   </nav>
 </div>
-<!-- End Page Title -->
 
 <section class="section">
   <div class="row">
@@ -34,131 +19,79 @@
 
         <h5 class="card-title">Select Room</h5>
 
-            <!-- Select Room -->
-          <form id="roomSelector">
-            <div class="row mb-3">
+        <!-- Select Room -->
+        <form id="roomSelector" method="GET">
+              <div class="row mb-3">
                 <label for="roomSelect" class="col-sm-2 col-form-label">Select a Room:</label>
                 <div class="col-sm-10">
-                  <select id="roomSelect" name="roomSelect" class="form-control">
-                    <option value="GK302">GK302</option>
-                  </select>
+                    <select id="roomSelect" name="roomSelect" class="form-control">
+                        <option value="">Select a Room</option>
+                        {% for room in room_list %}
+                            <option value="{{ room.name }}" {% if selected_room == room.name %}selected{% endif %}>
+                                {{ room.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <br>
-          </form>  
+            </div>
 
-          <div>
-          <h5 class="card-title">Day Schedule</h5>
-          <form id="dateForm">
-            {% csrf_token %}
-
+            <h5 class="card-title">Day Schedule</h5>
             <div class="row mb-3">
-              <label for="selectDate" class="col-sm-2 col-form-label">Select Date:</label>
-              <div class="col-sm-6">
-                <input type="date" id="selectDate" name="selectDate" class="form-control">
-              </div>
+                <label for="selectDate" class="col-sm-2 col-form-label">Select Date:</label>
+                <div class="col-sm-6">
+                    <input type="date" id="selectDate" name="selectDate" class="form-control" value="{{ selected_date }}">
+                </div>
+                <div class="col-sm-4">
+                    <button type="submit" class="btn btn-primary">View Schedule</button>
+                </div>
             </div>
             <div class="row mb-3">
-                <p>Viewing Schedule for [Selected Date].</p>
-            </div>   
-          </form>
-        </div>
+                <p>Viewing Schedule for {{ selected_date }}</p>
+            </div>
+        </form>
 
-        <div>
-            <!-- number of table columns depends on interval chosen at timeslot config-->
-            <table id="schedule">
+        <!-- Reservation Table -->
+        <table class="table datatable">
+            <thead>
                 <tr>
-                <th>Time</th>
-                <th>Slot</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Interval</th>
+                    <th>Purpose</th>
+                    <th>Status</th> 
+                    <th>Actions</th>
                 </tr>
-        <!-- hardcoded-->
-                <tr>
-                    <td>7:15-7:45</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>7:45-8:15</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>8:15-8:45</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>8:45-9:15</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>9:15-10:45</td>
-                    <td style="background-color: lightgrey;"> Reservation #123 - Juan Dela Cruz</td>
-                </tr>
-                <tr>
-                    <td>10:45-11:15</td>
-                    <td style="background-color: lightgrey;">Reservation #123 - Juan Dela Cruz</td>
-                </tr>
-                <tr>
-                    <td>11:15-11:45</td>
-                    <td style="background-color: lightgrey;">Reservation #123 - Juan Dela Cruz</td>
-                </tr>
-                <tr>
-                    <td>11:45-12:15</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>12:15-12:45</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>12:45-1:15</td>
-                    <td style="background-color: rgb(160, 160, 160);"></td>
-                </tr>
-                <tr>
-                    <td>1:15-1:45</td>
-                    <td style="background-color: rgb(160, 160, 160);"></td>
-                </tr>
-                <tr>
-                    <td>1:45-2:15</td>
-                    <td style="background-color: rgb(160, 160, 160);"></td>
-                </tr>
-                <tr>
-                    <td>2:15-2:45</td>
-                    <td style="background-color: lightgrey;"> Reservation #456 - Jane Cruz</td>
-                </tr>
-                <tr>
-                    <td>2:45-3:15</td>
-                    <td style="background-color: lightgrey;"> Reservation #456 - Jane Cruz</td>
-                </tr>
-                <tr>
-                    <td>3:15-3:45</td>
-                    <td style="background-color: lightgrey;"> Reservation #456 - Jane Cruz</td>
-                </tr>
-                <tr>
-                    <td>3:45-4:15</td>
-                    <td style="background-color: lightgrey;"> Reservation #456 - Jane Cruz</td>
-                </tr>
-                <tr>
-                    <td>4:15-4:45</td>
-                    <td style="background-color: rgb(255, 220, 107);"><a href="{% url 'labres_lab_reservationreqsDetailed' %}">Pending #789 - Ash Ketchum</a></td>
-                </tr>
-                <tr>
-                    <td>4:45-5:15</td>
-                    <td style="background-color: rgb(255, 220, 107);"><a href="{% url 'labres_lab_reservationreqsDetailed' %}">Pending #789 - Ash Ketchum</a></td>
-                </tr>
-                <tr>
-                    <td>5:15-5:45</td>
-                    <td></td>
-                </tr>
-                
-            </table>
-          
-        </div>
+            </thead>
+            <tbody>
+              {% for reservation in reservations %}
+              <tr>
+                  <td>{{ reservation.formatted_start_time }}</td>
+                  <td>{{ reservation.formatted_end_time }}</td>
+                  <td>{{ reservation.time_interval }} minutes</td>
+                  <td>{{ reservation.purpose }}</td>
+                  <td>{{ reservation.get_status_display }}</td>
+                  <td>
+                      {% if reservation.status == 'P' %}
+                          <button type="button" class="btn btn-success">Accept</button>
+                          <button type="button" class="btn btn-danger">Delete</button>
+                      {% else %}
+                          <!-- Optionally, you can show a message or leave it empty -->
+                          <span>Not Applicable</span>
+                      {% endif %}
+                  </td>
+              </tr>
+              {% empty %}
+              <tr>
+                  <td colspan="6">No reservations found for the selected room and date.</td>
+              </tr>
+              {% endfor %}
+          </tbody>
+        </table>
+
         </div>
       </div>
     </div>
   </div>
 </section>
-
-
-
-
 
 {% endblock %}
