@@ -36,8 +36,12 @@
   .more-schedules {
     cursor: pointer;
     color: #007bff; /* Link color */
-    text-decoration: underline; /* Underline to indicate it's clickable */
-  }
+    text-decoration: none; /* No underline by default */
+}
+
+.more-schedules:hover {
+    text-decoration: underline; /* Underline on hover */
+}
 </style>
 
 <div class="pagetitle">
@@ -98,7 +102,7 @@
                                       Purpose: {{ reservations.0.purpose }}
                                   </div>
                                   {% if reservations|length > 1 %}
-                                      <div class="card-title">
+                                      <div class="card-title more-schedules" >
                                           {{ reservations|length|add:"-1" }} more schedule(s). Click here to view.
                                       </div>
                                   {% endif %}
