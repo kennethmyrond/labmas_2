@@ -12,6 +12,7 @@ from .models import laboratory, Module, item_description, item_types, item_inven
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from .models import rooms, laboratory_reservations, time_configuration, reservation_blocked
 from datetime import timedelta, date, datetime
+from django.urls import reverse
 from calendar import monthrange
 from pyzbar.pyzbar import decode
 from PIL import Image 
@@ -2021,12 +2022,15 @@ def labres_lab_schedule(request):
     selected_room = None
     reservations_by_day = {}
 
+      # Get the current month
+    current_month = datetime.now().strftime('%Y-%m')  # Format: YYYY-MM
+
     if selected_laboratory_id:
         room_list = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
 
     if request.method == "GET":
         selected_room = request.GET.get('roomSelect')
-        selected_month = request.GET.get('selectMonth')
+        selected_month = request.GET.get('selectMonth', current_month)
         
         if selected_room and selected_month:
             try:
@@ -2110,6 +2114,31 @@ def labres_lab_reservationreqs(request):
             except rooms.DoesNotExist:
                 pass
 
+        # Handle POST requests for Accept and Delete actions
+    if request.method == "POST":
+        action = request.POST.get('action')
+
+        if action:
+            # Check if the action is accept or delete for a specific reservation
+            if action.startswith("accept_"):
+                reservation_id = action.split("_")[1]
+                reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id)
+
+                if reservation.status == 'P':  # Only update if pending
+                    reservation.status = 'A'  # Change status to Approved
+                    reservation.save()
+
+            elif action.startswith("delete_"):
+                reservation_id = action.split("_")[1]
+                reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id)
+
+                if reservation.status == 'P':  # Only update if pending
+                    reservation.status = 'L'  # Change status to Cancelled by Lab Tech
+                    reservation.save()
+
+        # Redirect to avoid form resubmission on page reload
+        return HttpResponseRedirect(reverse('labres_lab_reservationreqs'))
+    
     context = {
         'room_list': room_list,
         'reservations': reservations,
@@ -2119,8 +2148,35 @@ def labres_lab_reservationreqs(request):
 
     return render(request, 'mod_labRes/labres_lab_reservationreqs.html', context)
 
-def labres_lab_reservationreqsDetailed(request):
-    return render(request, 'mod_labRes/labres_lab_reservationreqsDetailed.html')
+def labres_lab_reservationreqsDetailed(request, reservation_id):
+    selected_laboratory_id = request.session.get('selected_lab')
+
+    try:
+        reservation = laboratory_reservations.objects.get(reservation_id=reservation_id)
+        room = rooms.objects.get(room_id=reservation.room.room_id, laboratory_id=selected_laboratory_id)
+    except (laboratory_reservations.DoesNotExist, rooms.DoesNotExist):
+        reservation = None
+        room = None
+
+    if request.method == "POST":
+        action = request.POST.get('action')
+        if action == 'accept':
+            # Change status to 'Approved' ('A')
+            reservation.status = 'A'
+        elif action == 'delete':
+            # Change status to 'Cancelled' ('L')
+            reservation.status = 'L'
+        reservation.save()
+
+        return redirect('labres_lab_reservationreqsDetailed', reservation_id=reservation_id)
+
+    context = {
+        'reservation': reservation,
+        'room': room,
+    }
+
+    return render(request, 'mod_labRes/labres_lab_reservationreqsDetailed.html', context)
+
 
 
 def labres_labcoord_configroom(request):
