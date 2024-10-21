@@ -1861,7 +1861,7 @@ def lab_reservation_student_reserveLabChooseRoom(request):
                 room=room,
                 start_time__lte=start,
                 end_time__gt=start,
-                status='R'
+                status='R' or 'A'
             ).exists()
             availability[slot_key] = 'red' if reserved else 'green'
         room_availability[room.room_id] = availability
@@ -1929,20 +1929,22 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
         # user = request.user if request.user.is_authenticated else None
         contact_name = request.POST.get('contact_name')
         contact_email = request.POST.get('contact_email')
-        contact_number = request.POST.get('contact_number')
         num_people = request.POST.get('num_people')
         purpose = request.POST.get('purpose')
 
+        print(contact_name)
+        print(contact_email)
+
         # Save the reservation to the database
         reservation = laboratory_reservations.objects.create(
-            user=current_user,
+            user=current_user or None,
             room=rooms.objects.get(name=reservation_data['room']),
             start_date=reservation_data['selected_date'],
             start_time=reservation_data['start_time'],
             end_time=reservation_data['end_time'],
             contact_name=contact_name,
             contact_email=contact_email,
-            contact_number=contact_number,
+            contact_number=0,
             num_people=num_people,
             purpose=purpose,
             status='R'  # Reserved
@@ -2165,7 +2167,7 @@ def labres_lab_reservationreqsDetailed(request, reservation_id):
             reservation.status = 'A'
         elif action == 'delete':
             # Change status to 'Cancelled' ('L')
-            reservation.status = 'L'
+            reservation.status = 'D'
         reservation.save()
 
         return redirect('labres_lab_reservationreqsDetailed', reservation_id=reservation_id)

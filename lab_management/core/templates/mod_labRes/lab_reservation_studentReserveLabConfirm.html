@@ -46,44 +46,20 @@
           <form method="POST">
             {% csrf_token %}
 
-            {% if user %}
               <!-- If the user is logged in, show pre-filled details -->
               <div class="row mb-3">
                 <label class="col-sm-2 col-form-label">Name:</label>
                 <div class="col-sm-10">
-                  <input type="text" class="form-control" value="{{ user.first_name }} {{ user.last_name }}" readonly>
+                  <input type="text" class="form-control" id="contact_name" name="contact_name" {% if user %} value="{{ user.first_name }} {{ user.last_name }}"  {% else %} required {% endif %}>
                 </div>
               </div>
 
               <div class="row mb-3">
                 <label class="col-sm-2 col-form-label">Email:</label>
                 <div class="col-sm-10">
-                  <input type="email" class="form-control" value="{{ user.email }}" readonly>
+                  <input type="email" class="form-control" id="contact_email" name="contact_email" {% if user %} value="{{ user.email }}"  {% else %} required {% endif %}>
                 </div>
               </div>
-            {% else %}
-              <!-- If the user is not logged in, allow input of details -->
-              <div class="row mb-3">
-                <label for="contact_name" class="col-sm-2 col-form-label">Name:</label>
-                <div class="col-sm-10">
-                  <input type="text" class="form-control" id="contact_name" name="contact_name" required>
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <label for="contact_email" class="col-sm-2 col-form-label">Email:</label>
-                <div class="col-sm-10">
-                  <input type="email" class="form-control" id="contact_email" name="contact_email" required>
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <label for="contact_number" class="col-sm-2 col-form-label">Contact Number:</label>
-                <div class="col-sm-10">
-                  <input type="text" class="form-control" id="contact_number" name="contact_number" required>
-                </div>
-              </div>
-            {% endif %}
 
             <div class="row mb-3">
               <label for="num_people" class="col-sm-2 col-form-label">Number of People:</label>
@@ -104,9 +80,7 @@
             <p>Please ensure that you adhere to the lab policies and use the facility responsibly.</p>
 
             <div class="row mb-3">
-              <div class="col-sm-10 offset-sm-2">
-                <button type="submit" class="btn btn-primary">Submit Booking</button>
-              </div>
+              <button type="submit" class="btn btn-primary btn-lg btn-block">Submit Booking</button>
             </div>
           </form>
 
