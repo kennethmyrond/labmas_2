@@ -360,3 +360,18 @@ class rooms(models.Model):
     capacity = models.IntegerField(default=0)
     description = models.CharField(max_length=45, null=True, blank=True)
     is_disabled = models.BooleanField(default=False)
+    is_reservable = models.BooleanField(default=True)
+
+class time_configuration(models.Model):
+    room = models.ForeignKey('rooms', on_delete=models.CASCADE, null=True, blank=True)
+    is_global = models.BooleanField(default=False)  # For all rooms or specific rooms
+    reservation_type = models.CharField(max_length=10, choices=[('class', 'Class Time'), ('hourly', 'Hourly')], default='class')
+    start_time = models.TimeField(null=True, blank=True)  # For hourly reservation
+    end_time = models.TimeField(null=True, blank=True)  # For hourly reservation
+
+class reservation_blocked(models.Model):
+    time_config = models.ForeignKey(time_configuration, on_delete=models.CASCADE)
+    day_of_week = models.CharField(max_length=10)  # Monday, Tuesday, etc.
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_blocked = models.BooleanField(default=False)  # Checkbox to block time

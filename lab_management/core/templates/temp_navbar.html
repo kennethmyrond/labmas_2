@@ -310,22 +310,6 @@
 
           <li>
            
-            <a href="{% url 'labres_labcoord_configroom' %}" class = "{% if request.resolver_match.url_name in 'labres_labcoord_configroom' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>LABCOORD - Configure Room</span>
-            </a>
-            
-          </li>
-
-          <li>
-           
-            <a href="{% url 'labres_labcoord_configtime' %}" class = "{% if request.resolver_match.url_name in 'labres_labcoord_configtime' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>LABCOORD - Configure Time Slot</span>
-            </a>
-            
-          </li>
-
-          <li>
-           
             <a href="{% url 'labres_lab_schedule' %}" class = "{% if request.resolver_match.url_name in 'labres_lab_schedule' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>LAB - Reservation Schedule</span>
             </a>
@@ -339,17 +323,12 @@
             </a>
             
           </li>
-
-          
           <li>
-            <a href="charts-apexcharts.html">
-              <i class="bi bi-circle"></i><span>ApexCharts</span>
+           
+            <a href="{% url 'labres_labcoord_configroom' %}" class = "{% if request.resolver_match.url_name in 'labres_labcoord_configroom' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>LABCOORD - Configure Room</span>
             </a>
-          </li>
-          <li>
-            <a href="charts-echarts.html">
-              <i class="bi bi-circle"></i><span>ECharts</span>
-            </a>
+            
           </li>
         </ul>
       </li><!--  Nav -->

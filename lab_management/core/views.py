@@ -10,7 +10,7 @@ from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirec
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
-from .models import rooms, laboratory_reservations
+from .models import rooms, laboratory_reservations, time_configuration, reservation_blocked
 from datetime import timedelta, date, datetime
 from calendar import monthrange
 from pyzbar.pyzbar import decode
@@ -1813,7 +1813,7 @@ def lab_reservation_view(request):
 def lab_reservation_student_reserveLabChooseRoom(request):
     selected_laboratory_id = request.session.get('selected_lab')
     today = timezone.now().date()
-    min_reservation_date = today + timedelta(days=3)
+    min_reservation_date = today + timedelta(days=0)
 
     reservation_date = request.GET.get('reservationDate')
     error_message = None
@@ -1835,7 +1835,7 @@ def lab_reservation_student_reserveLabChooseRoom(request):
     capacity_filter = request.GET.get('capacityFilter', '')
 
     # Fetch rooms based on selected lab and not disabled
-    rooms_query = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
+    rooms_query = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False, is_reservable=True)
 
     # Filter by room capacity if provided
     if capacity_filter:
@@ -2124,10 +2124,78 @@ def labres_lab_reservationreqsDetailed(request):
 
 
 def labres_labcoord_configroom(request):
-    return render(request, 'mod_labRes/labres_labcoord_configroom.html')
+    selected_laboratory_id = request.session.get('selected_lab')
 
-def labres_labcoord_configtime(request):
-    return render(request, 'mod_labRes/labres_labcoord_configtime.html')
+    # Handle Room Configuration
+    if request.method == "POST":
+        if 'save_rooms' in request.POST:
+            # Update is_reservable field for rooms
+            for room in rooms.objects.filter(laboratory_id=selected_laboratory_id):
+                room.is_reservable = f'room_{room.room_id}_enabled' in request.POST
+                room.save()
+
+            # Handle deleting rooms
+            for room_id in request.POST.getlist('delete_room'):
+                room = get_object_or_404(rooms, room_id=room_id)
+                room.delete()
+
+        elif 'add_room' in request.POST:
+            # Add a new room
+            room_name = request.POST.get('room_name')
+            room_capacity = request.POST.get('room_capacity')
+            room_description = request.POST.get('room_description')
+
+            if room_name and room_capacity:
+                new_room = rooms(
+                    laboratory_id=selected_laboratory_id,
+                    name=room_name,
+                    capacity=room_capacity,
+                    description=room_description
+                )
+                new_room.save()
+
+        elif 'save_time' in request.POST:
+            # Save time configuration
+            is_global = request.POST.get('global_config') == 'on'
+            if is_global:
+                time_config, _ = time_configuration.objects.get_or_create(is_global=True)
+            else:
+                room_id = request.POST.get('room_id')
+                room = get_object_or_404(rooms, pk=room_id)
+                time_config, _ = time_configuration.objects.get_or_create(room=room)
+
+            time_config.reservation_type = request.POST.get('reservation_type')
+
+            if time_config.reservation_type == 'hourly':
+                time_config.start_time = request.POST.get('hourly_start_time')
+                time_config.end_time = request.POST.get('hourly_end_time')
+
+            time_config.save()
+
+            # Save blocked times
+            for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+                for time_slot in request.POST.getlist(f'{day}_time_slots'):
+                    start_time, end_time = time_slot.split('-')
+                    is_blocked = f'{day}_{start_time}_{end_time}_blocked' in request.POST
+                    reservation_blocked.objects.update_or_create(
+                        time_config=time_config, day_of_week=day, start_time=start_time, end_time=end_time,
+                        defaults={'is_blocked': is_blocked}
+                    )
+
+        elif 'cancel' in request.POST:
+            # Logic to cancel changes
+            pass
+
+    # Fetch data to display
+    rooms_query = rooms.objects.filter(laboratory_id=selected_laboratory_id)
+    time_slots = [f"{hour:02d}:00" for hour in range(7, 17)]  # For time configuration
+
+    context = {
+        'rooms': rooms_query,
+        'time_slots': time_slots,
+    }
+
+    return render(request, 'mod_labRes/labres_labcoord_configroom.html', context)
 
 #  ================================================================= 
 

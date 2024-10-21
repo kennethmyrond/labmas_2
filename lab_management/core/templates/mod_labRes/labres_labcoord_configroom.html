@@ -16,87 +16,101 @@
     }
 </style>
 
+<!-- labres_labcoord_config.html -->
+
 <div class="pagetitle">
-  <h1>Laboratory Reservation</h1>
+  <h1>Room & Time Configuration</h1>
   <nav>
     <ol class="breadcrumb">
-      <li class="breadcrumb-item active">Room Configurations</li>
+      <li class="breadcrumb-item active">Room and Time Configurations</li>
     </ol>
   </nav>
 </div>
-<!-- End Page Title -->
 
+<!-- Room Configuration Section -->
 <section class="section">
   <div class="row">
     <div class="col-lg-12">
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title">Manage Rooms</h5>
-
-          <!-- Filters and Search Bar -->
-          <form id="roomForm">
+          <h5 class="card-title">Add Room</h5>
+          <!-- Form for Adding New Room -->
+          <form method="POST">
             {% csrf_token %}
             <div class="row mb-3">
-              <label for="building" class="col-sm-2 col-form-label">Building:</label>
-              <div class="col-sm-10">
-                <input type="text" id="building" name="building" class="form-control" placeholder="Enter building name"  maxlength="45">
-              </div>
-            </div>
-
-            <div class="row mb-3">
-              <label for="roomNum" class="col-sm-2 col-form-label">Room Number:</label>
+              <label for="room_name" class="col-sm-2 col-form-label">Room Name:</label>
               <div class="col-sm-4">
-                <input type="text" id="roomNum" name="roomNum" class="form-control"  maxlength="15">
+                <input type="text" id="room_name" name="room_name" class="form-control" placeholder="Enter room name" required>
               </div>
 
-              <label for="capacity" class="col-sm-2 col-form-label">Capcity:</label>
+              <label for="room_capacity" class="col-sm-2 col-form-label">Capacity:</label>
               <div class="col-sm-4">
-                <input type="number" min="1" oninput="validity.valid||(value='');" placeholder="1" id="capacity" name="capacity" class="form-control">
+                <input type="number" id="room_capacity" name="room_capacity" class="form-control" placeholder="Enter room capacity" required>
               </div>
             </div>
 
             <div class="row mb-3">
-              <label for="searchRoom" class="col-sm-2 col-form-label">Description:</label>
+              <label for="room_description" class="col-sm-2 col-form-label">Description:</label>
               <div class="col-sm-10">
-                <input type="text" id="searchRoom" name="searchRoom" class="form-control" placeholder="Enter room name" maxlength="100">
+                <input type="text" id="room_description" name="room_description" class="form-control" placeholder="Enter room description" maxlength="100">
               </div>
             </div>
 
-
-            <div class="row mb-3">
-              <div class="col-sm-10 offset-sm-11">
-                <button type="button" class="btn btn-primary" id="addbtn">Add</button>
-              </div>
-            </div>
+            <button type="submit" name="add_room" class="btn btn-primary">Add Room</button>
           </form>
 
-          <table class="table datatable">
-            <thead>
-              <tr>
-                <th>Building</th>
-                <th>Room #</th>
-                <th>Capacity</th>
-                <th>Description</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!--hardcoded-->
-              <tr>
-                <td>Gokongwei Building</td>
-                <td>GK302</td>  
-                <td>30</td> 
-                <td>Computer Lab</td> 
-                <td>
-                  <button type="button" id="deletebtn">Delete</button>
-                </td> 
-              </tr>
-              <!--end of hardcoded-->
-            </tbody>
-          </table>
-          <div class="row mb-3">
-            <div class="col-sm-10 offset-sm-11">
-              <button type="button" class="btn btn-primary" id="savebtn">Save</button>
+          <hr>
+
+          <h5 class="card-title">Manage Rooms</h5>
+          <!-- Room Table for Editing and Deleting Rooms -->
+          <form method="POST">
+            {% csrf_token %}
+            <div class="table-responsive">
+              <table class="table datatable">
+                <thead>
+                  <tr>
+                    <th>Room Name</th>
+                    <th>Capacity</th>
+                    <th>Description</th>
+                    <th>Enabled for Reservation</th>
+                    <th>Delete</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for room in rooms %}
+                  <tr>
+                    <td>{{ room.name }}</td>
+                    <td>{{ room.capacity }}</td>
+                    <td>{{ room.description }}</td>
+                    <td><input type="checkbox" name="room_{{ room.room_id }}_enabled" {% if room.is_reservable %}checked{% endif %}></td>
+                    <td>
+                      <button type="submit" name="delete_room" value="{{ room.room_id }}" class="btn btn-danger">Delete</button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <button type="submit" name="save_rooms" class="btn btn-primary">Save Room Configuration</button>
+            <button type="submit" name="cancel" class="btn btn-secondary">Cancel</button>
+          </form>
+
+          <!-- Confirmation Modal for Save -->
+          <div id="confirmRoomModal" class="modal fade" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Confirm Room Configuration</h5>
+                </div>
+                <div class="modal-body">
+                  Are you sure you want to save these changes?
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-primary">Confirm</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -106,6 +120,108 @@
   </div>
 </section>
 
+<!-- Time Configuration Section -->
+<section class="section">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Time Slot Configuration</h5>
+
+          <form method="POST">
+            {% csrf_token %}
+
+            <!-- Select Global or Room-Specific -->
+            <div class="form-group">
+              <input type="checkbox" id="global_config" name="global_config">
+              <label for="global_config">Apply to All Rooms</label>
+            </div>
+
+            <div class="form-group">
+              <label for="roomSelect">Select Room (if not global):</label>
+              <select id="roomSelect" name="room_id" class="form-control">
+                {% for room in rooms %}
+                <option value="{{ room.room_id }}">{{ room.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Time Configuration Type -->
+            <div class="form-group">
+              <label>Reservation Type:</label>
+              <input type="radio" name="reservation_type" value="class" checked> Class Time
+              <input type="radio" name="reservation_type" value="hourly"> Hourly
+            </div>
+
+            <!-- Hourly Time Input -->
+            <div class="form-group" id="hourly_time_config">
+              <label for="hourly_start_time">Start Time:</label>
+              <input type="time" id="hourly_start_time" name="hourly_start_time" class="form-control" step="3600000">
+              <label for="hourly_end_time">End Time:</label>
+              <input type="time" id="hourly_end_time" name="hourly_end_time" class="form-control" step="3600000">
+            </div>
+
+            <!-- Block Time Configuration Table -->
+            <br>
+            <div class="table-responsive">
+              <label for="table">Select time of unavailability</label>
+              <table class="table table-bordered table-striped">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Monday</th>
+                    <th>Tuesday</th>
+                    <th>Wednesday</th>
+                    <th>Thursday</th>
+                    <th>Friday</th>
+                    <th>Saturday</th>
+                    <th>Sunday</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for time_slot in time_slots %}
+                  <tr>
+                    <td>{{ time_slot }}</td>
+                    <td><input type="checkbox" name="Monday_time_slots" value="{{ time_slot }}"></td>
+                    <td><input type="checkbox" name="Tuesday_time_slots" value="{{ time_slot }}"></td>
+                    <td><input type="checkbox" name="Wednesday_time_slots" value="{{ time_slot }}"></td>
+                    <td><input type="checkbox" name="Thursday_time_slots" value="{{ time_slot }}"></td>
+                    <td><input type="checkbox" name="Friday_time_slots" value="{{ time_slot }}"></td>
+                    <td><input type="checkbox" name="Saturday_time_slots" value="{{ time_slot }}"></td>
+                    <td><input type="checkbox" name="Sunday_time_slots" value="{{ time_slot }}"></td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <button type="submit" name="save_time" class="btn btn-primary">Save Time Configuration</button>
+            <button type="submit" name="cancel" class="btn btn-secondary">Cancel</button>
+          </form>
+
+          <!-- Confirmation Modal for Save -->
+          <div id="confirmTimeModal" class="modal fade" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Confirm Time Configuration</h5>
+                </div>
+                <div class="modal-body">
+                  Are you sure you want to save these changes?
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-primary">Confirm</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
 
 {% endblock %}
