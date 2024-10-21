@@ -32,6 +32,8 @@
         <div class="card-body">
           <h5 class="card-title">Reservation ID: {{ reservation.reservation_id }}</h5>
           <p><strong>Name: </strong>{{ reservation.contact_name }}</p>
+          <p><strong>E-Mail: </strong>{{ reservation.contact_email }}</p>
+          <p><strong>Contact Number: </strong>{{ reservation.contact_number }}</p>
           <p><strong>Room Requested: </strong>{{ room.name }}</p>
           <p><strong>Request Date: </strong>{{ reservation.request_date|date:"Y/m/d h:iA" }}</p>
           <p><strong>Date: </strong>{{ reservation.start_date|date:"Y/m/d" }}</p>
