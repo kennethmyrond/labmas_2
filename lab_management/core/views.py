@@ -2021,12 +2021,12 @@ def labres_labcoord_configtime(request):
     return render(request, 'mod_labRes/labres_labcoord_configtime.html')
 
 def labres_lab_schedule(request):
-    print("Function labres_lab_schedule called")  # Check if the function is called
     selected_laboratory_id = request.session.get('selected_lab')
     room_list = []
     reservations = []
     selected_month = None
     selected_room = None
+    reservations_by_day = {}
 
     if selected_laboratory_id:
         room_list = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
@@ -2034,8 +2034,7 @@ def labres_lab_schedule(request):
     if request.method == "GET":
         selected_room = request.GET.get('roomSelect')
         selected_month = request.GET.get('selectMonth')
-        print(f"Selected Room: {selected_room}, Selected Month: {selected_month}")  # Check values
-
+        
         if selected_room and selected_month:
             try:
                 room = rooms.objects.get(name=selected_room, laboratory_id=selected_laboratory_id)
@@ -2044,9 +2043,6 @@ def labres_lab_schedule(request):
                 year, month = map(int, selected_month.split('-'))
                 start_date = datetime(year, month, 1)
                 end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
-
-                # Debugging: Print the selected room and month
-                print(f"Selected Room: {room.name}, Start Date: {start_date}, End Date: {end_date}")
 
                 # Get reservations for the selected month
                 reservations = laboratory_reservations.objects.filter(
@@ -2066,9 +2062,6 @@ def labres_lab_schedule(request):
                 # Organize reservations by day
                 for reservation in reservations:
                     reservations_by_day[reservation.start_date.day].append(reservation)
-
-                # Debugging: Print reservation count
-                print(f"Reservations Count: {reservations.count()}")
 
             except rooms.DoesNotExist:
                 print(f"Room '{selected_room}' does not exist.")
