@@ -65,7 +65,7 @@
                 {% for room in rooms %}
                   <tr>
                     <td>
-                      <button type="button" class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#roomModal{{ room.room_id }}">
+                      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#roomModal{{ room.room_id }}">
                         {{ room.name }} | Capacity: {{ room.capacity }}
                       </button>
                     </td>

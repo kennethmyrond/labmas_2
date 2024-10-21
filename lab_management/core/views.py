@@ -2135,9 +2135,11 @@ def labres_labcoord_configroom(request):
                 room.save()
 
             # Handle deleting rooms
-            for room_id in request.POST.getlist('delete_room'):
-                room = get_object_or_404(rooms, room_id=room_id)
-                room.delete()
+        elif 'delete_room' in request.POST:
+            delete_room_id = request.POST.get('delete_room')
+            room = get_object_or_404(rooms, room_id=delete_room_id)
+            room.is_disabled = True
+            room.save()
 
         elif 'add_room' in request.POST:
             # Add a new room
@@ -2187,7 +2189,7 @@ def labres_labcoord_configroom(request):
             pass
 
     # Fetch data to display
-    rooms_query = rooms.objects.filter(laboratory_id=selected_laboratory_id)
+    rooms_query = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
     time_slots = [f"{hour:02d}:00" for hour in range(7, 17)]  # For time configuration
 
     context = {

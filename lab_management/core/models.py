@@ -368,8 +368,10 @@ class time_configuration(models.Model):
     reservation_type = models.CharField(max_length=10, choices=[('class', 'Class Time'), ('hourly', 'Hourly')], default='class')
     start_time = models.TimeField(null=True, blank=True)  # For hourly reservation
     end_time = models.TimeField(null=True, blank=True)  # For hourly reservation
+    blocked_time = models.CharField(max_length=45, null=True, blank=True)
 
 class reservation_blocked(models.Model):
+    room = models.ForeignKey('rooms', on_delete=models.CASCADE, null=True, blank=True)
     time_config = models.ForeignKey(time_configuration, on_delete=models.CASCADE)
     day_of_week = models.CharField(max_length=10)  # Monday, Tuesday, etc.
     start_time = models.TimeField()
