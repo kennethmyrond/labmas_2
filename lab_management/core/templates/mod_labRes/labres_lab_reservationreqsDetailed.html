@@ -1,16 +1,16 @@
 {% extends 'temp_navbar.html' %}
-{% block title %}Reserve Laboratory{% endblock %}
+{% block title %}Reservation Details{% endblock %}
 {% block content %}
 
 <style>
-  #schedule,th,td{
+  #schedule, th, td {
     border: 2px solid grey;
     text-align: center;
   }
-  th,td{
+  th, td {
     width: 50%;
   }
-  #schedule{
+  #schedule {
     border-collapse: collapse;
     width:100%;
   }
@@ -24,47 +24,33 @@
     </ol>
   </nav>
 </div>
-<!-- End Page Title -->
 
 <section class="section">
   <div class="row">
     <div class="col-lg-12">
       <div class="card">
         <div class="card-body">
+          <h5 class="card-title">Reservation ID: {{ reservation.reservation_id }}</h5>
+          <p><strong>Name: </strong>{{ reservation.contact_name }}</p>
+          <p><strong>Room Requested: </strong>{{ room.name }}</p>
+          <p><strong>Request Date: </strong>{{ reservation.request_date|date:"Y/m/d h:iA" }}</p>
+          <p><strong>Date: </strong>{{ reservation.start_date|date:"Y/m/d" }}</p>
+          <p><strong>Start Time: </strong>{{ reservation.start_time|time:"g:iA" }}</p>
+          <p><strong>End Time: </strong>{{ reservation.end_time|time:"g:iA" }}</p>
+          <p><strong>Purpose: </strong>{{ reservation.purpose }}</p>
+          <p><strong>Number of People: </strong>{{ reservation.num_people }}</p>
+          <p><strong>Status: </strong>{{ reservation.get_status_display }}</p>
 
-        <h5 class="card-title">Reservation ID: 12345</h5>
-        <p><strong>Name: </strong>Ash Ketchum</p>
-        <p><strong>Room Requested: </strong>GK302</p>
-        <p><strong>Date: </strong>2024/05/12</p> <!-- may have date ranges? -->
-        <p><strong>Start Time: </strong>4:15PM</p>
-        <p><strong>End Time: </strong>5:15PM</p>
-        <p><strong>Purpose: </strong>Lab Purpose</p>
-        <p><strong>Status: </strong>Pending</p>
+          <form method="POST">
+            {% csrf_token %}
+            <button type="submit" name="action" value="accept" class="btn btn-success">Accept</button>
+            <button type="submit" name="action" value="delete" class="btn btn-danger">Delete</button>
+          </form>
 
-            <!-- Select Room -->
-          <form id="roomSelector">
-            <div class="row mb-3">
-                <div class="col-sm-10">
-                    <button type="submit" class="btn btn-primary">Approve</button>
-                    <button type="submit" class="btn btn-secondary">Reject</button>
-                </div>
-
-            </div>
-          </form>  
-
-
-        <div>
-            
-          
-        </div>
         </div>
       </div>
     </div>
   </div>
 </section>
-
-
-
-
 
 {% endblock %}

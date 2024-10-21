@@ -10,10 +10,11 @@ def b64encode(value):
 
 @register.filter
 def add(value, arg):
-    if value is None:
-        value = 0  # Set a default value if value is None
-    return value + arg
-
+    # Ensure both value and arg are treated as integers
+    try:
+        return int(value) + int(arg)
+    except (ValueError, TypeError):
+        return value  # Return the original value if conversion fails
 @register.filter
 def dict_key(value, key):
     return value.get(key)

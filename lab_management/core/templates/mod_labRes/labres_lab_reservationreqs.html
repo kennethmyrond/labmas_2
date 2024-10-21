@@ -54,6 +54,7 @@
         <table class="table datatable">
             <thead>
                 <tr>
+                    <th>Reservation ID</th>
                     <th>Start Time</th>
                     <th>End Time</th>
                     <th>Interval</th>
@@ -65,20 +66,27 @@
             <tbody>
               {% for reservation in reservations %}
               <tr>
+                  <td>
+                      <a href="{% url 'labres_lab_reservationreqsDetailed' reservation.reservation_id %}">
+                          {{ reservation.reservation_id }}
+                      </a>
+                  </td>
                   <td>{{ reservation.formatted_start_time }}</td>
                   <td>{{ reservation.formatted_end_time }}</td>
                   <td>{{ reservation.time_interval }} minutes</td>
                   <td>{{ reservation.purpose }}</td>
                   <td>{{ reservation.get_status_display }}</td>
                   <td>
-                      {% if reservation.status == 'P' %}
-                          <button type="button" class="btn btn-success">Accept</button>
-                          <button type="button" class="btn btn-danger">Delete</button>
-                      {% else %}
-                          <!-- Optionally, you can show a message or leave it empty -->
-                          <span>Not Applicable</span>
-                      {% endif %}
-                  </td>
+                    {% if reservation.status == 'P' %}
+                        <form method="POST">
+                            {% csrf_token %}
+                            <button type="submit" name="action" value="accept_{{ reservation.reservation_id }}" class="btn btn-success">Accept</button>
+                            <button type="submit" name="action" value="delete_{{ reservation.reservation_id }}" class="btn btn-danger">Delete</button>
+                        </form>
+                    {% else %}
+                        <span>Not Applicable</span>
+                    {% endif %}
+                </td>
               </tr>
               {% empty %}
               <tr>
