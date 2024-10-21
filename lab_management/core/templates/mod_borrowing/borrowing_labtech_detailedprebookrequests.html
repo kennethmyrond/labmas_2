@@ -29,7 +29,7 @@
             </div>
 
             <h5 class="card-title">Request ID: {{ borrow_entry.borrow_id }}</h5>
-            <p><strong>Borrowe Name:</strong> {{ borrow_entry.user.firstname }} {{ borrow_entry.user.lastname }}</p>
+            <p><strong>Borrow Name:</strong> {{ borrow_entry.user.firstname }} {{ borrow_entry.user.lastname }}</p>
             <p><strong>Date Requested:</strong> {{ borrow_entry.request_date|date:"Y/m/d" }}</p>
             <p><strong>Date Needed:</strong> {{ borrow_entry.borrow_date|date:"Y/m/d" }}</p>
             <p><strong>Due Date:</strong> {{ borrow_entry.due_date|date:"Y/m/d" }}</p>

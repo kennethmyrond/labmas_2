@@ -12,6 +12,7 @@ from .models import laboratory, Module, item_description, item_types, item_inven
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from .models import rooms, laboratory_reservations
 from datetime import timedelta, date, datetime
+from calendar import monthrange
 from pyzbar.pyzbar import decode
 from PIL import Image 
 from io import BytesIO
@@ -2020,10 +2021,112 @@ def labres_labcoord_configtime(request):
     return render(request, 'mod_labRes/labres_labcoord_configtime.html')
 
 def labres_lab_schedule(request):
-    return render(request, 'mod_labRes/labres_lab_schedule.html')
+    selected_laboratory_id = request.session.get('selected_lab')
+    room_list = []
+    reservations = []
+    selected_month = None
+    selected_room = None
+    reservations_by_day = {}
+
+    if selected_laboratory_id:
+        room_list = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
+
+    if request.method == "GET":
+        selected_room = request.GET.get('roomSelect')
+        selected_month = request.GET.get('selectMonth')
+        
+        if selected_room and selected_month:
+            try:
+                room = rooms.objects.get(name=selected_room, laboratory_id=selected_laboratory_id)
+
+                # Get the first and last day of the selected month
+                year, month = map(int, selected_month.split('-'))
+                start_date = datetime(year, month, 1)
+                end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
+
+                # Get reservations for the selected month
+                reservations = laboratory_reservations.objects.filter(
+                    room_id=room.room_id,  # Ensure you use room.room_id to access the ID
+                    start_date__range=[start_date, end_date]
+                )
+
+                # Format start_time and end_time for each reservation
+                for reservation in reservations:
+                    reservation.formatted_start_time = reservation.start_time.strftime("%I:%M%p") if reservation.start_time else "N/A"
+                    reservation.formatted_end_time = reservation.end_time.strftime("%I:%M%p") if reservation.end_time else "N/A"
+
+                # Prepare a list to hold reservations indexed by day
+                days_in_month = monthrange(year, month)[1]
+                reservations_by_day = {day: [] for day in range(1, days_in_month + 1)}
+
+                # Organize reservations by day
+                for reservation in reservations:
+                    reservations_by_day[reservation.start_date.day].append(reservation)
+
+            except rooms.DoesNotExist:
+                print(f"Room '{selected_room}' does not exist.")
+            except Exception as e:
+                print(f"Error occurred: {str(e)}")
+
+    context = {
+        'room_list': room_list,
+        'reservations_by_day': reservations_by_day,  # Pass the organized reservations
+        'selected_month': selected_month,
+        'selected_room': selected_room,
+    }
+
+    return render(request, 'mod_labRes/labres_lab_schedule.html', context)
 
 def labres_lab_reservationreqs(request):
-    return render(request, 'mod_labRes/labres_lab_reservationreqs.html')
+    selected_laboratory_id = request.session.get('selected_lab')
+    reservations = []
+    selected_room = None
+    selected_date = None
+    room_list = []
+
+    if selected_laboratory_id:
+        room_list = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
+
+    if request.method == "GET":
+        selected_room = request.GET.get('roomSelect')
+        selected_date = request.GET.get('selectDate')
+
+        if selected_room and selected_date:
+            try:
+                room = rooms.objects.get(name=selected_room, laboratory_id=selected_laboratory_id)
+                reservations = laboratory_reservations.objects.filter(
+                    room=room,
+                    start_date=selected_date,
+                )
+
+                # Format start_time, end_time and calculate interval
+                for reservation in reservations:
+                    # Format time as 9:00AM
+                    reservation.formatted_start_time = reservation.start_time.strftime("%I:%M%p")
+                    reservation.formatted_end_time = reservation.end_time.strftime("%I:%M%p")
+
+                    # Combine start_date with start_time and end_time to get datetime objects
+                    start_datetime = datetime.combine(reservation.start_date, reservation.start_time)
+                    end_datetime = datetime.combine(reservation.start_date, reservation.end_time)
+
+                    # Calculate the time difference in minutes
+                    time_difference = end_datetime - start_datetime
+                    reservation.time_interval = int(time_difference.total_seconds() // 60)
+
+
+            except rooms.DoesNotExist:
+                pass
+
+    context = {
+        'room_list': room_list,
+        'reservations': reservations,
+        'selected_room': selected_room,
+        'selected_date': selected_date,
+    }
+
+    return render(request, 'mod_labRes/labres_lab_reservationreqs.html', context)
+    
+
 
 def labres_lab_reservationreqsDetailed(request):
     return render(request, 'mod_labRes/labres_lab_reservationreqsDetailed.html')

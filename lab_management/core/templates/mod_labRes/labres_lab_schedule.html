@@ -1,30 +1,47 @@
 {% extends 'temp_navbar.html' %}
-{% block title %}Reserve Laboratory{% endblock %}
+{% block title %}Laboratory Schedule{% endblock %}
 {% block content %}
 
+
 <style>
-  #schedule,th,td{
-    border: 2px solid grey;
+  .calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .day {
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    min-height: 100px; /* Ensures there's some height for empty days */
+    position: relative;
+  }
+
+  .reservation {
+    background-color: #007bff; /* Bootstrap primary color */
+    color: white;
+    padding: 5px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+  }
+
+  .day-header {
+    font-weight: bold;
     text-align: center;
-  }
-  th,td{
-    width: 50%;
-  }
-  #schedule{
-    border-collapse: collapse;
-    width:100%;
   }
 </style>
 
 <div class="pagetitle">
-  <h1>Laboratory Reservation</h1>
+  <h1>Laboratory Schedule</h1>
   <nav>
     <ol class="breadcrumb">
       <li class="breadcrumb-item active">Reservation Schedule</li>
     </ol>
   </nav>
 </div>
-<!-- End Page Title -->
 
 <section class="section">
   <div class="row">
@@ -32,133 +49,60 @@
       <div class="card">
         <div class="card-body">
 
-        <h5 class="card-title">Select Room</h5>
-
-            <!-- Select Room -->
-          <form id="roomSelector">
+          <h5 class="card-title">Select Room</h5>
+          <form id="scheduleForm" method="GET">
             <div class="row mb-3">
-                <label for="roomSelect" class="col-sm-2 col-form-label">Select a Room:</label>
-                <div class="col-sm-10">
-                  <select id="roomSelect" name="roomSelect" class="form-control">
-                    <option value="GK302">GK302</option>
-                  </select>
-                </div>
-                <br>
-          </form>  
-
-          <div>
-          <h5 class="card-title">Day Schedule</h5>
-          <form id="dateForm">
-            {% csrf_token %}
-
-            <div class="row mb-3">
-              <label for="selectDate" class="col-sm-2 col-form-label">Select Date:</label>
-              <div class="col-sm-6">
-                <input type="date" id="selectDate" name="selectDate" class="form-control">
+              <label for="roomSelect" class="col-sm-2 col-form-label">Select a Room:</label>
+              <div class="col-sm-10">
+                <select id="roomSelect" name="roomSelect" class="form-control">
+                  <option value="">Select a Room</option>
+                  {% for room in room_list %}
+                    <option value="{{ room.name }}" {% if selected_room == room.name %}selected{% endif %}>
+                      {{ room.name }}
+                    </option>
+                  {% endfor %}
+                </select>
               </div>
             </div>
             <div class="row mb-3">
-                <p>Viewing Schedule for [Selected Date].</p>
-            </div>   
+              <label for="selectMonth" class="col-sm-2 col-form-label">Select Month:</label>
+              <div class="col-sm-10">
+                <input type="month" id="selectMonth" name="selectMonth" class="form-control" value="{{ selected_month }}">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">View Schedule</button>
           </form>
-        </div>
-
-        <div>
-            <!-- number of table columns depends on interval chosen at timeslot config-->
-            <table id="schedule">
-                <tr>
-                <th>Time</th>
-                <th>Slot</th>
-                </tr>
-        <!-- hardcoded-->
-                <tr>
-                    <td>7:15-7:45</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>7:45-8:15</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>8:15-8:45</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>8:45-9:15</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>9:15-10:45</td>
-                    <td style="background-color: lightgrey;"> Reservation #123 - Juan Dela Cruz</td>
-                </tr>
-                <tr>
-                    <td>10:45-11:15</td>
-                    <td style="background-color: lightgrey;">Reservation #123 - Juan Dela Cruz</td>
-                </tr>
-                <tr>
-                    <td>11:15-11:45</td>
-                    <td style="background-color: lightgrey;">Reservation #123 - Juan Dela Cruz</td>
-                </tr>
-                <tr>
-                    <td>11:45-12:15</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>12:15-12:45</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>12:45-1:15</td>
-                    <td style="background-color: rgb(160, 160, 160);"></td>
-                </tr>
-                <tr>
-                    <td>1:15-1:45</td>
-                    <td style="background-color: rgb(160, 160, 160);"></td>
-                </tr>
-                <tr>
-                    <td>1:45-2:15</td>
-                    <td style="background-color: rgb(160, 160, 160);"></td>
-                </tr>
-                <tr>
-                    <td>2:15-2:45</td>
-                    <td style="background-color: lightgrey;"> Reservation #456 - Jane Cruz</td>
-                </tr>
-                <tr>
-                    <td>2:45-3:15</td>
-                    <td style="background-color: lightgrey;"> Reservation #456 - Jane Cruz</td>
-                </tr>
-                <tr>
-                    <td>3:15-3:45</td>
-                    <td style="background-color: lightgrey;"> Reservation #456 - Jane Cruz</td>
-                </tr>
-                <tr>
-                    <td>3:45-4:15</td>
-                    <td style="background-color: lightgrey;"> Reservation #456 - Jane Cruz</td>
-                </tr>
-                <tr>
-                    <td>4:15-4:45</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>4:45-5:15</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>5:15-5:45</td>
-                    <td></td>
-                </tr>
-                
-            </table>
           
-        </div>
+          <div>
+            <h5 class="card-title">Reservation Schedule</h5>
+            {% load custom_filters %}
+            <div class="calendar">
+                {% if selected_month %}
+                    {% for day in 31|range_filter %}
+                        <div class="day">
+                            <div class="day-header">{{ day|add:1 }}</div>
+                            {% for reservation in reservations_by_day|get_item:day %}
+                                <div class="reservation">
+                                    <strong>{{ reservation.start_time|time:"h:i A" }} - {{ reservation.end_time|time:"h:i A" }}</strong><br>
+                                    Name: {{ reservation.contact_name }}<br>
+                                    Email: {{ reservation.contact_email }}<br>
+                                    Phone: {{ reservation.contact_number }}<br>
+                                    Purpose: {{ reservation.purpose }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No reservations found for the selected month.</p>
+                {% endif %}
+            </div>
+
+            </div>
+
         </div>
       </div>
     </div>
   </div>
 </section>
-
-
-
-
 
 {% endblock %}
