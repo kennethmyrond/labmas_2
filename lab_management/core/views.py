@@ -1879,7 +1879,6 @@ def lab_reservation_student_reserveLabChooseRoom(request):
 
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html', context)
 
-
 def lab_reservation_student_reserveLabConfirm(request):
     if request.method == 'POST':
         selected_room_id = request.POST.get('selectedRoom')
@@ -2014,12 +2013,6 @@ def lab_reservation_detail(request, reservation_id):
 
     return render(request, 'mod_labRes/lab_reservation_detail.html', context)
 
-def labres_labcoord_configroom(request):
-    return render(request, 'mod_labRes/labres_labcoord_configroom.html')
-
-def labres_labcoord_configtime(request):
-    return render(request, 'mod_labRes/labres_labcoord_configtime.html')
-
 def labres_lab_schedule(request):
     selected_laboratory_id = request.session.get('selected_lab')
     room_list = []
@@ -2125,11 +2118,16 @@ def labres_lab_reservationreqs(request):
     }
 
     return render(request, 'mod_labRes/labres_lab_reservationreqs.html', context)
-    
-
 
 def labres_lab_reservationreqsDetailed(request):
     return render(request, 'mod_labRes/labres_lab_reservationreqsDetailed.html')
+
+
+def labres_labcoord_configroom(request):
+    return render(request, 'mod_labRes/labres_labcoord_configroom.html')
+
+def labres_labcoord_configtime(request):
+    return render(request, 'mod_labRes/labres_labcoord_configtime.html')
 
 #  ================================================================= 
 
