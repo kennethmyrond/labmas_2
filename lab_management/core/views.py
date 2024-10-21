@@ -2022,12 +2022,15 @@ def labres_lab_schedule(request):
     selected_room = None
     reservations_by_day = {}
 
+      # Get the current month
+    current_month = datetime.now().strftime('%Y-%m')  # Format: YYYY-MM
+
     if selected_laboratory_id:
         room_list = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
 
     if request.method == "GET":
         selected_room = request.GET.get('roomSelect')
-        selected_month = request.GET.get('selectMonth')
+        selected_month = request.GET.get('selectMonth', current_month)
         
         if selected_room and selected_month:
             try:
