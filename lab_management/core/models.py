@@ -361,6 +361,10 @@ class rooms(models.Model):
     description = models.CharField(max_length=45, null=True, blank=True)
     is_disabled = models.BooleanField(default=False)
     is_reservable = models.BooleanField(default=True)
+    reservation_type = models.CharField(max_length=10, choices=[('class', 'Class Time'), ('hourly', 'Hourly')], default='class')
+    start_time = models.TimeField(null=True, blank=True)  # For hourly reservation
+    end_time = models.TimeField(null=True, blank=True)  # For hourly reservation
+    blocked_time = models.CharField(max_length=45, null=True, blank=True)
 
 class time_configuration(models.Model):
     room = models.ForeignKey('rooms', on_delete=models.CASCADE, null=True, blank=True)

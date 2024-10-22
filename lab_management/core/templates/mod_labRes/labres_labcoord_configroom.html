@@ -16,8 +16,6 @@
     }
 </style>
 
-<!-- labres_labcoord_config.html -->
-
 <div class="pagetitle">
   <h1>Room & Time Configuration</h1>
   <nav>
@@ -27,6 +25,12 @@
   </nav>
 </div>
 
+{% if messages %}
+  <div class="alert alert-success">
+    {{ messages }}
+  </div>
+{% endif %}
+
 <!-- Room Configuration Section -->
 <section class="section">
   <div class="row">
@@ -34,7 +38,6 @@
       <div class="card">
         <div class="card-body">
           <h5 class="card-title">Add Room</h5>
-          <!-- Form for Adding New Room -->
           <form method="POST">
             {% csrf_token %}
             <div class="row mb-3">
@@ -62,7 +65,6 @@
           <hr>
 
           <h5 class="card-title">Manage Rooms</h5>
-          <!-- Room Table for Editing and Deleting Rooms -->
           <form method="POST">
             {% csrf_token %}
             <div class="table-responsive">
@@ -95,25 +97,6 @@
             <button type="submit" name="save_rooms" class="btn btn-primary">Save Room Configuration</button>
             <button type="submit" name="cancel" class="btn btn-secondary">Cancel</button>
           </form>
-
-          <!-- Confirmation Modal for Save -->
-          <div id="confirmRoomModal" class="modal fade" tabindex="-1">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Confirm Room Configuration</h5>
-                </div>
-                <div class="modal-body">
-                  Are you sure you want to save these changes?
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-primary">Confirm</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
     </div>
@@ -128,107 +111,79 @@
         <div class="card-body">
           <h5 class="card-title">Time Slot Configuration</h5>
 
-          <form method="POST">
+          <form method="POST" id="timeConfigForm">
             {% csrf_token %}
 
-            <!-- Select Global or Room-Specific -->
+            <!-- Room Selection -->
             <div class="form-group row mb-3">
-              
-              <div class="col-sm-4">
-                <input type="checkbox" id="global_config" name="global_config" checked>
-                <label for="global_config" class="col-sm-10 col-form-label">Apply to All Rooms</label>
-              </div>
-
-              <label for="roomSelect" class="col-sm-3 col-form-label">Select Room (if not global):</label>
+              <label for="roomSelect" class="col-sm-3 col-form-label">Select Room to Configure Time Reservations:</label>
               <div class="col-sm-4">
                 <select id="roomSelect" name="room_id" class="form-control">
+                  <option value="">--Select a Room--</option>
                   {% for room in rooms %}
-                  <option value="{{ room.room_id }}">{{ room.name }}</option>
+                    <option value="{{ room.room_id }}" {% if room_configured and room.room_id == room_configured.room_id %}selected{% endif %}>{{ room.name }}</option>
                   {% endfor %}
                 </select>
               </div>
             </div>
 
-            <!-- Time Configuration Type -->
-            <div class="form-group row mb-3">
-              <label class="col-sm-10 col-form-label">Reservation Type:</label>
-              <div class="col-sm-4">
-              <input type="radio" name="reservation_type" value="class" checked> Class Time
+            <!-- Reservation Type Configuration -->
+            <div id="reservationTypeSection" style="display: none;">
+              <div class="form-group row mb-3">
+                <label class="col-sm-10 col-form-label">Reservation Type:</label>
+                <div class="col-sm-4">
+                  <input type="radio" name="reservation_type" value="class" onclick="changeTimeSlots('class')"> Class Time
+                </div>
+                <div class="col-sm-4">
+                  <input type="radio" name="reservation_type" value="hourly" onclick="changeTimeSlots('hourly')"> Hourly
+                </div>
               </div>
-              <div class="col-sm-4">
-              <input type="radio" name="reservation_type" value="hourly"> Hourly
+
+              <!-- Hourly Time Input -->
+              <div class="row mb-3" id="hourlyTimeInputs" style="display:none;">
+                <label for="hourly_start_time" class="col-sm-2 col-form-label">Start Time:</label>
+                <div class="col-sm-4">
+                  <input type="time" id="hourly_start_time" name="hourly_start_time" class="form-control">
+                </div>
+
+                <label for="hourly_end_time" class="col-sm-2 col-form-label">End Time:</label>
+                <div class="col-sm-4">
+                  <input type="time" id="hourly_end_time" name="hourly_end_time" class="form-control">
+                </div>
               </div>
+              <br>
+              <!-- Blocked Time Configuration Table -->
+              <div class="table-responsive">
+                <h5>Select available time slots for reservation</h5>
+                <div class="d-flex">
+                  <div class="p-2" style="background-color: green; width: 20px; height: 20px; border: 1px solid black;"></div>
+                  <div class="p-2">Available</div>
+                  <div class="p-2" style="background-color: red; width: 20px; height: 20px; border: 1px solid black; margin-left: 20px;"></div>
+                  <div class="p-2">Unavailable</div>
+                </div>
+                <table class="table table-bordered" id="timeSlotTable">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Monday</th>
+                      <th>Tuesday</th>
+                      <th>Wednesday</th>
+                      <th>Thursday</th>
+                      <th>Friday</th>
+                      <th>Saturday</th>
+                      <th>Sunday</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Time slots and blocked times will be dynamically populated here -->
+                  </tbody>
+                </table>
+              
+              </div>
+
+              <button type="submit" name="save_time" class="btn btn-primary" style="display: none;" id="saveTimeConfigBtn">Save Time Configuration</button>
             </div>
-
-            <!-- Hourly Time Input -->
-            <div class="row mb-3">
-              <label for="hourly_start_time" class="col-sm-2 col-form-label">Start Time:</label>
-              <div class="col-sm-4">
-                <input type="time" id="hourly_start_time" name="hourly_start_time" class="form-control" step="3600000">
-              </div>
-
-              <label for="hourly_end_time" class="col-sm-2 col-form-label">End Time:</label>
-              <div class="col-sm-4">
-                <input type="time" id="hourly_end_time" name="hourly_end_time" class="form-control" step="3600000">  
-              </div>
-            </div>
-
-            <!-- Block Time Configuration Table -->
-            <br>
-            <div class="table-responsive">
-              <label for="table">Select time of unavailability</label>
-              <table class="table table-bordered table-striped">
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Monday</th>
-                    <th>Tuesday</th>
-                    <th>Wednesday</th>
-                    <th>Thursday</th>
-                    <th>Friday</th>
-                    <th>Saturday</th>
-                    <th>Sunday</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for time_slot in time_slots %}
-                  <tr>
-                    <td>{{ time_slot }}</td>
-                    <td><input type="checkbox" name="Monday_time_slots" value="{{ time_slot }}"></td>
-                    <td><input type="checkbox" name="Tuesday_time_slots" value="{{ time_slot }}"></td>
-                    <td><input type="checkbox" name="Wednesday_time_slots" value="{{ time_slot }}"></td>
-                    <td><input type="checkbox" name="Thursday_time_slots" value="{{ time_slot }}"></td>
-                    <td><input type="checkbox" name="Friday_time_slots" value="{{ time_slot }}"></td>
-                    <td><input type="checkbox" name="Saturday_time_slots" value="{{ time_slot }}"></td>
-                    <td><input type="checkbox" name="Sunday_time_slots" value="{{ time_slot }}"></td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-
-            <button type="submit" name="save_time" class="btn btn-primary">Save Time Configuration</button>
-            <button type="submit" name="cancel" class="btn btn-secondary">Cancel</button>
           </form>
-
-          <!-- Confirmation Modal for Save -->
-          <div id="confirmTimeModal" class="modal fade" tabindex="-1">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Confirm Time Configuration</h5>
-                </div>
-                <div class="modal-body">
-                  Are you sure you want to save these changes?
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-primary">Confirm</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
     </div>
@@ -241,13 +196,213 @@
       <div class="card">
         <div class="card-body">
           <h5 class="card-title">Reservations Configuration</h5>
+
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+            <label class="form-check-label" for="flexCheckDefault">
+              Require approval from Laboratory Coordinator
+            </label>
+          </div>
+          
           <h7 class="card-title">add questions/pdf upload</h7><br>
-          <h7 class="card-title">have an approval from lab coord</h7>
         </div>
       </div>
     </div>
   </div>
 </section>
 
+<script>
+  // Trigger AJAX on room selection to load configuration dynamically
+  function changeTimeSlots(type, blockedTimes = []) {
+    const hourlyInputs = document.getElementById('hourlyTimeInputs');
+    const tableBody = document.querySelector('#timeSlotTable tbody');
+
+    // Clear the table body before populating
+    tableBody.innerHTML = '';
+
+    // Parse blocked_times into a Set for easier lookup
+    const blockedSet = new Set(blockedTimes);
+
+    if (type === 'class') {
+        hourlyInputs.style.display = 'none';
+
+        // Fixed class time slots
+        const classTimeSlots = [
+            '7:30-9:00',
+            '9:15-10:45',
+            '11:00-12:30',
+            '12:45-2:15',
+            '2:30-4:00',
+            '4:15-5:45',
+            '6:00-7:30',
+        ];
+
+        classTimeSlots.forEach(timeSlot => {
+            // Create a new row with checkboxes for each day
+            const row = document.createElement('tr');
+            const timeCell = document.createElement('td');
+            timeCell.textContent = timeSlot;
+            row.appendChild(timeCell);
+
+            // Create a checkbox for each day (Monday to Sunday)
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            days.forEach(day => {
+                const cell = document.createElement('td');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = `${day}_time_slots`;
+                checkbox.value = timeSlot;
+                checkbox.dataset.time = `${day}_${timeSlot}`; // Custom attribute for storing day and time slot
+
+                // Pre-check the checkbox if it's in the blocked time
+                const timeKey = `${day}_${timeSlot}`;
+                if (blockedSet.has(timeKey)) {
+                    checkbox.checked = true;
+                    cell.style.backgroundColor = 'red';
+                } else {
+                    cell.style.backgroundColor = 'green';
+                }
+
+                // Add event listener for background color change
+                checkbox.addEventListener('change', function() {
+                    if (checkbox.checked) {
+                        cell.style.backgroundColor = 'red';
+                    } else {
+                        cell.style.backgroundColor = 'green';
+                    }
+                });
+
+                cell.appendChild(checkbox);
+                row.appendChild(cell);
+            });
+
+            tableBody.appendChild(row);
+        });
+
+    } else if (type === 'hourly') {
+        hourlyInputs.style.display = 'flex';
+
+        // Get start and end time for hourly slots
+        const startTime = document.getElementById('hourly_start_time').value;
+        const endTime = document.getElementById('hourly_end_time').value;
+
+        if (!startTime || !endTime) {
+            return; // Exit if start or end time is not defined
+        }
+
+        // Helper function to add one hour to a time string (in HH:MM format)
+        function addOneHour(time) {
+            const [hours, minutes] = time.split(':').map(Number);
+            const newHour = (hours + 1).toString().padStart(2, '0');
+            return `${newHour}:${minutes.toString().padStart(2, '0')}`;
+        }
+
+        let currentTime = startTime;
+        while (currentTime < endTime) {
+            const nextTime = addOneHour(currentTime); // Get the next hour time slot
+            const timeSlot = `${currentTime}-${nextTime}`;
+            currentTime = nextTime; // Update current time for the next iteration
+
+            // Create a new row with checkboxes for each day
+            const row = document.createElement('tr');
+            const timeCell = document.createElement('td');
+            timeCell.textContent = timeSlot;
+            row.appendChild(timeCell);
+
+            // Create a checkbox for each day (Monday to Sunday)
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            days.forEach(day => {
+                const cell = document.createElement('td');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = `${day}_time_slots`;
+                checkbox.value = timeSlot;
+                checkbox.dataset.time = `${day}_${timeSlot}`; // Custom attribute for storing day and time slot
+
+                // Pre-check the checkbox if it's in the blocked time
+                const timeKey = `${day}_${timeSlot}`;
+                if (blockedSet.has(timeKey)) {
+                    checkbox.checked = true;
+                    cell.style.backgroundColor = 'red';
+                } else {
+                    cell.style.backgroundColor = 'green';
+                }
+
+                // Add event listener for background color change
+                checkbox.addEventListener('change', function() {
+                    if (checkbox.checked) {
+                        cell.style.backgroundColor = 'red';
+                    } else {
+                        cell.style.backgroundColor = 'green';
+                    }
+                });
+
+                cell.appendChild(checkbox);
+                row.appendChild(cell);
+            });
+
+            tableBody.appendChild(row);
+        }
+    }
+}
+
+// Trigger AJAX on room selection to load configuration dynamically
+document.getElementById('roomSelect').addEventListener('change', function() {
+  var roomId = this.value;
+  if (roomId) {
+    fetch(`/get-room-configuration/${roomId}/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.reservation_type) {
+        // Show the reservation type section
+        document.getElementById('reservationTypeSection').style.display = 'block';
+        document.getElementById('saveTimeConfigBtn').style.display = 'block';
+
+        // Set the correct reservation type (class or hourly)
+        if (data.reservation_type === 'class') {
+          document.querySelector('input[name="reservation_type"][value="class"]').checked = true;
+          changeTimeSlots('class', data.blocked_time);
+        } else if (data.reservation_type === 'hourly') {
+          document.querySelector('input[name="reservation_type"][value="hourly"]').checked = true;
+          document.getElementById('hourly_start_time').value = data.start_time;
+          document.getElementById('hourly_end_time').value = data.end_time;
+          changeTimeSlots('hourly', data.blocked_time);
+        }
+      }
+    });
+  } else {
+    document.getElementById('reservationTypeSection').style.display = 'none';
+    document.getElementById('saveTimeConfigBtn').style.display = 'none';
+  }
+});
+
+
+
+  function populateBlockedTimes(blockedTimes) {
+    const checkboxes = document.querySelectorAll('#timeSlotTable input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+      const time = checkbox.getAttribute('data-time');
+      const day = checkbox.name;
+      if (blockedTimes.includes(`${day}_${time}`)) {
+        checkbox.checked = true;
+        checkbox.parentElement.style.backgroundColor = 'red';
+      } else {
+        checkbox.checked = false;
+        checkbox.parentElement.style.backgroundColor = 'green';
+      }
+    });
+  }
+
+  // Handle checkbox state change to dynamically change the background color
+  document.addEventListener('change', function(e) {
+    if (e.target.matches('#timeSlotTable input[type="checkbox"]')) {
+      if (e.target.checked) {
+        e.target.parentElement.style.backgroundColor = 'red';
+      } else {
+        e.target.parentElement.style.backgroundColor = 'green';
+      }
+    }
+  });
+</script>
 
 {% endblock %}
