@@ -369,4 +369,6 @@ class reservation_config(models.Model):
     start_time = models.TimeField(null=True, blank=True)  # For hourly reservation
     end_time = models.TimeField(null=True, blank=True)  # For hourly reservation
     require_approval = models.BooleanField(default=False)
+    require_payment = models.BooleanField(default=False)
+    approval_form = models.FileField(upload_to='approval_forms/', null=True, blank=True)  # Optional PDF upload
     tc_description = models.CharField(max_length=45, null=True, blank=True)

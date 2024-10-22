@@ -191,6 +191,7 @@
   </div>
 </section>
 
+<!-- Reservations Configuration Section -->
 <section class="section">
   <div class="row">
     <div class="col-lg-12">
@@ -198,14 +199,37 @@
         <div class="card-body">
           <h5 class="card-title">Reservations Configuration</h5>
 
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
-            <label class="form-check-label" for="flexCheckDefault">
-              Require approval from Laboratory Coordinator
-            </label>
-          </div>
-          
-          <h7 class="card-title">add questions/pdf upload</h7><br>
+          <!-- Require Approval Checkbox and PDF Upload -->
+          <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="requireApproval" name="require_approval" {% if reservation_config.require_approval %}checked{% endif %}>
+              <label class="form-check-label" for="requireApproval">
+                Require approval from Laboratory Coordinator
+              </label>
+            </div>
+
+            <!-- Show PDF Upload only when require approval is checked -->
+            <div class="mb-3" id="pdfUploadSection" style="display: {% if reservation_config.require_approval %}block{% else %}none{% endif %};">
+              <label for="approvalForm" class="form-label">Upload PDF Form (optional)</label>
+              <input class="form-control" type="file" id="approvalForm" name="approval_form">
+            </div>
+
+            <button type="submit" name="save_approval" class="btn btn-primary">Save Approval Configuration</button>
+          </form>
+
+          <hr>
+
+          <!-- Terms and Conditions -->
+          <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="tcDescription" class="form-label">Terms and Conditions Description</label>
+              <textarea class="form-control" id="tcDescription" name="tc_description" rows="4">{{ reservation_config.tc_description }}</textarea>
+            </div>
+
+            <button type="submit" name="save_tc" class="btn btn-primary">Save Terms and Conditions</button>
+          </form>
         </div>
       </div>
     </div>
@@ -213,6 +237,15 @@
 </section>
 
 <script>
+  document.getElementById('requireApproval').addEventListener('change', function () {
+    const pdfUploadSection = document.getElementById('pdfUploadSection');
+    if (this.checked) {
+      pdfUploadSection.style.display = 'block';
+    } else {
+      pdfUploadSection.style.display = 'none';
+    }
+  });
+
   document.addEventListener('DOMContentLoaded', function() {
     // Trigger population of time slots immediately when page is loaded
     const roomSelect = document.getElementById('roomSelect');

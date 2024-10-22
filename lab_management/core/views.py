@@ -1920,7 +1920,9 @@ def lab_reservation_student_reserveLabConfirm(request):
 def lab_reservation_student_reserveLabConfirmDetails(request):
     reservation_data = request.session.get('reservation_data')
     current_user = get_object_or_404(user, user_id=request.user.id)
-
+    selected_laboratory_id = request.session.get('selected_lab')
+    reservation_config_obj = get_object_or_404(reservation_config,laboratory_id=selected_laboratory_id)
+    
     if not reservation_data:
         return redirect('lab_reservation_student_reserveLabChooseRoom')
 
@@ -1931,9 +1933,6 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
         contact_email = request.POST.get('contact_email')
         num_people = request.POST.get('num_people')
         purpose = request.POST.get('purpose')
-
-        print(contact_name)
-        print(contact_email)
 
         # Save the reservation to the database
         reservation = laboratory_reservations.objects.create(
@@ -1956,7 +1955,8 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
 
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabConfirm.html', {
         'reservation_data': reservation_data,
-        'user': request.user if request.user.is_authenticated else None
+        'user': request.user if request.user.is_authenticated else None,
+        'reserv_config': reservation_config_obj
     })
 
 # not used for now
@@ -2245,6 +2245,22 @@ def labres_labcoord_configroom(request):
             room_configured.blocked_time = ','.join(blocked_times)
             room_configured.save()
             message = f'Time configuration saved for {room_configured.name}'
+        
+        elif 'save_approval' in request.POST:
+            # Save approval settings and optional PDF form
+            reservation_config_obj.require_approval = 'require_approval' in request.POST
+
+            if 'approval_form' in request.FILES:
+                reservation_config_obj.approval_form = request.FILES['approval_form']
+
+            reservation_config_obj.save()
+            message = 'Approval settings saved'
+
+        elif 'save_tc' in request.POST:
+            # Save terms and conditions description
+            reservation_config_obj.tc_description = request.POST.get('tc_description')
+            reservation_config_obj.save()
+            message = 'Terms and conditions saved'
 
     # Fetch rooms and reservation config
     rooms_query = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
@@ -2253,6 +2269,8 @@ def labres_labcoord_configroom(request):
         'start_time': reservation_config_obj.start_time,
         'end_time': reservation_config_obj.end_time,
         'require_approval': reservation_config_obj.require_approval,
+        'require_approval': reservation_config_obj.require_approval,
+        'tc_description': reservation_config_obj.tc_description,
     }
 
     context = {
