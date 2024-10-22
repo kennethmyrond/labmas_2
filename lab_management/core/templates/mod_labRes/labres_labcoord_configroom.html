@@ -103,22 +103,52 @@
   </div>
 </section>
 
-<!-- Time Configuration Section -->
+<!-- General Time Configuration Section (For All Rooms) -->
 <section class="section">
   <div class="row">
     <div class="col-lg-12">
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title">Time Slot Configuration</h5>
+          <h5 class="card-title">Time Slot Configuration (For All Rooms)</h5>
+          <form method="POST">
+            {% csrf_token %}
+
+            <!-- Reservation Type -->
+            <div class="form-group row mb-3">
+              <label class="col-sm-10 col-form-label">Time Slot Type:</label>
+              <div class="col-sm-4">
+                <input type="radio" name="reservation_type" value="class" {% if reservation_config.reservation_type == 'class' %}checked{% endif %} onclick="changeTimeSlots('class')"> Class Time
+              </div>
+              <div class="col-sm-4">
+                <input type="radio" name="reservation_type" value="hourly" {% if reservation_config.reservation_type == 'hourly' %}checked{% endif %} onclick="changeTimeSlots('hourly')"> Hourly
+              </div>
+            </div>
+
+            <!-- Hourly Time Input -->
+            <div class="row mb-3" id="hourlyTimeInputs" style="display:{% if reservation_config.reservation_type == 'hourly' %}flex{% else %}none{% endif %};">
+              <label for="hourly_start_time" class="col-sm-2 col-form-label">Start Time:</label>
+              <div class="col-sm-4">
+                <input type="time" id="hourly_start_time" name="hourly_start_time" class="form-control" {%if reservation_config.start_time %} value="{{ reservation_config.start_time|time:'H:i' }}" {%else%} value="07:00" {%endif%}>
+              </div>
+
+              <label for="hourly_end_time" class="col-sm-2 col-form-label">End Time:</label>
+              <div class="col-sm-4">
+                <input type="time" id="hourly_end_time" name="hourly_end_time" class="form-control" {%if reservation_config.end_time %} value="{{ reservation_config.end_time|time:'H:i' }}" {%else%} value="17:00" {%endif%}>
+              </div>
+            </div>
+
+            <button type="submit" name="save_time" class="btn btn-primary">Save Time Configuration</button>
+          </form>
+          <hr>
+
+          <h5 class="card-title">Select Available Time Slots for Rooms</h5>
 
           <form method="POST" id="timeConfigForm">
             {% csrf_token %}
-
             <!-- Room Selection -->
             <div class="form-group row mb-3">
-              <label for="roomSelect" class="col-sm-3 col-form-label">Select Room to Configure Time Reservations:</label>
               <div class="col-sm-4">
-                <select id="roomSelect" name="room_id" class="form-control">
+                <select id="roomSelect" name="room_id" class="form-control" required>
                   <option value="">--Select a Room--</option>
                   {% for room in rooms %}
                     <option value="{{ room.room_id }}" {% if room_configured and room.room_id == room_configured.room_id %}selected{% endif %}>{{ room.name }}</option>
@@ -126,63 +156,34 @@
                 </select>
               </div>
             </div>
-
-            <!-- Reservation Type Configuration -->
-            <div id="reservationTypeSection" style="display: none;">
-              <div class="form-group row mb-3">
-                <label class="col-sm-10 col-form-label">Reservation Type:</label>
-                <div class="col-sm-4">
-                  <input type="radio" name="reservation_type" value="class" onclick="changeTimeSlots('class')"> Class Time
-                </div>
-                <div class="col-sm-4">
-                  <input type="radio" name="reservation_type" value="hourly" onclick="changeTimeSlots('hourly')"> Hourly
-                </div>
+            <!-- Time Slot Configuration Table -->
+            <div class="table-responsive">
+              <div class="d-flex">
+                <div class="p-2" style="background-color: green; width: 20px; height: 20px; border: 1px solid black;"></div>
+                <div class="p-2">Available</div>
+                <div class="p-2" style="background-color: red; width: 20px; height: 20px; border: 1px solid black; margin-left: 20px;"></div>
+                <div class="p-2">Unavailable</div>
               </div>
-
-              <!-- Hourly Time Input -->
-              <div class="row mb-3" id="hourlyTimeInputs" style="display:none;">
-                <label for="hourly_start_time" class="col-sm-2 col-form-label">Start Time:</label>
-                <div class="col-sm-4">
-                  <input type="time" id="hourly_start_time" name="hourly_start_time" class="form-control">
-                </div>
-
-                <label for="hourly_end_time" class="col-sm-2 col-form-label">End Time:</label>
-                <div class="col-sm-4">
-                  <input type="time" id="hourly_end_time" name="hourly_end_time" class="form-control">
-                </div>
-              </div>
-              <br>
-              <!-- Blocked Time Configuration Table -->
-              <div class="table-responsive">
-                <h5>Select available time slots for reservation</h5>
-                <div class="d-flex">
-                  <div class="p-2" style="background-color: green; width: 20px; height: 20px; border: 1px solid black;"></div>
-                  <div class="p-2">Available</div>
-                  <div class="p-2" style="background-color: red; width: 20px; height: 20px; border: 1px solid black; margin-left: 20px;"></div>
-                  <div class="p-2">Unavailable</div>
-                </div>
-                <table class="table table-bordered" id="timeSlotTable">
-                  <thead>
-                    <tr>
-                      <th>Time</th>
-                      <th>Monday</th>
-                      <th>Tuesday</th>
-                      <th>Wednesday</th>
-                      <th>Thursday</th>
-                      <th>Friday</th>
-                      <th>Saturday</th>
-                      <th>Sunday</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <!-- Time slots and blocked times will be dynamically populated here -->
-                  </tbody>
-                </table>
-              
-              </div>
-
-              <button type="submit" name="save_time" class="btn btn-primary" style="display: none;" id="saveTimeConfigBtn">Save Time Configuration</button>
+              <table class="table table-bordered" id="timeSlotTable">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Monday</th>
+                    <th>Tuesday</th>
+                    <th>Wednesday</th>
+                    <th>Thursday</th>
+                    <th>Friday</th>
+                    <th>Saturday</th>
+                    <th>Sunday</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Time slots and blocked times will be dynamically populated here -->
+                </tbody>
+              </table>
             </div>
+
+            <button type="submit" name="save_timeblocked" class="btn btn-primary">Save Available Time Slots</button>
           </form>
         </div>
       </div>
@@ -212,171 +213,166 @@
 </section>
 
 <script>
-  // Trigger AJAX on room selection to load configuration dynamically
-  function changeTimeSlots(type, blockedTimes = []) {
-    const hourlyInputs = document.getElementById('hourlyTimeInputs');
-    const tableBody = document.querySelector('#timeSlotTable tbody');
+  document.addEventListener('DOMContentLoaded', function() {
+    // Trigger population of time slots immediately when page is loaded
+    const roomSelect = document.getElementById('roomSelect');
+    if (roomSelect.value) {
+      loadRoomConfiguration(roomSelect.value);
+    }
 
-    // Clear the table body before populating
-    tableBody.innerHTML = '';
+    roomSelect.addEventListener('change', function() {
+      if (this.value) {
+        loadRoomConfiguration(this.value);
+      }
+    });
 
-    // Parse blocked_times into a Set for easier lookup
-    const blockedSet = new Set(blockedTimes);
+    function loadRoomConfiguration(roomId) {
+      fetch(`/get-room-configuration/${roomId}/`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.reservation_type) {
+            const blockedTimes = data.blocked_time || [];
+            if (data.reservation_type === 'class') {
+              populateTimeSlots('class', blockedTimes);
+            } else if (data.reservation_type === 'hourly') {
+              document.getElementById('hourly_start_time').value = data.start_time;
+              document.getElementById('hourly_end_time').value = data.end_time;
+              populateTimeSlots('hourly', blockedTimes, data.start_time, data.end_time);
+            }
+          }
+        });
+    }
 
-    if (type === 'class') {
-        hourlyInputs.style.display = 'none';
+    function populateTimeSlots(type, blockedTimes = [], startTime = '', endTime = '') {
+      const tableBody = document.querySelector('#timeSlotTable tbody');
+      tableBody.innerHTML = ''; // Clear the table body
 
-        // Fixed class time slots
+      const blockedSet = new Set(blockedTimes);
+
+      if (type === 'class') {
         const classTimeSlots = [
-            '7:30-9:00',
-            '9:15-10:45',
-            '11:00-12:30',
-            '12:45-2:15',
-            '2:30-4:00',
-            '4:15-5:45',
-            '6:00-7:30',
+          '7:30-9:00',
+          '9:15-10:45',
+          '11:00-12:30',
+          '12:45-2:15',
+          '2:30-4:00',
+          '4:15-5:45',
+          '6:00-7:30',
         ];
 
         classTimeSlots.forEach(timeSlot => {
-            // Create a new row with checkboxes for each day
-            const row = document.createElement('tr');
-            const timeCell = document.createElement('td');
-            timeCell.textContent = timeSlot;
-            row.appendChild(timeCell);
+          const row = document.createElement('tr');
+          const timeCell = document.createElement('td');
+          timeCell.textContent = timeSlot;
+          row.appendChild(timeCell);
 
-            // Create a checkbox for each day (Monday to Sunday)
-            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-            days.forEach(day => {
-                const cell = document.createElement('td');
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.name = `${day}_time_slots`;
-                checkbox.value = timeSlot;
-                checkbox.dataset.time = `${day}_${timeSlot}`; // Custom attribute for storing day and time slot
+          ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].forEach(day => {
+            const cell = document.createElement('td');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = `${day}_time_slots`;
+            checkbox.value = timeSlot;
+            checkbox.dataset.time = `${day}_${timeSlot}`;
 
-                // Pre-check the checkbox if it's in the blocked time
-                const timeKey = `${day}_${timeSlot}`;
-                if (blockedSet.has(timeKey)) {
-                    checkbox.checked = true;
-                    cell.style.backgroundColor = 'red';
-                } else {
-                    cell.style.backgroundColor = 'green';
-                }
+            const timeKey = `${day}_${timeSlot}`;
+            if (blockedSet.has(timeKey)) {
+              checkbox.checked = true;
+              cell.style.backgroundColor = 'red';
+            } else {
+              cell.style.backgroundColor = 'green';
+            }
 
-                // Add event listener for background color change
-                checkbox.addEventListener('change', function() {
-                    if (checkbox.checked) {
-                        cell.style.backgroundColor = 'red';
-                    } else {
-                        cell.style.backgroundColor = 'green';
-                    }
-                });
-
-                cell.appendChild(checkbox);
-                row.appendChild(cell);
+            checkbox.addEventListener('change', function() {
+              if (checkbox.checked) {
+                cell.style.backgroundColor = 'red';
+              } else {
+                cell.style.backgroundColor = 'green';
+              }
             });
 
-            tableBody.appendChild(row);
+            cell.appendChild(checkbox);
+            row.appendChild(cell);
+          });
+
+          tableBody.appendChild(row);
         });
+      } else if (type === 'hourly') {
+        const [startHour, startMinute] = startTime.split(':').map(Number);
+        const [endHour, endMinute] = endTime.split(':').map(Number);
 
-    } else if (type === 'hourly') {
-        hourlyInputs.style.display = 'flex';
+        let currentHour = startHour;
+        let currentMinute = startMinute;
 
-        // Get start and end time for hourly slots
-        const startTime = document.getElementById('hourly_start_time').value;
-        const endTime = document.getElementById('hourly_end_time').value;
+        while (currentHour < endHour || (currentHour === endHour && currentMinute < endMinute)) {
+          const nextHour = (currentHour + 1).toString().padStart(2, '0');
+          const timeSlot = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}-${nextHour}:${currentMinute.toString().padStart(2, '0')}`;
 
-        if (!startTime || !endTime) {
-            return; // Exit if start or end time is not defined
-        }
+          const row = document.createElement('tr');
+          const timeCell = document.createElement('td');
+          timeCell.textContent = timeSlot;
+          row.appendChild(timeCell);
 
-        // Helper function to add one hour to a time string (in HH:MM format)
-        function addOneHour(time) {
-            const [hours, minutes] = time.split(':').map(Number);
-            const newHour = (hours + 1).toString().padStart(2, '0');
-            return `${newHour}:${minutes.toString().padStart(2, '0')}`;
-        }
+          ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].forEach(day => {
+            const cell = document.createElement('td');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = `${day}_time_slots`;
+            checkbox.value = timeSlot;
+            checkbox.dataset.time = `${day}_${timeSlot}`;
 
-        let currentTime = startTime;
-        while (currentTime < endTime) {
-            const nextTime = addOneHour(currentTime); // Get the next hour time slot
-            const timeSlot = `${currentTime}-${nextTime}`;
-            currentTime = nextTime; // Update current time for the next iteration
+            const timeKey = `${day}_${timeSlot}`;
+            if (blockedSet.has(timeKey)) {
+              checkbox.checked = true;
+              cell.style.backgroundColor = 'red';
+            } else {
+              cell.style.backgroundColor = 'green';
+            }
 
-            // Create a new row with checkboxes for each day
-            const row = document.createElement('tr');
-            const timeCell = document.createElement('td');
-            timeCell.textContent = timeSlot;
-            row.appendChild(timeCell);
-
-            // Create a checkbox for each day (Monday to Sunday)
-            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-            days.forEach(day => {
-                const cell = document.createElement('td');
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.name = `${day}_time_slots`;
-                checkbox.value = timeSlot;
-                checkbox.dataset.time = `${day}_${timeSlot}`; // Custom attribute for storing day and time slot
-
-                // Pre-check the checkbox if it's in the blocked time
-                const timeKey = `${day}_${timeSlot}`;
-                if (blockedSet.has(timeKey)) {
-                    checkbox.checked = true;
-                    cell.style.backgroundColor = 'red';
-                } else {
-                    cell.style.backgroundColor = 'green';
-                }
-
-                // Add event listener for background color change
-                checkbox.addEventListener('change', function() {
-                    if (checkbox.checked) {
-                        cell.style.backgroundColor = 'red';
-                    } else {
-                        cell.style.backgroundColor = 'green';
-                    }
-                });
-
-                cell.appendChild(checkbox);
-                row.appendChild(cell);
+            checkbox.addEventListener('change', function() {
+              if (checkbox.checked) {
+                cell.style.backgroundColor = 'red';
+              } else {
+                cell.style.backgroundColor = 'green';
+              }
             });
 
-            tableBody.appendChild(row);
-        }
-    }
-}
+            cell.appendChild(checkbox);
+            row.appendChild(cell);
+          });
 
-// Trigger AJAX on room selection to load configuration dynamically
-document.getElementById('roomSelect').addEventListener('change', function() {
-  var roomId = this.value;
-  if (roomId) {
-    fetch(`/get-room-configuration/${roomId}/`)
-    .then(response => response.json())
-    .then(data => {
-      if (data.reservation_type) {
-        // Show the reservation type section
-        document.getElementById('reservationTypeSection').style.display = 'block';
-        document.getElementById('saveTimeConfigBtn').style.display = 'block';
-
-        // Set the correct reservation type (class or hourly)
-        if (data.reservation_type === 'class') {
-          document.querySelector('input[name="reservation_type"][value="class"]').checked = true;
-          changeTimeSlots('class', data.blocked_time);
-        } else if (data.reservation_type === 'hourly') {
-          document.querySelector('input[name="reservation_type"][value="hourly"]').checked = true;
-          document.getElementById('hourly_start_time').value = data.start_time;
-          document.getElementById('hourly_end_time').value = data.end_time;
-          changeTimeSlots('hourly', data.blocked_time);
+          tableBody.appendChild(row);
+          currentHour++;
         }
       }
+    }
+  });
+  
+  // Trigger AJAX on room selection to load configuration dynamically
+  document.addEventListener('DOMContentLoaded', function () {
+    const hourlyTimeInputs = document.getElementById('hourlyTimeInputs');
+    const classRadio = document.querySelector('input[name="reservation_type"][value="class"]');
+    const hourlyRadio = document.querySelector('input[name="reservation_type"][value="hourly"]');
+
+    // Initial load: Check which radio is selected
+    if (classRadio.checked) {
+      hourlyTimeInputs.style.display = 'none';  // Hide start/end time if 'class' is selected
+    } else if (hourlyRadio.checked) {
+      hourlyTimeInputs.style.display = 'flex';  // Show start/end time if 'hourly' is selected
+    }
+
+    // Add event listeners to handle radio button changes
+    classRadio.addEventListener('change', function () {
+      if (this.checked) {
+        hourlyTimeInputs.style.display = 'none';  // Hide start/end time if 'class' is selected
+      }
     });
-  } else {
-    document.getElementById('reservationTypeSection').style.display = 'none';
-    document.getElementById('saveTimeConfigBtn').style.display = 'none';
-  }
-});
 
-
+    hourlyRadio.addEventListener('change', function () {
+      if (this.checked) {
+        hourlyTimeInputs.style.display = 'flex';  // Show start/end time if 'hourly' is selected
+      }
+    });
+  });
 
   function populateBlockedTimes(blockedTimes) {
     const checkboxes = document.querySelectorAll('#timeSlotTable input[type="checkbox"]');

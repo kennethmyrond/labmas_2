@@ -10,7 +10,7 @@ from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirec
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
-from .models import rooms, laboratory_reservations, time_configuration, reservation_blocked
+from .models import rooms, laboratory_reservations, reservation_config
 from datetime import timedelta, date, datetime
 from django.urls import reverse
 from calendar import monthrange
@@ -2180,12 +2180,14 @@ def labres_lab_reservationreqsDetailed(request, reservation_id):
     return render(request, 'mod_labRes/labres_lab_reservationreqsDetailed.html', context)
 
 
-
 def labres_labcoord_configroom(request):
     selected_laboratory_id = request.session.get('selected_lab')
     message = None
     room_configured = None
-    # Handle Room Configuration
+
+    # Fetch or create the reservation config for the laboratory
+    reservation_config_obj, created = reservation_config.objects.get_or_create(laboratory_id=selected_laboratory_id)
+
     if request.method == "POST":
         if 'save_rooms' in request.POST:
             # Update is_reservable field for rooms
@@ -2194,7 +2196,6 @@ def labres_labcoord_configroom(request):
                 room.save()
             message = 'Successfully saved room configuration'
 
-            # Handle deleting rooms
         elif 'delete_room' in request.POST:
             delete_room_id = request.POST.get('delete_room')
             room = get_object_or_404(rooms, room_id=delete_room_id)
@@ -2203,7 +2204,6 @@ def labres_labcoord_configroom(request):
             message = 'Successfully deleted a room'
 
         elif 'add_room' in request.POST:
-            # Add a new room
             room_name = request.POST.get('room_name')
             room_capacity = request.POST.get('room_capacity')
             room_description = request.POST.get('room_description')
@@ -2219,50 +2219,60 @@ def labres_labcoord_configroom(request):
             message = f'Successfully added {room_name}'
 
         elif 'save_time' in request.POST:
-            room_id = request.POST.get('room_id')
-            room_configured = get_object_or_404(rooms, pk=room_id)
+            # Save the general reservation configuration for the lab (applies to all rooms)
             reservation_type = request.POST.get('reservation_type')
-            room_configured.reservation_type = reservation_type
+            reservation_config_obj.reservation_type = reservation_type
 
             if reservation_type == 'hourly':
-                room_configured.start_time = request.POST.get('hourly_start_time')
-                room_configured.end_time = request.POST.get('hourly_end_time')
+                reservation_config_obj.start_time = request.POST.get('hourly_start_time')
+                reservation_config_obj.end_time = request.POST.get('hourly_end_time')
             else:
-                room_configured.start_time = None
-                room_configured.end_time = None
+                reservation_config_obj.start_time = None
+                reservation_config_obj.end_time = None
+
+            reservation_config_obj.save()
+            message = f'Time configuration saved'
+
+        elif 'save_timeblocked' in request.POST:
+            room_id = request.POST.get('room_id')
+            room_configured = get_object_or_404(rooms, pk=room_id)
 
             blocked_times = []
             for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
                 for time_slot in request.POST.getlist(f'{day}_time_slots'):
                     blocked_times.append(f'{day}_{time_slot}')
+
             room_configured.blocked_time = ','.join(blocked_times)
             room_configured.save()
             message = f'Time configuration saved for {room_configured.name}'
 
-    # If a specific room is selected for configuration, populate data
-    room_id = request.GET.get('room_id')
-    if room_id:
-        room_configured = get_object_or_404(rooms, pk=room_id)
-    print(room_configured)
-
+    # Fetch rooms and reservation config
     rooms_query = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
+    reservation_config_data = {
+        'reservation_type': reservation_config_obj.reservation_type,
+        'start_time': reservation_config_obj.start_time,
+        'end_time': reservation_config_obj.end_time,
+        'require_approval': reservation_config_obj.require_approval,
+    }
 
     context = {
         'rooms': rooms_query,
         'messages': message,
         'room_configured': room_configured,
+        'reservation_config': reservation_config_data,
     }
 
     return render(request, 'mod_labRes/labres_labcoord_configroom.html', context)
 
 def get_room_configuration(request, room_id):
     room = get_object_or_404(rooms, pk=room_id)
+    reservation_config_obj = reservation_config.objects.get(laboratory=room.laboratory)
 
     # Return the room's configuration as JSON
     response_data = {
-        'reservation_type': room.reservation_type,
-        'start_time': room.start_time.strftime('%H:%M') if room.start_time else None,
-        'end_time': room.end_time.strftime('%H:%M') if room.end_time else None,
+        'reservation_type': reservation_config_obj.reservation_type,
+        'start_time': reservation_config_obj.start_time.strftime('%H:%M') if reservation_config_obj.start_time else None,
+        'end_time': reservation_config_obj.end_time.strftime('%H:%M') if reservation_config_obj.end_time else None,
         'blocked_time': room.blocked_time.split(',') if room.blocked_time else []  # Return blocked time as a list
     }
 
