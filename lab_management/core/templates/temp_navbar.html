@@ -174,13 +174,20 @@
   <aside id="sidebar" class="sidebar">
 
     <ul class="sidebar-nav" id="sidebar-nav">
-
       <li class="nav-item">
-        <a class="nav-link {% if request.resolver_match.url_name in 'superuser_setup' %}active{% else %}collapsed{% endif %}" href="{%url 'superuser_setup'%}">
+        <a class="nav-link {% if request.resolver_match.url_name in 'superuser_setup superuser_manage_labs' %}active{% else %}collapsed{% endif %}" data-bs-target="#setup-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-grid"></i>
-          <span>Setup</span>
+          <span>Setup</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-      </li><!-- End Dashboard Nav -->
+        <ul id="setup-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'superuser_manage_labs' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+          <li>
+            <a href="{% url 'superuser_manage_labs' %}" class="{% if request.resolver_match.url_name == 'superuser_manage_labs' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>SUPERUSER - Manage Labs</span>
+            </a>
+          </li>
+        </ul>
+      </li><!-- End Setup Nav -->
+      
       
       <li class="nav-item">
         <a class="nav-link {% if request.resolver_match.url_name in 'inventory_view inventory_addNewItem inventory_updateItem inventory_physicalCount inventory_manageSuppliers inventory_supplierDetails inventory_config inventory_itemDetails_view' %}active{% else %}collapsed{% endif %}" data-bs-target="#inventory-nav" data-bs-toggle="collapse" href="#">

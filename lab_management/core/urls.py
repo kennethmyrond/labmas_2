@@ -87,4 +87,5 @@ urlpatterns = [
     path('setup/logout/', views.superuser_logout, name='superuser_logout'),  # Added trailing slash
     path('setup/', views.superuser_setup, name='superuser_setup'),
     path('add-laboratory/', views.add_laboratory, name='add_laboratory'),  # New URL
+    path('setup/manageLabs', views.superuser_manage_labs, name='superuser_manage_labs'),
 ]

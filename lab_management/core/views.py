@@ -2381,6 +2381,8 @@ def user_settings_view(request):
 
 
 # superuser stuff
+def superuser_manage_labs(request):
+    return render(request, 'superuser/superuser_manageLabs.html')
 
 def superuser_login(request):
     if request.method == 'POST':
@@ -2393,9 +2395,7 @@ def superuser_login(request):
         form = LoginForm()
     return render(request, 'superuser/superuser_login.html', {'form': form})
 
-def superuser_logout(request):
-    logout(request)
-    return redirect("/login/superuser")
+
 
 
 @login_required()
@@ -2407,6 +2407,9 @@ def superuser_setup(request):
     modules = Module.objects.all()
     return render(request, 'superuser/superuser_setup.html', {'labs': labs, 'modules': modules})
 
+def superuser_logout(request):
+    logout(request)
+    return redirect("/login/superuser")
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
