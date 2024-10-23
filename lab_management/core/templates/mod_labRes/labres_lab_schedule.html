@@ -97,6 +97,7 @@
                                   <div class="reservation">
                                       <strong>{{ reservations.0.start_time|time:"h:i A" }} - {{ reservations.0.end_time|time:"h:i A" }}</strong><br>
                                       ResID: {{ reservations.0.reservation_id }}<br>
+                                      time: {{ reservations.0.start_date}}<br>
                                   </div>
                                   {% if reservations|length > 1 %}
                                       <div class="more-schedules" >

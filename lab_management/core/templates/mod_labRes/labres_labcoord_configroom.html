@@ -48,7 +48,7 @@
 
               <label for="room_capacity" class="col-sm-2 col-form-label">Capacity:</label>
               <div class="col-sm-4">
-                <input type="number" id="room_capacity" name="room_capacity" class="form-control" placeholder="Enter room capacity" required>
+                <input type="number" id="room_capacity" name="room_capacity" class="form-control" placeholder="Enter room capacity" min="0" oninput="validity.valid||(value='');" required>
               </div>
             </div>
 
@@ -115,7 +115,7 @@
             <div class="row mb-3">
               <label for="room_capacity" class="col-sm-2 col-form-label">Reservation Lead Time:</label>
               <div class="col-sm-4">
-                <input type="number" id="lead_time" name="lead_time" class="form-control" value="{{reservation_config.leadtime}}"required>
+                <input type="number" id="lead_time" name="lead_time" class="form-control" value="{{reservation_config.leadtime}}" min="0" oninput="validity.valid||(value='');" required>
               </div>
             </div>
 
