@@ -2379,13 +2379,14 @@ def user_settings_view(request):
     return render(request, 'user_settings.html')
 
 
+#lab setup
+
 
 # superuser stuff
 def superuser_manage_labs(request):
     return render(request, 'superuser/superuser_manageLabs.html')
 
 def superuser_lab_info(request):
-     
     return render(request, 'superuser/superuser_labInfo.html')
 
 # Function to handle adding users
@@ -2406,6 +2407,11 @@ def add_room(request):
         # insert code to add to the database 
         return redirect('superuser_lab_info') 
 
+def setup_editLab(request):
+    return render(request, 'superuser/superuser_editLab.html')
+
+def setup_manageRooms(request):
+       return render(request, 'superuser/superuser_manageRooms.html')
 
 def superuser_login(request):
     if request.method == 'POST':

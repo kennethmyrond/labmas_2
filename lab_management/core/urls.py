@@ -8,6 +8,9 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),  # Added trailing slash
     path('error/', views.error_page, name='error_page'),
 
+    # setup
+    
+
     # inventory
     path('inventory/', views.inventory_view, name='inventory_view'),
     path('inventory/addNewItem/', views.inventory_addNewItem_view, name='inventory_addNewItem'),  # Added trailing slash
@@ -91,4 +94,6 @@ urlpatterns = [
     path('setup/labInfo', views.superuser_lab_info, name='superuser_lab_info'),
     path('add-user/', views.add_user, name='add_user'),  # URL for adding users
     path('add-room/', views.add_room, name='add_room'), 
+    path('setup/editLab', views.setup_editLab, name='setup_editLab'),
+    path('setup/manageRooms', views.setup_manageRooms, name='setup_manageRooms'),
 ]
