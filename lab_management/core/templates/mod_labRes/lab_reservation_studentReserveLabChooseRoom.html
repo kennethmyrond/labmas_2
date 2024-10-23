@@ -11,7 +11,6 @@
     </ol>
   </nav>
 </div>
-<!-- End Page Title -->
 
 <section class="section">
   <div class="row">
@@ -21,12 +20,8 @@
           <h5 class="card-title">Search for a Room</h5>
 
           <!-- Display error message if any -->
-          {% if messages %}
-            <div class="alert alert-danger">
-              {% for message in messages %}
-                {{ message }}
-              {% endfor %}
-            </div>
+          {% if error_message %}
+            <div class="alert alert-danger">{{ error_message }}</div>
           {% endif %}
 
           <!-- Filters Section -->
@@ -51,15 +46,15 @@
 
           <!-- Room Availability Table -->
           <div id="roomList">
-            <h5 class="card-title">Available Rooms</h5>
+            <h5 class="card-title">Available Rooms | {{ reservation_date }}</h5>
             <table class="table table-bordered">
               <thead>
-                  <tr>
-                      <th>Room Name</th>
-                      {% for start in time_slots %}
-                          <th>{{ start }}</th>
-                      {% endfor %}
-                  </tr>
+                <tr>
+                  <th>Room Name</th>
+                  {% for start in time_slots %}
+                    <th>{{ start }}</th>
+                  {% endfor %}
+                </tr>
               </thead>
               <tbody>
                 {% for room in rooms %}
@@ -70,9 +65,9 @@
                       </button>
                     </td>
                     {% for start in time_slots %}
-                        {% with color=room_availability|dict_key:room.room_id|dict_key:start %}
-                            <td style="background-color: {{ color }}"></td>
-                        {% endwith %}
+                      {% with color=room_availability|dict_key:room.room_id|dict_key:start %}
+                        <td style="background-color: {{ color }}"></td>
+                      {% endwith %}
                     {% endfor %}
                   </tr>
 
@@ -98,79 +93,78 @@
                   <!-- End of Room Details Modal -->
                 {% empty %}
                   <tr>
-                      <td colspan="{{ time_slots|length|add:2 }}">No rooms available for the selected criteria.</td>
+                    <td colspan="{{ time_slots|length|add:1 }}">No rooms available for the selected criteria.</td>
                   </tr>
                 {% endfor %}
               </tbody>
             </table>
+
             <div class="d-flex">
               <div class="p-2" style="background-color: green; width: 20px; height: 20px; border: 1px solid black;"></div>
               <div class="p-2">Available</div>
               <div class="p-2" style="background-color: red; width: 20px; height: 20px; border: 1px solid black; margin-left: 20px;"></div>
               <div class="p-2">Unavailable</div>
-            </div>
-          </div><br>
+            </div><br>
+
           <!-- Form for room and time selection -->
-<section class="section">
-  <div class="row">
-    <div class="col-lg-12">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Reserve a Room</h5>
+          <section class="section">
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="card">
+                  <div class="card-body">
+                    <h5 class="card-title">Reserve a Room</h5>
 
-          <!-- Reservation Form -->
-          <form method="POST" action="{% url 'lab_reservation_student_reserveLabConfirm' %}">
-            {% csrf_token %}
-            
-            <div class="row mb-3">
-              <label for="selectedDate" class="col-sm-2 col-form-label">Selected Date:</label>
-              <div class="col-sm-10">
-                <input type="date" id="selectedDate" name="selectedDate" class="form-control" value="{{ reservation_date|date:'Y-m-d' }}" readonly="true">
+                    <!-- Reservation Form -->
+                    <form method="POST" action="{% url 'lab_reservation_student_reserveLabConfirm' %}">
+                      {% csrf_token %}
+                      
+                      <div class="row mb-3">
+                        <label for="selectedDate" class="col-sm-2 col-form-label">Selected Date:</label>
+                        <div class="col-sm-10">
+                          <input type="date" id="selectedDate" name="selectedDate" class="form-control" value="{{ reservation_date|date:'Y-m-d' }}" readonly="true">
+                        </div>
+                      </div>
+
+                      <div class="row mb-3">
+                        <label for="selectedRoom" class="col-sm-2 col-form-label">Select Room:</label>
+                        <div class="col-sm-10">
+                          <select id="selectedRoom" name="selectedRoom" class="form-select" required>
+                            {% for room in rooms %}
+                              <option value="{{ room.room_id }}">{{ room.name }} (Capacity: {{ room.capacity }})</option>
+                            {% endfor %}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="row mb-3">
+                        <label for="selectedStartTime" class="col-sm-2 col-form-label">Start Time:</label>
+                        <div class="col-sm-4">
+                          <input type="time" id="selectedStartTime" name="selectedStartTime" class="form-control" min="{{ reservation_config_obj.start_time }}" max="{{ reservation_config_obj.end_time }}" required>
+                        </div>
+
+                        <label for="selectedEndTime" class="col-sm-2 col-form-label">End Time:</label>
+                        <div class="col-sm-4">
+                          <input type="time" id="selectedEndTime" name="selectedEndTime" class="form-control" min="{{ reservation_config_obj.start_time }}" max="{{ reservation_config_obj.end_time }}" required>
+                        </div>
+                      </div>
+
+                      <div class="row mb-3">
+                        <div class="col-sm-10">
+                          <button type="submit" class="btn btn-primary">Confirm Booking</button>
+                        </div>
+                      </div>
+                    </form>
+
+                  </div>
+                </div>
               </div>
             </div>
-
-            <div class="row mb-3">
-              <label for="selectedRoom" class="col-sm-2 col-form-label">Select Room:</label>
-              <div class="col-sm-10">
-                <select id="selectedRoom" name="selectedRoom" class="form-select" required>
-                  {% for room in rooms %}
-                    <option value="{{ room.room_id }}">{{ room.name }} (Capacity: {{ room.capacity }})</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-
-            <div class="row mb-3">
-              <label for="selectedStartTime" class="col-sm-2 col-form-label">Start Time:</label>
-              <div class="col-sm-4">
-                <input type="time" id="selectedStartTime" name="selectedStartTime" class="form-control" required>
-              </div>
-
-              <label for="selectedEndTime" class="col-sm-2 col-form-label">End Time:</label>
-              <div class="col-sm-4">
-                <input type="time" id="selectedEndTime" name="selectedEndTime" class="form-control" required>
-              </div>
-            </div>
-
-            <div class="row mb-3">
-              <div class="col-sm-10">
-                <button type="submit" class="btn btn-primary">Confirm Booking</button>
-              </div>
-            </div>
-          </form>
+          </section>
 
         </div>
       </div>
     </div>
   </div>
 </section>
-
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
 
 {% endblock %}

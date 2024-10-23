@@ -372,3 +372,4 @@ class reservation_config(models.Model):
     require_payment = models.BooleanField(default=False)
     approval_form = models.FileField(upload_to='approval_forms/', null=True, blank=True)  # Optional PDF upload
     tc_description = models.CharField(max_length=45, null=True, blank=True)
+    leadtime = models.PositiveIntegerField(default=0)

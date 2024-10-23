@@ -1813,8 +1813,9 @@ def lab_reservation_view(request):
 
 def lab_reservation_student_reserveLabChooseRoom(request):
     selected_laboratory_id = request.session.get('selected_lab')
+    reservation_config_obj = reservation_config.objects.get(laboratory_id=selected_laboratory_id)
     today = timezone.now().date()
-    min_reservation_date = today + timedelta(days=0)
+    min_reservation_date = today + timedelta(days=reservation_config_obj.leadtime)
 
     reservation_date = request.GET.get('reservationDate')
     error_message = None
@@ -1822,7 +1823,7 @@ def lab_reservation_student_reserveLabChooseRoom(request):
     if reservation_date:
         reservation_date = datetime.strptime(reservation_date, '%Y-%m-%d').date()
         if reservation_date < min_reservation_date:
-            error_message = "Selected date must be at least 3 days from today."
+            error_message = f"Selected date must be at least {reservation_config_obj.leadtime} days from today."
     else:
         error_message = "Please select a reservation date."
 
@@ -1842,40 +1843,81 @@ def lab_reservation_student_reserveLabChooseRoom(request):
     if capacity_filter:
         rooms_query = rooms_query.filter(capacity__gte=capacity_filter)
 
-    # Create time intervals (7AM to 5PM)
-    time_slots = [f"{hour:02d}:00" for hour in range(7, 17)]
-    # time_slots = [(f"{hour:02d}:00", f"{hour + 1:02d}:00") for hour in range(7, 17)] #for start and end
+    # Fetch reservation configuration for the laboratory
+    
+    # Determine time slots based on reservation type
+    if reservation_config_obj.reservation_type == 'class':
+        time_slots = [
+            '7:30-9:00',
+            '9:15-10:45',
+            '11:00-12:30',
+            '12:45-2:15',
+            '2:30-4:00',
+            '4:15-5:45',
+            '6:00-7:30',
+        ]
+    elif reservation_config_obj.reservation_type == 'hourly':
+        start_time = reservation_config_obj.start_time
+        end_time = reservation_config_obj.end_time
+
+        # Generate hourly intervals between start_time and end_time
+        time_slots = []
+        current_time = start_time
+        while current_time < end_time:
+            next_time = (datetime.combine(today, current_time) + timedelta(hours=1)).time()
+            time_slots.append(f"{current_time.strftime('%H:%M')}-{next_time.strftime('%H:%M')}")
+            current_time = next_time
 
     # Fetch existing reservations for the selected date
     existing_reservations = laboratory_reservations.objects.filter(
         room__laboratory_id=selected_laboratory_id, start_date=reservation_date)
 
-    time_slots = [f"{hour:02d}:00" for hour in range(7, 17)]
+    # Get the day of the week for the selected date
+    day_of_week = reservation_date.strftime('%A')  # E.g., 'Monday', 'Tuesday', etc.
 
     room_availability = {}
     for room in rooms_query:
         availability = {}
+        
+        # Load and parse the blocked times (assuming it's stored as a JSON string)
+        blocked_times = json.loads(room.blocked_time) if room.blocked_time else {}
+
         for start in time_slots:
-            slot_key = f"{start}"
+            time_key = f"{start}"
+
+            # Check if the time slot is blocked for the selected day of the week
+            is_blocked = time_key in blocked_times.get(day_of_week, [])
+
+            # Split the time slot into start and end times
+            start_time_str, end_time_str = start.split('-')
+            start_time_obj = datetime.strptime(start_time_str, '%H:%M').time()
+            end_time_obj = datetime.strptime(end_time_str, '%H:%M').time()
+
+            # Check if the time slot is reserved
             reserved = existing_reservations.filter(
                 room=room,
-                start_time__lte=start,
-                end_time__gt=start,
-                status='R' or 'A'
+                start_time__lt=end_time_obj,
+                end_time__gt=start_time_obj,
+                status__in=['R', 'A']
             ).exists()
-            availability[slot_key] = 'red' if reserved else 'green'
+
+            # Mark as 'red' if reserved or blocked
+            if reserved or is_blocked:
+                availability[time_key] = 'red'  # Unavailable
+            else:
+                availability[time_key] = 'green'  # Available
+
         room_availability[room.room_id] = availability
 
-
-    print(room_availability)
     context = {
         'rooms': rooms_query,
         'time_slots': time_slots,
-        'room_availability': room_availability,  # Flat structure
+        'room_availability': room_availability,
         'reservation_date': reservation_date,
         'min_reservation_date': min_reservation_date,
         'capacity_filter': capacity_filter,
-        'error_message': error_message,  # Pass the error message to the template if any
+        'error_message': error_message,
+        'reservation_config_obj': reservation_config_obj
     }
 
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html', context)
@@ -1900,8 +1942,15 @@ def lab_reservation_student_reserveLabConfirm(request):
             end_time__gt=selected_start_time
         ).exists()
 
-        if existing_reservation:
-            error_message = "The selected time slot for this room is already booked."
+        # Fetch blocked times for the room
+        blocked_times = json.loads(selected_room.blocked_time) if selected_room.blocked_time else {}
+        day_of_week = datetime.strptime(selected_date, '%Y-%m-%d').strftime('%A')  # Get the day of the week
+
+        time_key = f"{selected_start_time}-{selected_end_time}"
+
+        # Check if the selected time is blocked or reserved
+        if existing_reservation or time_key in blocked_times.get(day_of_week, []):
+            error_message = "The selected time slot for this room is not available (blocked or already reserved)."
             messages.error(request, error_message)
             return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
@@ -1916,6 +1965,7 @@ def lab_reservation_student_reserveLabConfirm(request):
         return redirect('lab_reservation_student_reserveLabConfirmDetails')
 
     return HttpResponse("Invalid request", status=400)
+
 
 def lab_reservation_student_reserveLabConfirmDetails(request):
     reservation_data = request.session.get('reservation_data')
@@ -2230,21 +2280,39 @@ def labres_labcoord_configroom(request):
                 reservation_config_obj.start_time = None
                 reservation_config_obj.end_time = None
 
+            reservation_leadtime = request.POST.get('lead_time')
+            reservation_config_obj.leadtime = reservation_leadtime
+
             reservation_config_obj.save()
             message = f'Time configuration saved'
+
+        # elif 'save_timeblocked' in request.POST:
+        #     room_id = request.POST.get('room_id')
+        #     room_configured = get_object_or_404(rooms, pk=room_id)
+
+        #     blocked_times = []
+        #     for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+        #         for time_slot in request.POST.getlist(f'{day}_time_slots'):
+        #             blocked_times.append(f'{day}_{time_slot}')
+
+        #     room_configured.blocked_time = ','.join(blocked_times)
+        #     room_configured.save()
+        #     message = f'Time configuration saved for {room_configured.name}'
 
         elif 'save_timeblocked' in request.POST:
             room_id = request.POST.get('room_id')
             room_configured = get_object_or_404(rooms, pk=room_id)
 
-            blocked_times = []
+            blocked_times = {}
             for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
-                for time_slot in request.POST.getlist(f'{day}_time_slots'):
-                    blocked_times.append(f'{day}_{time_slot}')
+                time_slots = request.POST.getlist(f'{day}_time_slots')
+                if time_slots:
+                    blocked_times[day] = time_slots
 
-            room_configured.blocked_time = ','.join(blocked_times)
+            room_configured.blocked_time = json.dumps(blocked_times)
             room_configured.save()
             message = f'Time configuration saved for {room_configured.name}'
+            messages.success(request, message)
         
         elif 'save_approval' in request.POST:
             # Save approval settings and optional PDF form
@@ -2269,8 +2337,8 @@ def labres_labcoord_configroom(request):
         'start_time': reservation_config_obj.start_time,
         'end_time': reservation_config_obj.end_time,
         'require_approval': reservation_config_obj.require_approval,
-        'require_approval': reservation_config_obj.require_approval,
         'tc_description': reservation_config_obj.tc_description,
+        'leadtime': reservation_config_obj.leadtime,
     }
 
     context = {
@@ -2291,7 +2359,7 @@ def get_room_configuration(request, room_id):
         'reservation_type': reservation_config_obj.reservation_type,
         'start_time': reservation_config_obj.start_time.strftime('%H:%M') if reservation_config_obj.start_time else None,
         'end_time': reservation_config_obj.end_time.strftime('%H:%M') if reservation_config_obj.end_time else None,
-        'blocked_time': room.blocked_time.split(',') if room.blocked_time else []  # Return blocked time as a list
+        'blocked_time': room.blocked_time if room.blocked_time else {} 
     }
 
     return JsonResponse(response_data)

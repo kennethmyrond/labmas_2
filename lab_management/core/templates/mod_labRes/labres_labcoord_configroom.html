@@ -112,6 +112,12 @@
           <h5 class="card-title">Time Slot Configuration (For All Rooms)</h5>
           <form method="POST">
             {% csrf_token %}
+            <div class="row mb-3">
+              <label for="room_capacity" class="col-sm-2 col-form-label">Reservation Lead Time:</label>
+              <div class="col-sm-4">
+                <input type="number" id="lead_time" name="lead_time" class="form-control" value="{{reservation_config.leadtime}}"required>
+              </div>
+            </div>
 
             <!-- Reservation Type -->
             <div class="form-group row mb-3">
@@ -264,7 +270,7 @@
         .then(response => response.json())
         .then(data => {
           if (data.reservation_type) {
-            const blockedTimes = data.blocked_time || [];
+            const blockedTimes = data.blocked_time ? JSON.parse(data.blocked_time) : {};
             if (data.reservation_type === 'class') {
               populateTimeSlots('class', blockedTimes);
             } else if (data.reservation_type === 'hourly') {
@@ -276,11 +282,9 @@
         });
     }
 
-    function populateTimeSlots(type, blockedTimes = [], startTime = '', endTime = '') {
+    function populateTimeSlots(type, blockedTimes = {}, startTime = '', endTime = '') {
       const tableBody = document.querySelector('#timeSlotTable tbody');
       tableBody.innerHTML = ''; // Clear the table body
-
-      const blockedSet = new Set(blockedTimes);
 
       if (type === 'class') {
         const classTimeSlots = [
@@ -308,7 +312,7 @@
             checkbox.dataset.time = `${day}_${timeSlot}`;
 
             const timeKey = `${day}_${timeSlot}`;
-            if (blockedSet.has(timeKey)) {
+            if (blockedTimes[day] && blockedTimes[day].includes(timeSlot)) {
               checkbox.checked = true;
               cell.style.backgroundColor = 'red';
             } else {
@@ -354,7 +358,7 @@
             checkbox.dataset.time = `${day}_${timeSlot}`;
 
             const timeKey = `${day}_${timeSlot}`;
-            if (blockedSet.has(timeKey)) {
+            if (blockedTimes[day] && blockedTimes[day].includes(timeSlot)) {
               checkbox.checked = true;
               cell.style.backgroundColor = 'red';
             } else {
@@ -379,6 +383,7 @@
       }
     }
   });
+
   
   // Trigger AJAX on room selection to load configuration dynamically
   document.addEventListener('DOMContentLoaded', function () {
