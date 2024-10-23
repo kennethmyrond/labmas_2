@@ -2384,6 +2384,29 @@ def user_settings_view(request):
 def superuser_manage_labs(request):
     return render(request, 'superuser/superuser_manageLabs.html')
 
+def superuser_lab_info(request):
+     
+    return render(request, 'superuser/superuser_labInfo.html')
+
+# Function to handle adding users
+def add_user(request):
+    if request.method == "POST":
+        user_id = request.POST['user_id']
+        email = request.POST['email']
+        role = request.POST['role']
+        # insert code to add to the database 
+        return redirect('superuser_lab_info') 
+
+
+def add_room(request):
+    if request.method == "POST":
+        building = request.POST['building']
+        room_number = request.POST['room_number']
+        capacity = request.POST['capacity']
+        # insert code to add to the database 
+        return redirect('superuser_lab_info') 
+
+
 def superuser_login(request):
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)

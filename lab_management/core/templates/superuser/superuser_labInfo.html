@@ -1,0 +1,262 @@
+{% extends 'temp_navbar.html' %} {% block title %}SUPERUSER - Manage
+Laboratories{% endblock %} {% block content %}
+<style>
+  .status-active {
+    color: green;
+    font-weight: bold;
+  }
+
+  .status-terminated {
+    color: red;
+    font-weight: bold;
+  }
+</style>
+
+<div class="pagetitle">
+  <h1>Setup</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'superuser_manage_labs' %}">Manage Laboratories</a>
+      </li>
+      <li class="breadcrumb-item active">Laboratory Information</li>
+    </ol>
+  </nav>
+</div>
+<!-- End Page Title -->
+
+<section class="section">
+  <h5 class="card-title">Lab Details</h5>
+  <p><strong>ID:</strong> 1</p>
+  <!-- Replace with dynamic content -->
+  <p><strong>Name:</strong> Chem Lab AY 23-24</p>
+  <p><strong>Date Created:</strong> 12/03/20</p>
+  <p><strong>Status:</strong> <span class="status-active">Active</span></p>
+  <!-- End Lab Details Section -->
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Users</h5>
+
+          <!-- Table with stripped rows -->
+          <table class="table datatable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th style="display: none"></th>
+                <th style="display: none"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>juan@gmail.com</td>
+                <td>Administrator</td>
+                <td style="display: none"></td>
+                <td style="display: none"></td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>lala@gmail.com</td>
+                <td>Technician</td>
+                <td style="display: none"></td>
+                <td style="display: none"></td>
+              </tr>
+            </tbody>
+          </table>
+          <button
+            type="button"
+            class="btn btn-primary"
+            data-toggle="modal"
+            data-target="#addUserModal"
+          >
+            Add Users
+          </button>
+          <!-- End Table with stripped rows -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Rooms</h5>
+
+          <!-- Table with stripped rows -->
+          <table class="table datatable">
+            <thead>
+              <tr>
+                <th>Building</th>
+                <th>Room Number</th>
+                <th>Capacity</th>
+                <th style="display: none"></th>
+                <th style="display: none"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>GK</td>
+                <td>123</td>
+                <td>24</td>
+                <td style="display: none"></td>
+                <td style="display: none"></td>
+              </tr>
+              <tr>
+                <td>SJ</td>
+                <td>423</td>
+                <td>40</td>
+                <td style="display: none"></td>
+                <td style="display: none"></td>
+              </tr>
+            </tbody>
+          </table>
+          <button
+            type="button"
+            class="btn btn-primary"
+            data-toggle="modal"
+            data-target="#addRoomModal"
+          >
+            Add Rooms
+          </button>
+          <!-- End Table with stripped rows -->
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- Add User Modal -->
+<div
+  class="modal fade"
+  id="addUserModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="addUserModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'add_user' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
+          <button
+            type="button"
+            class="close"
+            data-dismiss="modal"
+            aria-label="Close"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="user_id">ID</label>
+            <input
+              type="text"
+              class="form-control"
+              id="user_id"
+              name="user_id"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              class="form-control"
+              id="email"
+              name="email"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="role">Role</label>
+            <select class="form-control" id="role" name="role">
+              <option value="Administrator">Administrator</option>
+              <option value="Technician">Technician</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            Close
+          </button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Add Room Modal -->
+<div
+  class="modal fade"
+  id="addRoomModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="addRoomModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'add_room' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addRoomModalLabel">Add Room</h5>
+          <button
+            type="button"
+            class="close"
+            data-dismiss="modal"
+            aria-label="Close"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="building">Building</label>
+            <input
+              type="text"
+              class="form-control"
+              id="building"
+              name="building"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="room_number">Room Number</label>
+            <input
+              type="text"
+              class="form-control"
+              id="room_number"
+              name="room_number"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="capacity">Capacity</label>
+            <input
+              type="number"
+              class="form-control"
+              id="capacity"
+              name="capacity"
+              required
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            Close
+          </button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

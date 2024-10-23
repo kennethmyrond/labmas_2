@@ -88,4 +88,7 @@ urlpatterns = [
     path('setup/', views.superuser_setup, name='superuser_setup'),
     path('add-laboratory/', views.add_laboratory, name='add_laboratory'),  # New URL
     path('setup/manageLabs', views.superuser_manage_labs, name='superuser_manage_labs'),
+    path('setup/labInfo', views.superuser_lab_info, name='superuser_lab_info'),
+    path('add-user/', views.add_user, name='add_user'),  # URL for adding users
+    path('add-room/', views.add_room, name='add_room'), 
 ]

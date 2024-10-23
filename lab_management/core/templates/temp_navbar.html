@@ -179,13 +179,15 @@
           <i class="bi bi-grid"></i>
           <span>Setup</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="setup-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'superuser_manage_labs' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+        <ul id="setup-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info' %}show{% endif %}" data-bs-parent="#sidebar-nav">
           <li>
-            <a href="{% url 'superuser_manage_labs' %}" class="{% if request.resolver_match.url_name == 'superuser_manage_labs' %}active{% endif %}">
+            <a href="{% url 'superuser_manage_labs' %}" class="{% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>SUPERUSER - Manage Labs</span>
             </a>
           </li>
+          
         </ul>
+        
       </li><!-- End Setup Nav -->
       
       

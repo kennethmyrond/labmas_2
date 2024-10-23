@@ -42,14 +42,16 @@ Laboratories{% endblock %} {% block content %}
             </thead>
             <tbody>
               <tr>
-                <td>1</td>
+                <td>
+                  <a href="{% url 'superuser_lab_info' %}">1</a>
+                </td>
                 <td>Chem Lab AY 23-24</td>
                 <td>45</td>
                 <td>12/03/20</td>
                 <td><span class="status-active">Active</span></td>
               </tr>
               <tr>
-                <td>2</td>
+                <td><a href="{% url 'superuser_lab_info' %}">2</a></td>
                 <td>Physics Lab AY 23-24</td>
                 <td>15</td>
                 <td>12/13/22</td>
