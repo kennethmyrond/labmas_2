@@ -1851,10 +1851,10 @@ def lab_reservation_student_reserveLabChooseRoom(request):
             '7:30-9:00',
             '9:15-10:45',
             '11:00-12:30',
-            '12:45-2:15',
-            '2:30-4:00',
-            '4:15-5:45',
-            '6:00-7:30',
+            '12:45-14:15',
+            '14:30-16:00',
+            '16:15-17:45',
+            '18:00-19:30',
         ]
     elif reservation_config_obj.reservation_type == 'hourly':
         start_time = reservation_config_obj.start_time
@@ -1898,7 +1898,7 @@ def lab_reservation_student_reserveLabChooseRoom(request):
                 room=room,
                 start_time__lt=end_time_obj,
                 end_time__gt=start_time_obj,
-                status__in=['R', 'A']
+                status__in=['R', 'A', 'P']
             ).exists()
 
             # Mark as 'red' if reserved or blocked
@@ -1923,6 +1923,8 @@ def lab_reservation_student_reserveLabChooseRoom(request):
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html', context)
 
 def lab_reservation_student_reserveLabConfirm(request):
+    selected_laboratory_id = request.session.get('selected_lab')
+    reservation_config_obj = reservation_config.objects.get(laboratory_id=selected_laboratory_id)
     if request.method == 'POST':
         selected_room_id = request.POST.get('selectedRoom')
         selected_date = request.POST.get('selectedDate')
@@ -1936,7 +1938,7 @@ def lab_reservation_student_reserveLabConfirm(request):
         existing_reservation = laboratory_reservations.objects.filter(
             room=selected_room,
             start_date=selected_date,
-            status='R'
+            status__in=['R', 'A', 'P']
         ).filter(
             start_time__lt=selected_end_time,
             end_time__gt=selected_start_time
@@ -1985,6 +1987,11 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
         purpose = request.POST.get('purpose')
 
         # Save the reservation to the database
+        if reservation_config_obj.require_approval: 
+            stat='P' 
+        else: 
+            stat='R'
+
         reservation = laboratory_reservations.objects.create(
             user=current_user or None,
             room=rooms.objects.get(name=reservation_data['room']),
@@ -1993,10 +2000,9 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
             end_time=reservation_data['end_time'],
             contact_name=contact_name,
             contact_email=contact_email,
-            contact_number=0,
             num_people=num_people,
             purpose=purpose,
-            status='R'  # Reserved
+            status=stat
         )
 
         # Clear session data and redirect to the booking list page
@@ -2177,7 +2183,7 @@ def labres_lab_reservationreqs(request):
                 reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id)
 
                 if reservation.status == 'P':  # Only update if pending
-                    reservation.status = 'A'  # Change status to Approved
+                    reservation.status = 'R'  # Change status to Approved
                     reservation.save()
 
             elif action.startswith("delete_"):
@@ -2185,7 +2191,7 @@ def labres_lab_reservationreqs(request):
                 reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id)
 
                 if reservation.status == 'P':  # Only update if pending
-                    reservation.status = 'L'  # Change status to Cancelled by Lab Tech
+                    reservation.status = 'D'  # Change status to Cancelled by Lab Tech
                     reservation.save()
 
         # Redirect to avoid form resubmission on page reload
@@ -2214,7 +2220,7 @@ def labres_lab_reservationreqsDetailed(request, reservation_id):
         action = request.POST.get('action')
         if action == 'accept':
             # Change status to 'Approved' ('A')
-            reservation.status = 'A'
+            reservation.status = 'R'
         elif action == 'delete':
             # Change status to 'Cancelled' ('L')
             reservation.status = 'D'

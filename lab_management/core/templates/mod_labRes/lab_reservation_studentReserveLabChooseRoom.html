@@ -35,7 +35,7 @@
 
               <label for="capacityFilter" class="col-sm-2 col-form-label">Filter by Capacity:</label>
               <div class="col-sm-2">
-                <input type="number" id="capacityFilter" name="capacityFilter" class="form-control" placeholder="Minimum capacity" value="{{ capacity_filter }}">
+                <input type="number" id="capacityFilter" name="capacityFilter" class="form-control" placeholder="Minimum capacity" value="{{ capacity_filter }}" min="0" oninput="validity.valid||(value='');">
               </div>
 
               <div class="col-sm-2">
@@ -137,16 +137,21 @@
                       </div>
 
                       <div class="row mb-3">
-                        <label for="selectedStartTime" class="col-sm-2 col-form-label">Start Time:</label>
+                        <label for="selectedStartTime" class="col-sm-2 col-form-label">Reserve Time:</label>
                         <div class="col-sm-4">
-                          <input type="time" id="selectedStartTime" name="selectedStartTime" class="form-control" min="{{ reservation_config_obj.start_time }}" max="{{ reservation_config_obj.end_time }}" required>
+                            <input type="time" id="selectedStartTime" name="selectedStartTime" class="form-control" min="{{ reservation_config_obj.start_time }}" max="{{ reservation_config_obj.end_time }}" required>
                         </div>
-
-                        <label for="selectedEndTime" class="col-sm-2 col-form-label">End Time:</label>
+                    
+                        <label for="selectedEndTime" class="col-sm-2 col-form-label">Until</label>
                         <div class="col-sm-4">
-                          <input type="time" id="selectedEndTime" name="selectedEndTime" class="form-control" min="{{ reservation_config_obj.start_time }}" max="{{ reservation_config_obj.end_time }}" required>
+                            <input type="time" id="selectedEndTime" name="selectedEndTime" class="form-control" min="{{ reservation_config_obj.start_time }}" max="{{ reservation_config_obj.end_time }}" required>
+                        </div>
+                        <div id="timeErrorMessage" class="text-danger" style="display: none;">
+                          *Invalid start and end time.
                         </div>
                       </div>
+                    
+                      
 
                       <div class="row mb-3">
                         <div class="col-sm-10">
@@ -166,5 +171,53 @@
     </div>
   </div>
 </section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const reservdate = document.getElementById('selectedDate');
+      const startTimeInput = document.getElementById('selectedStartTime');
+      const endTimeInput = document.getElementById('selectedEndTime');
+      const errorMessage = document.getElementById('timeErrorMessage');
+      
+      var date = new Date();
+      function getCurrentTime(){
+          var hh = date.getHours();
+          var mm = date.getMinutes();
+
+          hh = hh < 10 ? '0'+hh : hh; 
+          mm = mm < 10 ? '0'+mm : mm;
+
+          curr_time = hh+':'+mm;
+          return curr_time;
+      }
+
+      
+
+      const datenow = date.toISOString().split('T')[0];
+      const timenow = getCurrentTime();
+      console.log(reservdate.value , datenow)
+  
+      startTimeInput.addEventListener('change', function() {
+          endTimeInput.min = this.value;
+          errorMessage.style.display = 'none'; // Hide the error message when start time changes
+
+          if (this.value <= timenow && reservdate.value <= datenow ) {
+              errorMessage.style.display = 'block'; // Show the error message
+              this.value = ''; // Clear the invalid end time
+          } else {
+              errorMessage.style.display = 'none'; // Hide the error message
+          }
+      });
+  
+      endTimeInput.addEventListener('change', function() {
+          if (this.value <= startTimeInput.value) {
+              errorMessage.style.display = 'block'; // Show the error message
+              this.value = ''; // Clear the invalid end time
+          } else {
+              errorMessage.style.display = 'none'; // Hide the error message
+          }
+      });
+  });
+  </script>
 
 {% endblock %}

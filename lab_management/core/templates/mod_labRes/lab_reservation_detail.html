@@ -23,6 +23,10 @@
 
           <table class="table">
             <tr>
+              <th>Reservation Number</th>
+              <td>{{ reservation.reservation_id}}</td>
+            </tr>
+            <tr>
               <th>Room</th>
               <td>{{ reservation.room.name }}</td>
             </tr>
@@ -57,10 +61,6 @@
             <tr>
               <th>Contact Email</th>
               <td>{{ reservation.contact_email }}</td>
-            </tr>
-            <tr>
-              <th>Contact Number</th>
-              <td>{{ reservation.contact_number }}</td>
             </tr>
           </table>
 

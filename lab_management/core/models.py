@@ -335,7 +335,6 @@ class laboratory_reservations(models.Model):
     num_people = models.IntegerField(null=True, blank=True)
     contact_email = models.EmailField(null=True, blank=True)
     contact_name = models.CharField(max_length=255, null=True, blank=True)
-    contact_number = models.CharField(max_length=15, null=True, blank=True)
 
     def __str__(self):
         return f"Reservation {self.reservation_id} - {self.room.name}"
@@ -347,9 +346,6 @@ class laboratory_reservations(models.Model):
             'D': 'Declined',
             'R': 'Reserved',
             'C': 'Cancelled',
-            'L': 'Cancelled', #cancelled by lab tech
-            'X': 'Completed',
-            'Y': 'Clearance On-hold'
         }
         return status_mapping.get(self.status, 'Unknown')
 
