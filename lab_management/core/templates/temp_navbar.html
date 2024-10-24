@@ -175,14 +175,20 @@
 
     <ul class="sidebar-nav" id="sidebar-nav">
       <li class="nav-item">
-        <a class="nav-link {% if request.resolver_match.url_name in 'superuser_setup superuser_manage_labs' %}active{% else %}collapsed{% endif %}" data-bs-target="#setup-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link {% if request.resolver_match.url_name in 'superuser_setup superuser_manage_labs superuser_manage_users' %}active{% else %}collapsed{% endif %}" data-bs-target="#setup-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-grid"></i>
           <span>Setup</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="setup-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+        <ul id="setup-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info superuser_manage_users' %}show{% endif %}" data-bs-parent="#sidebar-nav">
           <li>
             <a href="{% url 'superuser_manage_labs' %}" class="{% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>SUPERUSER - Manage Labs</span>
+            </a>
+          </li> 
+
+          <li>
+            <a href="{% url 'superuser_manage_users' %}" class="{% if request.resolver_match.url_name in 'superuser_manage_users' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>SUPERUSER - Manage Users</span>
             </a>
           </li>
           
