@@ -122,8 +122,8 @@
                   {% endif %}
                 </td>
                 <td>
-                  {% if handling.updated_on %}
-                    {{ handling.updated_on|date:"Y-m-d H:i" }}
+                  {% if handling.timestamp %}
+                    {{ handling.timestamp|date:"Y-m-d H:i" }}
                   {% else %}
                     N/A
                   {% endif %}

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
-from django.db.models.functions import TruncDate
+from django.db.models.functions import TruncDate, Coalesce
 from django.contrib import messages
 from django.db.models import Q, Sum , Prefetch, F, Count, Avg
 from django.utils import timezone
@@ -2369,7 +2369,7 @@ def get_room_configuration(request, room_id):
 def reports_view(request):
     selected_laboratory_id = request.session.get('selected_lab')
 
-    # inventory reportss ----------
+    # inventory report
     date_type = request.GET.get('dateType', 'today')  # Get date filter type
     date = request.GET.get('date', None)
     start_date = request.GET.get('startDate', None)
@@ -2378,31 +2378,45 @@ def reports_view(request):
     # Query based on the selected date type
     today = datetime.now().date()
     query_filter = {}
-    
+
+    # Filtering logic for different date types
     if date_type == 'today':
-        query_filter['timestamp__date'] = today
+        start_date = '1900-12-30'
+        end_date = today
     elif date_type == 'day' and date:
-        query_filter['timestamp__date'] = datetime.strptime(date, '%Y-%m-%d').date()
+        start_date = '1900-12-30'
+        end_date = date
     elif date_type == 'week' and date:
         date_obj = datetime.strptime(date, '%Y-%m-%d').date()
-        start_of_week = date_obj - timedelta(days=date_obj.weekday())
-        end_of_week = start_of_week + timedelta(days=6)
-        query_filter['timestamp__date__range'] = (start_of_week, end_of_week)
+        start_date = date_obj - timedelta(days=date_obj.weekday())
+        end_date = start_date + timedelta(days=6)
     elif date_type == 'month' and date:
-        query_filter['timestamp__year'] = datetime.strptime(date, '%Y-%m-%d').year
-        query_filter['timestamp__month'] = datetime.strptime(date, '%Y-%m-%d').month
+        date_obj = datetime.strptime(date, '%Y-%m').date()
+        start_date = date_obj.replace(day=1)
+        end_date = (date_obj.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
     elif date_type == 'year' and date:
-        query_filter['timestamp__year'] = datetime.strptime(date, '%Y-%m-%d').year
+        date_obj = datetime.strptime(date, '%Y').date()
+        start_date = date_obj.replace(month=1, day=1)
+        end_date = date_obj.replace(month=12, day=31)
     elif date_type == 'timeframe' and start_date and end_date:
-        query_filter['timestamp__date__range'] = (start_date, end_date)
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
 
-    # Query the stock changes within the specified time range
-    inventory_data = item_handling.objects.filter(
-        inventory_item__item__laboratory_id=selected_laboratory_id,
-        **query_filter
-    ).values('inventory_item__item__item_name').annotate(
-        avg_qty=Avg('qty')
-    ).order_by('inventory_item__item__item_name')
+    # Calculate stock level based on item handling up to the selected end_date
+    inventory_data = item_description.objects.filter(
+        laboratory_id=selected_laboratory_id,
+        is_disabled=False
+    ).annotate(
+        current_qty=Coalesce(
+            # Sum all additions ('A') within the date range
+            Sum('item_inventory__item_handling__qty', filter=Q(item_inventory__item_handling__changes='A', item_inventory__item_handling__timestamp__gte=start_date, item_inventory__item_handling__timestamp__lte=end_date)) - 
+            # Sum all subtractions ('R') within the date range
+            Sum('item_inventory__item_handling__qty', filter=Q(item_inventory__item_handling__changes='R', item_inventory__item_handling__timestamp__gte=start_date, item_inventory__item_handling__timestamp__lte=end_date)),
+            0  # Default value if the result is None
+        )
+    ).order_by('-current_qty', 'item_name') 
+
+    print(inventory_data)
 
     # Borrowing Trends Report
     borrowing_data = borrowed_items.objects.values('item__item_name').annotate(
@@ -2421,6 +2435,10 @@ def reports_view(request):
         'borrowing_data': borrowing_data,
         'room_usage_data': room_usage_data,
         'maintenance_data': maintenance_data,
+        'date_type': date_type,
+        'date': date,
+        'start_date': start_date,
+        'end_date': end_date
     }
 
     return render(request, 'mod_reports/reports.html', context)

@@ -4,31 +4,34 @@
     <!-- Filter Section -->
     <div class="card mb-3">
         <div class="card-body">
-            <h5>Filter by Date Range</h5>
-            <form id="filterForm" method="GET" action="{% url 'reports_view' %}">
+            <h5 class="card-title">Filter by Date Range</h5>
+            <form id="filterForm" method="GET" action="{% url 'reports' %}">
                 <div class="row">
                     <div class="col-md-3">
                         <label for="dateType" class="form-label">Select Date Type:</label>
                         <select class="form-select" id="dateType" name="dateType">
-                            <option value="today">Today</option>
-                            <option value="day">Specific Day</option>
-                            <option value="week">Specific Week</option>
-                            <option value="month">Specific Month</option>
-                            <option value="year">Specific Year</option>
-                            <option value="timeframe">Timeframe</option>
+                            <option value="today" {% if date_type == 'today' %}selected{% endif %}>Today</option>
+                            <option value="day" {% if date_type == 'day' %}selected{% endif %}>Specific Day</option>
+                            <option value="week" {% if date_type == 'week' %}selected{% endif %}>Specific Week</option>
+                            <option value="month" {% if date_type == 'month' %}selected{% endif %}>Specific Month</option>
+                            <option value="year" {% if date_type == 'year' %}selected{% endif %}>Specific Year</option>
+                            <option value="timeframe" {% if date_type == 'timeframe' %}selected{% endif %}>Timeframe</option>
                         </select>
                     </div>
 
                     <div class="col-md-3" id="dateInput" style="display: none;">
                         <label for="date" class="form-label">Select Date:</label>
-                        <input type="date" class="form-control" id="date" name="date">
+                        <input type="date" class="form-control" id="date" name="date" value="{{date}}">
                     </div>
 
-                    <div class="col-md-3" id="timeframeInputs" style="display: none;">
+                    <div class="col-md-3" id="timeframeInputs1" style="display: none;">
                         <label for="startDate" class="form-label">From:</label>
-                        <input type="date" class="form-control" id="startDate" name="startDate">
+                        <input type="date" class="form-control" id="startDate" name="startDate" value="{{start_date}}">
+                    </div>
+
+                    <div class="col-md-3" id="timeframeInputs2" style="display: none;">
                         <label for="endDate" class="form-label mt-2">To:</label>
-                        <input type="date" class="form-control" id="endDate" name="endDate">
+                        <input type="date" class="form-control" id="endDate" name="endDate" value="{{end_date}}">
                     </div>
 
                     <div class="col-md-3 align-self-end">
@@ -42,26 +45,34 @@
     <!-- Inventory Stock Report Table -->
     <div class="card">
         <div class="card-body">
-            <h5>Average Stock Based on the Selected Date Range</h5>
-            <table id="inventoryTable" class="table table-striped">
+            <h5 class="card-title">Stock Level Based on the Selected Date</h5>
+            <canvas id="inventoryStockChart"></canvas>
+            <hr>
+            
+            <table id="inventoryTable" class="table datatable table-striped ">
                 <thead>
                     <tr>
                         <th>Item Name</th>
-                        <th>Average Quantity</th>
+                        <th>Current Stock Level</th>
+                        <th hidden></th>
+                        <th hidden></th>
+                        <th hidden></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in inventory_data %}
                     <tr>
                         <td>{{ item.item_name }}</td>
-                        <td>{{ item.avg_qty }}</td>
+                        <td>{{ item.current_qty }}</td>
+                        <td hidden></td>
+                        <td hidden></td>
+                        <td hidden></td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-</div>
 
 
     <!-- Borrowing Trends Report -->
@@ -77,24 +88,46 @@
     <canvas id="maintenanceRepairsChart"></canvas>
 </div>
 
-<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+
 <script>
     $(document).ready(function () {
-        $('#inventoryTable').DataTable();
-
+    
         // Handle showing/hiding of input fields based on date type
         $('#dateType').change(function () {
             var dateType = $(this).val();
             if (dateType === 'timeframe') {
-                $('#timeframeInputs').show();
+                $('#timeframeInputs1').show();
+                $('#timeframeInputs2').show();
                 $('#dateInput').hide();
             } else if (dateType !== 'today') {
                 $('#dateInput').show();
-                $('#timeframeInputs').hide();
+                $('#timeframeInputs1').hide();
+                $('#timeframeInputs2').hide();
+                if(dateType === 'week'){
+                    document.getElementById("date").attributes["type"].value = "week";
+                } else if(dateType === 'month'){
+                    document.getElementById("date").attributes["type"].value = "month";
+                } else if (dateType === 'year'){
+                    var date = document.getElementById("date");
+                    date.attributes["type"].value = "number";
+                    date.min = "1900";
+                    date.max = "2999";
+                    date.value = "2024"
+                }
             } else {
                 $('#dateInput').hide();
-                $('#timeframeInputs').hide();
+                $('#timeframeInputs1').hide();
+                $('#timeframeInputs2').hide();
             }
+        });
+
+        $('#startdate').change(function () {
+            var startdate = $(this).val();
+            console.log(startdate)
+            var enddate = document.getElementById("enddate")
+            console.log(enddate)
+            enddate.min = startdate;
+            console.log(enddate)
         });
     });
 </script>
@@ -106,7 +139,7 @@
         labels: [{% for item in inventory_data %}'{{ item.item_name }}',{% endfor %}],
         datasets: [{
             label: 'Stock Quantity',
-            data: [{% for item in inventory_data %}{{ item.qty }},{% endfor %}],
+            data: [{% for item in inventory_data %}{{ item.current_qty }},{% endfor %}],
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             borderColor: 'rgba(75, 192, 192, 1)',
             borderWidth: 1
