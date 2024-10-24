@@ -2081,7 +2081,7 @@ def labres_lab_schedule(request):
     reservations_by_day = {}
 
       # Get the current month
-    current_month = datetime.now().strftime('%Y-%m')  # Format: YYYY-MM
+    current_month = timezone.now().strftime('%Y-%m')
 
     if selected_laboratory_id:
         room_list = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)

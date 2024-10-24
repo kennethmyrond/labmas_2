@@ -89,15 +89,18 @@
             <div class="calendar">
               {% if selected_month %}
                   {% for day in 31|range_filter %}
-                      <div class="day" data-day="{{ day|add:1 }}" data-toggle="modal" data-target="#scheduleModal" 
-                           data-schedules="{% with reservations=reservations_by_day|get_item:day %}{% if reservations %}{% for reservation in reservations %}<div class='reservation'><strong>{{ reservation.start_time|time:'h:i A' }} - {{ reservation.end_time|time:'h:i A' }}</strong><br>ResID: {{ reservation.reservation_id }}<br>Name: {{ reservation.contact_name }}<br>Email: {{ reservation.contact_email }}<br>Phone: {{ reservation.contact_number }}<br>Purpose: {{ reservation.purpose }}</div>{% endfor %} {% endif %}{% endwith %}">
-                          <div class="day-header">{{ day|add:1 }}</div>
+                      <div class="day" data-day="{{ day }}" data-toggle="modal" data-target="#scheduleModal" 
+                           data-schedules="{% with reservations=reservations_by_day|get_item:day %}{% if reservations %}{% for reservation in reservations %}<div class='reservation'><strong>{{ reservation.start_time|time:'h:i A' }} - {{ reservation.end_time|time:'h:i A' }}</strong>
+                            <br>ID: {{ reservation.reservation_id }}<br>Name: {{ reservation.contact_name }}<br>Email: {{ reservation.contact_email }}<br>Purpose: {{ reservation.purpose }}</div>{% endfor %} {% endif %}{% endwith %}">
+                          <div class="day-header">{{ day }}</div>
                           {% with reservations=reservations_by_day|get_item:day %}
                               {% if reservations %}
                                   <div class="reservation">
                                       <strong>{{ reservations.0.start_time|time:"h:i A" }} - {{ reservations.0.end_time|time:"h:i A" }}</strong><br>
-                                      ResID: {{ reservations.0.reservation_id }}<br>
-                                      time: {{ reservations.0.start_date}}<br>
+                                      ID: {{ reservations.0.reservation_id }}<br>
+                                      Name: {{ reservations.0.contact_name }}<br>
+                                      Email: {{ reservations.0.contact_email }}<br>
+                                      Purpose: {{ reservations.0.purpose }}
                                   </div>
                                   {% if reservations|length > 1 %}
                                       <div class="more-schedules" >
@@ -120,9 +123,7 @@
               <div class="modal-content">
                 <div class="modal-header">
                   <h5 class="modal-title" id="scheduleModalLabel">Day Schedule</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                  </button>
+                  
                 </div>
                 <div class="modal-body">
                   <div id="modalDaySchedule"></div> <!-- Schedule for the clicked day will be loaded here -->
