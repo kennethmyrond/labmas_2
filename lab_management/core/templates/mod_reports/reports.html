@@ -1,10 +1,176 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'temp_navbar.html' %}
+{% block content %}
+<div class="container">
+    <!-- Filter Section -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>Filter by Date Range</h5>
+            <form id="filterForm" method="GET" action="{% url 'reports_view' %}">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="dateType" class="form-label">Select Date Type:</label>
+                        <select class="form-select" id="dateType" name="dateType">
+                            <option value="today">Today</option>
+                            <option value="day">Specific Day</option>
+                            <option value="week">Specific Week</option>
+                            <option value="month">Specific Month</option>
+                            <option value="year">Specific Year</option>
+                            <option value="timeframe">Timeframe</option>
+                        </select>
+                    </div>
 
-</body>
-</html>
+                    <div class="col-md-3" id="dateInput" style="display: none;">
+                        <label for="date" class="form-label">Select Date:</label>
+                        <input type="date" class="form-control" id="date" name="date">
+                    </div>
+
+                    <div class="col-md-3" id="timeframeInputs" style="display: none;">
+                        <label for="startDate" class="form-label">From:</label>
+                        <input type="date" class="form-control" id="startDate" name="startDate">
+                        <label for="endDate" class="form-label mt-2">To:</label>
+                        <input type="date" class="form-control" id="endDate" name="endDate">
+                    </div>
+
+                    <div class="col-md-3 align-self-end">
+                        <button type="submit" class="btn btn-primary">Generate Report</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Inventory Stock Report Table -->
+    <div class="card">
+        <div class="card-body">
+            <h5>Average Stock Based on the Selected Date Range</h5>
+            <table id="inventoryTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Average Quantity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in inventory_data %}
+                    <tr>
+                        <td>{{ item.item_name }}</td>
+                        <td>{{ item.avg_qty }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Borrowing Trends Report -->
+    <h3>Borrowing Trends</h3>
+    <canvas id="borrowingTrendsChart"></canvas>
+
+    <!-- Room Usage Report -->
+    <h3>Room Usage</h3>
+    <canvas id="roomUsageChart"></canvas>
+
+    <!-- Maintenance & Repairs Report -->
+    <h3>Reported Damaged Items</h3>
+    <canvas id="maintenanceRepairsChart"></canvas>
+</div>
+
+<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#inventoryTable').DataTable();
+
+        // Handle showing/hiding of input fields based on date type
+        $('#dateType').change(function () {
+            var dateType = $(this).val();
+            if (dateType === 'timeframe') {
+                $('#timeframeInputs').show();
+                $('#dateInput').hide();
+            } else if (dateType !== 'today') {
+                $('#dateInput').show();
+                $('#timeframeInputs').hide();
+            } else {
+                $('#dateInput').hide();
+                $('#timeframeInputs').hide();
+            }
+        });
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Inventory Stock Report Chart
+    const inventoryData = {
+        labels: [{% for item in inventory_data %}'{{ item.item_name }}',{% endfor %}],
+        datasets: [{
+            label: 'Stock Quantity',
+            data: [{% for item in inventory_data %}{{ item.qty }},{% endfor %}],
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+        }]
+    };
+    const inventoryConfig = {
+        type: 'bar',
+        data: inventoryData,
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    };
+    const inventoryStockChart = new Chart(document.getElementById('inventoryStockChart'), inventoryConfig);
+
+    // Borrowing Trends Report Chart
+    const borrowingData = {
+        labels: [{% for borrow in borrowing_data %}'{{ borrow.item__item_name }}',{% endfor %}],
+        datasets: [{
+            label: 'Total Borrowed Quantity',
+            data: [{% for borrow in borrowing_data %}{{ borrow.total_borrowed }},{% endfor %}],
+            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+            borderColor: 'rgba(255, 159, 64, 1)',
+            borderWidth: 1
+        }]
+    };
+    const borrowingConfig = {
+        type: 'bar',
+        data: borrowingData,
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    };
+    const borrowingTrendsChart = new Chart(document.getElementById('borrowingTrendsChart'), borrowingConfig);
+
+    // Room Usage Report Chart
+    const roomUsageData = {
+        labels: [{% for room in room_usage_data %}'{{ room.room__name }}',{% endfor %}],
+        datasets: [{
+            label: 'Total Reservations',
+            data: [{% for room in room_usage_data %}{{ room.total_reservations }},{% endfor %}],
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    };
+    const roomUsageConfig = {
+        type: 'bar',
+        data: roomUsageData,
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    };
+    const roomUsageChart = new Chart(document.getElementById('roomUsageChart'), roomUsageConfig);
+
+    // Maintenance & Repairs Report Chart
+    const maintenanceData = {
+        labels: [{% for report in maintenance_data %}'{{ report.item__item_name }}',{% endfor %}],
+        datasets: [{
+            label: 'Total Damaged Items Reported',
+            data: [{% for report in maintenance_data %}{{ report.total_reported }},{% endfor %}],
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+        }]
+    };
+    const maintenanceConfig = {
+        type: 'bar',
+        data: maintenanceData,
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    };
+    const maintenanceRepairsChart = new Chart(document.getElementById('maintenanceRepairsChart'), maintenanceConfig);
+</script>
+{% endblock %}

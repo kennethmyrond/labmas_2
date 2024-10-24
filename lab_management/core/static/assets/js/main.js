@@ -298,9 +298,16 @@
           cellClass: "green",
           headerClass: "red"
         }
-      ]
+      ],
+      layout: {
+        topStart: {
+            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+        }
+      }
     });
   })
+
+  
 
   /**
    * Autoresize echart charts
