@@ -2073,7 +2073,7 @@ def labres_lab_schedule(request):
     reservations_by_day = {}
 
       # Get the current month
-    current_month = datetime.now().strftime('%Y-%m')  # Format: YYYY-MM
+    current_month = timezone.now().strftime('%Y-%m')
 
     if selected_laboratory_id:
         room_list = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
@@ -2432,8 +2432,42 @@ def user_settings_view(request):
     return render(request, 'user_settings.html')
 
 
+#lab setup
+
 
 # superuser stuff
+def superuser_manage_labs(request):
+    return render(request, 'superuser/superuser_manageLabs.html')
+
+def superuser_lab_info(request):
+    return render(request, 'superuser/superuser_labInfo.html')
+
+def superuser_manage_users(request):
+    return render(request, 'superuser/superuser_manageusers.html')
+
+# Function to handle adding users
+def add_user(request):
+    if request.method == "POST":
+        user_id = request.POST['user_id']
+        email = request.POST['email']
+        role = request.POST['role']
+        # insert code to add to the database 
+        return redirect('superuser_lab_info') 
+
+
+def add_room(request):
+    if request.method == "POST":
+        building = request.POST['building']
+        room_number = request.POST['room_number']
+        capacity = request.POST['capacity']
+        # insert code to add to the database 
+        return redirect('superuser_lab_info') 
+
+def setup_editLab(request):
+    return render(request, 'superuser/superuser_editLab.html')
+
+def setup_manageRooms(request):
+       return render(request, 'superuser/superuser_manageRooms.html')
 
 def superuser_login(request):
     if request.method == 'POST':
@@ -2446,9 +2480,7 @@ def superuser_login(request):
         form = LoginForm()
     return render(request, 'superuser/superuser_login.html', {'form': form})
 
-def superuser_logout(request):
-    logout(request)
-    return redirect("/login/superuser")
+
 
 
 @login_required()
@@ -2460,6 +2492,9 @@ def superuser_setup(request):
     modules = Module.objects.all()
     return render(request, 'superuser/superuser_setup.html', {'labs': labs, 'modules': modules})
 
+def superuser_logout(request):
+    logout(request)
+    return redirect("/login/superuser")
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
