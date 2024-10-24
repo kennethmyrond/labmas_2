@@ -97,4 +97,5 @@ urlpatterns = [
     path('setup/editLab', views.setup_editLab, name='setup_editLab'),
     path('setup/manageRooms', views.setup_manageRooms, name='setup_manageRooms'),
     path('setup/manageusers', views.superuser_manage_users, name='superuser_manage_users'),
+    path('setup/userInfo', views.superuser_user_info, name='superuser_user_info'),
 ]

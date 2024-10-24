@@ -2445,6 +2445,9 @@ def superuser_lab_info(request):
 def superuser_manage_users(request):
     return render(request, 'superuser/superuser_manageusers.html')
 
+def superuser_user_info(request):
+    return render(request, 'superuser/superuser_userinfo.html')
+
 # Function to handle adding users
 def add_user(request):
     if request.method == "POST":
