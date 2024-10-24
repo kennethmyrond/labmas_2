@@ -1,0 +1,73 @@
+{% extends 'temp_navbar.html' %} {% block title %}SUPERUSER - Manage
+Users{% endblock %} {% block content %}
+<style>
+  .status-active {
+    color: green;
+    font-weight: bold;
+  }
+
+  .status-terminated {
+    color: red;
+    font-weight: bold;
+  }
+</style>
+
+<div class="pagetitle">
+  <h1>Setup</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item active">Manage Users</li>
+    </ol>
+  </nav>
+</div>
+<!-- End Page Title -->
+
+<section class="section">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Users</h5>
+
+          <!-- Table with stripped rows -->
+          <table class="table datatable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Assigned Laboratories</th>
+                <th>Role</th>
+                <th>Date Joined</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <a href="{% url 'superuser_user_info' %}">1</a>
+                </td>
+                <td>Juan Dela Cruz</td>
+                <td>Chem Lab AY 23-24</td>
+                <td>Student</td>
+                <td>12/03/23</td>
+                <td><span class="status-active">Active</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="{% url 'superuser_user_info' %}">2</a>
+                </td>
+                <td>Harry Potter</td>
+                <td>Physics Lab AY 23-24</td>
+                <td>Lab Technician</td>
+                <td>17/07/24</td>
+                <td><span class="status-terminated">Terminated</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- End Table with stripped rows -->
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
