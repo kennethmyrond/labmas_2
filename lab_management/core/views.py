@@ -105,7 +105,8 @@ def suggest_items(request):
         data.append({
             'item_id': item.item_id,
             'item_name': item.item_name,
-            'rec_expiration': item.rec_expiration
+            'rec_expiration': item.rec_expiration,
+            'add_cols': item.add_cols
         })
     
     return JsonResponse(data, safe=False)
@@ -127,20 +128,21 @@ def suggest_suppliers(request):
 
     return JsonResponse(data, safe=False)
 
-def remove_item_from_inventory(item_inventory_instance, qty, user, changes):
-    if item_inventory_instance.qty >= int(qty):
-        item_inventory_instance.qty -= int(qty)
-        item_inventory_instance.save()
-        
-        # Log the removal
-        item_handling.objects.create(
-            inventory_item=item_inventory_instance,
-            updated_by=user,
-            changes=changes,
-            qty=qty,
-        )
-    else:
-        raise ValueError("Not enough quantity in inventory")
+def remove_item_from_inventory(inventory_item, amount, user, change_type, remarks=''):
+    if inventory_item.qty < amount:
+        raise ValueError("Not enough items in inventory to remove.")
+
+    inventory_item.qty -= amount
+    inventory_item.save()
+
+    # Record the item handling
+    item_handling.objects.create(
+        inventory_item=inventory_item,
+        updated_by=user,
+        changes=change_type,
+        qty=amount,
+        remarks=remarks,
+    )
 
 def generate_qr_code(item_id):
     # Create a QR code instance
@@ -261,9 +263,10 @@ def inventory_itemDetails_view(request, item_id):
 
     # Get all item_inventory entries for the specified item_id
     # Prefetch item_handling related to item_inventory
-    item_handling_prefetch = Prefetch('item_handling_set', queryset=item_handling.objects.all())
+    item_handling_prefetch = Prefetch('item_handling_set', queryset=item_handling.objects.all().order_by('timestamp'))
     # Filter item_inventory and prefetch related supplier and item_handling data
     item_inventories = item_inventory.objects.filter(item=item).select_related('supplier').prefetch_related(item_handling_prefetch)
+    print(item_inventories)
 
     # Calculate the total quantity
     total_qty = item_inventories.aggregate(Sum('qty'))['qty__sum'] or 0
@@ -348,7 +351,9 @@ def inventory_updateItem_view(request):
     if request.method == 'POST':
         item_id = request.POST.get('item_name')
         action_type = request.POST.get('action_type')
-        amount = request.POST.get('amount') if action_type == 'add' else request.POST.get('quantity_removed')
+        amount_add = request.POST.get('amount')
+        amount_remove = request.POST.get('quantity_removed')
+        amount_damaged = request.POST.get('quantity_damaged')
         item_date_purchased = request.POST.get('item_date_purchased')
         item_date_received = request.POST.get('item_date_received')
         item_price = request.POST.get('item_price')
@@ -372,15 +377,14 @@ def inventory_updateItem_view(request):
                 date_purchased=item_date_purchased,
                 date_received=item_date_received,
                 purchase_price=item_price,
-                qty=amount,
-                remarks="add"
+                qty=amount_add,
             )
             item_handling.objects.create(
                 inventory_item=new_inventory_item,
                 updated_by=current_user,
                 changes='A',
-                qty=amount,
-                remarks='add'
+                qty=amount_add,
+                remarks='Add to Inventory'
             )
             # If expiration date is provided, save it
             if expiration_date:
@@ -388,8 +392,8 @@ def inventory_updateItem_view(request):
                     inventory_item=new_inventory_item,
                     expired_date=expiration_date
                 )
-        elif action_type == 'remove':
-            # Handle remove from inventory
+        elif action_type == 'remove':# Handle remove from inventory
+            
             # Filter item_inventory by item, join with item_expirations, filter by quantity, and order by expired_date
             if item_description_instance.rec_expiration == 1:
                 item_inventory_queryset = item_inventory.objects.filter(
@@ -405,15 +409,14 @@ def inventory_updateItem_view(request):
                 ).order_by('inventory_item_id')
 
             # Initialize the amount to be removed
-            remaining_amount = int(amount)
+            remaining_amount = int(amount_remove)
 
             # Iterate through the queryset and deduct the quantity
             for item_inventory_instance in item_inventory_queryset:
                 if remaining_amount <= 0:
                     break
-
                 if item_inventory_instance.qty >= remaining_amount:
-                    try:
+                    try:                    
                         remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'R', 'Remove')
                         remaining_amount = 0
                     except ValueError as e:
@@ -447,7 +450,7 @@ def inventory_updateItem_view(request):
                     qty__gt=0
                 ).order_by('inventory_item_id')
 
-            remaining_amount = int(amount)
+            remaining_amount = int(amount_damaged)
 
             # Iterate through the queryset and deduct the quantity
             for item_inventory_instance in item_inventory_queryset:
@@ -455,7 +458,7 @@ def inventory_updateItem_view(request):
                     break
                 if item_inventory_instance.qty >= remaining_amount:
                     try:
-                        remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'R', remarks=remarks)
+                        remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'D', remarks=remarks)
                         remaining_amount = 0
                     except ValueError as e:
                         print(e)
@@ -463,7 +466,7 @@ def inventory_updateItem_view(request):
                 else:
                     try:
                         remaining_amount = remaining_amount - int(item_inventory_instance.qty)
-                        remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'R', remarks=remarks)
+                        remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'D', remarks=remarks)
                     except ValueError as e:
                         print(e)
                         break
@@ -481,22 +484,6 @@ def inventory_updateItem_view(request):
         return render(request, 'mod_inventory/inventory_updateItem.html', context)
 
     return render(request, 'mod_inventory/inventory_updateItem.html')
-
-# Helper function for removing items from inventory
-def remove_item_from_inventory(inventory_item, amount, user, change_type, remarks=''):
-    if inventory_item.qty < amount:
-        raise ValueError("Not enough items in inventory to remove.")
-
-    inventory_item.qty -= amount
-    inventory_item.save()
-
-    # Record the item handling
-    item_handling.objects.create(
-        updated_by=user,
-        changes=change_type,
-        qty=amount,
-        remarks=remarks,
-    )
 
 def inventory_itemEdit_view(request, item_id):
     if not request.user.is_authenticated:
@@ -616,14 +603,14 @@ def inventory_physicalCount_view(request):
                             qty=discrepancy_qty,
                             date_purchased=timezone.now(),
                             date_received=timezone.now(),
-                            remarks="Physical count adjustment",
                             supplier=None  # Supplier can be left as None for physical adjustments
                         )
                         # Log this addition in item_handling
                         item_handling.objects.create(
                             inventory_item=item_inventory_instance,
                             updated_by=current_user,
-                            changes='Y',  # A for Add
+                            changes='A',  # A for Add
+                            remarks = "Physical count adjustment",
                             qty=discrepancy_qty
                         )
 
@@ -1380,7 +1367,7 @@ def borrowing_labcoord_borrowconfig(request):
         if 'lab_config_form' in request.POST:
             lab.allow_walkin = 'allow_walkin' in request.POST
             lab.allow_prebook = 'allow_prebook' in request.POST
-            lab.prebook_lead_time = request.POST.get('prebook_lead_time') or None
+            lab.prebook_lead_time = request.POST.get('prebook_lead_time') or 0
             lab.allow_shortterm = 'allow_shortterm' in request.POST
             lab.allow_longterm = 'allow_longterm' in request.POST
             lab.save()
@@ -2407,14 +2394,23 @@ def reports_view(request):
         laboratory_id=selected_laboratory_id,
         is_disabled=False
     ).annotate(
-        current_qty=Coalesce(
-            # Sum all additions ('A') within the date range
-            Sum('item_inventory__item_handling__qty', filter=Q(item_inventory__item_handling__changes='A', item_inventory__item_handling__timestamp__gte=start_date, item_inventory__item_handling__timestamp__lte=end_date)) - 
-            # Sum all subtractions ('R') within the date range
-            Sum('item_inventory__item_handling__qty', filter=Q(item_inventory__item_handling__changes='R', item_inventory__item_handling__timestamp__gte=start_date, item_inventory__item_handling__timestamp__lte=end_date)),
-            0  # Default value if the result is None
-        )
-    ).order_by('-current_qty', 'item_name') 
+    current_qty=Coalesce(
+        Sum(
+            'item_inventory__item_handling__qty',
+            filter=Q(item_inventory__item_handling__changes='A') &
+                   Q(item_inventory__item_handling__timestamp__gte=start_date) &
+                   Q(item_inventory__item_handling__timestamp__lte=end_date)
+        ), 0
+    ) - Coalesce(
+        Sum(
+            'item_inventory__item_handling__qty',
+            filter=Q(item_inventory__item_handling__changes='R') |
+                   Q(item_inventory__item_handling__changes='D') &
+                   Q(item_inventory__item_handling__timestamp__gte=start_date) &
+                   Q(item_inventory__item_handling__timestamp__lte=end_date)
+        ), 0
+    ) # Default value if the result is None
+    ).order_by('-current_qty', 'item_name')  # Order by current_qty descending, then by item_name
 
     print(inventory_data)
 

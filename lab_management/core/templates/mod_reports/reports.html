@@ -52,6 +52,7 @@
             <table id="inventoryTable" class="table datatable table-striped ">
                 <thead>
                     <tr>
+                        <th>Item ID</th>
                         <th>Item Name</th>
                         <th>Current Stock Level</th>
                         <th hidden></th>
@@ -62,6 +63,7 @@
                 <tbody>
                     {% for item in inventory_data %}
                     <tr>
+                        <td>{{ item.item_id }}</td>
                         <td>{{ item.item_name }}</td>
                         <td>{{ item.current_qty }}</td>
                         <td hidden></td>

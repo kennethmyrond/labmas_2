@@ -4,9 +4,9 @@
 {% block content %}
 <head>
     <!-- jQuery and Bootstrap for Modal -->
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <!-- <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script> -->
 
     <!-- Inline CSS -->
     <style>
@@ -57,9 +57,24 @@
                                         <select class="js-example-basic-single form-control" id="itemName" name="item_name" required></select>
                                     </div>
                                 </div>
-
+                                
                                 <!-- Add to Inventory Fields -->
                                 <div id="addFields">
+                                    <div class="row mb-3">
+                                        <label for="amount" class="col-sm-2 col-form-label">Quantity to add:</label>
+                                        <div class="col-sm-10">
+                                            <input type="number" class="form-control" name="amount" id="amount" placeholder="Enter number of items to add" min="0" oninput="validity.valid||(value='');" required>
+                                        </div>
+                                    </div>
+
+                                    <br>
+                                    <h6>Delivery Details</h6>
+                                    <div class="row mb-3">
+                                        <label for="itemSupplier" class="col-sm-2 col-form-label">Supplier:</label>
+                                        <div class="col-sm-10">
+                                            <select class="js-example-basic-single form-control" id="itemSupplier" name="item_supplier" required></select>
+                                        </div>
+                                    </div>
                                     <div class="row mb-3">
                                         <label for="inputDatePurchased" class="col-sm-2 col-form-label">Date Purchased:</label>
                                         <div class="col-sm-10">
@@ -73,21 +88,9 @@
                                         </div>
                                     </div>
                                     <div class="row mb-3">
-                                        <label for="amount" class="col-sm-2 col-form-label">Quantity Bought:</label>
-                                        <div class="col-sm-10">
-                                            <input type="number" class="form-control" name="amount" id="amount" required>
-                                        </div>
-                                    </div>
-                                    <div class="row mb-3">
                                         <label for="inputText" class="col-sm-2 col-form-label">Unit Price:</label>
                                         <div class="col-sm-10">
                                             <input type="number" class="form-control" name="item_price" id="unit_price" step="0.01">
-                                        </div>
-                                    </div>
-                                    <div class="row mb-3">
-                                        <label for="itemSupplier" class="col-sm-2 col-form-label">Supplier:</label>
-                                        <div class="col-sm-10">
-                                            <select class="js-example-basic-single form-control" id="itemSupplier" name="item_supplier" required></select>
                                         </div>
                                     </div>
                                     <div class="row mb-3" id="expirationDateRow" style="display:none;">
@@ -103,7 +106,7 @@
                                     <div class="row mb-3">
                                         <label for="quantityRemoved" class="col-sm-2 col-form-label">Quantity Removed:</label>
                                         <div class="col-sm-10">
-                                            <input type="number" class="form-control" name="quantity_removed" id="quantity_removed">
+                                            <input type="number" class="form-control" name="quantity_removed" id="quantity_removed" placeholder="Enter number of items to remove" min="0" oninput="validity.valid||(value='');" >
                                         </div>
                                     </div>
                                 </div>
@@ -113,7 +116,7 @@
                                     <div class="row mb-3">
                                         <label for="quantityDamaged" class="col-sm-2 col-form-label">Quantity Damaged/Lost:</label>
                                         <div class="col-sm-10">
-                                            <input type="number" class="form-control" name="quantity_removed" id="quantityDamaged" placeholder="Enter number of damaged/losst item">
+                                            <input type="number" class="form-control" name="quantity_damaged" id="quantityDamaged" min="0" oninput="validity.valid||(value='');"  placeholder="Enter number of damaged/lost item">
                                         </div>
                                     </div>
                                     <div class="row mb-3">
@@ -284,7 +287,7 @@
                         results: data.map(function(item) {
                             return {
                                 id: item.item_id,
-                                text: `${item.item_name}`
+                                text: `${item.item_name} | ${item.add_cols}`
                             };
                         })
                     };
