@@ -153,7 +153,7 @@ class item_inventory(models.Model):
 class item_handling(models.Model):
     item_handling_id = models.AutoField(primary_key=True)
     inventory_item = models.ForeignKey('item_inventory', on_delete=models.SET_NULL, null=True, blank=True)
-    updated_on = models.DateTimeField(null=True, blank=True)
+    timestamp = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     updated_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
     changes = models.CharField(max_length=1) # 'A' for add, 'R' for remove
     qty = models.IntegerField()

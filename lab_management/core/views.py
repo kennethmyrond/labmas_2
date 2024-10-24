@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
 from django.db.models.functions import TruncDate
 from django.contrib import messages
-from django.db.models import Q, Sum , Prefetch, F
+from django.db.models import Q, Sum , Prefetch, F, Count, Avg
 from django.utils import timezone
 from django import forms
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
@@ -83,7 +83,7 @@ def thread_function():
 # functions
 def get_inventory_history(item_description_instance):
     inventory_items = item_inventory.objects.filter(item=item_description_instance)
-    history = item_handling.objects.filter(inventory_item__in=inventory_items).order_by('-updated_on')
+    history = item_handling.objects.filter(inventory_item__in=inventory_items).order_by('-timestamp')
     return history
 
 def check_item_expiration(request, item_id):
@@ -135,7 +135,6 @@ def remove_item_from_inventory(item_inventory_instance, qty, user, changes):
         # Log the removal
         item_handling.objects.create(
             inventory_item=item_inventory_instance,
-            updated_on=timezone.now(),
             updated_by=user,
             changes=changes,
             qty=qty,
@@ -378,7 +377,6 @@ def inventory_updateItem_view(request):
             )
             item_handling.objects.create(
                 inventory_item=new_inventory_item,
-                updated_on=timezone.now(),
                 updated_by=current_user,
                 changes='A',
                 qty=amount,
@@ -494,8 +492,6 @@ def remove_item_from_inventory(inventory_item, amount, user, change_type, remark
 
     # Record the item handling
     item_handling.objects.create(
-        inventory_item=inventory_item,
-        updated_on=timezone.now(),
         updated_by=user,
         changes=change_type,
         qty=amount,
@@ -626,7 +622,6 @@ def inventory_physicalCount_view(request):
                         # Log this addition in item_handling
                         item_handling.objects.create(
                             inventory_item=item_inventory_instance,
-                            updated_on=timezone.now(),
                             updated_by=current_user,
                             changes='Y',  # A for Add
                             qty=discrepancy_qty
@@ -1025,7 +1020,6 @@ def borrowing_student_prebookview(request):
         'prebook_questions': prebook_questions  # Pass the prebook questions to the template
     })
 
-
 def get_items_by_type(request, item_type_id):
     try:
         items = item_description.objects.filter(itemType_id=item_type_id, is_disabled=0, allow_borrow=1)
@@ -1326,7 +1320,6 @@ def borrowing_student_detailedWalkInRequestsview(request):
         'borrowed_items': borrowed_items_list,
     })
 
-
 def borrowing_labcoord_prebookrequests(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -1498,7 +1491,6 @@ def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
         'borrowed_items_list': borrowed_items_list,
         'show_action_buttons': show_action_buttons,
     })
-
 
 def return_borrowed_items(request):
     borrow_id = request.POST.get('borrow_id', '')  # Fetch borrow_id from POST or use empty string
@@ -2369,11 +2361,72 @@ def get_room_configuration(request, room_id):
     }
 
     return JsonResponse(response_data)
+
+
+
 #  ================================================================= 
-
-
+# reports module
 def reports_view(request):
-    return render(request, 'mod_reports/reports.html')
+    selected_laboratory_id = request.session.get('selected_lab')
+
+    # inventory reportss ----------
+    date_type = request.GET.get('dateType', 'today')  # Get date filter type
+    date = request.GET.get('date', None)
+    start_date = request.GET.get('startDate', None)
+    end_date = request.GET.get('endDate', None)
+
+    # Query based on the selected date type
+    today = datetime.now().date()
+    query_filter = {}
+    
+    if date_type == 'today':
+        query_filter['timestamp__date'] = today
+    elif date_type == 'day' and date:
+        query_filter['timestamp__date'] = datetime.strptime(date, '%Y-%m-%d').date()
+    elif date_type == 'week' and date:
+        date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+        start_of_week = date_obj - timedelta(days=date_obj.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+        query_filter['timestamp__date__range'] = (start_of_week, end_of_week)
+    elif date_type == 'month' and date:
+        query_filter['timestamp__year'] = datetime.strptime(date, '%Y-%m-%d').year
+        query_filter['timestamp__month'] = datetime.strptime(date, '%Y-%m-%d').month
+    elif date_type == 'year' and date:
+        query_filter['timestamp__year'] = datetime.strptime(date, '%Y-%m-%d').year
+    elif date_type == 'timeframe' and start_date and end_date:
+        query_filter['timestamp__date__range'] = (start_date, end_date)
+
+    # Query the stock changes within the specified time range
+    inventory_data = item_handling.objects.filter(
+        inventory_item__item__laboratory_id=selected_laboratory_id,
+        **query_filter
+    ).values('inventory_item__item__item_name').annotate(
+        avg_qty=Avg('qty')
+    ).order_by('inventory_item__item__item_name')
+
+    # Borrowing Trends Report
+    borrowing_data = borrowed_items.objects.values('item__item_name').annotate(
+        total_borrowed=Sum('qty')).order_by('-total_borrowed')[:10]
+
+    # Room Usage Report
+    room_usage_data = laboratory_reservations.objects.values('room__name').annotate(
+        total_reservations=Count('reservation_id')).order_by('-total_reservations')
+
+    # Maintenance & Repairs Report
+    maintenance_data = reported_items.objects.values('item__item_name').annotate(
+        total_reported=Sum('qty_reported')).order_by('-total_reported')
+
+    context = {
+        'inventory_data': inventory_data,
+        'borrowing_data': borrowing_data,
+        'room_usage_data': room_usage_data,
+        'maintenance_data': maintenance_data,
+    }
+
+    return render(request, 'mod_reports/reports.html', context)
+
+
+
 
 def user_settings_view(request):
     return render(request, 'user_settings.html')
