@@ -1,0 +1,128 @@
+{% extends 'temp_navbar.html' %} {% block title %}SUPERUSER - Manage
+Laboratories{% endblock %} {% block content %}
+<style>
+  .status-active {
+    color: green;
+    font-weight: bold;
+  }
+
+  .status-terminated {
+    color: red;
+    font-weight: bold;
+  }
+
+</style>
+
+<div class="pagetitle">
+  <h1>Setup</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'superuser_manage_users' %}">Manage Users</a>
+      </li>
+      <li class="breadcrumb-item active">User Information</li>
+    </ol>
+  </nav>
+</div>
+<!-- End Page Title -->
+
+<section class="section">
+  <h5 class="card-title">User Details</h5>
+  <p><strong>ID:</strong> 1</p>
+  <!-- Replace with dynamic content -->
+  <p><strong>Name: </strong>Juan Dela Cruz</p>
+  <p><strong>Role: </strong>Student</p>
+  <p><strong>DLSU: </strong>Yes</p>  <!-- delete if not needed -->
+  <p><strong>Date Created: </strong> 12/03/23</p>
+  <p><strong>Status: </strong> <span class="status-active">Active</span></p>
+  <div>
+    <a href="{% url 'setup_edituser' %}" class="btn btn-primary">Edit</a>
+    <button
+      type="button"
+      class="btn btn-danger"
+      data-toggle="modal"
+      data-target="#deactivateLabModal"
+    >
+      Deactivate
+    </button>
+  </div>
+  <br />
+
+  <!-- End Lab Details Section -->
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Assigned Laboratories</h5>
+
+          <!-- Table with stripped rows -->
+          <table class="table datatable">
+            <thead>
+              <tr>
+                <th>Laboratory</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Chem Lab AY 23-24</td>
+                <td>
+                    <button class="btn btn-danger btn-sm">Delete</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <button
+            type="button"
+            class="btn btn-primary"
+            data-toggle="modal"
+            data-target="#addlabmodal"
+          >
+            Assign Laboratory
+          </button>
+          <!-- End Table with stripped rows -->
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Assign Laboratory Modal -->
+<div
+  class="modal fade"
+  id="addlabmodal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="addlabmodallabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form method="POST" action="">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addlabmodallabel"">Assign Lab</h5>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+          <div class="form-group">
+            <label for="role">Laboratory</label>
+            <select class="form-control" id="role" name="role">
+              <option value="Administrator">Physics Lab AY23-24</option>
+              <option value="Technician">Biology Lab AY23-24</option>
+              <option value="Technician">Computer Lab AY23-24</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            Close
+          </button>
+          <button type="submit" class="btn btn-primary">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

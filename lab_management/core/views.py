@@ -2496,6 +2496,9 @@ def add_room(request):
 def setup_editLab(request):
     return render(request, 'superuser/superuser_editLab.html')
 
+def setup_edituser(request):
+    return render(request, 'superuser/superuser_edituser.html')
+
 def setup_manageRooms(request):
        return render(request, 'superuser/superuser_manageRooms.html')
 

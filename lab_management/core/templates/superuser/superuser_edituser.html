@@ -1,0 +1,103 @@
+{% extends 'temp_navbar.html' %} {% block title %}SUPERUSER - Manage
+Laboratories{% endblock %} {% block content %}
+<style>
+  .status-active {
+    color: green;
+    font-weight: bold;
+  }
+
+  .status-terminated {
+    color: red;
+    font-weight: bold;
+  }
+  .short-input {
+    width: ;
+  }
+</style>
+
+<div class="pagetitle">
+  <h1>Setup</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'superuser_manage_users' %}">Manage Users</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'superuser_user_info' %}">User Information</a>
+      </li>
+      <li class="breadcrumb-item active">Edit User</li>
+    </ol>
+  </nav>
+</div>
+<!-- End Page Title -->
+
+<section class="section">
+  <h5 class="card-title">User Details</h5>
+  <p><strong>ID:</strong> 1</p>
+  <!-- Replace with dynamic content -->
+
+  <div class="col-xs-2">
+    <label for="lab_name"><strong>Name:</strong></label>
+    <input
+      type="text"
+      class=""
+      value="Chem Lab AY 23-24"
+      name="lab_name"
+      required
+    />
+  </div>
+
+  <p><strong>Date Created:</strong> 12/03/20</p>
+  <p><strong>Status:</strong> <span class="status-active">Active</span></p>
+  <!-- End Lab Details Section -->
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Users</h5>
+
+          <!-- Table with stripped rows -->
+          <table class="table datatable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Action</th>
+                <th style="display: none"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>juan@gmail.com</td>
+                <td>Administrator</td>
+                <td>
+                  <button type="submit" class="btn btn-danger btn-sm">
+                    Delete
+                  </button>
+                </td>
+                <td style="display: none"></td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>lala@gmail.com</td>
+                <td>Technician</td>
+                <td>
+                  <button type="submit" class="btn btn-danger btn-sm">
+                    Delete
+                  </button>
+                </td>
+                <td style="display: none"></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- End Table with stripped rows -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% endblock %}
+</section>
