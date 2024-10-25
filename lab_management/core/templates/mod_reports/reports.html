@@ -43,7 +43,7 @@
     </div>
 
     <!-- Inventory Stock Report Table -->
-    <div class="card">
+    <div class="card col">
         <div class="card-body">
             <h5 class="card-title">Stock Level Based on the Selected Date</h5>
             <canvas id="inventoryStockChart"></canvas>
@@ -54,6 +54,7 @@
                     <tr>
                         <th>Item ID</th>
                         <th>Item Name</th>
+                        <th>Item Type</th>
                         <th>Current Stock Level</th>
                         <th hidden></th>
                         <th hidden></th>
@@ -65,6 +66,7 @@
                     <tr>
                         <td>{{ item.item_id }}</td>
                         <td>{{ item.item_name }}</td>
+                        <td>{{ item.item_type__itemType_name}}</td>
                         <td>{{ item.current_qty }}</td>
                         <td hidden></td>
                         <td hidden></td>
@@ -93,7 +95,7 @@
 
 <script>
     $(document).ready(function () {
-    
+        let today = new Date()
         // Handle showing/hiding of input fields based on date type
         $('#dateType').change(function () {
             var dateType = $(this).val();
@@ -115,6 +117,20 @@
                     date.min = "1900";
                     date.max = "2999";
                     date.value = "2024"
+                } else{
+                    // get date today as max input
+                    var dtToday = new Date();
+                    var month = dtToday.getMonth() + 1;
+                    var day = dtToday.getDate();
+                    var year = dtToday.getFullYear();
+                    if(month < 10)
+                        month = '0' + month.toString();
+                    if(day < 10)
+                        day = '0' + day.toString();
+                    var maxDate = year + '-' + month + '-' + day;    
+                    $('#date').attr('max', maxDate);
+
+                    document.getElementById("date").attributes["type"].value = "date";
                 }
             } else {
                 $('#dateInput').hide();
@@ -138,19 +154,35 @@
 <script>
     // Inventory Stock Report Chart
     const inventoryData = {
-        labels: [{% for item in inventory_data %}'{{ item.item_name }}',{% endfor %}],
-        datasets: [{
-            label: 'Stock Quantity',
-            data: [{% for item in inventory_data %}{{ item.current_qty }},{% endfor %}],
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1
-        }]
+        labels: [{% for item in combined_data %}'{{ item.item_name }}',{% endfor %}],
+        datasets: [
+            {
+                label: 'Stock Quantity',
+                data: [{% for item in combined_data %}{{ item.current_qty }},{% endfor %}],
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'Total Borrowed Quantity',
+                data: [{% for item in combined_data %}{{ item.total_borrowed }},{% endfor %}],
+                backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1
+            }
+        ]
     };
     const inventoryConfig = {
         type: 'bar',
         data: inventoryData,
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
     };
     const inventoryStockChart = new Chart(document.getElementById('inventoryStockChart'), inventoryConfig);
 

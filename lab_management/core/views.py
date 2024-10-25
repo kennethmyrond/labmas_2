@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
-from django.db.models.functions import TruncDate, Coalesce
+from django.db.models.functions import TruncDate, Coalesce, Greatest
 from django.contrib import messages
-from django.db.models import Q, Sum , Prefetch, F, Count, Avg
+from django.db.models import Q, Sum , Prefetch, F, Count, Avg 
 from django.utils import timezone
 from django import forms
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
@@ -2373,6 +2373,12 @@ def reports_view(request):
     elif date_type == 'day' and date:
         start_date = '1900-12-30'
         end_date = date
+
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+        start_date = timezone.make_aware(datetime.combine(start_date, datetime.min.time()))
+        end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
     elif date_type == 'week' and date:
         date_obj = datetime.strptime(date, '%Y-%m-%d').date()
         start_date = date_obj - timedelta(days=date_obj.weekday())
@@ -2389,34 +2395,40 @@ def reports_view(request):
         start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
         end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
 
+    print (start_date, end_date)
     # Calculate stock level based on item handling up to the selected end_date
     inventory_data = item_description.objects.filter(
         laboratory_id=selected_laboratory_id,
         is_disabled=False
     ).annotate(
-    current_qty=Coalesce(
-        Sum(
-            'item_inventory__item_handling__qty',
-            filter=Q(item_inventory__item_handling__changes='A') &
-                   Q(item_inventory__item_handling__timestamp__gte=start_date) &
-                   Q(item_inventory__item_handling__timestamp__lte=end_date)
-        ), 0
-    ) - Coalesce(
-        Sum(
-            'item_inventory__item_handling__qty',
-            filter=Q(item_inventory__item_handling__changes='R') |
-                   Q(item_inventory__item_handling__changes='D') &
-                   Q(item_inventory__item_handling__timestamp__gte=start_date) &
-                   Q(item_inventory__item_handling__timestamp__lte=end_date)
-        ), 0
-    ) # Default value if the result is None
-    ).order_by('-current_qty', 'item_name')  # Order by current_qty descending, then by item_name
+    current_qty=Greatest(
+        Coalesce(
+            Sum('item_inventory__item_handling__qty', filter=Q(item_inventory__item_handling__changes='A', item_inventory__item_handling__timestamp__gte=start_date, item_inventory__item_handling__timestamp__lte=end_date)), 0
+        ) - 
+        Coalesce(
+            Sum('item_inventory__item_handling__qty', filter=Q(item_inventory__item_handling__changes='R') | Q(item_inventory__item_handling__changes='D')& Q(item_inventory__item_handling__timestamp__gte=start_date) & Q(item_inventory__item_handling__timestamp__lte=end_date)), 0
+        ),
+        0  # Default value if the result is None
+    )
+    ).order_by('-current_qty', 'item_name') 
 
-    print(inventory_data)
-
-    # Borrowing Trends Report
+    # Borrowing Data
     borrowing_data = borrowed_items.objects.values('item__item_name').annotate(
-        total_borrowed=Sum('qty')).order_by('-total_borrowed')[:10]
+        total_borrowed=Sum('qty')
+    ).order_by('-total_borrowed')[:10]
+
+    # Combine Data
+    combined_data = []
+    for item in inventory_data:
+        borrowed_qty = next((borrow['total_borrowed'] for borrow in borrowing_data if borrow['item__item_name'] == item.item_name), 0)
+        combined_data.append({
+            'item_name': item.item_name,
+            'current_qty': item.current_qty,
+            'total_borrowed': borrowed_qty
+        })
+
+    combined_data.sort(key=lambda x: (x['total_borrowed'], x['current_qty']), reverse=True)
+
 
     # Room Usage Report
     room_usage_data = laboratory_reservations.objects.values('room__name').annotate(
@@ -2429,6 +2441,7 @@ def reports_view(request):
     context = {
         'inventory_data': inventory_data,
         'borrowing_data': borrowing_data,
+        'combined_data': combined_data,
         'room_usage_data': room_usage_data,
         'maintenance_data': maintenance_data,
         'date_type': date_type,
