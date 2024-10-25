@@ -98,4 +98,5 @@ urlpatterns = [
     path('setup/manageRooms', views.setup_manageRooms, name='setup_manageRooms'),
     path('setup/manageusers', views.superuser_manage_users, name='superuser_manage_users'),
     path('setup/userInfo', views.superuser_user_info, name='superuser_user_info'),
+    path('setup/edituser', views.setup_edituser, name='setup_edituser'),
 ]
