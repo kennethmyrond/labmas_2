@@ -2502,6 +2502,9 @@ def setup_edituser(request):
 def setup_manageRooms(request):
        return render(request, 'superuser/superuser_manageRooms.html')
 
+def setup_createlab(request):
+       return render(request, 'superuser/superuser_createlab.html')
+
 def superuser_login(request):
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)

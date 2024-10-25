@@ -175,11 +175,18 @@
 
     <ul class="sidebar-nav" id="sidebar-nav">
       <li class="nav-item">
-        <a class="nav-link {% if request.resolver_match.url_name in 'superuser_setup superuser_manage_labs superuser_manage_users superuser_user_info setup_edituser setup_editLab' %}active{% else %}collapsed{% endif %}" data-bs-target="#setup-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link {% if request.resolver_match.url_name in 'superuser_setup superuser_manage_labs superuser_manage_users superuser_user_info setup_edituser setup_editLab setup_createlab' %}active{% else %}collapsed{% endif %}" data-bs-target="#setup-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-grid"></i>
           <span>Setup</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="setup-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info superuser_manage_users superuser_user_info setup_edituser setup_editLab' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+        <ul id="setup-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info superuser_manage_users superuser_user_info setup_edituser setup_editLab setup_createlab' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+          <li>
+            <a href="{% url 'setup_createlab' %}" class="{% if request.resolver_match.url_name in 'setup_createlab' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>SUPERUSER - Set Up New Laboratory</span>
+            </a>
+          </li> 
+
+
           <li>
             <a href="{% url 'superuser_manage_labs' %}" class="{% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info setup_editLab' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>SUPERUSER - Manage Labs</span>
