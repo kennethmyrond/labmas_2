@@ -8,12 +8,44 @@ from django.core.files import File
 from PIL import Image, ImageDraw
 from django.contrib.postgres.fields import JSONField
 
+
+class Module(models.Model): 
+    MODULE_CHOICES = [
+        ('inventory', 'Inventory Management'),
+        ('borrowing', 'Borrowing'),
+        ('clearance', 'Clearance'),
+        ('reservation', 'Laboratory Reservation'),
+        ('reports', 'Reports'),
+    ]
+    name = models.CharField(max_length=50, choices=MODULE_CHOICES)
+    enabled = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+
 class laboratory(models.Model):
     laboratory_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=45, null=True, blank=True)
     description = models.CharField(max_length=45, null=True, blank=True)
     department = models.CharField(max_length=45, null=True, blank=True)
     is_available = models.BooleanField(default=True)
+    modules = models.ManyToManyField(Module, through='LaboratoryModule', blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+class LaboratoryModule(models.Model):
+    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
+    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('laboratory', 'module')  # Ensure unique pairs
+
+    def __str__(self):
+        return f"{self.laboratory.name} - {self.module.name}"
+
 
 class role(models.Model):
     roles_id = models.AutoField(primary_key=True)
@@ -62,21 +94,6 @@ class user(AbstractBaseUser):
 
     def __str__(self):
         return self.email
-
-class Module(models.Model):
-    MODULE_CHOICES = [
-        ('inventory', 'Inventory Management'),
-        ('borrowing', 'Borrowing'),
-        ('clearance', 'Clearance'),
-        ('reservation', 'Laboratory Reservation'),
-        ('reports', 'Reports'),
-    ]
-    name = models.CharField(max_length=50, choices=MODULE_CHOICES)
-    enabled = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.name
-
 
 # class UserProfile(models.Model):
 #     USER_ROLES = [

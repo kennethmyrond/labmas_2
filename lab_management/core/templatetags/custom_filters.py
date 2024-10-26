@@ -3,6 +3,7 @@ from django import template
 
 register = template.Library()
 
+
 @register.filter(name='b64encode')
 def b64encode(value):
     """Encodes image or binary data into base64 for embedding in HTML."""
@@ -27,3 +28,4 @@ def get_item(dictionary, key):
 @register.filter
 def range_filter(value):
     return range(value)
+

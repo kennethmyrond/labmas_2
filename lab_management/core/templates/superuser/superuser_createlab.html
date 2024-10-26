@@ -1,0 +1,117 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}Setup - New Laboratory{% endblock %}
+
+{% block content %}
+  <style>
+    .btncontainer {
+      text-align: right;
+    }
+  </style>
+
+  <div class="pagetitle">
+    <h1>Setup</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item active">New User Laboratory</li>
+      </ol>
+    </nav>
+  </div>
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Laboratory Details</h5>
+            <form method="POST" id="edituser" action="{% url 'setup_createlab' %}" class="mb-2">
+              {% csrf_token %}
+                <div class="row mb-3">
+                    <label for="labname" class="col-sm-2 col-form-label">Name:</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="labname" class="form-control" maxlength="45">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label for="description" class="col-sm-2 col-form-label">Description:</label>
+                    <div class="col-sm-10">
+                      <input type="text" name="description" class="form-control" maxlength="100">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                  <label for="description" class="col-sm-2 col-form-label">Department:</label>
+                  <div class="col-sm-10">
+                    <input type="text" name="department" class="form-control" maxlength="100">
+                  </div>
+              </div>
+
+                <div class="row mb-3">
+                    <label for="modules" class="col-sm-2 col-form-label">Modules:</label>
+                    <div class="col-sm-10">
+                      <input type="checkbox" name="inventory" value="1">
+                      <label for="inventory" class="col-sm-2 col-form-label">Inventory</label>
+
+                      <input type="checkbox" name="borrowing" value="2">
+                      <label for="borrowing" class="col-sm-2 col-form-label">Borrowing</label>
+
+                      <input type="checkbox" name="clearance" value="3">
+                      <label for="clearance" class="col-sm-2 col-form-label">Clearance</label>
+
+                      <input type="checkbox" name="reservation" value="4">
+                      <label for="reservation" class="col-sm-2 col-form-label">Reservation</label>
+
+                      <input type="checkbox" name="reports" value="5">
+                      <label for="reports" class="col-sm-2 col-form-label">Reports</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Create New Lab</button>
+                <button type="reset" class="btn btn-secondary">Clear</button>
+
+            </form>     
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Form for Borrowing Configuration by Item or Item Type -->
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Roles</h5>
+
+            <form method="POST" id="">
+              <p>work in progress</p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Section 3</h5>
+  
+            
+  
+            
+  
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div>
+    
+  </div>
+  
+  
+
+{% endblock %}
