@@ -1,5 +1,6 @@
-{% extends 'temp_navbar.html' %} {% block title %}SUPERUSER - Manage
-Laboratories{% endblock %} {% block content %}
+{% extends 'temp_navbar.html' %} 
+{% block title %}SUPERUSER - Laboratory Information{% endblock %} 
+{% block content %}
 <style>
   .status-active {
     color: green;
@@ -9,6 +10,31 @@ Laboratories{% endblock %} {% block content %}
   .status-terminated {
     color: red;
     font-weight: bold;
+  }
+
+  .module-card {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+    transition: box-shadow 0.2s;
+  }
+
+  .module-card:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .module-title {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 5px;
+  }
+
+  /* Style for error message */
+  .alert {
+    color: red; /* Change text color to red */
+    cursor: pointer; /* Change cursor to pointer for clickable effect */
   }
 </style>
 
@@ -27,14 +53,86 @@ Laboratories{% endblock %} {% block content %}
 
 <section class="section">
   <h5 class="card-title">Lab Details</h5>
-  <p><strong>ID:</strong> 1</p>
-  <!-- Replace with dynamic content -->
-  <p><strong>Name: </strong>Chem Lab AY 23-24</p>
-  <p><strong>Date Created: </strong>12/03/20</p>
-  <p><strong>Status: </strong><span class="status-active">Active</span></p>
+  <p><strong>ID:</strong> {{ lab.laboratory_id }}</p>
+  <p><strong>Name: </strong>{{ lab.name }}</p>
+  <p><strong>Description: </strong>{{ lab.description }}</p>
+  <p><strong>Department: </strong>{{ lab.department }}</p>
+  <p><strong>Date Created: </strong>{{ lab.date_created|date:"Y-m-d" }}</p>
+
+  <h5 class="card-title">Add Module</h5>
+  <form method="POST" action="{% url 'add_module_to_lab' lab.laboratory_id %}">
+      {% csrf_token %}
+      <div class="form-group">
+          <label for="module_id">Select Module:</label>
+          <select class="form-control" id="module_id" name="module_id">
+              {% for module in all_modules %}
+                  <option value="{{ module.id }}">{{ module.name }}</option>
+              {% endfor %}
+          </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Add Module</button>
+  </form>
+  
+  <p><strong>Modules:</strong></p>
+  {% if messages %}
+    <div class="alert" role="alert" onclick="this.style.display='none';"> <!-- Remove close button -->
+        {% for message in messages %}
+            <div>{{ message }}</div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+  <div class="row">
+    {% if modules %}
+            {% for module in modules %}
+          <div class="col-md-4">
+            <div class="module-card">
+              <div class="module-title">{{ module.name }}</div>
+              <div class="module-description">
+                <p>{{ module.enabled|yesno:"Enabled, Disabled" }}</p>
+              </div>
+              <div class="module-actions">
+                <form action="{% url 'toggle_module_status' lab.laboratory_id module.id %}" method="post">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-{{ module.enabled|yesno:'danger,success' }} " onclick="updateButtonText(this, '{{ module.enabled }}')"> <!-- Update button text on click -->
+                    {% if module.enabled %}
+                      Disable Module
+                    {% else %}
+                      Enable Module
+                    {% endif %}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+  
+    {% else %}
+      <div class="col-md-12">
+        <div class="module-card">
+          <p>No modules assigned.</p>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+  
+  <p><strong>Status: </strong>
+    <span class="{% if lab.is_available %}status-active{% else %}status-terminated{% endif %}">
+      {{ lab.get_status }}
+    </span>
+  </p>
   <div>
-    <a href="{% url 'setup_editLab' %}" class="btn btn-primary">Edit</a>
     <button
+      type="button"
+      class="btn btn-primary"
+      data-toggle="modal"
+      data-target="#editLabModal"
+    >
+      Edit Lab
+    </button>
+    <form method="POST" action="{% url 'deactivate_lab' lab.laboratory_id %}" style="display:inline;">
+      {% csrf_token %}
+      <button
       type="button"
       class="btn btn-danger"
       data-toggle="modal"
@@ -42,8 +140,13 @@ Laboratories{% endblock %} {% block content %}
     >
       Deactivate
     </button>
+
+    </form>
   </div>
+  
   <br />
+</section>
+
 
   <!-- End Lab Details Section -->
   <div class="row">
@@ -99,33 +202,36 @@ Laboratories{% endblock %} {% block content %}
       <div class="card">
         <div class="card-body">
           <h5 class="card-title">Rooms</h5>
-
+  
           <!-- Table with stripped rows -->
           <table class="table datatable">
             <thead>
               <tr>
-                <th>Building</th>
-                <th>Room Number</th>
+                <th>Room ID</th>
+                <th>Room Name</th>
+                <th>Description</th>
                 <th>Capacity</th>
                 <th style="display: none"></th>
                 <th style="display: none"></th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>GK</td>
-                <td>123</td>
-                <td>24</td>
-                <td style="display: none"></td>
-                <td style="display: none"></td>
-              </tr>
-              <tr>
-                <td>SJ</td>
-                <td>423</td>
-                <td>40</td>
-                <td style="display: none"></td>
-                <td style="display: none"></td>
-              </tr>
+              {% if lab_rooms %}
+                {% for room in lab_rooms %}
+                  <tr>
+                    <td>{{ room.room_id }}</td>
+                    <td>{{ room.name }}</td>
+                    <td>{{ room.description }}</td>
+                    <td>{{ room.capacity }}</td>
+                    <td style="display: none"></td>
+                    <td style="display: none"></td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="4">No rooms assigned.</td>
+                </tr>
+              {% endif %}
             </tbody>
           </table>
           <button
@@ -140,7 +246,7 @@ Laboratories{% endblock %} {% block content %}
         </div>
       </div>
     </div>
-  </div>
+  </div>  
 </section>
 <!-- Add User Modal -->
 <div
@@ -216,10 +322,60 @@ Laboratories{% endblock %} {% block content %}
 >
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-      <form method="POST" action="{% url 'add_room' %}">
+      <form action="{% url 'add_room' laboratory_id=laboratory_id %}" method="post">
         {% csrf_token %}
         <div class="modal-header">
           <h5 class="modal-title" id="addRoomModalLabel">Add Room</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="room_name">Room Name</label>
+            <input type="text" class="form-control" id="room_name" name="room_name" required />
+          </div>
+          <div class="form-group">
+            <label for="room_description">Description</label>
+            <input type="text" class="form-control" id="room_description" name="room_description" required />
+          </div>
+          <div class="form-group">
+            <label for="room_capacity">Capacity</label>
+            <input type="number" class="form-control" id="room_capacity" name="room_capacity" required />
+          </div>
+        </div>
+        {% if messages %}
+          <div class="alert alert-info">
+            {% for message in messages %}
+              <p>{{ message }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Lab Modal -->
+<div
+  class="modal fade"
+  id="editLabModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="editLabModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <form id="editLabForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="editLabModalLabel">Edit Lab Details</h5>
           <button
             type="button"
             class="close"
@@ -231,32 +387,35 @@ Laboratories{% endblock %} {% block content %}
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label for="building">Building</label>
+            <label for="lab_name">Name</label>
             <input
               type="text"
               class="form-control"
-              id="building"
-              name="building"
+              id="lab_name"
+              name="name"
+              value="{{ lab.name }}"
               required
             />
           </div>
           <div class="form-group">
-            <label for="room_number">Room Number</label>
+            <label for="lab_description">Description</label>
             <input
               type="text"
               class="form-control"
-              id="room_number"
-              name="room_number"
+              id="lab_description"
+              name="description"
+              value="{{ lab.description }}"
               required
             />
           </div>
           <div class="form-group">
-            <label for="capacity">Capacity</label>
+            <label for="lab_department">Department</label>
             <input
-              type="number"
+              type="text"
               class="form-control"
-              id="capacity"
-              name="capacity"
+              id="lab_department"
+              name="department"
+              value="{{ lab.department }}"
               required
             />
           </div>
@@ -271,5 +430,63 @@ Laboratories{% endblock %} {% block content %}
     </div>
   </div>
 </div>
+
+<!-- Deactivate Confirmation Modal -->
+<div class="modal fade" id="deactivateLabModal" tabindex="-1" role="dialog" aria-labelledby="deactivateLabModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deactivateLabModalLabel">Confirm Deactivation</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to deactivate this laboratory?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <form method="POST" action="{% url 'deactivate_lab' lab.laboratory_id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Deactivate</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  function updateButtonText(button, currentState) {
+      // Change the button text before the form is submitted
+      if (currentState === "1") {
+          button.textContent = "Disable Module"; // If currently enabled, change to "Enable"
+      } else {
+          button.textContent = "Enable Module"; // If currently disabled, change to "Disable"
+      }
+  }
+
+  document.getElementById('editLabForm').onsubmit = function(event) {
+      event.preventDefault(); // Prevent default form submission
+      const formData = new FormData(this);
+      fetch("{% url 'edit_lab_info' lab.laboratory_id %}", {
+          method: 'POST',
+          body: formData,
+          headers: {
+              'X-CSRFToken': '{{ csrf_token }}' // Set CSRF token in header
+          }
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.status === 'success') {
+              // Optionally update the displayed information without refreshing
+              location.reload(); // Reload the page to see changes
+          } else {
+              alert('Error updating lab information');
+          }
+      })
+      .catch(error => console.error('Error:', error));
+  };
+</script>
 
 {% endblock %}

@@ -29,17 +29,22 @@ class laboratory(models.Model):
     name = models.CharField(max_length=45, null=True, blank=True)
     description = models.CharField(max_length=45, null=True, blank=True)
     department = models.CharField(max_length=45, null=True, blank=True)
-    is_available = models.BooleanField(default=True)
-    modules = models.ManyToManyField(Module, through='LaboratoryModule', blank=True)
+    is_available = models.BooleanField(default=True)  # 1 for active, 0 for terminated
+    date_created = models.DateTimeField(default=timezone.now)
+    modules = models.ManyToManyField('Module', through='LaboratoryModule', blank=True)
 
     def __str__(self):
         return self.name
+
+    def get_status(self):
+        return "Active" if self.is_available else "Terminated"
 
 
 class LaboratoryModule(models.Model):
     laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
     module = models.ForeignKey(Module, on_delete=models.CASCADE)
-
+    enabled = models.BooleanField(default=True)  # Add this field to track module status
+    
     class Meta:
         unique_together = ('laboratory', 'module')  # Ensure unique pairs
 
