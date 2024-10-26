@@ -10,9 +10,7 @@ Laboratories{% endblock %} {% block content %}
     color: red;
     font-weight: bold;
   }
-  .short-input {
-    width: ;
-  }
+  
 </style>
 
 <div class="pagetitle">
@@ -20,10 +18,10 @@ Laboratories{% endblock %} {% block content %}
   <nav>
     <ol class="breadcrumb">
       <li class="breadcrumb-item">
-        <a href="{% url 'superuser_manage_labs' %}">Manage Laboratories</a>
+        <a href="{% url 'superuser_manage_labs'  %}">Manage Laboratories</a>
       </li>
       <li class="breadcrumb-item">
-        <a href="{% url 'superuser_lab_info' %}">Laboratory Information</a>
+        <a href="{% url 'superuser_lab_info' lab.laboratory_id %}">Laboratory Information</a>
       </li>
       <li class="breadcrumb-item active">Edit Laboratory</li>
     </ol>

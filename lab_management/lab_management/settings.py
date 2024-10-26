@@ -134,7 +134,7 @@ DATABASES = {
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'dblabms_v3',
+#         'NAME': 'dblabmas_v2',
 #         'USER': 'root',
 #         'PASSWORD': 'DLSU1234',
 #         'HOST': '127.0.0.1',

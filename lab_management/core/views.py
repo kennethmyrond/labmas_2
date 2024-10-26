@@ -206,12 +206,6 @@ def error_page(request, message=None):
     """
     return render(request, 'error_page.html', {'message': message})
 
-# modules
-# 1	inventory
-# 2	borrowing
-# 3	clearance
-# 4	reservation
-# 5	reports
 
 # inventory
 def inventory_view(request):
@@ -220,9 +214,6 @@ def inventory_view(request):
     
     # Get the selected laboratory from the session
     selected_laboratory_id = request.session.get('selected_lab')
-    select_module = LaboratoryModule.objects.filter(laboratory_id=selected_laboratory_id, module_id=1)
-    if not select_module:
-        return render(request, 'error_page.html', {'message': 'Inventory is not allowed for this laboratory.'})
     
     # Get all item types for the selected laboratory
     item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
@@ -257,13 +248,6 @@ def inventory_view(request):
 def inventory_itemDetails_view(request, item_id):
     if not request.user.is_authenticated:
         return redirect('userlogin')
-    
-    # restricting access to laboratory module
-    selected_laboratory_id_module = request.session.get('selected_lab')
-    select_module = LaboratoryModule.objects.filter(laboratory_id=selected_laboratory_id_module, module_id=1)
-    if not select_module:
-        return render(request, 'error_page.html', {'message': 'Inventory is not allowed for this laboratory.'})
-    # end section
     
     # Get the item_description instance
     item = get_object_or_404(item_description, item_id=item_id)
@@ -2480,10 +2464,70 @@ def user_settings_view(request):
 
 # superuser stuff
 def superuser_manage_labs(request):
-    return render(request, 'superuser/superuser_manageLabs.html')
+    labs = laboratory.objects.all()  # Retrieve all laboratory records
+    context = {
+        'labs': labs,
+    }
+    return render(request, 'superuser/superuser_manageLabs.html', context)
 
-def superuser_lab_info(request):
-    return render(request, 'superuser/superuser_labInfo.html')
+def superuser_lab_info(request, laboratory_id):
+    lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+    lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id)  # Adjust this line based on your Room model's field names
+    modules = lab.modules.all()  # Retrieve all modules for the lab
+    all_modules = Module.objects.all()  # Get all available modules
+    
+    return render(request, 'superuser/superuser_labInfo.html', {
+        'laboratory_id': laboratory_id,
+        'lab': lab,
+        'modules': modules,
+        'lab_rooms': lab_rooms,
+        'all_modules': all_modules,  # Pass all modules to the template
+    })
+
+
+def add_module_to_lab(request, laboratory_id):
+    if request.method == 'POST':
+        module_id = request.POST.get('module_id')
+        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+        module = get_object_or_404(Module, id=module_id)
+
+        # Check if the module is already associated with the lab
+        if LaboratoryModule.objects.filter(laboratory=lab, module=module).exists():
+            messages.error(request, "The module is already added to this laboratory.")
+        else:
+            # Create a LaboratoryModule entry
+            LaboratoryModule.objects.get_or_create(laboratory=lab, module=module)
+            messages.success(request, "Module added successfully.")
+
+        return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+
+    return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+
+def toggle_module_status(request, laboratory_id, module_id):
+    # Get the module and toggle its status
+    module = Module.objects.get(id=module_id)
+    module.enabled = not module.enabled  # Toggle the enabled status
+    module.save()  # Save the updated status
+    
+    # Redirect back to the laboratory info page
+    return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+
+def edit_lab_info(request, laboratory_id):
+    if request.method == 'POST':
+        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+        lab.name = request.POST.get('name')
+        lab.description = request.POST.get('description')
+        lab.department = request.POST.get('department')
+        lab.save()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'fail'}, status=400)
+
+def deactivate_lab(request, laboratory_id):
+    lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+    lab.is_available = False  # Set is_available to 0 (inactive)
+    lab.save()  # Save the changes to the database
+    messages.success(request, "Laboratory deactivated successfully.")  # Optional success message
+    return redirect('superuser_manage_labs')
 
 def superuser_manage_users(request):
     return render(request, 'superuser/superuser_manageusers.html')
@@ -2501,16 +2545,37 @@ def add_user(request):
         return redirect('superuser_lab_info') 
 
 
-def add_room(request):
+def add_room(request, laboratory_id):
     if request.method == "POST":
-        building = request.POST['building']
-        room_number = request.POST['room_number']
-        capacity = request.POST['capacity']
-        # insert code to add to the database 
-        return redirect('superuser_lab_info') 
+        room_name = request.POST.get('room_name')
+        room_description = request.POST.get('room_description')
+        room_capacity = request.POST.get('room_capacity')
 
-def setup_editLab(request):
-    return render(request, 'superuser/superuser_editLab.html')
+        # Validate input data
+        if room_name and room_description and room_capacity.isdigit():  # Ensure capacity is an integer
+            room_capacity = int(room_capacity)  # Convert to integer
+            
+            # Create a new room instance
+            room = rooms.objects.create(
+                laboratory_id=laboratory_id,  # Associate room with laboratory
+                name=room_name,
+                capacity=room_capacity,
+                description=room_description
+            )
+            messages.success(request, "Room added successfully.")
+        else:
+            messages.error(request, "All fields are required and capacity must be a number.")
+
+        return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+    else:
+        # Handle GET request if necessary (optional)
+        return render(request, 'superuser/superuser_labInfo.html')  # Adjust to your actual template name
+
+#def setup_editLab(request, laboratory_id):
+    # Retrieve the lab to edit
+    #lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+    #return render(request, 'superuser/superuser_editLab.html', {'lab': lab})
+
 
 def setup_edituser(request):
     return render(request, 'superuser/superuser_edituser.html')
@@ -2532,13 +2597,14 @@ def setup_createlab(request):
             name=lab_name,
             description=description,
             department=department,
-            is_available=True
+            is_available=True,
+            date_created=timezone.now() 
         )
         print("Created new lab:", new_lab)  # Log the created lab
 
-        # Add selected modules
+        # Add selected modules using toggle switches
         module_ids = []
-        if 'inventory' in request.POST:
+        if 'inventory' in request.POST:  # Check if toggle is checked
             module_ids.append(1)  # ID for Inventory
         if 'borrowing' in request.POST:
             module_ids.append(2)  # ID for Borrowing
@@ -2549,7 +2615,6 @@ def setup_createlab(request):
         if 'reports' in request.POST:
             module_ids.append(5)  # ID for Reports
 
-
         # Check if there are any module IDs to set
         if module_ids:
             # Link selected modules
@@ -2557,10 +2622,10 @@ def setup_createlab(request):
                 module = Module.objects.get(id=module_id)  # Retrieve module instance
                 LaboratoryModule.objects.create(laboratory=new_lab, module=module)  # Create entry in LaboratoryModule
 
-
         return redirect('setup_createlab')  # Redirect to a success page or another view
 
     return render(request, 'superuser/superuser_createlab.html')
+
 
 
 

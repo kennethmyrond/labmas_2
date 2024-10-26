@@ -23,6 +23,44 @@ class Module(models.Model):
     def __str__(self):
         return self.name
 
+
+class laboratory(models.Model):
+    laboratory_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=45, null=True, blank=True)
+    description = models.CharField(max_length=45, null=True, blank=True)
+    department = models.CharField(max_length=45, null=True, blank=True)
+    is_available = models.BooleanField(default=True)  # 1 for active, 0 for terminated
+    date_created = models.DateTimeField(default=timezone.now)
+    modules = models.ManyToManyField('Module', through='LaboratoryModule', blank=True)
+
+    def __str__(self):
+        return self.name
+
+    def get_status(self):
+        return "Active" if self.is_available else "Terminated"
+
+
+class LaboratoryModule(models.Model):
+    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
+    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+    enabled = models.BooleanField(default=True)  # Add this field to track module status
+    
+    class Meta:
+        unique_together = ('laboratory', 'module')  # Ensure unique pairs
+
+    def __str__(self):
+        return f"{self.laboratory.name} - {self.module.name}"
+
+
+class role(models.Model):
+    roles_id = models.AutoField(primary_key=True)
+    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)  # ForeignKey to Laboratory
+    name = models.CharField(max_length=45, null=True, blank=True)
+    permissions = models.CharField(max_length=45, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
 class UserManager(BaseUserManager):
     def create_user(self, email, firstname, lastname, password=None, **extra_fields):
         if not email:
@@ -39,15 +77,34 @@ class UserManager(BaseUserManager):
 
         return self.create_user(email, firstname, lastname, password, **extra_fields)
 
+# class user(AbstractBaseUser):
+#     user = models.OneToOneField(User, on_delete=models.CASCADE)
+#     role = models.ForeignKey(role, null=True, blank=True, on_delete=models.SET_NULL)  # ForeignKey to Role
+#     is_deactivated = models.BooleanField(default=False)
+#     is_guest = models.BooleanField(default=False)
+
+#     is_active = models.BooleanField(default=True)
+
+
+#     objects = UserManager()
+
+#     USERNAME_FIELD = 'email'
+#     REQUIRED_FIELDS = ['firstname', 'lastname']
+
+#     def __str__(self):
+#         return self.email
+
 class user(AbstractBaseUser):
     user_id = models.AutoField(primary_key=True)
     firstname = models.CharField(max_length=45, null=True, blank=True)
     lastname = models.CharField(max_length=45, null=True, blank=True)
     id_number = models.IntegerField(null=True, blank=True) 
     email = models.EmailField(unique=True)
+    role = models.ForeignKey(role, null=True, blank=True, on_delete=models.SET_NULL)  # ForeignKey to Role
     is_deactivated = models.BooleanField(default=False)
     is_guest = models.BooleanField(default=False)
     
+
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
@@ -59,43 +116,6 @@ class user(AbstractBaseUser):
 
     def __str__(self):
         return self.email
-
-class laboratory(models.Model):
-    laboratory_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=45, null=True, blank=True)
-    description = models.CharField(max_length=45, null=True, blank=True)
-    department = models.CharField(max_length=45, null=True, blank=True)
-    is_available = models.BooleanField(default=True)
-    modules = models.ManyToManyField(Module, through='LaboratoryModule', blank=True)
-
-    def __str__(self):
-        return self.name
-
-class LaboratoryModule(models.Model):
-    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
-    module = models.ForeignKey(Module, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('laboratory', 'module')  # Ensure unique pairs
-
-    def __str__(self):
-        return f"{self.laboratory.name} - {self.module.name}"
-
-class laboratory_role(models.Model):
-    roles_id = models.AutoField(primary_key=True)
-    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)  # ForeignKey to Laboratory
-    name = models.CharField(max_length=45, null=True, blank=True)
-    permissions = models.CharField(max_length=45, null=True, blank=True)
-
-    def __str__(self):
-        return self.name
-
-class laboratory_users(models.Model):
-    user = models.ForeignKey(user, on_delete=models.CASCADE)
-    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
-    role = models.ForeignKey(laboratory_role, on_delete=models.CASCADE)
-
-
 
 # class UserProfile(models.Model):
 #     USER_ROLES = [

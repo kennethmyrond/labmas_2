@@ -1,5 +1,6 @@
-{% extends 'temp_navbar.html' %} {% block title %}SUPERUSER - Manage
-Laboratories{% endblock %} {% block content %}
+{% extends 'temp_navbar.html' %}
+{% block title %}SUPERUSER - Manage Laboratories{% endblock %}
+{% block content %}
 <style>
   .status-active {
     color: green;
@@ -35,28 +36,27 @@ Laboratories{% endblock %} {% block content %}
               <tr>
                 <th>ID</th>
                 <th>Name</th>
-                <th>No. of Users</th>
+                <th>Department</th>
                 <th>Date Created</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
+              {% for lab in labs %}
               <tr>
                 <td>
-                  <a href="{% url 'superuser_lab_info' %}">1</a>
+                  <a href="{% url 'superuser_lab_info' lab.laboratory_id %}">{{ lab.laboratory_id }}</a>
                 </td>
-                <td>Chem Lab AY 23-24</td>
-                <td>45</td>
-                <td>12/03/20</td>
-                <td><span class="status-active">Active</span></td>
+                <td>{{ lab.name }}</td>
+                <td>{{ lab.department }}</td>
+                <td>{{ lab.date_created|date:"Y-m-d" }}</td>
+                <td>
+                  <span class="{% if lab.is_available %}status-active{% else %}status-terminated{% endif %}">
+                    {{ lab.get_status }}
+                  </span>
+                </td>
               </tr>
-              <tr>
-                <td><a href="{% url 'superuser_lab_info' %}">2</a></td>
-                <td>Physics Lab AY 23-24</td>
-                <td>15</td>
-                <td>12/13/22</td>
-                <td><span class="status-terminated">Terminated</span></td>
-              </tr>
+              {% endfor %}
             </tbody>
           </table>
           <!-- End Table with stripped rows -->
