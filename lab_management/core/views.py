@@ -10,7 +10,7 @@ from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirec
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
-from .models import rooms, laboratory_reservations, reservation_config
+from .models import rooms, laboratory_reservations, reservation_config, LaboratoryModule
 from datetime import timedelta, date, datetime
 from django.urls import reverse
 from calendar import monthrange
@@ -2503,7 +2503,50 @@ def setup_manageRooms(request):
        return render(request, 'superuser/superuser_manageRooms.html')
 
 def setup_createlab(request):
-       return render(request, 'superuser/superuser_createlab.html')
+    if request.method == 'POST':
+        lab_name = request.POST.get('labname')
+        description = request.POST.get('description')
+        department = request.POST.get('department')
+
+        # Debug: Print POST data
+        print("Received POST data:", request.POST)  # Log the received data
+
+        # Create the new laboratory
+        new_lab = laboratory.objects.create(
+            name=lab_name,
+            description=description,
+            department=department,
+            is_available=True
+        )
+        print("Created new lab:", new_lab)  # Log the created lab
+
+        # Add selected modules
+        module_ids = []
+        if 'inventory' in request.POST:
+            module_ids.append(1)  # ID for Inventory
+        if 'borrowing' in request.POST:
+            module_ids.append(2)  # ID for Borrowing
+        if 'clearance' in request.POST:
+            module_ids.append(3)  # ID for Clearance
+        if 'reservation' in request.POST:
+            module_ids.append(4)  # ID for Reservation
+        if 'reports' in request.POST:
+            module_ids.append(5)  # ID for Reports
+
+
+        # Check if there are any module IDs to set
+        if module_ids:
+            # Link selected modules
+            for module_id in module_ids:
+                module = Module.objects.get(id=module_id)  # Retrieve module instance
+                LaboratoryModule.objects.create(laboratory=new_lab, module=module)  # Create entry in LaboratoryModule
+
+
+        return redirect('setup_createlab')  # Redirect to a success page or another view
+
+    return render(request, 'superuser/superuser_createlab.html')
+
+
 
 def superuser_login(request):
     if request.method == 'POST':
