@@ -206,6 +206,12 @@ def error_page(request, message=None):
     """
     return render(request, 'error_page.html', {'message': message})
 
+# modules
+# 1	inventory
+# 2	borrowing
+# 3	clearance
+# 4	reservation
+# 5	reports
 
 # inventory
 def inventory_view(request):
@@ -214,6 +220,9 @@ def inventory_view(request):
     
     # Get the selected laboratory from the session
     selected_laboratory_id = request.session.get('selected_lab')
+    select_module = LaboratoryModule.objects.filter(laboratory_id=selected_laboratory_id, module_id=1)
+    if not select_module:
+        return render(request, 'error_page.html', {'message': 'Inventory is not allowed for this laboratory.'})
     
     # Get all item types for the selected laboratory
     item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
@@ -248,6 +257,13 @@ def inventory_view(request):
 def inventory_itemDetails_view(request, item_id):
     if not request.user.is_authenticated:
         return redirect('userlogin')
+    
+    # restricting access to laboratory module
+    selected_laboratory_id_module = request.session.get('selected_lab')
+    select_module = LaboratoryModule.objects.filter(laboratory_id=selected_laboratory_id_module, module_id=1)
+    if not select_module:
+        return render(request, 'error_page.html', {'message': 'Inventory is not allowed for this laboratory.'})
+    # end section
     
     # Get the item_description instance
     item = get_object_or_404(item_description, item_id=item_id)

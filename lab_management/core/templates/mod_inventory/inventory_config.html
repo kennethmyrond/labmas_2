@@ -123,17 +123,32 @@
                                 </div>
 
                                 <!-- Display existing categories -->
-                                <div class="wrapper">
-                                    <table class="entrytable" id="categoryTable">
+                                <div>
+                                    <table class="table datatable table-striped" id="categoryTable">
                                       <!-- Inside your category loop -->
+                                       <thead>
+                                            <tr>
+                                                <th> Item Type Name</th>
+                                                <th> Action</th>
+                                                <th hidden></th>
+                                                <th hidden></th>
+                                                <th hidden></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
                                     {% for category in categories %}
+                                    
                                     <tr>
                                         <td>{{ category.itemType_name }}</td>
                                         <td id="deletecol">
                                             <button type="button" id="deletebtn" onclick="deleteCategory('{{ category.itemType_id }}')">Delete</button>
                                         </td>
+                                        <td hidden></td>
+                                        <td hidden></td>
+                                        <td hidden></td>
                                     </tr>
                                     {% endfor %}
+                                </tbody>
                                     </table>
                                 </div>
                             </div>
