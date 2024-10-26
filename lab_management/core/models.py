@@ -40,23 +40,6 @@ class UserManager(BaseUserManager):
 
         return self.create_user(email, firstname, lastname, password, **extra_fields)
 
-# class user(AbstractBaseUser):
-#     user = models.OneToOneField(User, on_delete=models.CASCADE)
-#     role = models.ForeignKey(role, null=True, blank=True, on_delete=models.SET_NULL)  # ForeignKey to Role
-#     is_deactivated = models.BooleanField(default=False)
-#     is_guest = models.BooleanField(default=False)
-
-#     is_active = models.BooleanField(default=True)
-
-
-#     objects = UserManager()
-
-#     USERNAME_FIELD = 'email'
-#     REQUIRED_FIELDS = ['firstname', 'lastname']
-
-#     def __str__(self):
-#         return self.email
-
 class user(AbstractBaseUser):
     user_id = models.AutoField(primary_key=True)
     firstname = models.CharField(max_length=45, null=True, blank=True)
