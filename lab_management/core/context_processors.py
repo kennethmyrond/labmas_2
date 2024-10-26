@@ -1,9 +1,10 @@
-from .models import laboratory, LaboratoryModule
-
+from .models import laboratory, LaboratoryModule, user, laboratory_users
+from django.shortcuts import get_object_or_404
 
 
 def labs_context(request):
     selected_lab_id = request.session.get('selected_lab')
+    current_user = get_object_or_404(user, email=request.user.email)
     selected_lab_modules = []
     
     if selected_lab_id:
@@ -13,7 +14,7 @@ def labs_context(request):
             selected_lab_modules = [module.name for module in lab.modules.filter(enabled=True)]
 
     return {
-        'laboratories': laboratory.objects.filter(is_available=True),
+        'laboratories': laboratory.objects.filter(is_available=True, laboratory_users__user=current_user),
         'selected_lab_name': request.session.get('selected_lab_name'),
         'selected_lab_modules': selected_lab_modules,
     }
