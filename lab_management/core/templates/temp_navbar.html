@@ -208,43 +208,43 @@
       
       
       {% if 'inventory' in selected_lab_modules %}
-<li class="nav-item">
-    <a class="nav-link {% if request.resolver_match.url_name in 'inventory_view inventory_addNewItem inventory_updateItem inventory_physicalCount inventory_manageSuppliers inventory_supplierDetails inventory_config inventory_itemDetails_view' %}active{% else %}collapsed{% endif %}" data-bs-target="#inventory-nav" data-bs-toggle="collapse" href="#">
-        <i class="bi bi-box2"></i><span>Inventory</span><i class="bi bi-chevron-down ms-auto"></i>
-    </a>
-    <ul id="inventory-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'inventory_view inventory_itemDetails_view' %}show{% endif %}" data-bs-parent="#sidebar-nav">
-        <li>
-            <a href="{% url 'inventory_view' %}" class="{% if request.resolver_match.url_name in 'inventory_view inventory_itemDetails_view' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>View Inventory</span>
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'inventory_addNewItem' %}" class="{% if request.resolver_match.url_name == 'inventory_addNewItem' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>Add New Item</span>
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'inventory_updateItem' %}" class="{% if request.resolver_match.url_name == 'inventory_updateItem' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>Update Item Quantity</span>
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'inventory_physicalCount' %}" class="{% if request.resolver_match.url_name == 'inventory_physicalCount' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>Physical Count</span>
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'inventory_manageSuppliers' %}" class="{% if request.resolver_match.url_name in 'inventory_manageSuppliers inventory_supplierDetails' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>Manage Suppliers</span>
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'inventory_config' %}" class="{% if request.resolver_match.url_name == 'inventory_config' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>Inventory Config</span>
-            </a>
-        </li>
-    </ul>
-</li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name in 'inventory_view inventory_addNewItem inventory_updateItem inventory_physicalCount inventory_manageSuppliers inventory_supplierDetails inventory_config inventory_itemDetails_view' %}active{% else %}collapsed{% endif %}" data-bs-target="#inventory-nav" data-bs-toggle="collapse" href="#">
+            <i class="bi bi-box2"></i><span>Inventory</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="inventory-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'inventory_view inventory_addNewItem inventory_updateItem inventory_physicalCount inventory_manageSuppliers inventory_supplierDetails inventory_config inventory_itemDetails_view' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+            <li>
+                <a href="{% url 'inventory_view' %}" class="{% if request.resolver_match.url_name in 'inventory_view inventory_itemDetails_view' %}active{% endif %}">
+                    <i class="bi bi-circle"></i><span>View Inventory</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventory_addNewItem' %}" class="{% if request.resolver_match.url_name == 'inventory_addNewItem' %}active{% endif %}">
+                    <i class="bi bi-circle"></i><span>Add New Item</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventory_updateItem' %}" class="{% if request.resolver_match.url_name == 'inventory_updateItem' %}active{% endif %}">
+                    <i class="bi bi-circle"></i><span>Update Item Quantity</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventory_physicalCount' %}" class="{% if request.resolver_match.url_name == 'inventory_physicalCount' %}active{% endif %}">
+                    <i class="bi bi-circle"></i><span>Physical Count</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventory_manageSuppliers' %}" class="{% if request.resolver_match.url_name == 'inventory_manageSuppliers inventory_supplierDetails' %}active{% endif %}">
+                    <i class="bi bi-circle"></i><span>Manage Suppliers</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventory_config' %}" class="{% if request.resolver_match.url_name == 'inventory_config' %}active{% endif %}">
+                    <i class="bi bi-circle"></i><span>Inventory Config</span>
+                </a>
+            </li>
+        </ul>
+    </li><!-- End inventory Nav -->
 {% endif %}
 
  
