@@ -23,7 +23,6 @@ class Module(models.Model):
     def __str__(self):
         return self.name
 
-
 class laboratory(models.Model):
     laboratory_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=45, null=True, blank=True)
@@ -39,7 +38,6 @@ class laboratory(models.Model):
     def get_status(self):
         return "Active" if self.is_available else "Terminated"
 
-
 class LaboratoryModule(models.Model):
     laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
     module = models.ForeignKey(Module, on_delete=models.CASCADE)
@@ -51,8 +49,7 @@ class LaboratoryModule(models.Model):
     def __str__(self):
         return f"{self.laboratory.name} - {self.module.name}"
 
-
-class role(models.Model):
+class laboratory_role(models.Model):
     roles_id = models.AutoField(primary_key=True)
     laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)  # ForeignKey to Laboratory
     name = models.CharField(max_length=45, null=True, blank=True)
@@ -77,6 +74,33 @@ class UserManager(BaseUserManager):
 
         return self.create_user(email, firstname, lastname, password, **extra_fields)
 
+class user(AbstractBaseUser):
+    user_id = models.AutoField(primary_key=True)
+    firstname = models.CharField(max_length=45, null=True, blank=True)
+    lastname = models.CharField(max_length=45, null=True, blank=True)
+    id_number = models.IntegerField(null=True, blank=True) 
+    email = models.EmailField(unique=True)
+    is_deactivated = models.BooleanField(default=False)
+    is_guest = models.BooleanField(default=False)
+    
+
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
+
+    objects = UserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['firstname', 'lastname']
+
+    def __str__(self):
+        return self.email
+
+class laboratory_users(models.Model):
+    user = models.ForeignKey(user, on_delete=models.CASCADE)
+    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
+    role = models.ForeignKey(laboratory_role, on_delete=models.CASCADE)
+
 # class user(AbstractBaseUser):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
 #     role = models.ForeignKey(role, null=True, blank=True, on_delete=models.SET_NULL)  # ForeignKey to Role
@@ -93,29 +117,6 @@ class UserManager(BaseUserManager):
 
 #     def __str__(self):
 #         return self.email
-
-class user(AbstractBaseUser):
-    user_id = models.AutoField(primary_key=True)
-    firstname = models.CharField(max_length=45, null=True, blank=True)
-    lastname = models.CharField(max_length=45, null=True, blank=True)
-    id_number = models.IntegerField(null=True, blank=True) 
-    email = models.EmailField(unique=True)
-    role = models.ForeignKey(role, null=True, blank=True, on_delete=models.SET_NULL)  # ForeignKey to Role
-    is_deactivated = models.BooleanField(default=False)
-    is_guest = models.BooleanField(default=False)
-    
-
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
-
-    objects = UserManager()
-
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['firstname', 'lastname']
-
-    def __str__(self):
-        return self.email
 
 # class UserProfile(models.Model):
 #     USER_ROLES = [

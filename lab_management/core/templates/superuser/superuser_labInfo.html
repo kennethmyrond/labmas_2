@@ -51,97 +51,112 @@
 </div>
 <!-- End Page Title -->
 
-<section class="section">
-  <h5 class="card-title">Lab Details</h5>
-  <p><strong>ID:</strong> {{ lab.laboratory_id }}</p>
-  <p><strong>Name: </strong>{{ lab.name }}</p>
-  <p><strong>Description: </strong>{{ lab.description }}</p>
-  <p><strong>Department: </strong>{{ lab.department }}</p>
-  <p><strong>Date Created: </strong>{{ lab.date_created|date:"Y-m-d" }}</p>
-
-  <h5 class="card-title">Add Module</h5>
-  <form method="POST" action="{% url 'add_module_to_lab' lab.laboratory_id %}">
-      {% csrf_token %}
-      <div class="form-group">
-          <label for="module_id">Select Module:</label>
-          <select class="form-control" id="module_id" name="module_id">
-              {% for module in all_modules %}
-                  <option value="{{ module.id }}">{{ module.name }}</option>
-              {% endfor %}
-          </select>
-      </div>
-      <button type="submit" class="btn btn-primary">Add Module</button>
-  </form>
-  
-  <p><strong>Modules:</strong></p>
-  {% if messages %}
-    <div class="alert" role="alert" onclick="this.style.display='none';"> <!-- Remove close button -->
-        {% for message in messages %}
-            <div>{{ message }}</div>
-        {% endfor %}
-    </div>
+{% if messages %}
+<div class="alert" role="alert" onclick="this.style.display='none';"> <!-- Remove close button -->
+    {% for message in messages %}
+        <div>{{ message }}</div>
+    {% endfor %}
+</div>
 {% endif %}
 
+<section class="section">
   <div class="row">
-    {% if modules %}
-            {% for module in modules %}
-          <div class="col-md-4">
-            <div class="module-card">
-              <div class="module-title">{{ module.name }}</div>
-              <div class="module-description">
-                <p>{{ module.enabled|yesno:"Enabled, Disabled" }}</p>
-              </div>
-              <div class="module-actions">
-                <form action="{% url 'toggle_module_status' lab.laboratory_id module.id %}" method="post">
-                  {% csrf_token %}
-                  <button type="submit" class="btn btn-{{ module.enabled|yesno:'danger,success' }} " onclick="updateButtonText(this, '{{ module.enabled }}')"> <!-- Update button text on click -->
-                    {% if module.enabled %}
-                      Disable Module
-                    {% else %}
-                      Enable Module
-                    {% endif %}
-                  </button>
-                </form>
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="row">
+          <div class="col-9">
+            <h5 class="card-title">Lab Details</h5>
+            <p><strong>ID:</strong> {{ lab.laboratory_id }}</p>
+            <p><strong>Name: </strong>{{ lab.name }}</p>
+            <p><strong>Description: </strong>{{ lab.description }}</p>
+            <p><strong>Department: </strong>{{ lab.department }}</p>
+            <p><strong>Date Created: </strong>{{ lab.date_created|date:"Y-m-d" }}</p>
+            <p><strong>Status: </strong>
+              <span class="{% if lab.is_available %}status-active{% else %}status-terminated{% endif %}">
+                {{ lab.get_status }}
+              </span>
+            </p>
+          </div>
+          <div class="col-3 justify-content-end">
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editLabModal" {%if lab.is_available == 0%} disabled {%endif%}>Edit Lab</button>
+            <form method="POST" action="{% url 'deactivate_lab' lab.laboratory_id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deactivateLabModal" {%if lab.is_available == 0%} disabled {%endif%}>Deactivate</button>
+            </form>
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div>
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Add Module</h5>
+            <form method="POST" action="{% url 'add_module_to_lab' lab.laboratory_id %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="module_id">Select Module:</label>
+                    <select class="form-control" id="module_id" name="module_id">
+                        {% for module in all_modules %}
+                            <option value="{{ module.id }}">{{ module.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Module</button>
+            </form>
+            
+            <h5 class="card-title">Manage Laboratory Modules</h5>
+            <div class="row">
+              <div class="col-md-12">
+                  <table id="modulesTable" class="table ">
+                      <thead>
+                          <tr>
+                              <th>Module Name</th>
+                              <th>Status</th>
+                              <th style="text-align:right;"></th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {% if modules %}
+                              {% for module in modules %}
+                                  <tr>
+                                      <td>{{ module.name }}</td>
+                                      <td>{{ module.enabled|yesno:"Enabled, Disabled" }}</td>
+                                      <td style="text-align:right;">
+                                          <form action="{% url 'toggle_module_status' lab.laboratory_id module.id %}" method="post">
+                                              {% csrf_token %}
+                                              <button type="submit" class="btn btn-{{ module.enabled|yesno:'danger,success' }}" onclick="updateButtonText(this, '{{ module.enabled }}')">
+                                                  {% if module.enabled %}
+                                                      Disable Module
+                                                  {% else %}
+                                                      Enable Module
+                                                  {% endif %}
+                                              </button>
+                                          </form>
+                                      </td>
+                                  </tr>
+                              {% endfor %}
+                          {% else %}
+                              <tr>
+                                  <td colspan="3">No modules assigned.</td>
+                              </tr>
+                          {% endif %}
+                      </tbody>
+                  </table>
               </div>
             </div>
           </div>
-        {% endfor %}
-  
-    {% else %}
-      <div class="col-md-12">
-        <div class="module-card">
-          <p>No modules assigned.</p>
         </div>
       </div>
-    {% endif %}
-  </div>
-  
-  <p><strong>Status: </strong>
-    <span class="{% if lab.is_available %}status-active{% else %}status-terminated{% endif %}">
-      {{ lab.get_status }}
-    </span>
-  </p>
-  <div>
-    <button
-      type="button"
-      class="btn btn-primary"
-      data-toggle="modal"
-      data-target="#editLabModal"
-    >
-      Edit Lab
-    </button>
-    <form method="POST" action="{% url 'deactivate_lab' lab.laboratory_id %}" style="display:inline;">
-      {% csrf_token %}
-      <button
-      type="button"
-      class="btn btn-danger"
-      data-toggle="modal"
-      data-target="#deactivateLabModal"
-    >
-      Deactivate
-    </button>
+    </div>
 
-    </form>
+  
+  
   </div>
   
   <br />
