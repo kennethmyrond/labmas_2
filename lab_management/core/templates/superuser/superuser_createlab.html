@@ -70,6 +70,15 @@
   input:checked + .slider:before {
     transform: translateX(26px);
   }
+
+  .roletable{
+    text-align: center;
+  }
+
+  th,td{
+    width: 1%;
+    padding: 1%;
+  }
 </style>
 
 <div class="pagetitle">
@@ -180,9 +189,66 @@
           <div class="card-body">
             <h5 class="card-title">Roles</h5>
 
-            <form method="POST" id="">
-              <p>work in progress</p>
-            </form>
+              <table class="roletable">
+                <tr>
+                  <th>Role Name</th>
+                  <th>Inventory</th>
+                  <th>Borrowing</th>
+                  <th>Clearance</th>
+                  <th>Reservation</th>
+                  <th>Reports</th>
+                  <th>Actions</th>
+                </tr>
+
+                <!-------     hardcoded    --------->
+                <tr>
+                  <td>Laboratory Coordinator</td>
+                  <td>
+                    <input type="checkbox" class="rolecheck" id="roleinv" onclick="return false;" checked>
+                  </td>
+                  <td>
+                    <input type="checkbox" class="rolecheck" id="rolebor" checked>
+                  </td>
+                  <td>
+                    <input type="checkbox" class="rolecheck" id="roleclr" checked>
+                  </td>
+                  <td>
+                    <input type="checkbox" class="rolecheck" id="roleres" checked>
+                  </td>
+                  <td>
+                    <input type="checkbox" class="rolecheck" id="rolerep" checked>
+                  </td>
+                  <td>
+                    <button class="btn btn-danger btn-sm">Delete</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>Laboratory Technician</td>
+                  <td>
+                    <input type="checkbox" class="rolecheck" id="roleinv" checked>
+                  </td>
+                  <td>
+                    <input type="checkbox" class="rolecheck" id="rolebor" checked>
+                  </td>
+                  <td>
+                    <input type="checkbox" class="rolecheck" id="roleclr" checked>
+                  </td>
+                  <td>
+                    <input type="checkbox" class="rolecheck" id="roleres" checked>
+                  </td>
+                  <td>
+                    <input type="checkbox" class="rolecheck" id="rolerep">
+                  </td>
+                  <td>
+                    <button class="btn btn-danger btn-sm">Delete</button>
+                  </td>
+                </tr>
+
+                <!-------     end of hardcoded    --------->
+
+              </table>
+              <button type="submit" class="btn btn-primary">Save</button>
           </div>
         </div>
       </div>
@@ -194,11 +260,85 @@
       <div class="col-lg-12">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Section 3</h5>
+            <h5 class="card-title">Add New Role</h5>
   
-            
-  
-            
+            <form method="POST" id="roleForm">
+              <div class="row mb-3">
+                <label for="roleName" class="col-sm-2 col-form-label">Role Name:</label>
+                <div class="col-sm-10">
+                  <input type="text" name="roleName" class="form-control">
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <p>Modules:</p>
+                <div class="col-sm-10">
+                  <div class="form-check form-switch">
+                    <label class="form-check-label" for="roleinv">Inventory</label>
+                    <input class="form-check-input" type="checkbox" id="invPermission" name="roleinv">
+                  </div>
+                </div>
+
+                <div>
+                  <table id="permissions" style="display:none;">
+                    <td>
+                      <label for="conf" class="col-sm-5 col-form-label">Config</label>
+                      <input type="checkbox" name="conf">
+                    </td>
+                    <td>
+                      <label for="add" class="col-sm-5 col-form-label">Add</label>
+                      <input type="checkbox" name="add">
+                    </td>
+                    <td>
+                      <label for="edit" class="col-sm-5 col-form-label">Edit</label>
+                      <input type="checkbox" name="edit">
+                    </td>
+                    <td>
+                      <label for="delete" class="col-sm-5 col-form-label">Delete</label>
+                      <input type="checkbox" name="delete">
+                    </td>
+                    <td>
+                      <label for="view" class="col-sm-5 col-form-label">View</label>
+                      <input type="checkbox" name="view">
+                    </td>
+                  </table>
+                </div>
+
+                <div class="col-sm-10">
+                  <div class="form-check form-switch">
+                    <label class="form-check-label" for="rolebor">Borrowing</label>
+                    <input class="form-check-input" type="checkbox" name="rolebor">
+                  </div>
+                </div>
+
+                <div class="col-sm-10">
+                  <div class="form-check form-switch">
+                    <label class="form-check-label" for="roleclr">Clearance</label>
+                    <input class="form-check-input" type="checkbox" name="roleclr">
+                  </div>
+                </div>
+
+                <div class="col-sm-10">
+                  <div class="form-check form-switch">
+                    <label class="form-check-label" for="roleres">Reservation</label>
+                    <input class="form-check-input" type="checkbox" name="roleres">
+                  </div>
+                </div>
+
+                <div class="col-sm-10">
+                  <div class="form-check form-switch">
+                    <label class="form-check-label" for="rolerep">Reports</label>
+                    <input class="form-check-input" type="checkbox" name="rolerep">
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <button type="submit" class="btn btn-primary">Add Role</button>
+                <button type="reset" class="btn btn-secondary">Clear</button>
+              </div>
+
+            </form>
   
           </div>
         </div>
@@ -208,6 +348,25 @@
   <div>
     
   </div>
+
+  <script>
+    const rolecheck = document.getElementsByClassName('rolecheck');
+    for (let i = 0; i < rolecheck.length; i++) {
+    rolecheck[i].setAttribute('onclick', 'return false;');
+  }
+
+
+  const permissions = document.getElementById('invPermission');
+  const component = document.getElementById('permissions');
+
+  function togglePermissions() {
+    component.style.display = permissions.checked ? 'block' : 'none';
+  }
+  togglePermissions();
+  permissions.addEventListener('change', togglePermissions);
+
+
+  </script>
   
   
 
