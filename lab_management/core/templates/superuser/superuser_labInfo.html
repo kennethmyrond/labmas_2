@@ -1,224 +1,200 @@
-{% extends 'temp_navbar.html' %} 
-{% block title %}SUPERUSER - Laboratory Information{% endblock %} 
+{% extends 'temp_navbar.html' %}
+{% block title %}SUPERUSER - Laboratory Information{% endblock %}
 {% block content %}
+
 <style>
-  .status-active {
-    color: green;
-    font-weight: bold;
-  }
-
-  .status-terminated {
-    color: red;
-    font-weight: bold;
-  }
-
-  .module-card {
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 10px;
-    margin-bottom: 10px;
-    text-align: center;
-    transition: box-shadow 0.2s;
-  }
-
-  .module-card:hover {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  }
-
-  .module-title {
-    font-weight: bold;
-    font-size: 18px;
-    margin-bottom: 5px;
-  }
-
-  /* Style for error message */
-  .alert {
-    color: red; /* Change text color to red */
-    cursor: pointer; /* Change cursor to pointer for clickable effect */
-  }
+  .status-active { color: green; font-weight: bold; }
+  .status-terminated { color: red; font-weight: bold; }
+  .module-card { border: 1px solid #ddd; border-radius: 5px; padding: 10px; margin-bottom: 10px; text-align: center; transition: box-shadow 0.2s; }
+  .module-card:hover { box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); }
+  .module-title { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+  .alert { color: red; cursor: pointer; }
 </style>
 
 <div class="pagetitle">
   <h1>Setup</h1>
   <nav>
     <ol class="breadcrumb">
-      <li class="breadcrumb-item">
-        <a href="{% url 'superuser_manage_labs' %}">Manage Laboratories</a>
-      </li>
+      <li class="breadcrumb-item"><a href="{% url 'superuser_manage_labs' %}">Manage Laboratories</a></li>
       <li class="breadcrumb-item active">Laboratory Information</li>
     </ol>
   </nav>
 </div>
-<!-- End Page Title -->
 
 {% if messages %}
-<div class="alert" role="alert" onclick="this.style.display='none';"> <!-- Remove close button -->
+<div class="alert" role="alert alert-success" onclick="this.style.display='none';">
     {% for message in messages %}
         <div>{{ message }}</div>
     {% endfor %}
 </div>
 {% endif %}
 
-<section class="section">
-  <div class="row">
-    <div class="col-lg-12">
-      <div class="card">
-        <div class="card-body">
-          <div class="row">
-          <div class="col-9">
-            <h5 class="card-title">Lab Details</h5>
-            <p><strong>ID:</strong> {{ lab.laboratory_id }}</p>
-            <p><strong>Name: </strong>{{ lab.name }}</p>
-            <p><strong>Description: </strong>{{ lab.description }}</p>
-            <p><strong>Department: </strong>{{ lab.department }}</p>
-            <p><strong>Date Created: </strong>{{ lab.date_created|date:"Y-m-d" }}</p>
-            <p><strong>Status: </strong>
-              <span class="{% if lab.is_available %}status-active{% else %}status-terminated{% endif %}">
-                {{ lab.get_status }}
-              </span>
-            </p>
-          </div>
-          <div class="col-3 justify-content-end">
-            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editLabModal" {%if lab.is_available == 0%} disabled {%endif%}>Edit Lab</button>
-            <form method="POST" action="{% url 'deactivate_lab' lab.laboratory_id %}" style="display:inline;">
-              {% csrf_token %}
-              <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deactivateLabModal" {%if lab.is_available == 0%} disabled {%endif%}>Deactivate</button>
-            </form>
-          </div>
+<section class="section mt-3">
+  <div class="card">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-8">
+          <h5 class="card-title">Laboratory Details</h5>
+          <p><strong>Name: </strong>{{ lab.name }}</p>
+          <p><strong>Description: </strong>{{ lab.description }}</p>
+          <p><strong>Department: </strong>{{ lab.department }}</p>
+          <p><strong>Date Created: </strong>{{ lab.date_created|date:"Y-m-d" }}</p>
+          <p><strong>Status: </strong>
+            <span class="{% if lab.is_available %}status-active{% else %}status-terminated{% endif %}">
+              {{ lab.get_status }}
+            </span>
+          </p>
         </div>
+        <div class="col-4 text-right">
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editLabModal" {% if not lab.is_available %} disabled {% endif %}>Edit Details</button>
+          <form method="POST" action="{% url 'deactivate_lab' lab.laboratory_id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deactivateLabModal" {% if not lab.is_available %} disabled {% endif %}>Deactivate</button>
+          </form>
         </div>
       </div>
     </div>
   </div>
-  
-  <div>
-    <div class="row">
-      <div class="col-lg-12">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Add Module</h5>
-            <form method="POST" action="{% url 'add_module_to_lab' lab.laboratory_id %}">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="module_id">Select Module:</label>
-                    <select class="form-control" id="module_id" name="module_id">
-                        {% for module in all_modules %}
-                            <option value="{{ module.id }}">{{ module.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">Add Module</button>
-            </form>
-            
-            <h5 class="card-title">Manage Laboratory Modules</h5>
-            <div class="row">
-              <div class="col-md-12">
-                  <table id="modulesTable" class="table ">
-                      <thead>
-                          <tr>
-                              <th>Module Name</th>
-                              <th>Status</th>
-                              <th style="text-align:right;"></th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          {% if modules %}
-                              {% for module in modules %}
-                                  <tr>
-                                      <td>{{ module.name }}</td>
-                                      <td>{{ module.enabled|yesno:"Enabled, Disabled" }}</td>
-                                      <td style="text-align:right;">
-                                          <form action="{% url 'toggle_module_status' lab.laboratory_id module.id %}" method="post">
-                                              {% csrf_token %}
-                                              <button type="submit" class="btn btn-{{ module.enabled|yesno:'danger,success' }}" onclick="updateButtonText(this, '{{ module.enabled }}')">
-                                                  {% if module.enabled %}
-                                                      Disable Module
-                                                  {% else %}
-                                                      Enable Module
-                                                  {% endif %}
-                                              </button>
-                                          </form>
-                                      </td>
-                                  </tr>
-                              {% endfor %}
-                          {% else %}
-                              <tr>
-                                  <td colspan="3">No modules assigned.</td>
-                              </tr>
-                          {% endif %}
-                      </tbody>
-                  </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  
-  
-  </div>
-  
-  <br />
 </section>
 
+<!-- Tab Navigation -->
+ {%if lab.get_status == 'Active'%}
+<ul class="nav nav-tabs" id="labInfoTabs" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link active" id="modules-tab" data-toggle="tab" href="#modules" role="tab">Modules</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="users-tab" data-toggle="tab" href="#users" role="tab">Users</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="users-tab" data-toggle="tab" href="#roles" role="tab">Roles</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="rooms-tab" data-toggle="tab" href="#rooms" role="tab">Rooms</a>
+  </li>
+</ul>
 
-  <!-- End Lab Details Section -->
-  <div class="row">
-    <div class="col-lg-12">
+<!-- Tab Content -->
+<div class="tab-content" id="labInfoTabsContent">
+  <!-- Modules Tab -->
+  <div class="tab-pane fade show active" id="modules" role="tabpanel">
+    <section class="section mt-3">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Add Module</h5>
+          <form method="POST" action="{% url 'add_module_to_lab' lab.laboratory_id %}">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="module_id">Select Module:</label>
+              <select class="form-control" id="module_id" name="module_id">
+                {% for module in all_modules %}
+                  <option value="{{ module.id }}">{{ module.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Module</button>
+          </form>
+
+          <h5 class="card-title mt-4">Manage Laboratory Modules</h5>
+          <table id="modulesTable" class="table">
+            <thead>
+              <tr>
+                <th>Module Name</th>
+                <th>Status</th>
+                <th style="text-align:right;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for module in modules %}
+                <tr>
+                  <td>{{ module.name }}</td>
+                  <td>{{ module.enabled|yesno:"Enabled, Disabled" }}</td>
+                  <td style="text-align:right;">
+                    <form action="{% url 'toggle_module_status' lab.laboratory_id module.id %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-{{ module.enabled|yesno:'danger,success' }}" onclick="updateButtonText(this, '{{ module.enabled }}')">
+                        {{ module.enabled|yesno:'Disable Module,Enable Module' }}
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Users Tab -->
+  <div class="tab-pane fade" id="users" role="tabpanel">
+    <section class="section mt-3">
       <div class="card">
         <div class="card-body">
           <h5 class="card-title">Users</h5>
-
-          <!-- Table with stripped rows -->
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addUserModal">Add Users</button>
           <table class="table datatable">
             <thead>
               <tr>
                 <th>ID</th>
                 <th>Email</th>
                 <th>Role</th>
-                <th style="display: none"></th>
-                <th style="display: none"></th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
+              {% for user in lab_users %}
               <tr>
-                <td>1</td>
-                <td>juan@gmail.com</td>
-                <td>Administrator</td>
-                <td style="display: none"></td>
-                <td style="display: none"></td>
+                <td>{{ user.id }}</td>
+                <td>{{ user.user_email }}</td>
+                <td>{{ user.role_name }}</td>
+                <td></td>
               </tr>
-              <tr>
-                <td>2</td>
-                <td>lala@gmail.com</td>
-                <td>Technician</td>
-                <td style="display: none"></td>
-                <td style="display: none"></td>
-              </tr>
+              {% endfor %}
             </tbody>
           </table>
-          <button
-            type="button"
-            class="btn btn-primary"
-            data-toggle="modal"
-            data-target="#addUserModal"
-          >
-            Add Users
-          </button>
-          <!-- End Table with stripped rows -->
+          
         </div>
       </div>
-    </div>
+    </section>
   </div>
 
-  <div class="row">
-    <div class="col-lg-12">
+  <div class="tab-pane fade" id="roles" role="tabpanel">
+    <section class="section mt-3">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Roles</h5>
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addRolesModal">Add Roles</button>
+          <table class="table datatable">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Roles</th>
+                <th>Users</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for roles in lab_roles %}
+              <tr>
+                <td style="text-align:left;">{{ roles.name }}</td>
+                <td>{{roles.usercount}}</td>
+                <td class="{% if roles.is_active %}status-active{% else %}status-terminated{% endif %}">{% if roles.is_active %} Active {%else%} Inactive {%endif%}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Rooms Tab -->
+  <div class="tab-pane fade" id="rooms" role="tabpanel">
+    <section class="section mt-3">
       <div class="card">
         <div class="card-body">
           <h5 class="card-title">Rooms</h5>
-  
-          <!-- Table with stripped rows -->
           <table class="table datatable">
             <thead>
               <tr>
@@ -226,282 +202,53 @@
                 <th>Room Name</th>
                 <th>Description</th>
                 <th>Capacity</th>
-                <th style="display: none"></th>
-                <th style="display: none"></th>
               </tr>
             </thead>
             <tbody>
-              {% if lab_rooms %}
-                {% for room in lab_rooms %}
-                  <tr>
-                    <td>{{ room.room_id }}</td>
-                    <td>{{ room.name }}</td>
-                    <td>{{ room.description }}</td>
-                    <td>{{ room.capacity }}</td>
-                    <td style="display: none"></td>
-                    <td style="display: none"></td>
-                  </tr>
-                {% endfor %}
-              {% else %}
+              {% for room in lab_rooms %}
                 <tr>
-                  <td colspan="4">No rooms assigned.</td>
+                  <td>{{ room.room_id }}</td>
+                  <td>{{ room.name }}</td>
+                  <td>{{ room.description }}</td>
+                  <td>{{ room.capacity }}</td>
                 </tr>
-              {% endif %}
+              {% endfor %}
             </tbody>
           </table>
-          <button
-            type="button"
-            class="btn btn-primary"
-            data-toggle="modal"
-            data-target="#addRoomModal"
-          >
-            Add Rooms
-          </button>
-          <!-- End Table with stripped rows -->
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addRoomModal">Add Rooms</button>
         </div>
       </div>
-    </div>
-  </div>  
-</section>
-<!-- Add User Modal -->
-<div
-  class="modal fade"
-  id="addUserModal"
-  tabindex="-1"
-  role="dialog"
-  aria-labelledby="addUserModalLabel"
-  aria-hidden="true"
->
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <form method="POST" action="{% url 'add_user' %}">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
-          <button
-            type="button"
-            class="close"
-            data-dismiss="modal"
-            aria-label="Close"
-          >
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="user_id">ID</label>
-            <input
-              type="text"
-              class="form-control"
-              id="user_id"
-              name="user_id"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input
-              type="email"
-              class="form-control"
-              id="email"
-              name="email"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label for="role">Role</label>
-            <select class="form-control" id="role" name="role">
-              <option value="Administrator">Administrator</option>
-              <option value="Technician">Technician</option>
-            </select>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">
-            Close
-          </button>
-          <button type="submit" class="btn btn-primary">Save changes</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-<!-- Add Room Modal -->
-<div
-  class="modal fade"
-  id="addRoomModal"
-  tabindex="-1"
-  role="dialog"
-  aria-labelledby="addRoomModalLabel"
-  aria-hidden="true"
->
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <form action="{% url 'add_room' laboratory_id=laboratory_id %}" method="post">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="addRoomModalLabel">Add Room</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="room_name">Room Name</label>
-            <input type="text" class="form-control" id="room_name" name="room_name" required />
-          </div>
-          <div class="form-group">
-            <label for="room_description">Description</label>
-            <input type="text" class="form-control" id="room_description" name="room_description" required />
-          </div>
-          <div class="form-group">
-            <label for="room_capacity">Capacity</label>
-            <input type="number" class="form-control" id="room_capacity" name="room_capacity" required />
-          </div>
-        </div>
-        {% if messages %}
-          <div class="alert alert-info">
-            {% for message in messages %}
-              <p>{{ message }}</p>
-            {% endfor %}
-          </div>
-        {% endif %}
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-primary">Save changes</button>
-        </div>
-      </form>
-    </div>
+    </section>
   </div>
 </div>
 
-<!-- Edit Lab Modal -->
-<div
-  class="modal fade"
-  id="editLabModal"
-  tabindex="-1"
-  role="dialog"
-  aria-labelledby="editLabModalLabel"
-  aria-hidden="true"
->
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <form id="editLabForm">
-        {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="editLabModalLabel">Edit Lab Details</h5>
-          <button
-            type="button"
-            class="close"
-            data-dismiss="modal"
-            aria-label="Close"
-          >
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="lab_name">Name</label>
-            <input
-              type="text"
-              class="form-control"
-              id="lab_name"
-              name="name"
-              value="{{ lab.name }}"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label for="lab_description">Description</label>
-            <input
-              type="text"
-              class="form-control"
-              id="lab_description"
-              name="description"
-              value="{{ lab.description }}"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label for="lab_department">Department</label>
-            <input
-              type="text"
-              class="form-control"
-              id="lab_department"
-              name="department"
-              value="{{ lab.department }}"
-              required
-            />
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">
-            Close
-          </button>
-          <button type="submit" class="btn btn-primary">Save changes</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
+<!-- Modals -->
+{% include 'superuser/modals/edit_lab_modal.html' %}
+{% include 'superuser/modals/deactivate_lab_modal.html' %}
+{% include 'superuser/modals/add_user_modal.html' %}
+{% include 'superuser/modals/add_room_modal.html' %}
 
-<!-- Deactivate Confirmation Modal -->
-<div class="modal fade" id="deactivateLabModal" tabindex="-1" role="dialog" aria-labelledby="deactivateLabModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="deactivateLabModalLabel">Confirm Deactivation</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        Are you sure you want to deactivate this laboratory?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-        <form method="POST" action="{% url 'deactivate_lab' lab.laboratory_id %}">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-danger">Deactivate</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
+{%endif%}
 
 <script>
   function updateButtonText(button, currentState) {
-      // Change the button text before the form is submitted
-      if (currentState === "1") {
-          button.textContent = "Disable Module"; // If currently enabled, change to "Enable"
-      } else {
-          button.textContent = "Enable Module"; // If currently disabled, change to "Disable"
-      }
+    button.textContent = currentState === "1" ? "Disable Module" : "Enable Module";
   }
 
   document.getElementById('editLabForm').onsubmit = function(event) {
-      event.preventDefault(); // Prevent default form submission
-      const formData = new FormData(this);
-      fetch("{% url 'edit_lab_info' lab.laboratory_id %}", {
-          method: 'POST',
-          body: formData,
-          headers: {
-              'X-CSRFToken': '{{ csrf_token }}' // Set CSRF token in header
-          }
-      })
-      .then(response => response.json())
-      .then(data => {
-          if (data.status === 'success') {
-              // Optionally update the displayed information without refreshing
-              location.reload(); // Reload the page to see changes
-          } else {
-              alert('Error updating lab information');
-          }
-      })
-      .catch(error => console.error('Error:', error));
+    event.preventDefault();
+    const formData = new FormData(this);
+    fetch("{% url 'edit_lab_info' lab.laboratory_id %}", {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') location.reload();
+      else alert('Error updating lab information');
+    })
+    .catch(error => console.error('Error:', error));
   };
 </script>
-
 {% endblock %}

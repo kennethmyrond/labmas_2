@@ -76,15 +76,18 @@
 
     <nav class="header-nav ms-auto">
       <ul class="d-flex align-items-center">
-
+        
+        {% comment %} 
         <li class="nav-item d-block d-lg-none">
           <a class="nav-link nav-icon search-bar-toggle " href="#">
             <i class="bi bi-search"></i>
           </a>
         </li><!-- End Search Icon-->
+        {% endcomment %}
 
 
         <!--choose lab dropdown-->
+{%if laboratories%}
 <li class="nav-item dropdown pe-3">
   <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">    
     <span class="d-none d-md-block dropdown-toggle ps-2">{{ selected_lab_name|default:"Choose Laboratory" }}</span>
@@ -108,6 +111,7 @@
     {% endfor %}
   </ul>
 </li>
+{%endif%}
 <!-- End Profile Nav -->
 
         <li class="nav-item dropdown pe-3">
@@ -183,20 +187,20 @@
         <ul id="setup-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info superuser_manage_users superuser_user_info setup_edituser setup_editLab setup_createlab' %}show{% endif %}" data-bs-parent="#sidebar-nav">
           <li>
             <a href="{% url 'setup_createlab' %}" class="{% if request.resolver_match.url_name in 'setup_createlab' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>SUPERUSER - Set Up New Laboratory</span>
+              <i class="bi bi-circle"></i><span>Set Up New Laboratory</span>
             </a>
           </li> 
 
 
           <li>
             <a href="{% url 'superuser_manage_labs' %}" class="{% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info setup_editLab' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>SUPERUSER - Manage Labs</span>
+              <i class="bi bi-circle"></i><span>Manage Laboratories</span>
             </a>
           </li> 
 
           <li>
             <a href="{% url 'superuser_manage_users' %}" class="{% if request.resolver_match.url_name in 'superuser_manage_users superuser_user_info setup_edituser' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>SUPERUSER - Manage Users</span>
+              <i class="bi bi-circle"></i><span>Manage Users</span>
             </a>
           </li>
           

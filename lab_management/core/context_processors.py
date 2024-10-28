@@ -4,14 +4,12 @@ from django.shortcuts import get_object_or_404
 
 def labs_context(request):
     selected_lab_id = request.session.get('selected_lab')
-    # print('user:',request.user.id)
     try:
         current_user = get_object_or_404(user, email=request.user.email)
     except:
         current_user = None
     
     selected_lab_modules = []
-    
     if selected_lab_id:
         lab = laboratory.objects.filter(laboratory_id=selected_lab_id).first()
         if lab:

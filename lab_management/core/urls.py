@@ -101,7 +101,15 @@ urlpatterns = [
     #path('setup/editLab/<int:laboratory_id>/', views.setup_editLab, name='setup_editLab'),
     path('setup/manageRooms', views.setup_manageRooms, name='setup_manageRooms'),
     path('setup/manageusers', views.superuser_manage_users, name='superuser_manage_users'),
-    path('setup/userInfo', views.superuser_user_info, name='superuser_user_info'),
+    path('setup/userInfo/<int:user_id>/', views.superuser_user_info, name='superuser_user_info'),
     path('setup/edituser', views.setup_edituser, name='setup_edituser'),
+    
     path('setup/createlab', views.setup_createlab, name='setup_createlab'),
+
+
+    path('add-user/', views.add_user, name='add_user'),
+    path('user/<int:user_id>/', views.superuser_user_info, name='superuser_user_info'),
+    path('user/<int:user_id>/edit/', views.edit_user, name='edit_user'),
+    path('user/<int:user_id>/deactivate/', views.deactivate_user, name='deactivate_user'),
+    path('user/<int:user_id>/assign-lab/', views.assign_lab, name='assign_lab'),
 ]

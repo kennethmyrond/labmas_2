@@ -34,8 +34,7 @@
           <table class="table datatable">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Name</th>
+                <th style="text-align:left;">Name</th>
                 <th>Department</th>
                 <th>Date Created</th>
                 <th>Status</th>
@@ -44,10 +43,7 @@
             <tbody>
               {% for lab in labs %}
               <tr>
-                <td>
-                  <a href="{% url 'superuser_lab_info' lab.laboratory_id %}">{{ lab.laboratory_id }}</a>
-                </td>
-                <td>{{ lab.name }}</td>
+                <td style="text-align:left;"><a href="{% url 'superuser_lab_info' lab.laboratory_id %}">{{ lab.name }}</a></td>
                 <td>{{ lab.department }}</td>
                 <td>{{ lab.date_created|date:"Y-m-d" }}</td>
                 <td>

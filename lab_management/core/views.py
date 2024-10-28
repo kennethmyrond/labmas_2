@@ -11,6 +11,7 @@ from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from .models import rooms, laboratory_reservations, reservation_config, LaboratoryModule
+from .models import laboratory_users, laboratory_role
 from datetime import timedelta, date, datetime
 from django.urls import reverse
 from calendar import monthrange
@@ -2475,6 +2476,11 @@ def superuser_lab_info(request, laboratory_id):
     lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id)  # Adjust this line based on your Room model's field names
     modules = lab.modules.all()  # Retrieve all modules for the lab
     all_modules = Module.objects.all()  # Get all available modules
+    lab_users = laboratory_users.objects.filter(laboratory_id=lab.laboratory_id).select_related('user', 'role').annotate(
+        user_email=F('user__email'),
+        role_name=F('role__name')
+    )
+    lab_roles = laboratory_role.objects.filter(laboratory_id=lab.laboratory_id).annotate(usercount=Count('users'))
     
     return render(request, 'superuser/superuser_labInfo.html', {
         'laboratory_id': laboratory_id,
@@ -2482,6 +2488,8 @@ def superuser_lab_info(request, laboratory_id):
         'modules': modules,
         'lab_rooms': lab_rooms,
         'all_modules': all_modules,  # Pass all modules to the template
+        'lab_users': lab_users,
+        'lab_roles': lab_roles
     })
 
 
@@ -2530,20 +2538,77 @@ def deactivate_lab(request, laboratory_id):
     return redirect('superuser_manage_labs')
 
 def superuser_manage_users(request):
-    return render(request, 'superuser/superuser_manageusers.html')
+    users = user.objects.all()
+    context = {
+        'users': users,
+    }
+    return render(request, 'superuser/superuser_manageusers.html', context)
 
-def superuser_user_info(request):
-    return render(request, 'superuser/superuser_userinfo.html')
+def add_user(request):
+    if request.method == 'POST':
+        firstname = request.POST['firstname']
+        lastname = request.POST['lastname']
+        idnum = request.POST['idnum']
+        email = request.POST['email']
+        username = request.POST['username']
+        password = request.POST['password']
+        user.objects.create_user(email=email, firstname=firstname, lastname=lastname, password=password, personal_id=idnum, username=username)
+        messages.success(request, "User added successfully.")
+    return redirect('superuser_manage_users')
+
+def superuser_user_info(request, user_id):
+    user1 = get_object_or_404(user, user_id=user_id)
+    lab_users = laboratory_users.objects.filter(user=user1, is_active=True)
+    all_laboratories = laboratory.objects.filter(is_available=True)
+    all_roles = laboratory_role.objects.filter(is_active=True)
+    context = {
+        'user': user1,
+        'lab_users': lab_users,
+        'all_laboratories': all_laboratories,
+        'all_roles': all_roles,
+    }
+    return render(request, 'superuser/superuser_userinfo.html', context)
+
+def edit_user(request, user_id):
+    user1 = get_object_or_404(user, user_id=user_id)
+    if request.method == 'POST':
+        user1.firstname = request.POST['firstname']
+        user1.lastname = request.POST['lastname']
+        user1.username = request.POST['username']
+        user1.email = request.POST['email']
+        user1.save()
+        messages.success(request, 'User details updated successfully.')
+    return redirect('superuser_user_info', user_id=user_id)
+
+def deactivate_user(request, user_id):
+    user1 = get_object_or_404(user, user_id=user_id)
+    user1.is_deactivated = True
+    user1.save()
+    messages.success(request, 'User deactivated successfully.')
+    return redirect('superuser_user_info', user_id=user_id)
+
+def assign_lab(request, user_id):
+    if request.method == 'POST':
+        laboratory_id = request.POST['laboratory_id']
+        role_id = request.POST['role_id']
+        laboratory = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+        role = get_object_or_404(laboratory_role, roles_id=role_id)
+        laboratory_users.objects.create(user_id=user_id, laboratory=laboratory, role=role)
+        messages.success(request, 'Laboratory assigned successfully.')
+    return redirect('superuser_user_info', user_id=user_id)
+
+
+
+
 
 # Function to handle adding users
-def add_user(request):
+def add_user_role(request):
     if request.method == "POST":
         user_id = request.POST['user_id']
         email = request.POST['email']
         role = request.POST['role']
         # insert code to add to the database 
         return redirect('superuser_lab_info') 
-
 
 def add_room(request, laboratory_id):
     if request.method == "POST":
@@ -2575,7 +2640,6 @@ def add_room(request, laboratory_id):
     # Retrieve the lab to edit
     #lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
     #return render(request, 'superuser/superuser_editLab.html', {'lab': lab})
-
 
 def setup_edituser(request):
     return render(request, 'superuser/superuser_edituser.html')
