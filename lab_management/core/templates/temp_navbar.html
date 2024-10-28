@@ -207,160 +207,153 @@
       
       
       
-      {% if 'inventory' in selected_lab_modules %}
-<li class="nav-item">
-    <a class="nav-link {% if request.resolver_match.url_name in 'inventory_view inventory_addNewItem inventory_updateItem inventory_physicalCount inventory_manageSuppliers inventory_supplierDetails inventory_config inventory_itemDetails_view' %}active{% else %}collapsed{% endif %}" data-bs-target="#inventory-nav" data-bs-toggle="collapse" href="#">
-        <i class="bi bi-box2"></i><span>Inventory</span><i class="bi bi-chevron-down ms-auto"></i>
-    </a>
-    <ul id="inventory-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'inventory_view inventory_itemDetails_view' %}show{% endif %}" data-bs-parent="#sidebar-nav">
-        <li>
-            <a href="{% url 'inventory_view' %}" class="{% if request.resolver_match.url_name in 'inventory_view inventory_itemDetails_view' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>View Inventory</span>
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'inventory_addNewItem' %}" class="{% if request.resolver_match.url_name == 'inventory_addNewItem' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>Add New Item</span>
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'inventory_updateItem' %}" class="{% if request.resolver_match.url_name == 'inventory_updateItem' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>Update Item Quantity</span>
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'inventory_physicalCount' %}" class="{% if request.resolver_match.url_name == 'inventory_physicalCount' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>Physical Count</span>
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'inventory_manageSuppliers' %}" class="{% if request.resolver_match.url_name in 'inventory_manageSuppliers inventory_supplierDetails' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>Manage Suppliers</span>
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'inventory_config' %}" class="{% if request.resolver_match.url_name == 'inventory_config' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>Inventory Config</span>
-            </a>
-        </li>
-    </ul>
-</li>
+      {% if 1 in selected_lab_modules %}
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name in 'inventory_view inventory_addNewItem inventory_updateItem inventory_physicalCount inventory_manageSuppliers inventory_supplierDetails inventory_config inventory_itemDetails_view' %}active{% else %}collapsed{% endif %}" data-bs-target="#inventory-nav" data-bs-toggle="collapse" href="#">
+            <i class="bi bi-box2"></i><span>Inventory</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="inventory-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'inventory_view inventory_addNewItem inventory_updateItem inventory_physicalCount inventory_manageSuppliers inventory_supplierDetails inventory_config inventory_itemDetails_view' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+            <li>
+                <a href="{% url 'inventory_view' %}" class="{% if request.resolver_match.url_name in 'inventory_view inventory_itemDetails_view' %}active{% endif %}">
+                    <i class="bi bi-circle"></i><span>View Inventory</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventory_addNewItem' %}" class="{% if request.resolver_match.url_name == 'inventory_addNewItem' %}active{% endif %}">
+                    <i class="bi bi-circle"></i><span>Add New Item</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventory_updateItem' %}" class="{% if request.resolver_match.url_name == 'inventory_updateItem' %}active{% endif %}">
+                    <i class="bi bi-circle"></i><span>Update Item Quantity</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventory_physicalCount' %}" class="{% if request.resolver_match.url_name == 'inventory_physicalCount' %}active{% endif %}">
+                    <i class="bi bi-circle"></i><span>Physical Count / System Reconciliation</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventory_manageSuppliers' %}" class="{% if request.resolver_match.url_name == 'inventory_manageSuppliers inventory_supplierDetails' %}active{% endif %}">
+                    <i class="bi bi-circle"></i><span>Manage Suppliers</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventory_config' %}" class="{% if request.resolver_match.url_name == 'inventory_config' %}active{% endif %}">
+                    <i class="bi bi-circle"></i><span>Inventory Config</span>
+                </a>
+            </li>
+        </ul>
+    </li><!-- End inventory Nav -->
 {% endif %}
 
  
-{% if 'borrowing' in selected_lab_modules %}
-    <li class="nav-item">
-        <a class="nav-link {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_labcoord_prebookrequests  borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items' %}active{% else %}collapsed{% endif %}" data-bs-target="#borrow-nav" data-bs-toggle="collapse" href="#">
-            <i class="bi bi-journal-text"></i><span>Borrowing</span><i class="bi bi-chevron-down ms-auto"></i>
+{% if 2 in selected_lab_modules %}
+<li class="nav-item">
+  <a class="nav-link {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_labcoord_prebookrequests  borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items' %}active{% else %}collapsed{% endif %}" data-bs-target="#borrow-nav" data-bs-toggle="collapse" href="#">
+      <i class="bi bi-journal-text"></i><span>Borrowing</span><i class="bi bi-chevron-down ms-auto"></i>
+  </a>
+  <ul id="borrow-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_studentviewWalkInRequests borrowing_studentDetailedPreBookRequests borrowing_studentDetailedWalkInRequests borrowing_labcoord_prebookrequests borrowing_labcoord_borrowconfig borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+      <li>
+          <a href="{% url 'borrowing_studentPrebook' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentPrebook' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>STUDENT- Borrow(Pre-Book)</span>
+          </a>
+      </li>
+      <li>
+          <a href="{% url 'borrowing_studentWalkin' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentWalkin' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>STUDENT- Borrow(Walk-In)</span>
+          </a>
+      </li>
+      <li>
+          <a href="{% url 'borrowing_studentviewPreBookRequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_studentviewPreBookRequests borrowing_studentDetailedPreBookRequests' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>STUDENT - View Borrows</span>
+          </a>
+      </li>
+      <!-- <li>
+          <a href="{% url 'borrowing_studentviewWalkInRequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_studentviewWalkInRequests borrowing_studentDetailedWalkInRequests' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>STUDENT - View Walk-In Requests</span>
+          </a>
+      </li> -->
+      <li>
+        <a href="{% url 'borrowing_labcoord_prebookrequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_labcoord_prebookrequests borrowing_labcoord_detailedPrebookrequests' %}active{% endif %}">
+            <i class="bi bi-circle"></i><span>LAB COORD - Booking Requests</span>
         </a>
-        <ul id="borrow-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_studentviewWalkInRequests borrowing_studentDetailedPreBookRequests borrowing_studentDetailedWalkInRequests borrowing_labcoord_prebookrequests borrowing_labcoord_borrowconfig borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items' %}show{% endif %}" data-bs-parent="#sidebar-nav">
-            <li>
-                <a href="{% url 'borrowing_studentPrebook' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentPrebook' %}active{% endif %}">
-                    <i class="bi bi-circle"></i><span>STUDENT- Borrow(Pre-Book)</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'borrowing_studentWalkin' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentWalkin' %}active{% endif %}">
-                    <i class="bi bi-circle"></i><span>STUDENT- Borrow(Walk-In)</span>
-                </a>
-            </li>
-            <li>
-                <a href="{% url 'borrowing_studentviewPreBookRequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_studentviewPreBookRequests borrowing_studentDetailedPreBookRequests' %}active{% endif %}">
-                    <i class="bi bi-circle"></i><span>STUDENT - View Borrows</span>
-                </a>
-            </li>
-            
-            <li>
-              <a href="{% url 'borrowing_labcoord_prebookrequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_labcoord_prebookrequests borrowing_labcoord_detailedPrebookrequests' %}active{% endif %}">
-                  <i class="bi bi-circle"></i><span>LAB COORD - Booking Requests</span>
-              </a>
-          </li>
-          <li>
-            <a href="{% url 'borrowing_labtech_prebookrequests' %}" class="{% if request.resolver_match.url_name == 'borrowing_labtech_prebookrequests' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>LAB TECH - Booking Requests</span>
-            </a>
-          </li>
-          <li>
-            <a href="{% url 'return_borrowed_items' %}" class="{% if request.resolver_match.url_name == 'return_borrowed_items' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>LAB TECH - Return Items Borrowed</span>
-            </a>
-          </li>
-          <li>
-            <a href="{% url 'borrowing_labcoord_borrowconfig' %}" class="{% if request.resolver_match.url_name == 'borrowing_labcoord_borrowconfig' %}active{% endif %}">
-                <i class="bi bi-circle"></i><span>LAB COORD - Borrowing Configuration</span>
-            </a>
-        </li>
-        </ul>
-    </li><!-- End Borrowing Nav -->
+    </li>
+    <li>
+      <a href="{% url 'borrowing_labtech_prebookrequests' %}" class="{% if request.resolver_match.url_name == 'borrowing_labtech_prebookrequests' %}active{% endif %}">
+          <i class="bi bi-circle"></i><span>LAB TECH - Booking Requests</span>
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'return_borrowed_items' %}" class="{% if request.resolver_match.url_name == 'return_borrowed_items' %}active{% endif %}">
+          <i class="bi bi-circle"></i><span>LAB TECH - Return Items Borrowed</span>
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'borrowing_labcoord_borrowconfig' %}" class="{% if request.resolver_match.url_name == 'borrowing_labcoord_borrowconfig' %}active{% endif %}">
+          <i class="bi bi-circle"></i><span>LAB COORD - Borrowing Configuration</span>
+      </a>
+  </li>
+  </ul>
+</li><!-- End Borrowing Nav -->
     {% endif %}
     
     
-    {% if 'clearance' in selected_lab_modules %}
-      <li class="nav-item">
-        <a class="nav-link {% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed' %}active{% else %}collapsed{% endif %}" data-bs-target="#tables-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-layout-text-window-reverse"></i><span>Clearance</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="tables-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed'%}show{% endif %} " data-bs-parent="#sidebar-nav">
-          <li>
-            <a href="{% url 'clearance_student_viewClearance' %}" class = "{% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>STUDENT - View Clearance</span>
-            </a>
-          </li>
-          <li>
-            <a href="{% url 'clearance_labtech_viewclearance' %}" class = "{% if request.resolver_match.url_name in 'clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>LAB TECH - View Clearance</span>
-            </a>
-          </li>
-        
-        </ul>
-      </li><!-- End Tables Nav -->
+    {% if 3 in selected_lab_modules %}
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed' %}active{% else %}collapsed{% endif %}" data-bs-target="#tables-nav" data-bs-toggle="collapse" href="#">
+        <i class="bi bi-layout-text-window-reverse"></i><span>Clearance</span><i class="bi bi-chevron-down ms-auto"></i>
+      </a>
+      <ul id="tables-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed'%}show{% endif %} " data-bs-parent="#sidebar-nav">
+        <li>
+          <a href="{% url 'clearance_student_viewClearance' %}" class = "{% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed' %}active{% endif %}">
+            <i class="bi bi-circle"></i><span>STUDENT - View Clearance</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'clearance_labtech_viewclearance' %}" class = "{% if request.resolver_match.url_name in 'clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed' %}active{% endif %}">
+            <i class="bi bi-circle"></i><span>LAB TECH - View Clearance</span>
+          </a>
+        </li>
+      
+      </ul>
+    </li><!-- End Tables Nav -->
       {% endif %}
 
-      {% if 'reservation' in selected_lab_modules %}
+      {% if 4 in selected_lab_modules %}
       <li class="nav-item">
         <a class="nav-link {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule labres_lab_reservationreqs labres_lab_reservationreqsDetailed lab_reservation_student_reserveLabConfirmDetails'%}active{% else %}collapsed{% endif %}" data-bs-target="#reserve-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-journal-bookmark"></i><span>Lab Reservation</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="reserve-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule labres_lab_reservationreqs labres_lab_reservationreqsDetailed lab_reservation_student_reserveLabConfirmDetails'%}show{% endif %} " data-bs-parent="#sidebar-nav">
-          <li>
-           
+          <li>           
             <a href="{% url 'lab_reservation_student_reserveLabChooseRoom' %}" class = "{% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>STUDENT - Reserve Laboratory - Choose Room</span>
             </a>
-
             <a href="{% url 'lab_reservation_student_reserveLabSummary' %}" class = "{% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabSummary lab_reservation_detail' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>STUDENT - My Room Reservations</span>
-            </a>
-            
+            </a>            
           </li>
-
-          <li>
-           
+          <li>     
             <a href="{% url 'labres_lab_schedule' %}" class = "{% if request.resolver_match.url_name in 'labres_lab_schedule' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>LAB - Reservation Schedule</span>
-            </a>
-            
+            </a> 
           </li>
-
-          <li>
-           
+          <li>         
             <a href="{% url 'labres_lab_reservationreqs' %}" class = "{% if request.resolver_match.url_name in 'labres_lab_reservationreqs labres_lab_reservationreqsDetailed' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>LAB - Reservation Requests</span>
             </a>
-            
           </li>
           <li>
-           
             <a href="{% url 'labres_labcoord_configroom' %}" class = "{% if request.resolver_match.url_name in 'labres_labcoord_configroom' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>LABCOORD - Configure Room</span>
             </a>
-            
           </li>
         </ul>
       </li><!--  Nav -->
       {% endif %}
 
-      {% if 'reports' in selected_lab_modules %}
+      {% if 5 in selected_lab_modules %}
       <li class="nav-item">
         <a class="nav-link {% if request.resolver_match.url_name in 'reports'%}active{% else %}collapsed{% endif %}" data-bs-target="#reports-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-bar-chart"></i><span>Reports</span><i class="bi bi-chevron-down ms-auto"></i>

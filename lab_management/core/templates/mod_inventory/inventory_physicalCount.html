@@ -53,8 +53,8 @@
               <table class="table datatable" id="itemsTable">
                 <thead>
                   <tr>
-                    <th>Item Name</th>
-                    <th>Current Qty</th> <!-- Current qty column added -->
+                    <th style="text-align:left;">Item Name</th>
+                    <th style="text-align:left;">Current Qty</th> <!-- Current qty column added -->
                     <th>Count Qty</th>
                     <!-- <th style="display:none;"></th> Hidden column -->
                   </tr>
@@ -62,8 +62,8 @@
                 <tbody>
                   {% for item in inventory_items %}
                     <tr>
-                      <td>{{ item.item_name }}</td> <!-- Item Name -->
-                      <td>{{ item.total_qty|default:0 }}</td> <!-- Current Quantity -->
+                      <td style="text-align:left;">{{ item.item_name }}</td> <!-- Item Name -->
+                      <td style="text-align:left;">{{ item.total_qty|default:0 }}</td> <!-- Current Quantity -->
                       <td>
                         <!-- Count Qty input field with name based on item_id -->
                         <input type="number" name="count_qty_{{ item.item_id }}" class="form-control" placeholder="Enter count" required>
