@@ -98,11 +98,11 @@
           </div>
           <hr>
           <div class="form-group">
-            <label for="username">Email*</label>
-            <input type="text" class="form-control" id="username" name="username" required>
+            <label for="email">Email*</label>
+            <input type="text" class="form-control" id="email" name="email" required>
           </div>
           <div class="form-group">
-            <label for="password">Password*</label>
+            <label for="password">Password* <i class="fas fa-info-circle" data-toggle="tooltip" data-placement="right" title="Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character."></i></label>
             <input type="password" class="form-control" id="password" name="password" required>
           </div>
           <div class="form-group">
@@ -121,12 +121,26 @@
 </div>
 
 <script>
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  });
+
   function validatePasswords() {
     var password = document.getElementById("password").value;
     var confirmPassword = document.getElementById("confirm_password").value;
     var errorMessage = document.getElementById("passwordError");
 
+    // Define the password policy
+    var passwordPolicy = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    if (!passwordPolicy.test(password)) {
+      errorMessage.textContent = "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.";
+      errorMessage.style.display = "block";
+      return false;
+    }
+
     if (password !== confirmPassword) {
+      errorMessage.textContent = "Passwords do not match. Please try again.";
       errorMessage.style.display = "block";
       return false;
     } else {

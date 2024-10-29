@@ -8,6 +8,51 @@
   .module-card { border: 1px solid #ddd; border-radius: 5px; padding: 10px; margin-bottom: 10px; text-align: center; transition: box-shadow 0.2s; }
   .module-card:hover { box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); }
   .module-title { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+
+  input:checked + .slider {
+    background-color: #2196F3;
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(26px);
+  }
+
 </style>
 
 <div class="pagetitle">
@@ -83,54 +128,42 @@
 </div>
 
   <!-- Modules Tab -->
-  <div class="tab-pane fade" id="modules" role="tabpanel">
-    <section class="section">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Add Module</h5>
-          <form method="POST" action="{% url 'add_module_to_lab' lab.laboratory_id %}">
-            {% csrf_token %}
-            <div class="form-group">
-              <label for="module_id">Select Module:</label>
-              <select class="form-control" id="module_id" name="module_id">
-                {% for module in all_modules %}
-                  <option value="{{ module.id }}">{{ module.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Add Module</button>
-          </form>
-
-          <h5 class="card-title mt-4">Manage Laboratory Modules</h5>
+<!-- Modules Tab -->
+<div class="tab-pane fade" id="modules" role="tabpanel">
+  <section class="section">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Manage Laboratory Modules</h5>
+        <form method="POST" action="{% url 'toggle_module_status' lab.laboratory_id %}">
+          {% csrf_token %}
           <table id="modulesTable" class="table">
             <thead>
               <tr>
                 <th>Module Name</th>
                 <th>Status</th>
-                <th style="text-align:right;"></th>
               </tr>
             </thead>
             <tbody>
-              {% for module in modules %}
+              {% for module in all_modules %}
                 <tr>
                   <td>{{ module.name }}</td>
-                  <td>{{ module.enabled|yesno:"Enabled, Disabled" }}</td>
-                  <td style="text-align:right;">
-                    <form action="{% url 'toggle_module_status' lab.laboratory_id module.id %}" method="post">
-                      {% csrf_token %}
-                      <button type="submit" class="btn btn-{{ module.enabled|yesno:'danger,success' }}" onclick="updateButtonText(this, '{{ module.enabled }}')">
-                        {{ module.enabled|yesno:'Disable Module,Enable Module' }}
-                      </button>
-                    </form>
+                  <td class="text-right">
+                    <label class="toggle-switch">
+                      <input type="checkbox" name="module_{{ module.id }}" value="{{ module.id }}" {% if module.id in lab.modules %}checked{% endif %}>
+                      <span class="slider"></span>
+                    </label>
                   </td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
-        </div>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
       </div>
-    </section>
-  </div>
+    </div>
+  </section>
+</div>
+
 
   <!-- Users Tab -->
 <div class="tab-pane fade" id="users" role="tabpanel">

@@ -30,24 +30,13 @@ class laboratory(models.Model):
     department = models.CharField(max_length=45, null=True, blank=True)
     is_available = models.BooleanField(default=True)  # 1 for active, 0 for terminated
     date_created = models.DateTimeField(default=timezone.now)
-    modules = models.ManyToManyField('Module', through='LaboratoryModule', blank=True)
+    modules = models.JSONField(blank=True, default=list)
 
     def __str__(self):
         return self.name
 
     def get_status(self):
         return "Active" if self.is_available else "Deactivated"
-
-class LaboratoryModule(models.Model):
-    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
-    module = models.ForeignKey(Module, on_delete=models.CASCADE)
-    enabled = models.BooleanField(default=True)  # Add this field to track module status
-    
-    class Meta:
-        unique_together = ('laboratory', 'module')  # Ensure unique pairs
-
-    def __str__(self):
-        return f"{self.laboratory.name} - {self.module.name}"
 
 class laboratory_role(models.Model):
     roles_id = models.AutoField(primary_key=True)

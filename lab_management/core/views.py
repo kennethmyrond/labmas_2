@@ -14,7 +14,7 @@ from django import forms
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
-from .models import rooms, laboratory_reservations, reservation_config, LaboratoryModule
+from .models import rooms, laboratory_reservations, reservation_config
 from .models import laboratory_users, laboratory_role
 from datetime import timedelta, date, datetime
 from calendar import monthrange
@@ -146,7 +146,6 @@ def suggest_users(request):
     
     return JsonResponse(results, safe=False)
 
-
 def remove_item_from_inventory(inventory_item, amount, user, change_type, remarks=''):
     if inventory_item.qty < amount:
         raise ValueError("Not enough items in inventory to remove.")
@@ -209,6 +208,7 @@ def home(request):
 def set_lab(request, laboratory_id):
     # Set the chosen laboratory in the session
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+    current_user = get_object_or_404(user, email=request.user.email)
     request.session['selected_lab'] = lab.laboratory_id
     request.session['selected_lab_name'] = lab.name
     return redirect(request.META.get('HTTP_REFERER', '/'))  # Redirect back to the previous page
@@ -2478,10 +2478,10 @@ def user_settings_view(request):
     return render(request, 'user_settings.html')
 
 
+
+
+
 #lab setup
-
-
-# superuser stuff
 def superuser_manage_labs(request):
     labs = laboratory.objects.all()  # Retrieve all laboratory records
     context = {
@@ -2492,7 +2492,11 @@ def superuser_manage_labs(request):
 def superuser_lab_info(request, laboratory_id):
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
     lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id)  # Rooms associated with the lab
-    modules = lab.modules.all()  # Retrieve all modules for the lab
+    
+    # Retrieve all modules for the lab using the module IDs stored in the JSON field
+    module_ids = lab.modules
+    modules = Module.objects.filter(id__in=module_ids)
+    
     all_modules = Module.objects.all()  # All available modules
     lab_users = laboratory_users.objects.filter(laboratory_id=lab.laboratory_id).select_related('user', 'role').annotate(
         username=F('user__username'),
@@ -2532,14 +2536,20 @@ def add_module_to_lab(request, laboratory_id):
 
     return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
-def toggle_module_status(request, laboratory_id, module_id):
-    # Get the module and toggle its status
-    module = Module.objects.get(id=module_id)
-    module.enabled = not module.enabled  # Toggle the enabled status
-    module.save()  # Save the updated status
-    
-    # Redirect back to the laboratory info page
-    return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+def toggle_module_status(request, laboratory_id):
+    if request.method == 'POST':
+        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+        module_ids = []
+
+        for module in Module.objects.all():
+            if request.POST.get(f'module_{module.id}'):
+                module_ids.append(module.id)
+
+        lab.modules = module_ids
+        lab.save()
+
+        messages.success(request, "Module statuses updated successfully.")
+        return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 def edit_lab_info(request, laboratory_id):
     if request.method == 'POST':
@@ -2591,14 +2601,17 @@ def superuser_manage_users(request):
 
 def add_user(request):
     if request.method == 'POST':
-        firstname = request.POST['firstname']
-        lastname = request.POST['lastname']
-        idnum = request.POST['idnum']
-        email = request.POST['email']
-        username = request.POST['email']
-        password = request.POST['password']
-        user.objects.create_user(email=email, firstname=firstname, lastname=lastname, password=password, personal_id=idnum, username=username)
-        messages.success(request, "User added successfully.")
+        firstname = request.POST.get('firstname')
+        lastname = request.POST.get('lastname')
+        idnum = request.POST.get('idnum')
+        email = request.POST.get('email')
+        username = request.POST.get('email')
+        password = request.POST.get('password')
+        if email and firstname and lastname and password:
+            user.objects.create_user(email=email, firstname=firstname, lastname=lastname, password=password, personal_id=idnum, username=username)
+            messages.success(request, "User added successfully.")
+        else:
+            messages.error(request, "Missing required fields.")
     return redirect('superuser_manage_users')
 
 def superuser_user_info(request, user_id):
@@ -2715,7 +2728,7 @@ def setup_createlab(request):
             description=description,
             department=department,
             is_available=True,
-            date_created=timezone.now() 
+            date_created=timezone.now()
         )
         print("Created new lab:", new_lab)  # Log the created lab
 
@@ -2732,18 +2745,14 @@ def setup_createlab(request):
         if 'reports' in request.POST:
             module_ids.append(5)  # ID for Reports
 
-        # Check if there are any module IDs to set
-        if module_ids:
-            # Link selected modules
-            for module_id in module_ids:
-                module = Module.objects.get(id=module_id)  # Retrieve module instance
-                LaboratoryModule.objects.create(laboratory=new_lab, module=module)  # Create entry in LaboratoryModule
+        # Save the module IDs in the laboratory model
+        new_lab.modules = module_ids
+        new_lab.save()
 
-        return redirect('setup_createlab')  # Redirect to a success page or another view
+        messages.success(request, "Laboratory created successfully.")
+        return redirect('superuser_lab_info', new_lab.laboratory_id)  # Redirect to a success page or another view
 
     return render(request, 'superuser/superuser_createlab.html')
-
-
 
 
 def superuser_login(request):
