@@ -1,25 +1,27 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.contrib.auth import authenticate, login as auth_login, logout
+from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
-from django.db.models.functions import TruncDate, Coalesce, Greatest
 from django.contrib import messages
-from django.db.models import Q, Sum , Prefetch, F, Count, Avg 
+from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat
+from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value
+from django.db import connection, models
 from django.utils import timezone
-from django import forms
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
+from django.urls import reverse
+from django import forms
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from .models import rooms, laboratory_reservations, reservation_config, LaboratoryModule
 from .models import laboratory_users, laboratory_role
 from datetime import timedelta, date, datetime
-from django.urls import reverse
 from calendar import monthrange
 from pyzbar.pyzbar import decode
 from PIL import Image 
 from io import BytesIO
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.db import connection, models
+
 import json, qrcode, base64, threading, time
 
 # thread every midnight query items to check due date if today (for on holding past due date )
@@ -128,6 +130,22 @@ def suggest_suppliers(request):
         })
 
     return JsonResponse(data, safe=False)
+
+def suggest_users(request):
+    print("users:")
+    query = request.GET.get('query', '')
+    lab_id = request.GET.get('lab_id', None)
+
+    # Filter to get users not already assigned to the lab
+    assigned_user_ids = laboratory_users.objects.filter(laboratory_id=lab_id).values_list('user_id', flat=True)
+    users = user.objects.exclude(user_id__in=assigned_user_ids).filter(
+        Q(username__icontains=query) | Q(firstname__icontains=query) | Q(lastname__icontains=query)
+    ).annotate(fullname=Concat(F('email'), Value(' | '), F('firstname'), Value(' '), F('lastname'), output_field=CharField()))
+
+    results = [{'user_id': u.user_id, 'fullname': u.fullname} for u in users]
+    
+    return JsonResponse(results, safe=False)
+
 
 def remove_item_from_inventory(inventory_item, amount, user, change_type, remarks=''):
     if inventory_item.qty < amount:
@@ -2473,25 +2491,28 @@ def superuser_manage_labs(request):
 
 def superuser_lab_info(request, laboratory_id):
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-    lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id)  # Adjust this line based on your Room model's field names
+    lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id)  # Rooms associated with the lab
     modules = lab.modules.all()  # Retrieve all modules for the lab
-    all_modules = Module.objects.all()  # Get all available modules
+    all_modules = Module.objects.all()  # All available modules
     lab_users = laboratory_users.objects.filter(laboratory_id=lab.laboratory_id).select_related('user', 'role').annotate(
+        username=F('user__username'),
         user_email=F('user__email'),
+        full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
         role_name=F('role__name')
     )
     lab_roles = laboratory_role.objects.filter(laboratory_id=lab.laboratory_id).annotate(usercount=Count('users'))
     
-    return render(request, 'superuser/superuser_labInfo.html', {
+    context = {
         'laboratory_id': laboratory_id,
         'lab': lab,
         'modules': modules,
         'lab_rooms': lab_rooms,
-        'all_modules': all_modules,  # Pass all modules to the template
+        'all_modules': all_modules,
         'lab_users': lab_users,
-        'lab_roles': lab_roles
-    })
-
+        'lab_roles': lab_roles,
+    }
+    
+    return render(request, 'superuser/superuser_labInfo.html', context)
 
 def add_module_to_lab(request, laboratory_id):
     if request.method == 'POST':
@@ -2537,6 +2558,30 @@ def deactivate_lab(request, laboratory_id):
     messages.success(request, "Laboratory deactivated successfully.")  # Optional success message
     return redirect('superuser_manage_labs')
 
+
+# users
+@login_required
+@require_POST
+def edit_user_role(request, laboratory_id):
+    user_id = request.POST.get('user_id')
+    new_role_id = request.POST.get('role_id')
+    lab_user = get_object_or_404(laboratory_users, user_id=user_id, laboratory_id=laboratory_id)
+    lab_user.role_id = new_role_id
+    lab_user.save()
+    messages.success(request, "User role updated successfully.")
+    return redirect ('superuser_lab_info', laboratory_id)
+
+@login_required
+@require_POST
+def toggle_user_status(request):
+    data = json.loads(request.body)
+    user_id = data.get('user_id')
+    lab_user = get_object_or_404(laboratory_users, user_id=user_id)
+    lab_user.is_active = not lab_user.is_active
+    lab_user.save()
+    messages.success(request, "User status updated successfully.")
+    return JsonResponse({'success': True, 'is_active': lab_user.is_active})
+
 def superuser_manage_users(request):
     users = user.objects.all()
     context = {
@@ -2550,7 +2595,7 @@ def add_user(request):
         lastname = request.POST['lastname']
         idnum = request.POST['idnum']
         email = request.POST['email']
-        username = request.POST['username']
+        username = request.POST['email']
         password = request.POST['password']
         user.objects.create_user(email=email, firstname=firstname, lastname=lastname, password=password, personal_id=idnum, username=username)
         messages.success(request, "User added successfully.")
@@ -2591,24 +2636,32 @@ def assign_lab(request, user_id):
     if request.method == 'POST':
         laboratory_id = request.POST['laboratory_id']
         role_id = request.POST['role_id']
-        laboratory = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+        user_laboratory = get_object_or_404(laboratory, laboratory_id=laboratory_id)
         role = get_object_or_404(laboratory_role, roles_id=role_id)
-        laboratory_users.objects.create(user_id=user_id, laboratory=laboratory, role=role)
+        laboratory_users.objects.create(user_id=user_id, laboratory=user_laboratory, role=role)
         messages.success(request, 'Laboratory assigned successfully.')
     return redirect('superuser_user_info', user_id=user_id)
 
 
-
-
-
 # Function to handle adding users
-def add_user_role(request):
+def add_user_laboratory(request, laboratory_id):
     if request.method == "POST":
-        user_id = request.POST['user_id']
-        email = request.POST['email']
-        role = request.POST['role']
-        # insert code to add to the database 
-        return redirect('superuser_lab_info') 
+        user_id = request.POST['user']
+        role_id = request.POST['role']
+        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+        
+        user_instance = get_object_or_404(user, user_id=user_id)
+        role_instance = get_object_or_404(laboratory_role, roles_id=role_id, laboratory=lab)
+        
+        # Add user to laboratory if not already assigned
+        laboratory_users.objects.get_or_create(
+            user=user_instance,
+            laboratory=lab,
+            role=role_instance,
+            defaults={'is_active': request.POST['Status'] == 'Active'}
+        )
+
+    return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 def add_room(request, laboratory_id):
     if request.method == "POST":

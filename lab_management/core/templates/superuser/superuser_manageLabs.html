@@ -38,6 +38,7 @@
                 <th>Department</th>
                 <th>Date Created</th>
                 <th>Status</th>
+                <th hidden></th>
               </tr>
             </thead>
             <tbody>
@@ -51,6 +52,7 @@
                     {{ lab.get_status }}
                   </span>
                 </td>
+                <td hidden></td>
               </tr>
               {% endfor %}
             </tbody>

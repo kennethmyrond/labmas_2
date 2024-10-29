@@ -35,8 +35,9 @@
     <div class="col-lg-12">
       <div class="card">
         <div class="card-body">
+          <h5 class="card-title">Users</h5>
           <!-- Button to trigger Add User Modal -->
-          <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#addUserModal">Add User</button>
+          <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#addUserModal">Add New User</button>
           <!-- Users Table -->
           <table class="table datatable" id="usertable">
             <thead>
@@ -45,6 +46,7 @@
                 <th style="text-align:left;">Name</th>
                 <th>Date Joined</th>
                 <th>Status</th>
+                <th hidden></th>
               </tr>
             </thead>
             <tbody>
@@ -58,6 +60,7 @@
                     {% if not user.is_deactivated %}Active{% else %}Deactivated{% endif %}
                   </span>
                 </td>
+                <td hidden></td>
               </tr>
               {% endfor %}
             </tbody>
@@ -72,10 +75,10 @@
 <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="POST" action="{% url 'add_user' %}">
+      <form method="POST" action="{% url 'add_user' %}" onsubmit="return validatePasswords()">
         {% csrf_token %}
         <div class="modal-header">
-          <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
+          <h5 class="modal-title" id="addUserModalLabel">Add New User</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -90,21 +93,22 @@
             <input type="text" class="form-control" id="lastname" name="lastname" required>
           </div>
           <div class="form-group">
-            <label for="email">Email*</label>
-            <input type="email" class="form-control" id="email" name="email" required>
-          </div>
-          <div class="form-group">
             <label for="idnum">ID Number</label>
             <input type="text" class="form-control" id="idnum" name="idnum">
           </div>
           <hr>
           <div class="form-group">
-            <label for="username">Username*</label>
+            <label for="username">Email*</label>
             <input type="text" class="form-control" id="username" name="username" required>
           </div>
           <div class="form-group">
             <label for="password">Password*</label>
             <input type="password" class="form-control" id="password" name="password" required>
+          </div>
+          <div class="form-group">
+            <label for="confirm_password">Confirm Password*</label>
+            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+            <div id="passwordError" class="error-message" style="display: none; color: red;">Passwords do not match. Please try again.</div>
           </div>
         </div>
         <div class="modal-footer">
@@ -117,5 +121,18 @@
 </div>
 
 <script>
+  function validatePasswords() {
+    var password = document.getElementById("password").value;
+    var confirmPassword = document.getElementById("confirm_password").value;
+    var errorMessage = document.getElementById("passwordError");
+
+    if (password !== confirmPassword) {
+      errorMessage.style.display = "block";
+      return false;
+    } else {
+      errorMessage.style.display = "none";
+      return true;
+    }
+  }
 </script>
 {% endblock %}

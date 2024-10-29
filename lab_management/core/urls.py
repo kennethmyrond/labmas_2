@@ -96,7 +96,7 @@ urlpatterns = [
     path('setup/editLab/<int:laboratory_id>/', views.edit_lab_info, name='edit_lab_info'),
     path('setup/deactivate_lab/<int:laboratory_id>/', views.deactivate_lab, name='deactivate_lab'),
     path('setup/labInfo/<int:laboratory_id>/toggle_module/<int:module_id>/', views.toggle_module_status, name='toggle_module_status'),
-    path('add-user/', views.add_user, name='add_user'),  # URL for adding users
+    
     path('setup/labInfo/<int:laboratory_id>/add_room/', views.add_room, name='add_room'),
     #path('setup/editLab/<int:laboratory_id>/', views.setup_editLab, name='setup_editLab'),
     path('setup/manageRooms', views.setup_manageRooms, name='setup_manageRooms'),
@@ -105,11 +105,17 @@ urlpatterns = [
     path('setup/edituser', views.setup_edituser, name='setup_edituser'),
     
     path('setup/createlab', views.setup_createlab, name='setup_createlab'),
-
+    
+    path('labs/<int:laboratory_id>/add_user/', views.add_user_laboratory, name='add_user_laboratory'),  # To add user
+    path('suggest_users/', views.suggest_users, name='suggest_users'),
+    path('labs/<int:laboratory_id>/edit_user_role/', views.edit_user_role, name='edit_user_role'),
+    path('labs/toggle_user_status/', views.toggle_user_status, name='toggle_user_status'),
 
     path('add-user/', views.add_user, name='add_user'),
     path('user/<int:user_id>/', views.superuser_user_info, name='superuser_user_info'),
     path('user/<int:user_id>/edit/', views.edit_user, name='edit_user'),
     path('user/<int:user_id>/deactivate/', views.deactivate_user, name='deactivate_user'),
     path('user/<int:user_id>/assign-lab/', views.assign_lab, name='assign_lab'),
+
+    
 ]
