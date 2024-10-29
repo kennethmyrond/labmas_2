@@ -4,7 +4,13 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-
+{% if messages %}
+<div class="alert alert-success">
+  {% for message in messages %}
+    {{ message }}
+  {% endfor %}
+</div>
+{% endif %}
     <h1>Welcome to Labmas, {{user.first_name}}</h1>
 
     <a class="form-select d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">    

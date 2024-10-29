@@ -181,7 +181,7 @@ class item_transactions(models.Model):
 
 # borrowing & Clearance
 class borrowing_config(models.Model):
-    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE, primary_key=True, unique=True)
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE, primary_key=True)
     
     allow_walkin = models.BooleanField(default=False)
     allow_prebook = models.BooleanField(default=False)
@@ -241,14 +241,14 @@ class borrowing_config(models.Model):
 class borrow_info(models.Model):
     borrow_id = models.AutoField(primary_key=True)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
-    user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='borrowed_by')
+    user = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True, related_name='borrowed_by')
     request_date = models.DateTimeField(null=True, blank=True)
     borrow_date = models.DateField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
     # class_id = models.ForeignKey('Class', on_delete=models.SET_NULL, null=True, blank=True)
     # faculty_id = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='faculty')
     status = models.CharField(max_length=1, null=True, blank=True)
-    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    approved_by = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True)
     questions_responses = models.JSONField(default=dict, blank=True)
     remarks = models.CharField(max_length=45, null=True, blank=True)
 

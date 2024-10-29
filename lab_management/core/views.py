@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from django.urls import reverse
 from django import forms
+# from allauth.socialaccount.helpers import provider_login_url
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
@@ -199,7 +200,20 @@ class ItemEditForm(forms.ModelForm):
 
 # misc views
 def userlogin(request):
-    return render(request,"user_login.html")
+    if request.method == "POST":
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+
+        # Authenticate using email and password
+        user = authenticate(request, email=email, password=password)
+        if user is not None:
+            auth_login(request, user)
+            return redirect('home')  # Redirect to a specific page after login
+        else:
+            messages.error(request, "Invalid email or password")
+    
+    # Render the login template
+    return render(request, "user_login.html")
 
 @login_required(login_url='/login')
 def home(request):
@@ -224,6 +238,8 @@ def error_page(request, message=None):
     :param message: The error message to display (optional)
     """
     return render(request, 'error_page.html', {'message': message})
+
+
 
 
 # inventory
@@ -2483,6 +2499,9 @@ def user_settings_view(request):
 
 #lab setup
 def superuser_manage_labs(request):
+    if not request.user.is_superuser:
+        return render(request, 'error_page.html', {'message': 'Module is allowed for this laboratory.'})
+
     labs = laboratory.objects.all()  # Retrieve all laboratory records
     context = {
         'labs': labs,
@@ -2714,6 +2733,9 @@ def setup_manageRooms(request):
        return render(request, 'superuser/superuser_manageRooms.html')
 
 def setup_createlab(request):
+    if not request.user.is_superuser:
+        return render(request, 'error_page.html', {'message': 'Module is allowed for this laboratory.'})
+    
     if request.method == 'POST':
         lab_name = request.POST.get('labname')
         description = request.POST.get('description')
@@ -2755,6 +2777,9 @@ def setup_createlab(request):
     return render(request, 'superuser/superuser_createlab.html')
 
 
+
+
+
 def superuser_login(request):
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
@@ -2765,8 +2790,6 @@ def superuser_login(request):
     else:
         form = LoginForm()
     return render(request, 'superuser/superuser_login.html', {'form': form})
-
-
 
 
 @login_required()
@@ -2782,9 +2805,6 @@ def superuser_logout(request):
     logout(request)
     return redirect("/login/superuser")
 
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from .forms import LaboratoryForm
 
 @login_required(login_url='/login/superuser')
 def add_laboratory(request):

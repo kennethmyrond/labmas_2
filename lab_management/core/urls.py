@@ -1,4 +1,5 @@
-from django.urls import path
+from django.contrib import admin
+from django.urls import path, include
 from . import views
 
 urlpatterns = [
@@ -8,6 +9,8 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),  # Added trailing slash
     path('error/', views.error_page, name='error_page'),
 
+    
+    
     # setup
     
 
