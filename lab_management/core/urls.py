@@ -108,6 +108,8 @@ urlpatterns = [
     path('setup/edituser', views.setup_edituser, name='setup_edituser'),
     
     path('setup/createlab', views.setup_createlab, name='setup_createlab'),
+    path('update_permissions/<int:laboratory_id>/', views.update_permissions, name='update_permissions'),
+    path('add_role/', views.add_role, name='add_role'),
     
     path('labs/<int:laboratory_id>/add_user/', views.add_user_laboratory, name='add_user_laboratory'),  # To add user
     path('suggest_users/', views.suggest_users, name='suggest_users'),

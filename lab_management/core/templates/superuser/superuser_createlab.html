@@ -1,84 +1,16 @@
 {% extends 'temp_navbar.html' %}
 {% block title %}Setup - New Laboratory{% endblock %}
+{% load custom_filters %}
 
 {% block content %}
 <style>
-  .btncontainer {
-    text-align: right;
-  }
-
-  .module-card {
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 10px;
-    margin-bottom: 10px;
-    text-align: center;
-    transition: box-shadow 0.2s;
-  }
-
-  .module-card:hover {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  }
-
-  .module-title {
-    font-weight: bold;
-    font-size: 18px;
-    margin-bottom: 5px;
-  }
-
-  .toggle-switch {
-    display: inline-block;
-    width: 60px;
-    height: 34px;
-    position: relative;
-  }
-
-  .toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-    border-radius: 34px;
-  }
-
-  .slider:before {
-    position: absolute;
-    content: "";
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: .4s;
-    border-radius: 50%;
-  }
-
-  input:checked + .slider {
-    background-color: #2196F3;
-  }
-
-  input:checked + .slider:before {
-    transform: translateX(26px);
-  }
-
-  .roletable{
-    text-align: center;
-  }
-
-  th,td{
-    width: 1%;
-    padding: 1%;
-  }
+  .btncontainer { text-align: right; }
+  .toggle-switch { display: inline-block; width: 60px; height: 34px; position: relative; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+  .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+  input:checked + .slider { background-color: #2196F3; }
+  input:checked + .slider:before { transform: translateX(26px); }
 </style>
 
 <div class="pagetitle">
@@ -104,85 +36,77 @@
       <div class="card">
         <div class="card-body">
           <h5 class="card-title">Laboratory Details</h5>
-          <form method="POST" id="edituser" action="{% url 'setup_createlab' %}" class="mb-2">
+          <form method="POST" action="{% url 'setup_createlab' %}" class="mb-2">
             {% csrf_token %}
+            
+            <!-- Laboratory Details Section -->
             <div class="row mb-3">
               <label for="labname" class="col-sm-2 col-form-label">Name:</label>
-              <div class="col-sm-10">
-                <input type="text" name="labname" class="form-control" maxlength="45" required>
-              </div>
+              <div class="col-sm-10"><input type="text" name="labname" class="form-control" maxlength="45" required></div>
             </div>
-
             <div class="row mb-3">
               <label for="description" class="col-sm-2 col-form-label">Description:</label>
-              <div class="col-sm-10">
-                <input type="text" name="description" class="form-control" maxlength="100" required>
-              </div>
+              <div class="col-sm-10"><input type="text" name="description" class="form-control" maxlength="100" required></div>
             </div>
-
             <div class="row mb-3">
               <label for="department" class="col-sm-2 col-form-label">Department:</label>
-              <div class="col-sm-10">
-                <input type="text" name="department" class="form-control" maxlength="100" required>
-              </div>
+              <div class="col-sm-10"><input type="text" name="department" class="form-control" maxlength="100" required></div>
             </div>
 
+            <!-- Module Selection Section -->
             <div class="row mb-3">
               <label for="modules" class="col-sm-2 col-form-label">Modules:</label>
               <div class="col-sm-10">
                 <table class="table">
                   <tbody>
+                    {% for module in modules %}
                     <tr>
-                      <td>Inventory</td>
+                      <td>{{ module.name }}</td>
                       <td class="text-right">
                         <label class="toggle-switch">
-                          <input type="checkbox" name="inventory" value="1">
+                          <input type="checkbox" name="modules[]" value="{{ module.id }}" onchange="togglePermissionTable('{{ module.id }}')">
                           <span class="slider"></span>
                         </label>
                       </td>
                     </tr>
-                    <tr>
-                      <td>Borrowing</td>
-                      <td class="text-right">
-                        <label class="toggle-switch">
-                          <input type="checkbox" name="borrowing" value="2">
-                          <span class="slider"></span>
-                        </label>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Clearance</td>
-                      <td class="text-right">
-                        <label class="toggle-switch">
-                          <input type="checkbox" name="clearance" value="3">
-                          <span class="slider"></span>
-                        </label>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Laboratory Reservation</td>
-                      <td class="text-right">
-                        <label class="toggle-switch">
-                          <input type="checkbox" name="reservation" value="4">
-                          <span class="slider"></span>
-                        </label>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Reports</td>
-                      <td class="text-right">
-                        <label class="toggle-switch">
-                          <input type="checkbox" name="reports" value="5">
-                          <span class="slider"></span>
-                        </label>
-                      </td>
-                    </tr>
+                    {% endfor %}
                   </tbody>
                 </table>
               </div>
             </div>
-            <button type="submit" class="btn btn-primary">Create New Lab</button>
-            <button type="reset" class="btn btn-secondary">Clear</button>
+
+            <!-- Permissions Section -->
+            {% for module in modules %}
+            <div id="permissions_table_{{ module.id }}" style="display:none;">
+              <h5 class="card-title">{{ module.name }} Permissions</h5>
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Role</th>
+                    {% for perm in permissions_by_module|get_item:module.id %}
+                      <th>{{ perm.name }}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for role in roles %}
+                  <tr>
+                    <td>{{ role.name }}</td>
+                    {% for perm in permissions_by_module|get_item:module.id %}
+                      <td>
+                        <input type="checkbox" name="permissions[{{ role.roles_id }}][{{ perm.codename }}]" 
+                              {% if role_permissions|get_item:role.id|get_item:perm.codename %}checked{% endif %}>
+                      </td>
+                    {% endfor %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-primary">Create Laboratory</button>
+            <button type="reset" class="btn btn-secondary">Cancel</button>
           </form>
         </div>
       </div>
@@ -190,185 +114,11 @@
   </div>
 </section>
 
-
-  <!-- Form for Borrowing Configuration by Item or Item Type -->
-  <section class="section">
-    <div class="row">
-      <div class="col-lg-12">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Roles</h5>
-
-              <table class="roletable">
-                <tr>
-                  <th>Role Name</th>
-                  <th>Inventory</th>
-                  <th>Borrowing</th>
-                  <th>Clearance</th>
-                  <th>Reservation</th>
-                  <th>Reports</th>
-                  <th>Actions</th>
-                </tr>
-
-                <!-------     hardcoded    --------->
-                <tr>
-                  <td>Laboratory Coordinator</td>
-                  <td>
-                    <input type="checkbox" class="rolecheck" id="roleinv" onclick="return false;" checked>
-                  </td>
-                  <td>
-                    <input type="checkbox" class="rolecheck" id="rolebor" checked>
-                  </td>
-                  <td>
-                    <input type="checkbox" class="rolecheck" id="roleclr" checked>
-                  </td>
-                  <td>
-                    <input type="checkbox" class="rolecheck" id="roleres" checked>
-                  </td>
-                  <td>
-                    <input type="checkbox" class="rolecheck" id="rolerep" checked>
-                  </td>
-                  <td>
-                    <button class="btn btn-danger btn-sm">Delete</button>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td>Laboratory Technician</td>
-                  <td>
-                    <input type="checkbox" class="rolecheck" id="roleinv" checked>
-                  </td>
-                  <td>
-                    <input type="checkbox" class="rolecheck" id="rolebor" checked>
-                  </td>
-                  <td>
-                    <input type="checkbox" class="rolecheck" id="roleclr" checked>
-                  </td>
-                  <td>
-                    <input type="checkbox" class="rolecheck" id="roleres" checked>
-                  </td>
-                  <td>
-                    <input type="checkbox" class="rolecheck" id="rolerep">
-                  </td>
-                  <td>
-                    <button class="btn btn-danger btn-sm">Delete</button>
-                  </td>
-                </tr>
-
-                <!-------     end of hardcoded    --------->
-
-              </table>
-              <button type="submit" class="btn btn-primary">Save</button>
-              
-              <hr>
-            <h5 class="card-title">Add New Role</h5>
-  
-            <form method="POST" id="roleForm">
-              <div class="row mb-3">
-                <label for="roleName" class="col-sm-2 col-form-label">Role Name:</label>
-                <div class="col-sm-10">
-                  <input type="text" name="roleName" class="form-control">
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <p>Modules:</p>
-                <div class="col-sm-10">
-                  <div class="form-check form-switch">
-                    <label class="form-check-label" for="roleinv">Inventory</label>
-                    <input class="form-check-input" type="checkbox" id="invPermission" name="roleinv">
-                  </div>
-                </div>
-
-                <div>
-                  <table id="permissions" style="display:none;">
-                    <td>
-                      <label for="conf" class="col-sm-5 col-form-label">Config</label>
-                      <input type="checkbox" name="conf">
-                    </td>
-                    <td>
-                      <label for="add" class="col-sm-5 col-form-label">Add</label>
-                      <input type="checkbox" name="add">
-                    </td>
-                    <td>
-                      <label for="edit" class="col-sm-5 col-form-label">Edit</label>
-                      <input type="checkbox" name="edit">
-                    </td>
-                    <td>
-                      <label for="delete" class="col-sm-5 col-form-label">Delete</label>
-                      <input type="checkbox" name="delete">
-                    </td>
-                    <td>
-                      <label for="view" class="col-sm-5 col-form-label">View</label>
-                      <input type="checkbox" name="view">
-                    </td>
-                  </table>
-                </div>
-
-                <div class="col-sm-10">
-                  <div class="form-check form-switch">
-                    <label class="form-check-label" for="rolebor">Borrowing</label>
-                    <input class="form-check-input" type="checkbox" name="rolebor">
-                  </div>
-                </div>
-
-                <div class="col-sm-10">
-                  <div class="form-check form-switch">
-                    <label class="form-check-label" for="roleclr">Clearance</label>
-                    <input class="form-check-input" type="checkbox" name="roleclr">
-                  </div>
-                </div>
-
-                <div class="col-sm-10">
-                  <div class="form-check form-switch">
-                    <label class="form-check-label" for="roleres">Reservation</label>
-                    <input class="form-check-input" type="checkbox" name="roleres">
-                  </div>
-                </div>
-
-                <div class="col-sm-10">
-                  <div class="form-check form-switch">
-                    <label class="form-check-label" for="rolerep">Reports</label>
-                    <input class="form-check-input" type="checkbox" name="rolerep">
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <button type="submit" class="btn btn-primary">Add Role</button>
-                <button type="reset" class="btn btn-secondary">Clear</button>
-              </div>
-
-            </form>
-  
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-  <div>
-    
-  </div>
-
-  <script>
-    const rolecheck = document.getElementsByClassName('rolecheck');
-    for (let i = 0; i < rolecheck.length; i++) {
-    rolecheck[i].setAttribute('onclick', 'return false;');
-  }
-
-
-  const permissions = document.getElementById('invPermission');
-  const component = document.getElementById('permissions');
-
-  function togglePermissions() {
-    component.style.display = permissions.checked ? 'block' : 'none';
-  }
-  togglePermissions();
-  permissions.addEventListener('change', togglePermissions);
-
-
-  </script>
-  
-  
+<script>
+function togglePermissionTable(moduleId) {
+    const table = document.getElementById(`permissions_table_${moduleId}`);
+    table.style.display = table.style.display === 'none' ? 'block' : 'none';
+}
+</script>
 
 {% endblock %}

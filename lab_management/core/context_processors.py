@@ -8,6 +8,7 @@ def labs_context(request):
         current_user = get_object_or_404(user, email=request.user.email)
     except:
         current_user = None
+    # print(current_user)
     
     selected_lab_modules = []
     if selected_lab_id:
@@ -17,7 +18,7 @@ def labs_context(request):
             selected_lab_modules = [module.id for module in Module.objects.filter(id__in=module_ids, enabled=True)]
     
     user_labs = laboratory.objects.filter(is_available=True, laboratory_users__user=current_user)
-    print(user_labs)
+    # print(user_labs)
 
     return {
         'laboratories': user_labs,

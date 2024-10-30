@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat
 from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value
@@ -10,20 +10,21 @@ from django.db import connection, models
 from django.utils import timezone
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from django.urls import reverse
+from collections import defaultdict
 from django import forms
 # from allauth.socialaccount.helpers import provider_login_url
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from .models import rooms, laboratory_reservations, reservation_config
-from .models import laboratory_users, laboratory_role
+from .models import laboratory_users, laboratory_roles, laboratory_permissions, permissions
 from datetime import timedelta, date, datetime
 from calendar import monthrange
 from pyzbar.pyzbar import decode
 from PIL import Image 
 from io import BytesIO
 
-import json, qrcode, base64, threading, time
+import json, qrcode, base64, threading, time, re
 
 # thread every midnight query items to check due date if today (for on holding past due date )
 def thread_function():
@@ -239,7 +240,8 @@ def error_page(request, message=None):
     """
     return render(request, 'error_page.html', {'message': message})
 
-
+def user_settings_view(request):
+    return render(request, 'user_settings.html')
 
 
 # inventory
@@ -601,8 +603,7 @@ def inventory_physicalCount_view(request):
     selected_laboratory_id = request.session.get('selected_lab')
     item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
     selected_item_type = request.GET.get('item_type')
-    current_user = get_object_or_404(user, user_id=request.user.id)
-
+    current_user = get_object_or_404(user, email=request.user.email)
     # Filter items by laboratory and selected item type
     if selected_item_type:
         inventory_items = item_description.objects.filter(
@@ -1692,7 +1693,6 @@ def clearance_student_viewClearance(request):
     }
     return render(request, 'mod_clearance/student_viewClearance.html', context)
 
-
 def clearance_student_viewClearanceDetailed(request, borrow_id):
     # Get the currently logged-in user
     user = request.user
@@ -1785,7 +1785,6 @@ def clearance_labtech_viewclearance(request):
         'reports': report_data,
     }
     return render(request, 'mod_clearance/labtech_viewclearance.html', context)
-
 
 def clearance_labtech_viewclearanceDetailed(request, report_id):
     # Get the reported item by ID
@@ -1981,7 +1980,6 @@ def lab_reservation_student_reserveLabConfirm(request):
         return redirect('lab_reservation_student_reserveLabConfirmDetails')
 
     return HttpResponse("Invalid request", status=400)
-
 
 def lab_reservation_student_reserveLabConfirmDetails(request):
     reservation_data = request.session.get('reservation_data')
@@ -2249,7 +2247,6 @@ def labres_lab_reservationreqsDetailed(request, reservation_id):
 
     return render(request, 'mod_labRes/labres_lab_reservationreqsDetailed.html', context)
 
-
 def labres_labcoord_configroom(request):
     selected_laboratory_id = request.session.get('selected_lab')
     message = None
@@ -2489,15 +2486,8 @@ def reports_view(request):
 
 
 
-
-def user_settings_view(request):
-    return render(request, 'user_settings.html')
-
-
-
-
-
 #lab setup
+@user_passes_test(lambda u: u.is_superuser)
 def superuser_manage_labs(request):
     if not request.user.is_superuser:
         return render(request, 'error_page.html', {'message': 'Module is allowed for this laboratory.'})
@@ -2510,31 +2500,47 @@ def superuser_manage_labs(request):
 
 def superuser_lab_info(request, laboratory_id):
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-    lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id)  # Rooms associated with the lab
+    lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id)
     
-    # Retrieve all modules for the lab using the module IDs stored in the JSON field
-    module_ids = lab.modules
-    modules = Module.objects.filter(id__in=module_ids)
+    # Get modules active in the lab
+    active_module_ids = lab.modules
+    modules = Module.objects.filter(id__in=active_module_ids)
     
+    # Filter permissions by active modules
+    permissions_by_module = {}
+    for module in modules:
+        permissions_by_module[module.id] = permissions.objects.filter(module=module)
+
     all_modules = Module.objects.all()  # All available modules
+
+    # Retrieve all lab users and roles
     lab_users = laboratory_users.objects.filter(laboratory_id=lab.laboratory_id).select_related('user', 'role').annotate(
         username=F('user__username'),
         user_email=F('user__email'),
         full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
         role_name=F('role__name')
     )
-    lab_roles = laboratory_role.objects.filter(laboratory_id=lab.laboratory_id).annotate(usercount=Count('users'))
+    lab_roles = laboratory_roles.objects.annotate(
+        usercount=Count('users', filter=Q(users__laboratory_id=laboratory_id))
+    )
     
+    # Current permissions for each role in the lab
+    role_permissions = {(perm.role.roles_id, perm.permissions.codename): True 
+                        for perm in laboratory_permissions.objects.filter(laboratory=lab)}
+    print(role_permissions)
+    print(lab_roles)
     context = {
         'laboratory_id': laboratory_id,
         'lab': lab,
         'modules': modules,
-        'lab_rooms': lab_rooms,
         'all_modules': all_modules,
+        'lab_rooms': lab_rooms,
         'lab_users': lab_users,
         'lab_roles': lab_roles,
+        'permissions_by_module': permissions_by_module,
+        'role_permissions': role_permissions,
     }
-    
+
     return render(request, 'superuser/superuser_labInfo.html', context)
 
 def add_module_to_lab(request, laboratory_id):
@@ -2587,6 +2593,40 @@ def deactivate_lab(request, laboratory_id):
     messages.success(request, "Laboratory deactivated successfully.")  # Optional success message
     return redirect('superuser_manage_labs')
 
+def update_permissions(request, laboratory_id):
+    if request.method == 'POST':
+        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+
+        # Parse and save permissions
+        permissions_data = {}
+        for key, value in request.POST.items():
+            if key.startswith('permissions'):
+                role_id = key.split('[')[1].split(']')[0]
+                perm_codename = key.split('[')[2].split(']')[0]
+                role_id = int(role_id)
+                
+                if role_id not in permissions_data:
+                    permissions_data[role_id] = {}
+                permissions_data[role_id][perm_codename] = value == 'on'
+        
+        # Update the database with the new permissions
+        for role_id, perms in permissions_data.items():
+            role = laboratory_roles.objects.get(id=role_id)
+            for perm_codename, is_selected in perms.items():
+                perm_obj = permissions.objects.get(codename=perm_codename)
+
+                if is_selected:
+                    laboratory_permissions.objects.update_or_create(
+                        role=role, laboratory=lab, permissions=perm_obj
+                    )
+                else:
+                    laboratory_permissions.objects.filter(
+                        role=role, laboratory=lab, permissions=perm_obj
+                    ).delete()
+
+        messages.success(request, "Permissions updated successfully.")
+    return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+
 
 # users
 @login_required
@@ -2637,7 +2677,7 @@ def superuser_user_info(request, user_id):
     user1 = get_object_or_404(user, user_id=user_id)
     lab_users = laboratory_users.objects.filter(user=user1, is_active=True)
     all_laboratories = laboratory.objects.filter(is_available=True)
-    all_roles = laboratory_role.objects.filter(is_active=True)
+    all_roles = laboratory_roles.objects.filter(is_active=True)
     context = {
         'user': user1,
         'lab_users': lab_users,
@@ -2669,7 +2709,7 @@ def assign_lab(request, user_id):
         laboratory_id = request.POST['laboratory_id']
         role_id = request.POST['role_id']
         user_laboratory = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-        role = get_object_or_404(laboratory_role, roles_id=role_id)
+        role = get_object_or_404(laboratory_roles, roles_id=role_id)
         laboratory_users.objects.create(user_id=user_id, laboratory=user_laboratory, role=role)
         messages.success(request, 'Laboratory assigned successfully.')
     return redirect('superuser_user_info', user_id=user_id)
@@ -2683,7 +2723,7 @@ def add_user_laboratory(request, laboratory_id):
         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
         
         user_instance = get_object_or_404(user, user_id=user_id)
-        role_instance = get_object_or_404(laboratory_role, roles_id=role_id, laboratory=lab)
+        role_instance = get_object_or_404(laboratory_roles, roles_id=role_id)
         
         # Add user to laboratory if not already assigned
         laboratory_users.objects.get_or_create(
@@ -2734,17 +2774,14 @@ def setup_manageRooms(request):
 
 def setup_createlab(request):
     if not request.user.is_superuser:
-        return render(request, 'error_page.html', {'message': 'Module is allowed for this laboratory.'})
+        return render(request, 'error_page.html', {'message': 'Access restricted.'})
     
     if request.method == 'POST':
         lab_name = request.POST.get('labname')
         description = request.POST.get('description')
         department = request.POST.get('department')
 
-        # Debug: Print POST data
-        print("Received POST data:", request.POST)  # Log the received data
-
-        # Create the new laboratory
+        # Create the new lab
         new_lab = laboratory.objects.create(
             name=lab_name,
             description=description,
@@ -2752,33 +2789,118 @@ def setup_createlab(request):
             is_available=True,
             date_created=timezone.now()
         )
-        print("Created new lab:", new_lab)  # Log the created lab
 
-        # Add selected modules using toggle switches
-        module_ids = []
-        if 'inventory' in request.POST:  # Check if toggle is checked
-            module_ids.append(1)  # ID for Inventory
-        if 'borrowing' in request.POST:
-            module_ids.append(2)  # ID for Borrowing
-        if 'clearance' in request.POST:
-            module_ids.append(3)  # ID for Clearance
-        if 'reservation' in request.POST:
-            module_ids.append(4)  # ID for Reservation
-        if 'reports' in request.POST:
-            module_ids.append(5)  # ID for Reports
-
-        # Save the module IDs in the laboratory model
-        new_lab.modules = module_ids
+        # Convert selected module IDs to integers
+        selected_modules = [int(module_id) for module_id in request.POST.getlist('modules[]')]
+        new_lab.modules = selected_modules
         new_lab.save()
 
-        messages.success(request, "Laboratory created successfully.")
-        return redirect('superuser_lab_info', new_lab.laboratory_id)  # Redirect to a success page or another view
+        # Initialize permissions_data dictionary
+        permissions_data = {}
 
-    return render(request, 'superuser/superuser_createlab.html')
+        # Regular expression pattern for extracting role_id and perm_codename
+        pattern = r"permissions\[(\d+)\]\[(\w+)\]"
 
+        # Extract permissions data from POST
+        for key, value in request.POST.items():
+            match = re.match(pattern, key)
+            if match:
+                role_id, perm_codename = match.groups()
+                role_id = int(role_id)
+                print(f"Parsed role_id: {role_id}, perm_codename: {perm_codename}")  # Debugging print if match found
 
+                # Organize data into permissions_data dictionary
+                if role_id not in permissions_data:
+                    permissions_data[role_id] = {}
+                permissions_data[role_id][perm_codename] = value
 
+        # Save permissions per role per module
+        for role_id, perms in permissions_data.items():
+            role = laboratory_roles.objects.get(roles_id=role_id)
+            for perm_codename, is_selected in perms.items():
+                perm_obj = permissions.objects.get(codename=perm_codename)
+                
+                if is_selected == 'on':  # Save if checkbox was checked
+                    laboratory_permissions.objects.update_or_create(
+                        role=role, laboratory=new_lab, permissions=perm_obj
+                    )
+                else:
+                    # Remove the permission if unchecked
+                    laboratory_permissions.objects.filter(
+                        role=role, laboratory=new_lab, permissions=perm_obj
+                    ).delete()
 
+        messages.success(request, "Laboratory and permissions saved successfully.")
+        return redirect('superuser_lab_info', new_lab.laboratory_id)
+
+    # Prepare data for rendering
+    roles = laboratory_roles.objects.all()
+    modules = Module.objects.all()
+
+    # Group permissions by module
+    permissions_by_module = {}
+    for module in modules:
+        permissions_by_module[module.id] = permissions.objects.filter(module=module)
+
+    # Flatten role_permissions for easier access in template
+    role_permissions = {(rp.role.roles_id, rp.permissions.codename): True for rp in laboratory_permissions.objects.all()}
+
+    context = {
+        'modules': modules,
+        'roles': roles,
+        'permissions_by_module': permissions_by_module,
+        'role_permissions': role_permissions,
+    }
+    return render(request, 'superuser/superuser_createlab.html', context)
+
+def add_role(request):
+    if request.method == 'POST':
+        role_name = request.POST.get('roleName')
+        lab_id = request.POST.get('laboratory')  # Ensure lab_id is provided or set up
+        
+        # Capture permissions for each module from the form
+        permissions = {
+            "inventory": {
+                "view_inventory": request.POST.get("inventory_view_inventory") == "on",
+                "add_new_item": request.POST.get("inventory_add_new_item") == "on",
+                "update_item_inventory": request.POST.get("inventory_update_item_inventory") == "on",
+                "physical_count": request.POST.get("inventory_physical_count") == "on",
+                "manage_suppliers": request.POST.get("inventory_manage_suppliers") == "on",
+                "configure_inventory": request.POST.get("inventory_configure_inventory") == "on",
+            },
+            "borrowing": {
+                "borrow_items": request.POST.get("borrowing_borrow_items") == "on",
+                "view_borrowed_items": request.POST.get("borrowing_view_borrowed_items") == "on",
+                "view_booking_requests": request.POST.get("borrowing_view_booking_requests") == "on",
+                "return_item": request.POST.get("borrowing_return_item") == "on",
+                "configure_borrowing": request.POST.get("borrowing_configure_borrowing") == "on",
+            },
+            "clearance": {
+                "view_own_clearance": request.POST.get("clearance_view_own_clearance") == "on",
+                "view_student_clearance": request.POST.get("clearance_view_student_clearance") == "on",
+            },
+            "lab_reservation": {
+                "reserve_laboratory": request.POST.get("reservation_reserve_laboratory") == "on",
+                "view_reservations": request.POST.get("reservation_view_reservations") == "on",
+                "approve_deny_reservations": request.POST.get("reservation_approve_deny_reservations") == "on",
+                "configure_lab_reservation": request.POST.get("reservation_configure_lab_reservation") == "on",
+            },
+            "reports": {
+                "view_reports": request.POST.get("reports_view_reports") == "on",
+            },
+        }
+
+        # Create the role and save permissions
+        new_role = laboratory_roles.objects.create(
+            laboratory_id=lab_id,
+            name=role_name,
+            permissions=permissions
+        )
+
+        messages.success(request, "Role created successfully.")
+        return redirect('role_list')  # Redirect to role list or another page
+
+    return render(request, 'core/add_role.html')
 
 def superuser_login(request):
     if request.method == 'POST':

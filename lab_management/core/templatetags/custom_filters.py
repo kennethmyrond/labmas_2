@@ -28,4 +28,3 @@ def get_item(dictionary, key):
 @register.filter
 def range_filter(value):
     return range(value)
-

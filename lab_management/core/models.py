@@ -23,6 +23,15 @@ class Module(models.Model):
     def __str__(self):
         return self.name
 
+class permissions(models.Model):
+    permission_id = models.AutoField(primary_key=True)
+    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+    codename = models.CharField(max_length=45, null=True, blank=True)
+    name = models.CharField(max_length=45, null=True, blank=True)
+    
+    def __str__(self):
+        return self.codename
+
 class laboratory(models.Model):
     laboratory_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=45, null=True, blank=True)
@@ -38,15 +47,23 @@ class laboratory(models.Model):
     def get_status(self):
         return "Active" if self.is_available else "Deactivated"
 
-class laboratory_role(models.Model):
+class laboratory_roles(models.Model):
     roles_id = models.AutoField(primary_key=True)
-    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)  # ForeignKey to Laboratory
     name = models.CharField(max_length=45, null=True, blank=True)
-    permissions = models.CharField(max_length=45, null=True, blank=True)
-    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
+    
+class laboratory_permissions(models.Model):
+    role = models.ForeignKey(laboratory_roles, on_delete=models.CASCADE)
+    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
+    permissions = models.ForeignKey(permissions, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('role', 'laboratory', 'permissions')
+
+    def __str__(self):
+        return f"{self.role} - {self.laboratory}"
 
 class UserManager(BaseUserManager):
     def create_user(self, email, firstname, lastname, password=None, **extra_fields):
@@ -86,7 +103,7 @@ class user(AbstractBaseUser):
 class laboratory_users(models.Model):
     user = models.ForeignKey(user, on_delete=models.CASCADE)
     laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
-    role = models.ForeignKey(laboratory_role, on_delete=models.CASCADE, related_name='users')
+    role = models.ForeignKey(laboratory_roles, on_delete=models.CASCADE, related_name='users')
     is_active = models.BooleanField(default=True)
 
 

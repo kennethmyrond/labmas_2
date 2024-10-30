@@ -1,6 +1,7 @@
 {% extends 'temp_navbar.html' %}
 {% block title %}SUPERUSER - Laboratory Information{% endblock %}
 {% block content %}
+{% load custom_filters %}
 
 <style>
   .status-active { color: green; font-weight: bold; }
@@ -90,7 +91,7 @@
       <a class="nav-link" id="users-tab" data-toggle="tab" href="#users" role="tab">Users</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" id="users-tab" data-toggle="tab" href="#roles" role="tab">Roles</a>
+      <a class="nav-link" id="users-tab" data-toggle="tab" href="#roles" role="tab">Roles & Permissions</a>
     </li>
     <li class="nav-item">
       <a class="nav-link" id="rooms-tab" data-toggle="tab" href="#rooms" role="tab">Rooms</a>
@@ -170,11 +171,26 @@
   <section class="section">
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title">Users</h5>
+        <h5 class="card-title">Assigned Users Per Role</h5>
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="text-align:center; padding-left: 50px;">Roles</th>
+                <th style="text-align:center;  padding-right: 50px;">Assigned Users</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for roles in lab_roles %}
+              <tr>
+                <td style="text-align:center; padding-left: 50px;">{{ roles.name }}</td>
+                <td style="text-align:center; padding-right: 50px;">{{roles.usercount}}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        <hr><br>
+        <h5 class="card-title">Laboratory Users</h5>
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addUserModal">Add User</button>
-        
-   
-        
         <!-- User Table -->
         <table class="table datatable">
           <thead>
@@ -212,31 +228,46 @@
   </section>
 </div>
 
+  <!-- Roles Tab with Permissions -->
   <div class="tab-pane fade" id="roles" role="tabpanel">
     <section class="section">
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title">Roles</h5>
-          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addRolesModal">Add Roles</button>
-          <table class="table datatable">
-            <thead>
-              <tr>
-                <th style="text-align:left;">Roles</th>
-                <th>Users</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for roles in lab_roles %}
-              <tr>
-                <td style="text-align:left;">{{ roles.name }}</td>
-                <td>{{roles.usercount}}</td>
-                <td class="{% if roles.is_active %}status-active{% else %}status-terminated{% endif %}">{% if roles.is_active %} Active {%else%} Inactive {%endif%}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-          
+          <h5 class="card-title">Manage Permissions by Role</h5>
+
+          <!-- Loop through each active module -->
+          {% for module in modules %}
+          <div id="permissions_table_{{ module.id }}" class="module-permission-table">
+            <h6>{{ module.name }} Permissions</h6>
+            <form method="POST" action="{% url 'update_permissions' lab.laboratory_id %}">
+              {% csrf_token %}
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Role</th>
+                    {% for perm in permissions_by_module|get_item:module.id %}
+                      <th>{{ perm.name }}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for role in lab_roles %}
+                  <tr>
+                    <td>{{ role.name }}</td>
+                    {% for perm in permissions_by_module|get_item:module.id %}
+                      <td>
+                        <input type="checkbox" name="permissions[{{ role.roles_id }}][{{ perm.codename }}]" 
+          {% if role_permissions and role_permissions|get_item:role.roles_id and role_permissions|get_item:role.roles_id|get_item:perm.codename %}checked{% endif %}>
+                      </td>
+                    {% endfor %}
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              <button type="submit" class="btn btn-primary">Save Permissions</button>
+            </form>
+          </div>
+          {% endfor %}
         </div>
       </div>
     </section>
