@@ -964,9 +964,13 @@ def get_add_cols(request, category_id):
 
 # =====================================================
 #BORROWING
+@login_required
+@lab_permission_required('borrow_items')
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
 
+@login_required
+@lab_permission_required('borrow_items')
 def borrowing_student_prebookview(request):
     try:
         laboratory_id = request.session.get('selected_lab')
@@ -1082,6 +1086,8 @@ def borrowing_student_prebookview(request):
         'prebook_questions': prebook_questions  # Pass the prebook questions to the template
     })
 
+@login_required
+@lab_permission_required('borrow_items')
 def get_items_by_type(request, item_type_id):
     try:
         items = item_description.objects.filter(itemType_id=item_type_id, is_disabled=0, allow_borrow=1)
@@ -1102,7 +1108,9 @@ def get_items_by_type(request, item_type_id):
         # Log the exception for debugging
         print(f"Error fetching items: {e}")
         return JsonResponse({'error': str(e)}, status=500)
-    
+
+@login_required
+@lab_permission_required('borrow_items') 
 def get_quantity_for_item(request, item_id):
     try:
         # Fetch the total quantity for the specified item_id
@@ -1112,6 +1120,8 @@ def get_quantity_for_item(request, item_id):
         print(f"Error fetching quantity: {e}")
         return JsonResponse({'error': str(e)}, status=500)
 
+@login_required
+@lab_permission_required('borrow_items')
 def borrowing_student_walkinview(request):
     # Get session details
     laboratory_id = request.session.get('selected_lab')
@@ -1251,7 +1261,8 @@ def borrowing_student_walkinview(request):
         'items_by_type': items_by_type,  # Pass grouped items to the template
     })
 
-
+@login_required
+@lab_permission_required('view_booking_requests')
 # booking requests
 def borrowing_student_viewPreBookRequestsview(request):
     if not request.user.is_authenticated:
@@ -1316,6 +1327,9 @@ def borrowing_student_viewPreBookRequestsview(request):
         'prebook_requests_all': prebook_requests,
     })
 # @require_POST
+
+@login_required
+@lab_permission_required('view_booking_requests')
 def cancel_borrow_request(request):
     try:
         data = json.loads(request.body)
@@ -1331,6 +1345,8 @@ def cancel_borrow_request(request):
     except borrow_info.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Request not found.'})
 
+@login_required
+@lab_permission_required('view_booking_requests')
 def borrowing_student_WalkInRequestsview(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -1352,6 +1368,8 @@ def borrowing_student_WalkInRequestsview(request):
         'prebook_requests': prebook_requests,
     })
 
+@login_required
+@lab_permission_required('view_booking_requests')
 def borrowing_student_detailedPreBookRequestsview(request, borrow_id):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -1367,6 +1385,8 @@ def borrowing_student_detailedPreBookRequestsview(request, borrow_id):
         'borrowed_items': borrowed_items_list,
     })
 
+@login_required
+@lab_permission_required('view_booking_requests')
 def borrowing_student_detailedWalkInRequestsview(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -1382,6 +1402,8 @@ def borrowing_student_detailedWalkInRequestsview(request):
         'borrowed_items': borrowed_items_list,
     })
 
+@login_required
+@lab_permission_required('view_booking_requests')
 def borrowing_labcoord_prebookrequests(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -1422,6 +1444,8 @@ def borrowing_labcoord_prebookrequests(request):
         'selected_status': selected_status,  # Pass the selected status to the template
     })
 
+@login_required
+@lab_permission_required('configure_borrowing')
 def borrowing_labcoord_borrowconfig(request):
     selected_laboratory_id = request.session.get('selected_lab')
 
@@ -1518,6 +1542,8 @@ def borrowing_labcoord_borrowconfig(request):
         'questions': lab.get_questions()  # Get the questions to display them
     })
 
+@login_required
+@lab_permission_required('view_booking_requests')
 def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
     borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id)
     borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_request)
@@ -1554,6 +1580,8 @@ def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
         'show_action_buttons': show_action_buttons,
     })
 
+@login_required
+@lab_permission_required('return_item')
 def return_borrowed_items(request):
     borrow_id = request.POST.get('borrow_id', '')  # Fetch borrow_id from POST or use empty string
 
@@ -1623,6 +1651,8 @@ def return_borrowed_items(request):
         'borrow_id': borrow_id,
     })
 
+@login_required
+@lab_permission_required('view_booking_requests')
 def borrowing_labtech_prebookrequests(request):
     selected_laboratory_id = request.session.get('selected_lab')
     
@@ -1664,6 +1694,8 @@ def borrowing_labtech_prebookrequests(request):
         'borrowed_borrows': borrowed_borrows
     })
 
+@login_required
+@lab_permission_required('view_booking_requests')
 def borrowing_labtech_detailedprebookrequests(request, borrow_id):
     borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id)
     borrowed_items1 = borrowed_items.objects.filter(borrow=borrow_entry)
@@ -1690,9 +1722,13 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
 
 
 #CLEARANCE
+@login_required
+@lab_permission_required('view_own_clearance')
 def clearance_view(request):
     return render(request, 'mod_clearance/clearance.html')
 
+@login_required
+@lab_permission_required('view_own_clearance')
 def clearance_student_viewClearance(request):
     # Get the currently logged-in user
     user = request.user
@@ -1723,7 +1759,7 @@ def clearance_student_viewClearance(request):
         else:
             reports = reported_items.objects.none()  # No reports if no borrows
 
-    except Exception as e:
+    except Exception as e: 
         reports = reported_items.objects.none()  # If there's an error, return no reports
         print(f"Error fetching reports: {e}")  # Debugging output for error tracking
 
@@ -1732,6 +1768,8 @@ def clearance_student_viewClearance(request):
     }
     return render(request, 'mod_clearance/student_viewClearance.html', context)
 
+@login_required
+@lab_permission_required('view_own_clearance')
 def clearance_student_viewClearanceDetailed(request, borrow_id):
     # Get the currently logged-in user
     user = request.user
@@ -1775,6 +1813,8 @@ def clearance_student_viewClearanceDetailed(request, borrow_id):
     }
     return render(request, 'mod_clearance/student_viewClearanceDetailed.html', context)
 
+@login_required
+@lab_permission_required('view_student_clearance')
 def clearance_labtech_viewclearance(request):
     # Get the currently logged-in user (labtech)
     user = request.user
@@ -1825,6 +1865,8 @@ def clearance_labtech_viewclearance(request):
     }
     return render(request, 'mod_clearance/labtech_viewclearance.html', context)
 
+@login_required
+@lab_permission_required('view_student_clearance')
 def clearance_labtech_viewclearanceDetailed(request, report_id):
     # Get the reported item by ID
     report = get_object_or_404(reported_items, id=report_id)
@@ -1860,9 +1902,13 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
 
 
 # lab reserv ================================================================= 
+@login_required
+@lab_permission_required('reserve_laboratory')
 def lab_reservation_view(request):
     return render(request, 'mod_labRes/lab_reservation.html')
 
+@login_required
+@lab_permission_required('reserve_laboratory')
 def lab_reservation_student_reserveLabChooseRoom(request):
     selected_laboratory_id = request.session.get('selected_lab')
     reservation_config_obj = reservation_config.objects.get(laboratory_id=selected_laboratory_id)
@@ -1974,6 +2020,8 @@ def lab_reservation_student_reserveLabChooseRoom(request):
 
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html', context)
 
+@login_required
+@lab_permission_required('reserve_laboratory')
 def lab_reservation_student_reserveLabConfirm(request):
     selected_laboratory_id = request.session.get('selected_lab')
     reservation_config_obj = reservation_config.objects.get(laboratory_id=selected_laboratory_id)
@@ -2020,6 +2068,8 @@ def lab_reservation_student_reserveLabConfirm(request):
 
     return HttpResponse("Invalid request", status=400)
 
+@login_required
+@lab_permission_required('reserve_laboratory')
 def lab_reservation_student_reserveLabConfirmDetails(request):
     reservation_data = request.session.get('reservation_data')
     current_user = get_object_or_404(user, user_id=request.user.id)
@@ -2067,9 +2117,13 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
     })
 
 # not used for now
+@login_required
+@lab_permission_required('reserve_laboratory')
 def lab_reservation_student_reserveLabChooseTime(request):
      return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseTime.html')
 
+@login_required
+@lab_permission_required('reserve_laboratory')
 def lab_reservation_student_reserveLabSummary(request):
     # Get the current user
     # current_user = request.user
@@ -2100,6 +2154,8 @@ def lab_reservation_student_reserveLabSummary(request):
 
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabSummary.html', context)
 
+@login_required
+@lab_permission_required('reserve_laboratory')
 def cancel_reservation(request, reservation_id):
     # Get the reservation object by id
     current_user = get_object_or_404(user, user_id=request.user.id)
@@ -2112,6 +2168,8 @@ def cancel_reservation(request, reservation_id):
     # Redirect to the reservation summary page
     return redirect('lab_reservation_student_reserveLabSummary')
 
+@login_required
+@lab_permission_required('reserve_laboratory')
 def lab_reservation_detail(request, reservation_id):
     # Get the reservation object by its ID
     current_user = get_object_or_404(user, user_id=request.user.id)
@@ -2123,6 +2181,8 @@ def lab_reservation_detail(request, reservation_id):
 
     return render(request, 'mod_labRes/lab_reservation_detail.html', context)
 
+@login_required
+@lab_permission_required('view_reservations')
 def labres_lab_schedule(request):
     selected_laboratory_id = request.session.get('selected_lab')
     room_list = []
@@ -2183,6 +2243,8 @@ def labres_lab_schedule(request):
 
     return render(request, 'mod_labRes/labres_lab_schedule.html', context)
 
+@login_required
+@lab_permission_required('view_reservations')
 def labres_lab_reservationreqs(request):
     selected_laboratory_id = request.session.get('selected_lab')
     reservations = []
@@ -2257,6 +2319,8 @@ def labres_lab_reservationreqs(request):
 
     return render(request, 'mod_labRes/labres_lab_reservationreqs.html', context)
 
+@login_required
+@lab_permission_required('approve_deny_reservations')
 def labres_lab_reservationreqsDetailed(request, reservation_id):
     selected_laboratory_id = request.session.get('selected_lab')
 
@@ -2286,6 +2350,8 @@ def labres_lab_reservationreqsDetailed(request, reservation_id):
 
     return render(request, 'mod_labRes/labres_lab_reservationreqsDetailed.html', context)
 
+@login_required
+@lab_permission_required('configure_lab_reservations')
 def labres_labcoord_configroom(request):
     selected_laboratory_id = request.session.get('selected_lab')
     message = None
@@ -2406,6 +2472,8 @@ def labres_labcoord_configroom(request):
 
     return render(request, 'mod_labRes/labres_labcoord_configroom.html', context)
 
+@login_required
+@lab_permission_required('configure_lab_reservations')
 def get_room_configuration(request, room_id):
     room = get_object_or_404(rooms, pk=room_id)
     reservation_config_obj = reservation_config.objects.get(laboratory=room.laboratory)
