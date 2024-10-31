@@ -194,11 +194,11 @@
       
       {%if logged_user.is_superuser%}
       <li class="nav-item">
-        <a class="nav-link {% if request.resolver_match.url_name in 'superuser_setup superuser_manage_labs superuser_manage_users superuser_user_info setup_edituser setup_editLab setup_createlab' %}active{% else %}collapsed{% endif %}" data-bs-target="#setup-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link {% if logged_user.is_superuser %}active{% else %}collapsed{% endif %}" data-bs-target="#setup-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-grid"></i>
           <span>Setup</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="setup-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info superuser_manage_users superuser_user_info setup_edituser setup_editLab setup_createlab' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+        <ul id="setup-nav" class="nav-content collapse {% if logged_user.is_superuser %}show{% endif %}" data-bs-parent="#sidebar-nav">
           <li>
             <a href="{% url 'setup_createlab' %}" class="{% if request.resolver_match.url_name in 'setup_createlab' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>Set Up New Laboratory</span>
@@ -228,36 +228,48 @@
             <i class="bi bi-box2"></i><span>Inventory</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="inventory-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'inventory_view inventory_addNewItem inventory_updateItem inventory_physicalCount inventory_manageSuppliers inventory_supplierDetails inventory_config inventory_itemDetails_view' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+            {% if permissions.can_view_inventory %}  
             <li>
                 <a href="{% url 'inventory_view' %}" class="{% if request.resolver_match.url_name in 'inventory_view inventory_itemDetails_view' %}active{% endif %}">
                     <i class="bi bi-circle"></i><span>View Inventory</span>
                 </a>
             </li>
+            {% endif %}
+            {% if permissions.can_add_new_item %}
             <li>
                 <a href="{% url 'inventory_addNewItem' %}" class="{% if request.resolver_match.url_name == 'inventory_addNewItem' %}active{% endif %}">
                     <i class="bi bi-circle"></i><span>Add New Item</span>
                 </a>
             </li>
+            {% endif %}
+            {% if permissions.can_update_item_inventory %}
             <li>
                 <a href="{% url 'inventory_updateItem' %}" class="{% if request.resolver_match.url_name == 'inventory_updateItem' %}active{% endif %}">
                     <i class="bi bi-circle"></i><span>Update Item Quantity</span>
                 </a>
             </li>
+            {% endif %}
+            {% if permissions.can_physical_count %}
             <li>
                 <a href="{% url 'inventory_physicalCount' %}" class="{% if request.resolver_match.url_name == 'inventory_physicalCount' %}active{% endif %}">
                     <i class="bi bi-circle"></i><span>Physical Count / System Reconciliation</span>
                 </a>
             </li>
+            {%endif%}
+            {% if permissions.can_manage_suppliers %}
             <li>
                 <a href="{% url 'inventory_manageSuppliers' %}" class="{% if request.resolver_match.url_name == 'inventory_manageSuppliers inventory_supplierDetails' %}active{% endif %}">
                     <i class="bi bi-circle"></i><span>Manage Suppliers</span>
                 </a>
             </li>
+            {%endif%}
+            {% if permissions.can_configure_inventory %}
             <li>
                 <a href="{% url 'inventory_config' %}" class="{% if request.resolver_match.url_name == 'inventory_config' %}active{% endif %}">
                     <i class="bi bi-circle"></i><span>Inventory Config</span>
                 </a>
             </li>
+            {%endif%}
         </ul>
     </li><!-- End inventory Nav -->
 {% endif %}

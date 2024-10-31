@@ -18,6 +18,7 @@ from .models import laboratory, Module, item_description, item_types, item_inven
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from .models import rooms, laboratory_reservations, reservation_config
 from .models import laboratory_users, laboratory_roles, laboratory_permissions, permissions
+from .decorators import lab_permission_required
 from datetime import timedelta, date, datetime
 from calendar import monthrange
 from pyzbar.pyzbar import decode
@@ -218,7 +219,10 @@ def userlogin(request):
 
 @login_required(login_url='/login')
 def home(request):
-    return render(request,"home.html")
+    if request.user.is_superuser:
+        return redirect('setup_createlab')
+    else:
+        return render(request,"home.html")
 
 def set_lab(request, laboratory_id):
     # Set the chosen laboratory in the session
@@ -238,6 +242,7 @@ def error_page(request, message=None):
     :param request: HTTP request
     :param message: The error message to display (optional)
     """
+    message = request.GET.get('message', 'An error occurred.')
     return render(request, 'error_page.html', {'message': message})
 
 def user_settings_view(request):
@@ -245,6 +250,8 @@ def user_settings_view(request):
 
 
 # inventory
+@login_required
+@lab_permission_required('view_inventory')
 def inventory_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -282,6 +289,8 @@ def inventory_view(request):
         'add_cols': add_cols,
     })
 
+@login_required
+@lab_permission_required('view_inventory')
 def inventory_itemDetails_view(request, item_id):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -325,6 +334,8 @@ def inventory_itemDetails_view(request, item_id):
 
     return render(request, 'mod_inventory/inventory_itemDetails.html', context)
 
+@login_required
+@lab_permission_required('add_new_item')
 def inventory_addNewItem_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -381,6 +392,8 @@ def inventory_addNewItem_view(request):
         'selected_lab_name': request.session.get('selected_lab_name'),
     })
 
+@login_required
+@lab_permission_required('update_item_inventory')
 def inventory_updateItem_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -522,6 +535,8 @@ def inventory_updateItem_view(request):
 
     return render(request, 'mod_inventory/inventory_updateItem.html')
 
+@login_required
+@lab_permission_required('view_inventory')
 def inventory_itemEdit_view(request, item_id):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -570,6 +585,8 @@ def inventory_itemEdit_view(request, item_id):
         'is_alert_disabled': item.alert_qty == 0,  # Alert if disabled
     })
 
+@login_required
+@lab_permission_required('view_inventory')
 def inventory_itemDelete_view(request, item_id):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -595,6 +612,8 @@ def inventory_itemDelete_view(request, item_id):
 
     return render(request, 'mod_inventory/inventory_itemDelete.html', context)
 
+@login_required
+@lab_permission_required('physical_count')
 def inventory_physicalCount_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -708,6 +727,8 @@ def inventory_physicalCount_view(request):
         'selected_item_type': int(selected_item_type) if selected_item_type else None,
     })
 
+@login_required
+@lab_permission_required('manage_suppliers')
 def inventory_manageSuppliers_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -740,6 +761,8 @@ def inventory_manageSuppliers_view(request):
         'suppliers': lab_suppliers,
     })
 
+
+@lab_permission_required('manage_suppliers')
 def inventory_supplierDetails_view(request, supplier_id):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -776,6 +799,8 @@ def inventory_supplierDetails_view(request, supplier_id):
         'item_handling_entries': item_handling_entries,
     })
 
+@login_required
+@lab_permission_required('configure_inventory')
 def inventory_config_view(request):
     if not request.user.is_authenticated:
         return redirect('login')
@@ -800,6 +825,8 @@ def inventory_config_view(request):
 
     return render(request, 'mod_inventory/inventory_config.html', context)
 
+@login_required
+@lab_permission_required('configure_inventory')
 def add_category(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -834,6 +861,8 @@ def add_category(request):
 
     return render(request, 'mod_inventory/add_category.html')
 
+@login_required
+@lab_permission_required('configure_inventory')
 def delete_category(request, category_id):
     if request.method == 'POST':
         category = get_object_or_404(item_types, pk=category_id)
@@ -849,6 +878,8 @@ def delete_category(request, category_id):
 
     return JsonResponse({'success': False}, status=400)
 
+@login_required
+@lab_permission_required('configure_inventory')
 def add_attributes(request):
     if request.method == 'POST':
         category_id = request.POST['category']
@@ -886,10 +917,14 @@ def add_attributes(request):
 
     return JsonResponse({'success': False, 'message': "Invalid request."})
 
+@login_required
+@lab_permission_required('configure_inventory')
 def get_fixed_choices(request, category_id):
     category = get_object_or_404(item_types, pk=category_id)
     return JsonResponse({'fixed_choices': category.fixed_choices})
 
+@login_required
+@lab_permission_required('configure_inventory')
 def delete_attribute(request, category_id, attribute_name):
     if request.method == 'POST':
         category = get_object_or_404(item_types, pk=category_id)
@@ -915,15 +950,19 @@ def delete_attribute(request, category_id, attribute_name):
             return JsonResponse({'success': False, 'message': 'Attribute not found.'}, status=404)
 
     return JsonResponse({'success': False}, status=400)
-    
+
+@login_required   
+@lab_permission_required('configure_inventory')
 def get_add_cols(request, category_id):
     category = get_object_or_404(item_types, pk=category_id)
     add_cols = json.loads(category.add_cols) if category.add_cols else []
     return JsonResponse({'add_cols': add_cols})
 
 
-# =====================================================
 
+
+
+# =====================================================
 #BORROWING
 def borrowing_view(request):
     return render(request, 'mod_borrowing/borrowing.html')
@@ -2385,6 +2424,8 @@ def get_room_configuration(request, room_id):
 
 #  ================================================================= 
 # reports module
+@login_required
+@lab_permission_required('view_reports')
 def reports_view(request):
     selected_laboratory_id = request.session.get('selected_lab')
 
@@ -2486,6 +2527,7 @@ def reports_view(request):
 
 
 
+#  ================================================================= 
 #lab setup
 @user_passes_test(lambda u: u.is_superuser)
 def superuser_manage_labs(request):
@@ -2611,7 +2653,7 @@ def update_permissions(request, laboratory_id):
         
         # Update the database with the new permissions
         for role_id, perms in permissions_data.items():
-            role = laboratory_roles.objects.get(id=role_id)
+            role = laboratory_roles.objects.get(roles_id=role_id)
             for perm_codename, is_selected in perms.items():
                 perm_obj = permissions.objects.get(codename=perm_codename)
 
@@ -2677,7 +2719,7 @@ def superuser_user_info(request, user_id):
     user1 = get_object_or_404(user, user_id=user_id)
     lab_users = laboratory_users.objects.filter(user=user1, is_active=True)
     all_laboratories = laboratory.objects.filter(is_available=True)
-    all_roles = laboratory_roles.objects.filter(is_active=True)
+    all_roles = laboratory_roles.objects.filter()
     context = {
         'user': user1,
         'lab_users': lab_users,
