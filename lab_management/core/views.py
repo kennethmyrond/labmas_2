@@ -2703,36 +2703,48 @@ def deactivate_lab(request, laboratory_id):
     messages.success(request, "Laboratory deactivated successfully.")  # Optional success message
     return redirect('superuser_manage_labs')
 
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from .models import laboratory, laboratory_roles, laboratory_permissions, permissions
+
 def update_permissions(request, laboratory_id):
     if request.method == 'POST':
         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
 
-        # Parse and save permissions
+        # Store permissions that were checked in the form submission
         permissions_data = {}
         for key, value in request.POST.items():
             if key.startswith('permissions'):
-                role_id = key.split('[')[1].split(']')[0]
+                role_id = int(key.split('[')[1].split(']')[0])
                 perm_codename = key.split('[')[2].split(']')[0]
-                role_id = int(role_id)
                 
                 if role_id not in permissions_data:
                     permissions_data[role_id] = {}
                 permissions_data[role_id][perm_codename] = value == 'on'
+
+        # Query all existing permissions for this lab and role
+        existing_permissions = laboratory_permissions.objects.filter(laboratory=lab)
         
-        # Update the database with the new permissions
+        # Determine which permissions to keep and which to delete
+        for perm_entry in existing_permissions:
+            role_id = perm_entry.role.roles_id
+            perm_codename = perm_entry.permissions.codename
+
+            # If the permission is missing from permissions_data, delete it
+            if not permissions_data.get(role_id, {}).get(perm_codename, False):
+                perm_entry.delete()
+
+        # Add or update permissions based on the form data
         for role_id, perms in permissions_data.items():
             role = laboratory_roles.objects.get(roles_id=role_id)
             for perm_codename, is_selected in perms.items():
                 perm_obj = permissions.objects.get(codename=perm_codename)
 
                 if is_selected:
+                    # Create or update permission if it’s checked
                     laboratory_permissions.objects.update_or_create(
                         role=role, laboratory=lab, permissions=perm_obj
                     )
-                else:
-                    laboratory_permissions.objects.filter(
-                        role=role, laboratory=lab, permissions=perm_obj
-                    ).delete()
 
         messages.success(request, "Permissions updated successfully.")
     return redirect('superuser_lab_info', laboratory_id=laboratory_id)

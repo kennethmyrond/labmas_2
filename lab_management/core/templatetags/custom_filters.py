@@ -28,3 +28,22 @@ def get_item(dictionary, key):
 @register.filter
 def range_filter(value):
     return range(value)
+
+@register.filter
+def has_permission(role_permissions, args):
+    """
+    Check if the role_permissions dictionary has (role_id, perm_codename) as a key.
+    """
+    role_id, perm_codename = args
+    return role_permissions.get((role_id, perm_codename), False)
+
+@register.simple_tag
+def create_tuple(role_id, perm_codename):
+    return (role_id, perm_codename)
+
+
+
+
+
+
+
