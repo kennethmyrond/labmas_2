@@ -281,46 +281,60 @@
       <i class="bi bi-journal-text"></i><span>Borrowing</span><i class="bi bi-chevron-down ms-auto"></i>
   </a>
   <ul id="borrow-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_studentviewWalkInRequests borrowing_studentDetailedPreBookRequests borrowing_studentDetailedWalkInRequests borrowing_labcoord_prebookrequests borrowing_labcoord_borrowconfig borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+      {% if permissions.can_borrow_items %}
       <li>
           <a href="{% url 'borrowing_studentPrebook' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentPrebook' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>STUDENT- Borrow(Pre-Book)</span>
           </a>
       </li>
+      {%endif%}
+      {% if permissions.can_borrow_items %}
       <li>
           <a href="{% url 'borrowing_studentWalkin' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentWalkin' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>STUDENT- Borrow(Walk-In)</span>
           </a>
       </li>
+      {%endif%}
+      {% if permissions.can_borrow_items %}
       <li>
           <a href="{% url 'borrowing_studentviewPreBookRequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_studentviewPreBookRequests borrowing_studentDetailedPreBookRequests' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>STUDENT - View Borrows</span>
           </a>
       </li>
+      {%endif%}
       <!-- <li>
           <a href="{% url 'borrowing_studentviewWalkInRequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_studentviewWalkInRequests borrowing_studentDetailedWalkInRequests' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>STUDENT - View Walk-In Requests</span>
           </a>
       </li> -->
+      {% if permissions.can_view_booking_requests %}
       <li>
         <a href="{% url 'borrowing_labcoord_prebookrequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_labcoord_prebookrequests borrowing_labcoord_detailedPrebookrequests' %}active{% endif %}">
             <i class="bi bi-circle"></i><span>LAB COORD - Booking Requests</span>
         </a>
-    </li>
+      </li>
+      {%endif%}
+      {% if permissions.can_view_booking_requests %}
     <li>
       <a href="{% url 'borrowing_labtech_prebookrequests' %}" class="{% if request.resolver_match.url_name == 'borrowing_labtech_prebookrequests' %}active{% endif %}">
           <i class="bi bi-circle"></i><span>LAB TECH - Booking Requests</span>
       </a>
     </li>
+    {%endif%}
+    {% if permissions.can_return_item %}
     <li>
       <a href="{% url 'return_borrowed_items' %}" class="{% if request.resolver_match.url_name == 'return_borrowed_items' %}active{% endif %}">
           <i class="bi bi-circle"></i><span>LAB TECH - Return Items Borrowed</span>
       </a>
     </li>
+    {%endif%}
+    {% if permissions.can_configure_borrowing %}
     <li>
       <a href="{% url 'borrowing_labcoord_borrowconfig' %}" class="{% if request.resolver_match.url_name == 'borrowing_labcoord_borrowconfig' %}active{% endif %}">
           <i class="bi bi-circle"></i><span>LAB COORD - Borrowing Configuration</span>
       </a>
   </li>
+  {%endif%}
   </ul>
 </li><!-- End Borrowing Nav -->
     {% endif %}
@@ -332,17 +346,20 @@
         <i class="bi bi-layout-text-window-reverse"></i><span>Clearance</span><i class="bi bi-chevron-down ms-auto"></i>
       </a>
       <ul id="tables-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed'%}show{% endif %} " data-bs-parent="#sidebar-nav">
+        {% if permissions.can_view_own_clearance%}
         <li>
           <a href="{% url 'clearance_student_viewClearance' %}" class = "{% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed' %}active{% endif %}">
             <i class="bi bi-circle"></i><span>STUDENT - View Clearance</span>
           </a>
         </li>
+        {% endif %}
+        {% if permissions.can_view_student_clearance%}
         <li>
           <a href="{% url 'clearance_labtech_viewclearance' %}" class = "{% if request.resolver_match.url_name in 'clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed' %}active{% endif %}">
             <i class="bi bi-circle"></i><span>LAB TECH - View Clearance</span>
           </a>
         </li>
-      
+        {% endif %}
       </ul>
     </li><!-- End Tables Nav -->
       {% endif %}
@@ -353,6 +370,7 @@
           <i class="bi bi-journal-bookmark"></i><span>Lab Reservation</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="reserve-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule labres_lab_reservationreqs labres_lab_reservationreqsDetailed lab_reservation_student_reserveLabConfirmDetails'%}show{% endif %} " data-bs-parent="#sidebar-nav">
+          {% if permissions.can_reserve_laboratory%}
           <li>           
             <a href="{% url 'lab_reservation_student_reserveLabChooseRoom' %}" class = "{% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>STUDENT - Reserve Laboratory - Choose Room</span>
@@ -361,21 +379,28 @@
               <i class="bi bi-circle"></i><span>STUDENT - My Room Reservations</span>
             </a>            
           </li>
+          {% endif %}
+          {% if permissions.can_view_reservations%}
           <li>     
             <a href="{% url 'labres_lab_schedule' %}" class = "{% if request.resolver_match.url_name in 'labres_lab_schedule' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>LAB - Reservation Schedule</span>
             </a> 
           </li>
+          {% endif %}
+          {% if permissions.can_view_reservations%}
           <li>         
             <a href="{% url 'labres_lab_reservationreqs' %}" class = "{% if request.resolver_match.url_name in 'labres_lab_reservationreqs labres_lab_reservationreqsDetailed' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>LAB - Reservation Requests</span>
             </a>
           </li>
+          {% endif %}
+          {% if permissions.can_configure_lab_reservation%}
           <li>
             <a href="{% url 'labres_labcoord_configroom' %}" class = "{% if request.resolver_match.url_name in 'labres_labcoord_configroom' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>LABCOORD - Configure Room</span>
             </a>
           </li>
+          {% endif %}
         </ul>
       </li><!--  Nav -->
       {% endif %}
@@ -386,11 +411,13 @@
           <i class="bi bi-bar-chart"></i><span>Reports</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="reports-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'reports'%}show{% endif %}" data-bs-parent="#sidebar-nav">
+          {% if permissions.can_view_reports%}
           <li>
             <a href="{% url 'reports' %}" class="{% if request.resolver_match.url_name in 'reports'%}active{% else %}collapsed{% endif %}">
               <i class="bi bi-circle"></i><span>Reports</span>
             </a>
           </li>
+          {% endif %}
         </ul>
       </li><!-- End Icons Nav -->
       {% endif %}
