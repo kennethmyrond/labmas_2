@@ -36,9 +36,11 @@
   <div class="card">
     <div class="card-body">
   <h5 class="card-title">User Information</h5>
+  {%if user.is_superuser%}<h6><strong>Superuser</strong></h6>{%endif%}
   <p><strong>Name: </strong>{{ user.firstname }} {{ user.lastname }}</p>
   <p><strong>Username: </strong>{{ user.username }}</p>
   <p><strong>Email: </strong>{{ user.email }}</p>
+  <p><strong>Personal ID: </strong>{{ user.personal_id }}</p>
   <p><strong>Date Joined: </strong>{{ user.date_joined|date:"Y-m-d" }}</p>
   <p><strong>Status: </strong> <span class="{% if not user.is_deactivated %}status-active{% else %}status-terminated{% endif %}">
     {% if not user.is_deactivated %}Active{% else %}Deactivated{% endif %}</span></p>
@@ -107,6 +109,10 @@
           <div class="form-group">
             <label for="email">Email</label>
             <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+          </div>
+          <div class="form-group">
+            <label for="personal_id">Personal ID</label>
+            <input type="text" class="form-control" id="personal_id" name="personal_id" value="{{ user.personal_id }}">
           </div>
         </div>
         <div class="modal-footer">

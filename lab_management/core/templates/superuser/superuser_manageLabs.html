@@ -43,8 +43,8 @@
             </thead>
             <tbody>
               {% for lab in labs %}
-              <tr>
-                <td style="text-align:left;"><a href="{% url 'superuser_lab_info' lab.laboratory_id %}">{{ lab.name }}</a></td>
+              <tr class="clickable-row" onclick="window.location.href='{% url 'superuser_lab_info' lab.laboratory_id %}'">
+                <td style="text-align:left;">{{ lab.name }}</td>
                 <td>{{ lab.department }}</td>
                 <td>{{ lab.date_created|date:"Y-m-d" }}</td>
                 <td>

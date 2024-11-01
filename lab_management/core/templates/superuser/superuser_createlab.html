@@ -95,7 +95,7 @@
                     {% for perm in permissions_by_module|get_item:module.id %}
                       <td>
                         <input type="checkbox" name="permissions[{{ role.roles_id }}][{{ perm.codename }}]" 
-                              {% if role_permissions|get_item:role.id|get_item:perm.codename %}checked{% endif %}>
+                        {% if perm.permission_id in default_permissions|get_item:role.roles_id %}checked{% endif %}>
                       </td>
                     {% endfor %}
                   </tr>

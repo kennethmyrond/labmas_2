@@ -75,7 +75,7 @@
   {% endif %}
 
 <!-- Tab Navigation -->
- {%if lab.get_status == 'Active'%}
+ 
 
 
 <!-- Tab Content -->
@@ -129,6 +129,7 @@
 </div>
 
   <!-- Modules Tab -->
+  
 <!-- Modules Tab -->
 <div class="tab-pane fade" id="modules" role="tabpanel">
   <section class="section">
@@ -150,7 +151,7 @@
                   <td>{{ module.name }}</td>
                   <td class="text-right">
                     <label class="toggle-switch">
-                      <input type="checkbox" name="module_{{ module.id }}" value="{{ module.id }}" {% if module.id in lab.modules %}checked{% endif %}>
+                      <input type="checkbox" name="module_{{ module.id }}" value="{{ module.id }}" {% if module.id in lab.modules %}checked{% endif %} {% if not lab.is_available %} disabled {% endif %}>
                       <span class="slider"></span>
                     </label>
                   </td>
@@ -158,7 +159,7 @@
               {% endfor %}
             </tbody>
           </table>
-          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="submit" class="btn btn-primary" {% if not lab.is_available %} disabled {% endif %}>Save Changes</button>
         </form>
       </div>
     </div>
@@ -190,7 +191,7 @@
           </table>
         <hr><br>
         <h5 class="card-title">Laboratory Users</h5>
-        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addUserModal">Add User</button>
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addUserModal" {% if not lab.is_available %} disabled {% endif %}>Add User</button>
         <!-- User Table -->
         <table class="table datatable">
           <thead>
@@ -261,7 +262,7 @@
                       <input type="checkbox" name="permissions[{{ role.roles_id }}][{{ perm.codename }}]"
                              {% create_tuple role.roles_id perm.codename as args %}
                              {% if role_permissions|has_permission:args %}checked{% endif %}
-                             onchange="highlightCell(this )">
+                             onchange="highlightCell(this )" {% if not lab.is_available %} disabled {% endif %}>
                     </td>
                   {% endfor %}
                 </tr>
@@ -274,7 +275,7 @@
           
           {% if modules %}
           <!-- Single button to save permissions for all tables -->
-          <button type="submit" class="btn btn-primary">Save Permissions</button>
+          <button type="submit" class="btn btn-primary" {% if not lab.is_available %} disabled {% endif %}>Save Permissions</button>
           {%endif%}
         </form>
       </div>
@@ -309,7 +310,7 @@
               {% endfor %}
             </tbody>
           </table>
-          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addRoomModal">Add Rooms</button>
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addRoomModal" {% if not lab.is_available %} disabled {% endif %}>Add Rooms</button>
         </div>
       </div>
     </section>
@@ -396,8 +397,6 @@
     </div>
   </div>
 </div>
-
-{%endif%}
 
 <script>
   function updateButtonText(button, currentState) {

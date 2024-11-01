@@ -35,24 +35,23 @@
     <div class="col-lg-12">
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title">Users</h5>
           <!-- Button to trigger Add User Modal -->
           <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#addUserModal">Add New User</button>
           <!-- Users Table -->
           <table class="table datatable" id="usertable">
-            <thead>
+            <thead class="thead-dark">
               <tr>
-                <th style="text-align:left;">Username</th>
+                <th style="text-align:left;">Email</th>
                 <th style="text-align:left;">Name</th>
                 <th>Date Joined</th>
                 <th>Status</th>
-                <th hidden></th>
+                <th>User Type</th>
               </tr>
             </thead>
             <tbody>
               {% for user in users %}
-              <tr>
-                <td style="text-align:left;"><a href="{% url 'superuser_user_info' user.user_id %}">{{ user.username }}</a></td>
+              <tr class="clickable-row" onclick="window.location.href='{% url 'superuser_user_info' user.user_id %}'">
+                <td style="text-align:left;">{{ user.email }}</td>
                 <td style="text-align:left;">{{ user.firstname }} {{ user.lastname }}</td>
                 <td>{{ user.date_joined|date:"Y-m-d" }}</td>
                 <td>
@@ -60,7 +59,7 @@
                     {% if not user.is_deactivated %}Active{% else %}Deactivated{% endif %}
                   </span>
                 </td>
-                <td hidden></td>
+                <td>{% if user.is_superuser %}Superuser{% else %}Staff{% endif %}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -95,6 +94,10 @@
           <div class="form-group">
             <label for="idnum">ID Number</label>
             <input type="text" class="form-control" id="idnum" name="idnum">
+          </div>
+          <div class="form-group">
+            <input type="checkbox" id="is_superuser" name="is_superuser">
+            <label for="is_superuser">Is Superuser <i class="fas fa-info-circle" data-toggle="tooltip" data-placement="right" title="Make this account superuser"></i></label>
           </div>
           <hr>
           <div class="form-group">

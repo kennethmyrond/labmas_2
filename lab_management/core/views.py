@@ -1262,7 +1262,7 @@ def borrowing_student_walkinview(request):
     })
 
 @login_required
-@lab_permission_required('view_booking_requests')
+@lab_permission_required('borrow_items')
 # booking requests
 def borrowing_student_viewPreBookRequestsview(request):
     if not request.user.is_authenticated:
@@ -1329,7 +1329,7 @@ def borrowing_student_viewPreBookRequestsview(request):
 # @require_POST
 
 @login_required
-@lab_permission_required('view_booking_requests')
+@lab_permission_required('borrow_items')
 def cancel_borrow_request(request):
     try:
         data = json.loads(request.body)
@@ -1652,7 +1652,7 @@ def return_borrowed_items(request):
     })
 
 @login_required
-@lab_permission_required('view_booking_requests')
+@lab_permission_required('view_borrowed_items')
 def borrowing_labtech_prebookrequests(request):
     selected_laboratory_id = request.session.get('selected_lab')
     
@@ -1695,7 +1695,7 @@ def borrowing_labtech_prebookrequests(request):
     })
 
 @login_required
-@lab_permission_required('view_booking_requests')
+@lab_permission_required('view_borrowed_items')
 def borrowing_labtech_detailedprebookrequests(request, borrow_id):
     borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id)
     borrowed_items1 = borrowed_items.objects.filter(borrow=borrow_entry)
@@ -2608,6 +2608,8 @@ def superuser_manage_labs(request):
     }
     return render(request, 'superuser/superuser_manageLabs.html', context)
 
+
+@user_passes_test(lambda u: u.is_superuser)
 def superuser_lab_info(request, laboratory_id):
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
     lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id)
@@ -2653,6 +2655,8 @@ def superuser_lab_info(request, laboratory_id):
 
     return render(request, 'superuser/superuser_labInfo.html', context)
 
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def add_module_to_lab(request, laboratory_id):
     if request.method == 'POST':
         module_id = request.POST.get('module_id')
@@ -2671,6 +2675,8 @@ def add_module_to_lab(request, laboratory_id):
 
     return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def toggle_module_status(request, laboratory_id):
     if request.method == 'POST':
         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
@@ -2686,6 +2692,8 @@ def toggle_module_status(request, laboratory_id):
         messages.success(request, "Module statuses updated successfully.")
         return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def edit_lab_info(request, laboratory_id):
     if request.method == 'POST':
         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
@@ -2696,6 +2704,8 @@ def edit_lab_info(request, laboratory_id):
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'fail'}, status=400)
 
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def deactivate_lab(request, laboratory_id):
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
     lab.is_available = False  # Set is_available to 0 (inactive)
@@ -2703,10 +2713,8 @@ def deactivate_lab(request, laboratory_id):
     messages.success(request, "Laboratory deactivated successfully.")  # Optional success message
     return redirect('superuser_manage_labs')
 
-from django.shortcuts import redirect, get_object_or_404
-from django.contrib import messages
-from .models import laboratory, laboratory_roles, laboratory_permissions, permissions
-
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def update_permissions(request, laboratory_id):
     if request.method == 'POST':
         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
@@ -2753,6 +2761,7 @@ def update_permissions(request, laboratory_id):
 # users
 @login_required
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def edit_user_role(request, laboratory_id):
     user_id = request.POST.get('user_id')
     new_role_id = request.POST.get('role_id')
@@ -2764,6 +2773,7 @@ def edit_user_role(request, laboratory_id):
 
 @login_required
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def toggle_user_status(request):
     data = json.loads(request.body)
     user_id = data.get('user_id')
@@ -2773,6 +2783,8 @@ def toggle_user_status(request):
     messages.success(request, "User status updated successfully.")
     return JsonResponse({'success': True, 'is_active': lab_user.is_active})
 
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def superuser_manage_users(request):
     users = user.objects.all()
     context = {
@@ -2780,6 +2792,8 @@ def superuser_manage_users(request):
     }
     return render(request, 'superuser/superuser_manageusers.html', context)
 
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def add_user(request):
     if request.method == 'POST':
         firstname = request.POST.get('firstname')
@@ -2788,13 +2802,16 @@ def add_user(request):
         email = request.POST.get('email')
         username = request.POST.get('email')
         password = request.POST.get('password')
+        is_superuser = request.POST.get('is_superuser') == 'on'
         if email and firstname and lastname and password:
-            user.objects.create_user(email=email, firstname=firstname, lastname=lastname, password=password, personal_id=idnum, username=username)
+            user.objects.create_user(email=email, firstname=firstname, lastname=lastname, password=password, personal_id=idnum, username=username, is_superuser=is_superuser)
             messages.success(request, "User added successfully.")
         else:
             messages.error(request, "Missing required fields.")
     return redirect('superuser_manage_users')
 
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def superuser_user_info(request, user_id):
     user1 = get_object_or_404(user, user_id=user_id)
     lab_users = laboratory_users.objects.filter(user=user1, is_active=True)
@@ -2808,6 +2825,8 @@ def superuser_user_info(request, user_id):
     }
     return render(request, 'superuser/superuser_userinfo.html', context)
 
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def edit_user(request, user_id):
     user1 = get_object_or_404(user, user_id=user_id)
     if request.method == 'POST':
@@ -2815,10 +2834,13 @@ def edit_user(request, user_id):
         user1.lastname = request.POST['lastname']
         user1.username = request.POST['username']
         user1.email = request.POST['email']
+        user1.personal_id = request.POST['personal_id']
         user1.save()
         messages.success(request, 'User details updated successfully.')
     return redirect('superuser_user_info', user_id=user_id)
 
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def deactivate_user(request, user_id):
     user1 = get_object_or_404(user, user_id=user_id)
     user1.is_deactivated = True
@@ -2826,6 +2848,8 @@ def deactivate_user(request, user_id):
     messages.success(request, 'User deactivated successfully.')
     return redirect('superuser_user_info', user_id=user_id)
 
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def assign_lab(request, user_id):
     if request.method == 'POST':
         laboratory_id = request.POST['laboratory_id']
@@ -2838,6 +2862,7 @@ def assign_lab(request, user_id):
 
 
 # Function to handle adding users
+@user_passes_test(lambda u: u.is_superuser)
 def add_user_laboratory(request, laboratory_id):
     if request.method == "POST":
         user_id = request.POST['user']
@@ -2857,6 +2882,7 @@ def add_user_laboratory(request, laboratory_id):
 
     return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
+@user_passes_test(lambda u: u.is_superuser)
 def add_room(request, laboratory_id):
     if request.method == "POST":
         room_name = request.POST.get('room_name')
@@ -2887,13 +2913,15 @@ def add_room(request, laboratory_id):
     # Retrieve the lab to edit
     #lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
     #return render(request, 'superuser/superuser_editLab.html', {'lab': lab})
-
+@user_passes_test(lambda u: u.is_superuser)
 def setup_edituser(request):
     return render(request, 'superuser/superuser_edituser.html')
 
+@user_passes_test(lambda u: u.is_superuser)
 def setup_manageRooms(request):
        return render(request, 'superuser/superuser_manageRooms.html')
 
+@user_passes_test(lambda u: u.is_superuser)
 def setup_createlab(request):
     if not request.user.is_superuser:
         return render(request, 'error_page.html', {'message': 'Access restricted.'})
@@ -2959,6 +2987,15 @@ def setup_createlab(request):
     roles = laboratory_roles.objects.all()
     modules = Module.objects.all()
 
+    # Default permissions per role
+    default_permissions = {
+        1: [7, 8, 9, 10, 11, 1, 2, 3, 4, 5, 6, 12, 13, 14, 15, 16, 17, 18],
+        2: [9, 11, 1, 5, 6, 13, 16, 17, 18],
+        3: [8, 10, 1, 2, 3, 4, 13, 15],
+        4: [1, 18],
+        5: [7, 12, 14]
+    }
+
     # Group permissions by module
     permissions_by_module = {}
     for module in modules:
@@ -2967,14 +3004,17 @@ def setup_createlab(request):
     # Flatten role_permissions for easier access in template
     role_permissions = {(rp.role.roles_id, rp.permissions.codename): True for rp in laboratory_permissions.objects.all()}
 
+    # Add default permissions to the context
     context = {
         'modules': modules,
         'roles': roles,
         'permissions_by_module': permissions_by_module,
         'role_permissions': role_permissions,
+        'default_permissions': default_permissions
     }
     return render(request, 'superuser/superuser_createlab.html', context)
 
+@user_passes_test(lambda u: u.is_superuser)
 def add_role(request):
     if request.method == 'POST':
         role_name = request.POST.get('roleName')
@@ -3024,6 +3064,7 @@ def add_role(request):
 
     return render(request, 'core/add_role.html')
 
+@user_passes_test(lambda u: u.is_superuser)
 def superuser_login(request):
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
@@ -3037,6 +3078,7 @@ def superuser_login(request):
 
 
 @login_required()
+@user_passes_test(lambda u: u.is_superuser)
 def superuser_setup(request):
     if not request.user.is_superuser:
         return redirect('/login')
@@ -3045,12 +3087,14 @@ def superuser_setup(request):
     modules = Module.objects.all()
     return render(request, 'superuser/superuser_setup.html', {'labs': labs, 'modules': modules})
 
+@user_passes_test(lambda u: u.is_superuser)
 def superuser_logout(request):
     logout(request)
     return redirect("/login/superuser")
 
 
 @login_required(login_url='/login/superuser')
+@user_passes_test(lambda u: u.is_superuser)
 def add_laboratory(request):
     if not request.user.is_superuser:
         return redirect('login')

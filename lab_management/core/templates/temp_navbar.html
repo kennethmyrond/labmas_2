@@ -67,6 +67,14 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.rtl.min.css" />
   <!-- Scripts -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    .clickable-row {
+      cursor: pointer;
+    }
+    .clickable-row:hover {
+      background-color: #dbdbdb !important; /* Change this color to your desired hover color */
+    }
+  </style>
 </head>
 
 <body>
@@ -314,7 +322,7 @@
         </a>
       </li>
       {%endif%}
-      {% if permissions.can_view_booking_requests %}
+      {% if permissions.can_view_borrowed_items %}
     <li>
       <a href="{% url 'borrowing_labtech_prebookrequests' %}" class="{% if request.resolver_match.url_name == 'borrowing_labtech_prebookrequests' %}active{% endif %}">
           <i class="bi bi-circle"></i><span>LAB TECH - Booking Requests</span>
