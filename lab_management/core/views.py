@@ -974,7 +974,7 @@ def borrowing_view(request):
 def borrowing_student_prebookview(request):
     try:
         laboratory_id = request.session.get('selected_lab')
-        user_id = request.user.id
+        user_id = request.user.user_id
         lab = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
 
         # Check if pre-booking is allowed
@@ -2072,7 +2072,7 @@ def lab_reservation_student_reserveLabConfirm(request):
 @lab_permission_required('reserve_laboratory')
 def lab_reservation_student_reserveLabConfirmDetails(request):
     reservation_data = request.session.get('reservation_data')
-    current_user = get_object_or_404(user, user_id=request.user.id)
+    current_user = get_object_or_404(user, user_id=request.user.user_id)
     selected_laboratory_id = request.session.get('selected_lab')
     reservation_config_obj = get_object_or_404(reservation_config,laboratory_id=selected_laboratory_id)
     
@@ -2127,7 +2127,7 @@ def lab_reservation_student_reserveLabChooseTime(request):
 def lab_reservation_student_reserveLabSummary(request):
     # Get the current user
     # current_user = request.user
-    current_user = get_object_or_404(user, user_id=request.user.id)
+    current_user = get_object_or_404(user, user_id=request.user.user_id)
     
     # Get today's date
     today = timezone.now().date()
@@ -2172,7 +2172,7 @@ def cancel_reservation(request, reservation_id):
 @lab_permission_required('reserve_laboratory')
 def lab_reservation_detail(request, reservation_id):
     # Get the reservation object by its ID
-    current_user = get_object_or_404(user, user_id=request.user.id)
+    current_user = get_object_or_404(user, user_id=request.user.user_id)
     reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id, user=current_user)
 
     context = {
@@ -2244,7 +2244,7 @@ def labres_lab_schedule(request):
     return render(request, 'mod_labRes/labres_lab_schedule.html', context)
 
 @login_required
-@lab_permission_required('view_reservations')
+@lab_permission_required('approve_deny_reservations')
 def labres_lab_reservationreqs(request):
     selected_laboratory_id = request.session.get('selected_lab')
     reservations = []
@@ -2351,7 +2351,7 @@ def labres_lab_reservationreqsDetailed(request, reservation_id):
     return render(request, 'mod_labRes/labres_lab_reservationreqsDetailed.html', context)
 
 @login_required
-@lab_permission_required('configure_lab_reservations')
+@lab_permission_required('configure_lab_reservation')
 def labres_labcoord_configroom(request):
     selected_laboratory_id = request.session.get('selected_lab')
     message = None
@@ -2473,7 +2473,7 @@ def labres_labcoord_configroom(request):
     return render(request, 'mod_labRes/labres_labcoord_configroom.html', context)
 
 @login_required
-@lab_permission_required('configure_lab_reservations')
+@lab_permission_required('configure_lab_reservation')
 def get_room_configuration(request, room_id):
     room = get_object_or_404(rooms, pk=room_id)
     reservation_config_obj = reservation_config.objects.get(laboratory=room.laboratory)

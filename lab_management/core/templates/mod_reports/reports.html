@@ -1,5 +1,8 @@
 {% extends 'temp_navbar.html' %}
 {% block content %}
+
+
+
 <div class="container">
     <!-- Filter Section -->
     <div class="card mb-3">
@@ -95,6 +98,7 @@
 
 <script>
     $(document).ready(function () {
+       
         let today = new Date()
         // Handle showing/hiding of input fields based on date type
         $('#dateType').change(function () {
@@ -152,6 +156,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    
     // Inventory Stock Report Chart
     const inventoryData = {
         labels: [{% for item in combined_data %}'{{ item.item_name }}',{% endfor %}],

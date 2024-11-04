@@ -33,6 +33,9 @@
   <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
   <link href="{% static 'assets/css/custom.css' %}" rel="stylesheet">
 
+  <link href="{% static 'DataTables/datatables.min.css' %}" rel="stylesheet">
+  
+
   
 
   <!-- =======================================================
@@ -45,8 +48,6 @@
   <script type="text/javascript" src="{% static 'jquery-3.7.1.js'%}"></script> 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"  />
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-  
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
@@ -75,6 +76,8 @@
       background-color: #dbdbdb !important; /* Change this color to your desired hover color */
     }
   </style>
+
+
 </head>
 
 <body>
@@ -381,31 +384,31 @@
           {% if permissions.can_reserve_laboratory%}
           <li>           
             <a href="{% url 'lab_reservation_student_reserveLabChooseRoom' %}" class = "{% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>STUDENT - Reserve Laboratory - Choose Room</span>
+              <i class="bi bi-circle"></i><span>Reserve Laboratory</span>
             </a>
             <a href="{% url 'lab_reservation_student_reserveLabSummary' %}" class = "{% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabSummary lab_reservation_detail' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>STUDENT - My Room Reservations</span>
+              <i class="bi bi-circle"></i><span>My Room Reservations</span>
             </a>            
           </li>
           {% endif %}
           {% if permissions.can_view_reservations%}
           <li>     
             <a href="{% url 'labres_lab_schedule' %}" class = "{% if request.resolver_match.url_name in 'labres_lab_schedule' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>LAB - Reservation Schedule</span>
+              <i class="bi bi-circle"></i><span>Reservation Schedules</span>
             </a> 
           </li>
           {% endif %}
-          {% if permissions.can_view_reservations%}
+          {% if permissions.can_approve_deny_reservations%}
           <li>         
             <a href="{% url 'labres_lab_reservationreqs' %}" class = "{% if request.resolver_match.url_name in 'labres_lab_reservationreqs labres_lab_reservationreqsDetailed' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>LAB - Reservation Requests</span>
+              <i class="bi bi-circle"></i><span>Reservation Requests</span>
             </a>
           </li>
           {% endif %}
           {% if permissions.can_configure_lab_reservation%}
           <li>
             <a href="{% url 'labres_labcoord_configroom' %}" class = "{% if request.resolver_match.url_name in 'labres_labcoord_configroom' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>LABCOORD - Configure Room</span>
+              <i class="bi bi-circle"></i><span>Configure Laboratory Reservation</span>
             </a>
           </li>
           {% endif %}
@@ -472,7 +475,7 @@
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.0/dist/jquery.slim.min.js"></script> -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
+  <script src="{% static 'DataTables/datatables.min.js' %}"></script>
 </body>
 
 </html>

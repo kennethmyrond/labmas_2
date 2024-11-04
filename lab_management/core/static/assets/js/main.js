@@ -285,6 +285,21 @@
   datatables.forEach(datatable => {
     new simpleDatatables.DataTable(datatable, {
       perPageSelect: [5, 10, 15, ["All", -1]],
+      buttons: [
+        'copy', 'excel', 'pdf', 'print', 'csv',
+        {
+            text: 'JSON',
+            action: function (e, dt, button, config) {
+                var data = dt.buttons.exportData();
+
+                $.fn.dataTable.fileSave(
+                    new Blob([JSON.stringify(data)]),
+                    'Export.json'
+                );
+            }
+        }
+    ],
+      
       columns: [{
           select: 2,
           sortSequence: ["desc", "asc"]
@@ -298,12 +313,8 @@
           cellClass: "green",
           headerClass: "red"
         }
-      ],
-      layout: {
-        topStart: {
-            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
-        }
-      }
+      ]
+      
     });
   })
 

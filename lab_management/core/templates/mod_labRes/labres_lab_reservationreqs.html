@@ -80,9 +80,10 @@
                     {% if reservation.status == 'P' %}
                         <form method="POST">
                             {% csrf_token %}
-                            <button type="submit" name="action" value="accept_{{ reservation.reservation_id }}" class="btn btn-success">Accept</button>
-                            <button type="submit" name="action" value="delete_{{ reservation.reservation_id }}" class="btn btn-danger">Delete</button>
+                            <button type="submit" name="action" value="accept_{{ reservation.reservation_id }}" class="btn btn-success">✔</button>
+                            <button type="submit" name="action" value="delete_{{ reservation.reservation_id }}" class="btn btn-danger">✖</button>
                         </form>
+                        
                     {% else %}
                         <span>Not Applicable</span>
                     {% endif %}
