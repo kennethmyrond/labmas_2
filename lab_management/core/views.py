@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.contrib.auth import authenticate, login as auth_login, logout
+from django.contrib.auth import authenticate, login as auth_login, logout, update_session_auth_hash
+from django.contrib.auth.hashers import check_password
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
@@ -232,6 +233,7 @@ def set_lab(request, laboratory_id):
     request.session['selected_lab_name'] = lab.name
     return redirect(request.META.get('HTTP_REFERER', '/'))  # Redirect back to the previous page
 
+@login_required
 def logout_view(request):
     logout(request)
     return redirect("/login")
@@ -248,6 +250,34 @@ def error_page(request, message=None):
 def user_settings_view(request):
     return render(request, 'user_settings.html')
 
+
+@login_required
+def my_profile(request):
+    user = request.user
+    return render(request, 'my_profile.html', {'user': user})
+
+@login_required
+def deactivate_account(request):
+    user = request.user
+    user.is_deactivated = True
+    user.save()
+    messages.success(request, "Account deactivated successfully.")
+    return redirect('logout')  # Redirect to logout or another appropriate page
+
+@login_required
+def edit_profile(request):
+    user = request.user
+    if request.method == 'POST':
+        user.firstname = request.POST.get('firstname')
+        user.lastname = request.POST.get('lastname')
+        user.username = request.POST.get('username')
+        user.email = request.POST.get('email')
+        user.personal_id = request.POST.get('personal_id')
+        user.save()
+        messages.success(request, "Profile updated successfully.")
+        return redirect('edit_profile')
+    
+    return render(request, 'edit_profile.html', {'user': user})
 
 # inventory
 @login_required

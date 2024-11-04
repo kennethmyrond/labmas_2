@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from . import views
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('login/', views.userlogin, name='userlogin'),
@@ -8,8 +9,9 @@ urlpatterns = [
     path('set_lab/<int:laboratory_id>/', views.set_lab, name='set_lab'),
     path('logout/', views.logout_view, name='logout'),  # Added trailing slash
     path('error/', views.error_page, name='error_page'),
-
-    
+    path('edit-profile/', views.edit_profile, name='edit_profile'),
+    path('my-profile/', views.my_profile, name='my_profile'),
+    path('deactivate-account/', views.deactivate_account, name='deactivate_account'),
     
     # setup
     
@@ -123,4 +125,9 @@ urlpatterns = [
     path('user/<int:user_id>/assign-lab/', views.assign_lab, name='assign_lab'),
 
     
+]
+
+urlpatterns += [
+    path('change-password/', auth_views.PasswordChangeView.as_view(template_name='change_password.html'), name='change_password'),
+    path('change-password/done/', auth_views.PasswordChangeDoneView.as_view(template_name='change_password_done.html'), name='password_change_done'),
 ]

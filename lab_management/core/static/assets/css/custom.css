@@ -3,6 +3,13 @@
 body{
   background-color: red;
 } */
+
+:root {
+    --dlsu-color: #087830;
+    
+}
+
+
 .datatable-table {
 	max-width: 100%;
 	width: 100%;

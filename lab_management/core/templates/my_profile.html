@@ -1,0 +1,29 @@
+{% extends 'temp_navbar.html' %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mt-5">
+                <div class="card-header">
+                    <h4>My Profile</h4>
+                </div>
+                <div class="card-body">
+                    <p><strong>First Name:</strong> {{ user.firstname }}</p>
+                    <p><strong>Last Name:</strong> {{ user.lastname }}</p>
+                    <p><strong>Username:</strong> {{ user.username }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p><strong>Personal ID:</strong> {{ user.personal_id }}</p>
+                    <p><strong>Date Joined:</strong> {{ user.date_joined|date:"Y-m-d" }}</p>
+                    <p><strong>Status:</strong> {% if not user.is_deactivated %}Active{% else %}Deactivated{% endif %}</p>
+                    <a href="{% url 'edit_profile' %}" class="btn btn-primary">Edit Profile</a>
+                    <a href="{% url 'deactivate_account' %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to deactivate your account?');">Deactivate Account</a>
+                    <a href="{% url 'change_password' %}" class="btn btn-secondary">Change Password</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
