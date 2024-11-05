@@ -18,9 +18,12 @@
                     <p><strong>Personal ID:</strong> {{ user.personal_id }}</p>
                     <p><strong>Date Joined:</strong> {{ user.date_joined|date:"Y-m-d" }}</p>
                     <p><strong>Status:</strong> {% if not user.is_deactivated %}Active{% else %}Deactivated{% endif %}</p>
-                    <a href="{% url 'edit_profile' %}" class="btn btn-primary">Edit Profile</a>
-                    <a href="{% url 'deactivate_account' %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to deactivate your account?');">Deactivate Account</a>
+                    <a href="{% url 'edit_profile' %}" class="btn btn-primary">✎ Edit Profile</a>
+                    <hr>
                     <a href="{% url 'change_password' %}" class="btn btn-secondary">Change Password</a>
+                    <hr>
+                    <a href="{% url 'deactivate_account' %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to deactivate your account?');">Deactivate Account</a>
+                    
                 </div>
             </div>
         </div>

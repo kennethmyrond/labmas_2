@@ -140,15 +140,15 @@
 
         <!-- End Profile Nav -->
         <li class="nav-item dropdown pe-3">
-          <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
+          <a class="nav-link nav-profile d-flex align-items-center pe-0 text-truncate" href="#" data-bs-toggle="dropdown">
             <img src="{% static 'assets/img/user.png' %}" alt="Profile" class="rounded-circle">
-            <span class="d-none d-md-block dropdown-toggle ps-2">{{ logged_user.username }}</span>
+            <span class="d-none d-md-block dropdown-toggle ps-2">{{ request.user.username }}</span>
           </a><!-- End Profile Iamge Icon -->
 
           <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
             <li class="dropdown-header">
-              <h6>{{ logged_user.firstname }} {{ logged_user.lastname }}</h6>
-              <span>{{ logged_user.email }}</span>
+              <h6>{{ request.user.firstname }} {{ request.user.lastname }}</h6>
+              <span>{{ request.user.email }}</span>
             </li>
             <li>
               <hr class="dropdown-divider">
@@ -203,31 +203,40 @@
   <aside id="sidebar" class="sidebar">
     <ul class="sidebar-nav" id="sidebar-nav">
       
-      {%if logged_user.is_superuser%}
+      {%if logged_user.is_superuser or permissions.can_configure_laboratory %}
       <li class="nav-item">
-        <a class="nav-link {% if logged_user.is_superuser %}active{% else %}collapsed{% endif %}" data-bs-target="#setup-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link {% if request.resolver_match.url_name in 'superuser_lab_info setup_createlab superuser_manage_labs superuser_manage_users setup_editLab'  %}active{% else %}collapsed{% endif %}" data-bs-target="#setup-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-grid"></i>
           <span>Setup</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="setup-nav" class="nav-content collapse {% if logged_user.is_superuser %}show{% endif %}" data-bs-parent="#sidebar-nav">
+        <ul id="setup-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'superuser_lab_info setup_createlab superuser_manage_labs superuser_manage_users setup_editLab' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+          
+
+          {% if permissions.can_view_inventory %}
+          <li>
+            <a href="{% url 'superuser_lab_info' selected_lab_id%}" class="{% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info setup_editLab' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>Manage Laboratory</span>
+            </a>
+          </li> 
+          {%else%}
           <li>
             <a href="{% url 'setup_createlab' %}" class="{% if request.resolver_match.url_name in 'setup_createlab' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>Set Up New Laboratory</span>
             </a>
           </li> 
-
-
           <li>
             <a href="{% url 'superuser_manage_labs' %}" class="{% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info setup_editLab' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>Manage Laboratories</span>
             </a>
           </li> 
-
           <li>
             <a href="{% url 'superuser_manage_users' %}" class="{% if request.resolver_match.url_name in 'superuser_manage_users superuser_user_info setup_edituser' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>Manage Users</span>
             </a>
           </li>
+          {%endif%}
+
+          
         </ul>
       </li><!-- End Setup Nav -->
       {%endif%}
@@ -293,23 +302,26 @@
   </a>
   <ul id="borrow-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_studentviewWalkInRequests borrowing_studentDetailedPreBookRequests borrowing_studentDetailedWalkInRequests borrowing_labcoord_prebookrequests borrowing_labcoord_borrowconfig borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items' %}show{% endif %}" data-bs-parent="#sidebar-nav">
       {% if permissions.can_borrow_items %}
+      {% if borrow_config.allow_prebook %}
       <li>
           <a href="{% url 'borrowing_studentPrebook' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentPrebook' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>STUDENT- Borrow(Pre-Book)</span>
+              <i class="bi bi-circle"></i><span>Borrow(Pre-Book)</span>
           </a>
       </li>
       {%endif%}
-      {% if permissions.can_borrow_items %}
+      
+      {% if borrow_config.allow_walkin %}
       <li>
           <a href="{% url 'borrowing_studentWalkin' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentWalkin' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>STUDENT- Borrow(Walk-In)</span>
+              <i class="bi bi-circle"></i><span>Borrow(Walk-In)</span>
           </a>
       </li>
+      {%endif%}
       {%endif%}
       {% if permissions.can_borrow_items %}
       <li>
           <a href="{% url 'borrowing_studentviewPreBookRequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_studentviewPreBookRequests borrowing_studentDetailedPreBookRequests' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>STUDENT - View Borrows</span>
+              <i class="bi bi-circle"></i><span>My Borrowed Items</span>
           </a>
       </li>
       {%endif%}
@@ -321,28 +333,28 @@
       {% if permissions.can_view_booking_requests %}
       <li>
         <a href="{% url 'borrowing_labcoord_prebookrequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_labcoord_prebookrequests borrowing_labcoord_detailedPrebookrequests' %}active{% endif %}">
-            <i class="bi bi-circle"></i><span>LAB COORD - Booking Requests</span>
+            <i class="bi bi-circle"></i><span>Booking Requests</span>
         </a>
       </li>
       {%endif%}
       {% if permissions.can_view_borrowed_items %}
     <li>
       <a href="{% url 'borrowing_labtech_prebookrequests' %}" class="{% if request.resolver_match.url_name == 'borrowing_labtech_prebookrequests' %}active{% endif %}">
-          <i class="bi bi-circle"></i><span>LAB TECH - Booking Requests</span>
+          <i class="bi bi-circle"></i><span>Booking Requests</span>
       </a>
     </li>
     {%endif%}
     {% if permissions.can_return_item %}
     <li>
       <a href="{% url 'return_borrowed_items' %}" class="{% if request.resolver_match.url_name == 'return_borrowed_items' %}active{% endif %}">
-          <i class="bi bi-circle"></i><span>LAB TECH - Return Items Borrowed</span>
+          <i class="bi bi-circle"></i><span>Return Items Borrowed</span>
       </a>
     </li>
     {%endif%}
     {% if permissions.can_configure_borrowing %}
     <li>
       <a href="{% url 'borrowing_labcoord_borrowconfig' %}" class="{% if request.resolver_match.url_name == 'borrowing_labcoord_borrowconfig' %}active{% endif %}">
-          <i class="bi bi-circle"></i><span>LAB COORD - Borrowing Configuration</span>
+          <i class="bi bi-circle"></i><span>Borrowing Configuration</span>
       </a>
   </li>
   {%endif%}
@@ -367,7 +379,7 @@
         {% if permissions.can_view_student_clearance%}
         <li>
           <a href="{% url 'clearance_labtech_viewclearance' %}" class = "{% if request.resolver_match.url_name in 'clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed' %}active{% endif %}">
-            <i class="bi bi-circle"></i><span>LAB TECH - View Clearance</span>
+            <i class="bi bi-circle"></i><span>View Clearance</span>
           </a>
         </li>
         {% endif %}

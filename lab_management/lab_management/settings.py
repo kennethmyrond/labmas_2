@@ -203,6 +203,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 SOCIALACCOUNT_AUTO_SIGNUP = False  # Prevents auto-creation if an account with email already exists
 SOCIALACCOUNT_QUERY_EMAIL = True  # Enables querying of email for existing user account match
+SOCIALACCOUNT_LOGIN_ON_GET=True
 
 # settings.py
 # SOCIALACCOUNT_ADAPTER = 'core.adapters.MySocialAccountAdapter'

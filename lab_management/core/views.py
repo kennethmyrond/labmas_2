@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.exceptions import PermissionDenied
 from django.contrib.auth import authenticate, login as auth_login, logout, update_session_auth_hash
 from django.contrib.auth.hashers import check_password
 from django.views.decorators.http import require_POST
@@ -12,6 +13,8 @@ from django.utils import timezone
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from django.urls import reverse
 from collections import defaultdict
+from functools import wraps
+
 from django import forms
 # from allauth.socialaccount.helpers import provider_login_url
 from .forms import LoginForm, InventoryItemForm
@@ -19,7 +22,7 @@ from .models import laboratory, Module, item_description, item_types, item_inven
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from .models import rooms, laboratory_reservations, reservation_config
 from .models import laboratory_users, laboratory_roles, laboratory_permissions, permissions
-from .decorators import lab_permission_required
+from .decorators import lab_permission_required, superuser_or_lab_permission_required
 from datetime import timedelta, date, datetime
 from calendar import monthrange
 from pyzbar.pyzbar import decode
@@ -27,6 +30,11 @@ from PIL import Image
 from io import BytesIO
 
 import json, qrcode, base64, threading, time, re
+
+
+
+
+
 
 # thread every midnight query items to check due date if today (for on holding past due date )
 def thread_function():
@@ -228,7 +236,7 @@ def home(request):
 def set_lab(request, laboratory_id):
     # Set the chosen laboratory in the session
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-    current_user = get_object_or_404(user, email=request.user.email)
+    current_user = request.user
     request.session['selected_lab'] = lab.laboratory_id
     request.session['selected_lab_name'] = lab.name
     return redirect(request.META.get('HTTP_REFERER', '/'))  # Redirect back to the previous page
@@ -246,10 +254,6 @@ def error_page(request, message=None):
     """
     message = request.GET.get('message', 'An error occurred.')
     return render(request, 'error_page.html', {'message': message})
-
-def user_settings_view(request):
-    return render(request, 'user_settings.html')
-
 
 @login_required
 def my_profile(request):
@@ -275,7 +279,7 @@ def edit_profile(request):
         user.personal_id = request.POST.get('personal_id')
         user.save()
         messages.success(request, "Profile updated successfully.")
-        return redirect('edit_profile')
+        return redirect('my_profile')
     
     return render(request, 'edit_profile.html', {'user': user})
 
@@ -442,7 +446,7 @@ def inventory_updateItem_view(request):
 
         # Fetch item and supplier
         item_description_instance = get_object_or_404(item_description, item_id=item_id)
-        current_user = get_object_or_404(user, user_id=request.user.id)
+        current_user = request.user
 
         expiration_date = None
         if item_description_instance.rec_expiration and 'expiration_date' in request.POST:
@@ -652,7 +656,7 @@ def inventory_physicalCount_view(request):
     selected_laboratory_id = request.session.get('selected_lab')
     item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
     selected_item_type = request.GET.get('item_type')
-    current_user = get_object_or_404(user, email=request.user.email)
+    current_user = request.user
     # Filter items by laboratory and selected item type
     if selected_item_type:
         inventory_items = item_description.objects.filter(
@@ -1004,7 +1008,7 @@ def borrowing_view(request):
 def borrowing_student_prebookview(request):
     try:
         laboratory_id = request.session.get('selected_lab')
-        user_id = request.user.user_id
+        user = request.user
         lab = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
 
         # Check if pre-booking is allowed
@@ -1080,7 +1084,7 @@ def borrowing_student_prebookview(request):
             # If validation passes, proceed with insertion
             borrow_entry = borrow_info.objects.create(
                 laboratory_id=laboratory_id,
-                user_id=user_id,
+                user=user,
                 request_date=timezone.now(),  # Use current timestamp
                 borrow_date=borrow_date,
                 due_date=due_date,
@@ -1155,7 +1159,7 @@ def get_quantity_for_item(request, item_id):
 def borrowing_student_walkinview(request):
     # Get session details
     laboratory_id = request.session.get('selected_lab')
-    user_id = request.user.id
+    user_id = request.user
 
     # Fetch the lab's borrowing configuration
     lab = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
@@ -1233,7 +1237,8 @@ def borrowing_student_walkinview(request):
                 'error_message': error_message,
                 'inventory_items': inventory_items,
                 'walkin_questions': walkin_questions,  # Pass walk-in questions back to the template
-                 'items_by_type': items_by_type,  # Pass grouped items to the template
+                'items_by_type': items_by_type,  # Pass grouped items to the template
+                'lab_config': lab
             })
 
         # If validation passes, insert items into borrowed_items
@@ -1298,7 +1303,7 @@ def borrowing_student_viewPreBookRequestsview(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
 
-    current_user = get_object_or_404(user, user_id=request.user.id)
+    current_user = request.user
 
     # Get the borrowing configuration for the laboratory
     laboratory_id = request.session.get('selected_lab')
@@ -1381,7 +1386,7 @@ def borrowing_student_WalkInRequestsview(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
 
-    current_user = get_object_or_404(user, user_id=request.user.id)
+    current_user = request.user
 
     # Annotate the request date as truncated date (without time) and exclude records where dates match
     prebook_requests = borrow_info.objects.annotate(
@@ -2102,7 +2107,7 @@ def lab_reservation_student_reserveLabConfirm(request):
 @lab_permission_required('reserve_laboratory')
 def lab_reservation_student_reserveLabConfirmDetails(request):
     reservation_data = request.session.get('reservation_data')
-    current_user = get_object_or_404(user, user_id=request.user.user_id)
+    current_user = request.user
     selected_laboratory_id = request.session.get('selected_lab')
     reservation_config_obj = get_object_or_404(reservation_config,laboratory_id=selected_laboratory_id)
     
@@ -2157,7 +2162,7 @@ def lab_reservation_student_reserveLabChooseTime(request):
 def lab_reservation_student_reserveLabSummary(request):
     # Get the current user
     # current_user = request.user
-    current_user = get_object_or_404(user, user_id=request.user.user_id)
+    current_user = request.user
     
     # Get today's date
     today = timezone.now().date()
@@ -2188,7 +2193,7 @@ def lab_reservation_student_reserveLabSummary(request):
 @lab_permission_required('reserve_laboratory')
 def cancel_reservation(request, reservation_id):
     # Get the reservation object by id
-    current_user = get_object_or_404(user, user_id=request.user.id)
+    current_user = request.user
     reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id, user=current_user)
 
     # Change the status to 'Cancelled' (assuming 'C' represents cancelled)
@@ -2202,7 +2207,7 @@ def cancel_reservation(request, reservation_id):
 @lab_permission_required('reserve_laboratory')
 def lab_reservation_detail(request, reservation_id):
     # Get the reservation object by its ID
-    current_user = get_object_or_404(user, user_id=request.user.user_id)
+    current_user = request.user
     reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id, user=current_user)
 
     context = {
@@ -2632,17 +2637,78 @@ def superuser_manage_labs(request):
     if not request.user.is_superuser:
         return render(request, 'error_page.html', {'message': 'Module is allowed for this laboratory.'})
 
-    labs = laboratory.objects.all()  # Retrieve all laboratory records
+    labs = laboratory.objects.exclude(laboratory_id=0)   # Retrieve all laboratory records
     context = {
         'labs': labs,
     }
     return render(request, 'superuser/superuser_manageLabs.html', context)
 
 
-@user_passes_test(lambda u: u.is_superuser)
+# lab info
+@superuser_or_lab_permission_required('configure_laboratory')
 def superuser_lab_info(request, laboratory_id):
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-    lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id)
+    lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id, is_disabled=False)
+
+    if request.method == "POST":
+        if 'save_rooms' in request.POST:
+            # Update is_reservable field for rooms
+            for room in rooms.objects.filter(laboratory_id=lab):
+                room.is_reservable = f'room_{room.room_id}_enabled' in request.POST
+                room.save()
+            messages.success(request, 'Successfully saved room configuration')
+
+        elif 'delete_room' in request.POST:
+            delete_room_id = request.POST.get('delete_room')
+            room = get_object_or_404(rooms, room_id=delete_room_id)
+            room.is_disabled = True
+            room.save()
+            messages.success(request,  'Successfully deleted a room')
+
+        elif 'add_room' in request.POST:
+            room_name = request.POST.get('room_name')
+            room_capacity = request.POST.get('room_capacity')
+            room_description = request.POST.get('room_description')
+
+            if room_name and room_capacity:
+                new_room = rooms(
+                    laboratory=lab,
+                    name=room_name,
+                    capacity=room_capacity,
+                    description=room_description
+                )
+                new_room.save()
+            messages.success( request, f'Successfully added Room: {room_name}')
+        elif 'edit_room' in request.POST:
+            room_id = request.POST.get('edit_room')
+            room = get_object_or_404(rooms, room_id=room_id)
+            room.name = request.POST.get('room_name')
+            room.capacity = request.POST.get('room_capacity')
+            room.description = request.POST.get('room_description')
+            room.save()
+            messages.success(request, 'Successfully updated the room')
+            
+        elif 'add_role' in request.POST:
+            role_name = request.POST.get('role_name')
+            if role_name:
+                new_role = laboratory_roles(
+                    laboratory=lab,
+                    name=role_name,
+                )
+                new_role.save()
+            messages.success( request, f'Successfully added Role: {role_name}')
+        elif 'edit_role' in request.POST:
+            role_name = request.POST.get('role_name')
+            role_id = request.POST.get('edit_role')
+            role = get_object_or_404(laboratory_roles, roles_id=role_id)
+            role.name = role_name
+            role.save()
+            messages.success( request, f'Successfully Edited Role: {role_name}')
+        elif 'delete_role' in request.POST:
+            role_id = request.POST.get('delete_role')
+            role = get_object_or_404(laboratory_roles, roles_id=role_id)
+            role.delete()
+            messages.success(request,  'Successfully deleted a role')
     
     # Get modules active in the lab
     active_module_ids = lab.modules
@@ -2662,14 +2728,14 @@ def superuser_lab_info(request, laboratory_id):
         full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
         role_name=F('role__name')
     )
-    lab_roles = laboratory_roles.objects.annotate(
+    lab_roles = laboratory_roles.objects.filter(Q(laboratory_id=0) | Q(laboratory_id=lab.laboratory_id)).annotate(
         usercount=Count('users', filter=Q(users__laboratory_id=laboratory_id))
     )
     
     # Current permissions for each role in the lab
     role_permissions = {(perm.role.roles_id, perm.permissions.codename): True 
                         for perm in laboratory_permissions.objects.filter(laboratory=lab)}
-    print(role_permissions)
+    # print(role_permissions)
     print(lab_roles)
     context = {
         'laboratory_id': laboratory_id,
@@ -2686,7 +2752,7 @@ def superuser_lab_info(request, laboratory_id):
     return render(request, 'superuser/superuser_labInfo.html', context)
 
 @login_required()
-@user_passes_test(lambda u: u.is_superuser)
+@superuser_or_lab_permission_required('configure_laboratory')
 def add_module_to_lab(request, laboratory_id):
     if request.method == 'POST':
         module_id = request.POST.get('module_id')
@@ -2706,7 +2772,7 @@ def add_module_to_lab(request, laboratory_id):
     return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 @login_required()
-@user_passes_test(lambda u: u.is_superuser)
+@superuser_or_lab_permission_required('configure_laboratory')
 def toggle_module_status(request, laboratory_id):
     if request.method == 'POST':
         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
@@ -2723,7 +2789,7 @@ def toggle_module_status(request, laboratory_id):
         return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 @login_required()
-@user_passes_test(lambda u: u.is_superuser)
+@superuser_or_lab_permission_required('configure_laboratory')
 def edit_lab_info(request, laboratory_id):
     if request.method == 'POST':
         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
@@ -2735,7 +2801,7 @@ def edit_lab_info(request, laboratory_id):
     return JsonResponse({'status': 'fail'}, status=400)
 
 @login_required()
-@user_passes_test(lambda u: u.is_superuser)
+@superuser_or_lab_permission_required('configure_laboratory')
 def deactivate_lab(request, laboratory_id):
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
     lab.is_available = False  # Set is_available to 0 (inactive)
@@ -2744,7 +2810,7 @@ def deactivate_lab(request, laboratory_id):
     return redirect('superuser_manage_labs')
 
 @login_required()
-@user_passes_test(lambda u: u.is_superuser)
+@superuser_or_lab_permission_required('configure_laboratory')
 def update_permissions(request, laboratory_id):
     if request.method == 'POST':
         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
@@ -2791,7 +2857,7 @@ def update_permissions(request, laboratory_id):
 # users
 @login_required
 @require_POST
-@user_passes_test(lambda u: u.is_superuser)
+@superuser_or_lab_permission_required('configure_laboratory')
 def edit_user_role(request, laboratory_id):
     user_id = request.POST.get('user_id')
     new_role_id = request.POST.get('role_id')
@@ -2803,7 +2869,7 @@ def edit_user_role(request, laboratory_id):
 
 @login_required
 @require_POST
-@user_passes_test(lambda u: u.is_superuser)
+@superuser_or_lab_permission_required('configure_laboratory')
 def toggle_user_status(request):
     data = json.loads(request.body)
     user_id = data.get('user_id')
@@ -2812,6 +2878,26 @@ def toggle_user_status(request):
     lab_user.save()
     messages.success(request, "User status updated successfully.")
     return JsonResponse({'success': True, 'is_active': lab_user.is_active})
+
+@superuser_or_lab_permission_required('configure_laboratory')
+def add_user_laboratory(request, laboratory_id):
+    if request.method == "POST":
+        user_id = request.POST['user']
+        role_id = request.POST['role']
+        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+        
+        user_instance = get_object_or_404(user, user_id=user_id)
+        role_instance = get_object_or_404(laboratory_roles, roles_id=role_id)
+        
+        # Add user to laboratory if not already assigned
+        laboratory_users.objects.get_or_create(
+            user=user_instance,
+            laboratory=lab,
+            role=role_instance,
+            defaults={'is_active': request.POST['Status'] == 'Active'}
+        )
+    messages.success('User added successfully')
+    return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
@@ -2892,25 +2978,6 @@ def assign_lab(request, user_id):
 
 
 # Function to handle adding users
-@user_passes_test(lambda u: u.is_superuser)
-def add_user_laboratory(request, laboratory_id):
-    if request.method == "POST":
-        user_id = request.POST['user']
-        role_id = request.POST['role']
-        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-        
-        user_instance = get_object_or_404(user, user_id=user_id)
-        role_instance = get_object_or_404(laboratory_roles, roles_id=role_id)
-        
-        # Add user to laboratory if not already assigned
-        laboratory_users.objects.get_or_create(
-            user=user_instance,
-            laboratory=lab,
-            role=role_instance,
-            defaults={'is_active': request.POST['Status'] == 'Active'}
-        )
-
-    return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 @user_passes_test(lambda u: u.is_superuser)
 def add_room(request, laboratory_id):
@@ -2943,13 +3010,6 @@ def add_room(request, laboratory_id):
     # Retrieve the lab to edit
     #lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
     #return render(request, 'superuser/superuser_editLab.html', {'lab': lab})
-@user_passes_test(lambda u: u.is_superuser)
-def setup_edituser(request):
-    return render(request, 'superuser/superuser_edituser.html')
-
-@user_passes_test(lambda u: u.is_superuser)
-def setup_manageRooms(request):
-       return render(request, 'superuser/superuser_manageRooms.html')
 
 @user_passes_test(lambda u: u.is_superuser)
 def setup_createlab(request):
@@ -3106,6 +3166,16 @@ def superuser_login(request):
         form = LoginForm()
     return render(request, 'superuser/superuser_login.html', {'form': form})
 
+@user_passes_test(lambda u: u.is_superuser)
+def setup_edituser(request):
+    return render(request, 'superuser/superuser_edituser.html')
+
+@user_passes_test(lambda u: u.is_superuser)
+def setup_manageRooms(request):
+       return render(request, 'superuser/superuser_manageRooms.html')
+
+
+# no need
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)

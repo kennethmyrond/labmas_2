@@ -1,41 +1,49 @@
 # context_processors.py
-from .models import laboratory, user, laboratory_users, Module, permissions as Permissions
+from .models import laboratory, user, laboratory_users, Module, permissions as Permissions, borrowing_config
 from .utils import has_lab_permission
 from django.shortcuts import get_object_or_404
-
+from django.core.exceptions import ObjectDoesNotExist
 
 def labs_context(request):
     selected_lab_id = request.session.get('selected_lab')
-    try:
-        current_user = get_object_or_404(user, email=request.user.email)
-    except:
-        current_user = None
-    # print(current_user)
-    
+    current_user = None
     selected_lab_modules = []
-    if selected_lab_id:
-        lab = laboratory.objects.filter(laboratory_id=selected_lab_id).first()
-        if lab:
-            module_ids = lab.modules
-            selected_lab_modules = [module.id for module in Module.objects.filter(id__in=module_ids, enabled=True)]
-    
-    user_labs = laboratory.objects.filter(is_available=True, laboratory_users__user=current_user)
-    # print(user_labs)
-
-    # Default permissions are empty
+    user_labs = []
+    borrow_config = None
     permissions = {}
-    if selected_lab_id:
-        # Query all permissions and set them dynamically
-        all_permissions = Permissions.objects.values('codename')
-        permissions = {
-            f"can_{perm['codename']}": has_lab_permission(request.user, selected_lab_id, perm['codename'])
-            for perm in all_permissions
-        }
-    
+
+    if request.user.is_authenticated:
+        print(request.user.user_id)
+        try:
+            current_user = user.objects.get(email=request.user.email)
+        except user.DoesNotExist:
+            pass
+        
+        user_labs = laboratory.objects.filter(is_available=True, laboratory_users__user=request.user)
+
+        if selected_lab_id:
+            lab = laboratory.objects.filter(laboratory_id=selected_lab_id).first()
+            if lab:
+                module_ids = lab.modules
+                selected_lab_modules = Module.objects.filter(id__in=module_ids, enabled=True).values_list('id', flat=True)
+            
+            try:
+                borrow_config = borrowing_config.objects.get(laboratory_id=selected_lab_id)
+            except borrowing_config.DoesNotExist:
+                pass
+
+            all_permissions = Permissions.objects.values('codename')
+            permissions = {
+                f"can_{perm['codename']}": has_lab_permission(request.user, selected_lab_id, perm['codename'])
+                for perm in all_permissions
+            }
+
     return {
         'laboratories': user_labs,
+        'selected_lab_id': selected_lab_id,
         'selected_lab_name': request.session.get('selected_lab_name'),
         'selected_lab_modules': selected_lab_modules,
         'logged_user': current_user,
-        'permissions': permissions
+        'permissions': permissions,
+        'borrow_config': borrow_config
     }

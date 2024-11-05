@@ -25,7 +25,7 @@ class Module(models.Model):
 
 class permissions(models.Model):
     permission_id = models.AutoField(primary_key=True)
-    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+    module = models.ForeignKey(Module, on_delete=models.CASCADE,default=0)
     codename = models.CharField(max_length=45, null=True, blank=True)
     name = models.CharField(max_length=45, null=True, blank=True)
     
@@ -50,6 +50,7 @@ class laboratory(models.Model):
 class laboratory_roles(models.Model):
     roles_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=45, null=True, blank=True)
+    laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
@@ -186,14 +187,14 @@ class suppliers(models.Model):
 #     end_username = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
 #     end_userreason = models.CharField(max_length=45, null=True, blank=True)
 
-class item_transactions(models.Model): 
-    transaction_id = models.AutoField(primary_key=True)
-    user = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True)
-    timestamp = models.DateTimeField(null=True, blank=True)
-    remarks = models.CharField(max_length=45, null=True, blank=True)
+# class item_transactions(models.Model): 
+#     transaction_id = models.AutoField(primary_key=True)
+#     user = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True)
+#     timestamp = models.DateTimeField(null=True, blank=True)
+#     remarks = models.CharField(max_length=45, null=True, blank=True)
 
-    def __str__(self):
-        return f"Transaction {self.transaction_id}"
+#     def __str__(self):
+#         return f"Transaction {self.transaction_id}"
 
 
 # borrowing & Clearance
