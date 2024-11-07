@@ -106,6 +106,7 @@
               <th>Qty</th>
               <th>Date Created</th>
               <th>Remarks</th>
+              <th>Expirations</th>
               <th></th>
               <th style="display:none"></th>
             </tr>
@@ -138,6 +139,13 @@
                     Physical Count Adjustment
                   {% endif %} -->
                   {{handling.remarks}}
+                </td>
+                <td>
+                  {% if inventory.expiration_date %}
+                    {{ inventory.expiration_date|date:"Y-m-d" }}
+                  {% else %}
+                    Not Applicable
+                  {% endif %}
                 </td>
                 
                 <td>
@@ -199,7 +207,7 @@
               </tr>
               {% empty %}
               <tr>
-                <td colspan="6">No inventory records found for this item.</td>
+                <td colspan="7">No inventory records found for this item.</td>
               </tr>
               {% endfor %}
             {% endfor %}

@@ -318,6 +318,9 @@ def inventory_view(request):
     # Get the selected item_type from the GET parameters
     selected_item_type = request.GET.get('item_type')
 
+    # Fetch current date for expiration comparison
+    current_date = timezone.now().date()
+
     # Filter inventory items by both the selected item_type and the selected laboratory,
     # and ensure the item is not disabled
     if selected_item_type:
@@ -325,15 +328,24 @@ def inventory_view(request):
             itemType_id=selected_item_type,
             laboratory_id=selected_laboratory_id,
             is_disabled=0  # Only get items that are enabled
-        ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
+        ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0)) # Calculate total quantity
         selected_item_type_instance = item_types.objects.get(pk=selected_item_type)
         add_cols = json.loads(selected_item_type_instance.add_cols)
     else:
         inventory_items = item_description.objects.filter(
             laboratory_id=selected_laboratory_id,
             is_disabled=0  # Only get items that are enabled
-        ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
+        ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
         add_cols = []
+
+     # Check for items nearing expiration and add a warning flag
+    for item in inventory_items:
+        expirations = item_expirations.objects.filter(inventory_item__item=item)
+        expiration_warnings = []
+        for exp in expirations:
+            if exp.expired_date <= current_date + timedelta(days=7):  # Threshold of 7 days
+                expiration_warnings.append(exp)
+        item.expiration_warning = len(expiration_warnings) > 0    
 
     return render(request, 'mod_inventory/view_inventory.html', {
         'inventory_items': inventory_items,
@@ -360,7 +372,7 @@ def inventory_itemDetails_view(request, item_id):
     # Get the related laboratory instance
     lab = get_object_or_404(laboratory, laboratory_id=item.laboratory_id)
 
-    # Get all item_inventory entries for the specified item_id
+    
     # Prefetch item_handling related to item_inventory
     item_handling_prefetch = Prefetch('item_handling_set', queryset=item_handling.objects.all().order_by('timestamp'))
     # Filter item_inventory and prefetch related supplier and item_handling data
@@ -372,13 +384,25 @@ def inventory_itemDetails_view(request, item_id):
 
     qr_code_data = generate_qr_code(item.item_id)
 
+     # Fetch expiration data and attach it to each inventory item if applicable
+    if item.rec_expiration:
+        expirations = item_expirations.objects.filter(inventory_item__in=item_inventories)
+        expiration_data = {exp.inventory_item.inventory_item_id: exp.expired_date for exp in expirations}
+        
+        # Attach expiration_date directly to each inventory instance
+        for inventory in item_inventories:
+            inventory.expiration_date = expiration_data.get(inventory.inventory_item_id)
+    else:
+        # If no expirations are recorded, set expiration_date to None for consistency
+        for inventory in item_inventories:
+            inventory.expiration_date = None
+
     # Prepare context for rendering
     context = {
         'item': item,
         'itemType_name': item_type.itemType_name if item_type else None,
         'laboratory_name': lab.name if lab else None,
         'item_inventories': item_inventories,
-        #  'item_expirations': item_expiration,
         'total_qty': total_qty,
         'add_cols_data': add_cols_data,
         'is_edit_mode': False,  # Not in edit mode
