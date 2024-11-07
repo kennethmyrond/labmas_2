@@ -87,7 +87,7 @@ urlpatterns = [
 
 
     path('reports/', views.reports_view, name='reports'),
-
+    path('admin-reports/', views.admin_reports_view, name='admin_reports'),
 
     # Superuser URLs
     path('login/superuser/', views.superuser_login, name='superuser_login'),  # Added trailing slash

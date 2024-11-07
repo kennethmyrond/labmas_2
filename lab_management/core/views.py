@@ -2711,6 +2711,123 @@ def reports_view(request):
 
     return render(request, 'mod_reports/reports.html', context)
 
+@user_passes_test(lambda u: u.is_superuser)
+def admin_reports_view(request):
+    # Get separate filters for each card from GET parameters
+    total_users_filter = request.GET.get('total_users_filter', 'this_year')
+    new_users_filter = request.GET.get('new_users_filter', 'today')
+    reports_filter = request.GET.get('reports_filter', 'this_week')
+
+    today = timezone.now().date()
+    # # Total Users Filter Setup
+    # if total_users_filter == 'today':
+    #     total_start_date = today
+    # elif total_users_filter == 'this_month':
+    #     total_start_date = today.replace(day=1)
+    # elif total_users_filter == 'this_year':
+    #     total_start_date = today.replace(month=1, day=1)
+    # else:
+    #     total_start_date = today - timedelta(weeks=1)
+
+    # Active Users Count
+    total_active_users = user.objects.filter(is_deactivated=False).count()
+    total_active_labs = laboratory.objects.filter(is_available=True).count()
+
+    # New Users Filter Setup (default to 'today' for new users card)
+    if new_users_filter == 'today':
+        new_users_filter = 'Today'
+        new_start_date = today
+    elif new_users_filter == 'this_month':
+        new_users_filter = 'This Month'
+        new_start_date = today.replace(day=1)
+    elif new_users_filter == 'this_year':
+        new_users_filter = 'This Year'
+        new_start_date = today.replace(month=1, day=1)
+    else:
+        new_users_filter = 'This Week'
+        new_start_date = today - timedelta(weeks=1)
+
+    # New Users Count
+    new_users = user.objects.filter(date_joined__date__gte=new_start_date).count()
+
+    # Reports Filter Setup
+    if reports_filter == 'this_week':
+        reports_filter_display = 'This Week'
+        reports_start_date = today - timedelta(days=today.weekday())  # Start of the current week
+        date_range = [reports_start_date + timedelta(days=i) for i in range(7)]
+        date_format = "%Y-%m-%d"
+    elif reports_filter == 'this_month':
+        reports_filter_display = 'This Month'
+        reports_start_date = today.replace(day=1)
+        last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        date_range = [reports_start_date + timedelta(days=i) for i in range((last_day - reports_start_date).days + 1)]
+        date_format = "%Y-%m-%d"
+    else:  # 'this_year'
+        reports_filter_display = 'This Year'
+        reports_start_date = today.replace(month=1, day=1)
+        date_range = [datetime(today.year, month, 1).date() for month in range(1, 13)]
+        date_format = "%Y-%m"
+
+    # Count New Users for Each Date in Range (for Reports Card Line Chart)
+    reports_data = []
+    for date in date_range:
+        if reports_filter == 'this_year':
+            user_count = user.objects.filter(
+                date_joined__year=date.year,
+                date_joined__month=date.month
+            ).count()
+        else:
+            user_count = user.objects.filter(date_joined__date=date).count()
+        reports_data.append({'date': date.strftime(date_format), 'count': user_count})
+
+    print(reports_data)
+
+    # Retrieve data for roles (separating default and others)
+    default_roles = laboratory_roles.objects.filter(laboratory_id=0).values('roles_id', 'name').exclude(roles_id=0)
+    default_role_ids = [role['roles_id'] for role in default_roles]
+
+    # Retrieve labs and user counts per role for stacked chart
+    user_labs_data = []
+    labs = laboratory.objects.exclude(Q(laboratory_id=0) | Q(is_available=0)).annotate(user_count=Count('laboratory_users'))
+    for lab in labs:
+        lab_roles_data = {'lab_name': lab.name}
+        
+        # Count users for each default role in this laboratory
+        for role in default_roles:
+            role_count = laboratory_users.objects.filter(
+                laboratory=lab, role_id=role['roles_id'], is_active=True
+            ).count()
+            lab_roles_data[role['name']] = role_count
+        
+        # Count users with roles not in the default roles as "Others"
+        others_count = laboratory_users.objects.filter(
+            laboratory=lab, is_active=True
+        ).exclude(role_id__in=default_role_ids).count()
+        lab_roles_data['Others'] = others_count
+        
+        user_labs_data.append(lab_roles_data)
+        
+    
+
+
+    context = {
+        'total_active_users': total_active_users,
+        'total_active_labs': total_active_labs,
+        'new_users': new_users,
+        'filter_type': {
+            'total_users': total_users_filter,
+            'new_users': new_users_filter,
+            'reports': reports_filter
+        },
+        'reports_data': reports_data,
+        'reports_filter_display': reports_filter_display,
+        
+        'user_labs_data': user_labs_data,
+        'default_roles': default_roles,
+
+        'labs': labs
+    }
+    return render(request, 'mod_reports/admin_reports.html', context)
 
 
 #  ================================================================= 

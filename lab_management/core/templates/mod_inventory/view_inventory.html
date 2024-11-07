@@ -43,7 +43,7 @@
             </form>
 
             <!-- Table with stripped rows -->
-            <table class="table export-datatable table-striped">
+            <table class="table inventory-datatable table-striped">
               <!-- datatable -->
               <thead>
                 <tr>
@@ -54,15 +54,15 @@
                     <th>{{ col }}</th>
                   {% endfor %}
                   <th style="text-align:right;">Available Qty</th>
-                  <th style="display:none"></th>
-                  <th style="display:none"></th>
-                  <th style="display:none"></th>
+                  <!-- <th hidden></th>
+                  <th hidden></th>
+                  <th hidden></th> -->
                 </tr>
               </thead>
               <tbody>
                 {% for item in inventory_items %}
                   <tr>
-                    <td style="color: {% if item.total_qty > item.alert_qty %}green{% else %}red{% endif %}; text-align:left;">
+                    <td style="color: {% if item.total_qty > item.alert_qty %}green{% else %}red{% endif %}; text-align:center;">
                       {% if item.total_qty > item.alert_qty %}Available{% else %}Low Stock{% endif %}
                     </td>
                     <td style="text-align:left;">
@@ -75,16 +75,17 @@
                       <td>{{ item.add_cols|get_col_value:col }}</td>
                     {% endfor %}
                     <td style="text-align:right;">
-                      <span style="display:inline-block;">
-                        {{ item.total_qty }}
-                      </span>
                       {% if item.expiration_warning %}
                         <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
                       {% endif %}
+                      <span style="display:inline-block;">
+                        {{ item.total_qty }}
+                      </span>
+                      
                     </td>
-                    <td style="display:none"></td>
-                    <td style="display:none"></td>
-                    <td style="display:none"></td>
+                    <!-- <td hidden></td>
+                    <td hidden></td>
+                    <td hidden></td> -->
                   </tr>
                 {% empty %}
                   <tr>
@@ -102,4 +103,26 @@
       </div>
     </div>
   </section>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const today = new Date().toISOString().split('T')[0];
+    inventory_filename = '{{selected_lab_name}}_inventory_' + today;
+    new DataTable('.inventory-datatable', {
+      layout: {
+        bottomStart: {
+            // buttons: ['copy', 'excel', 'pdf', 'colvis']
+            buttons: [{
+                    extend: 'excelHtml5',
+                    title: inventory_filename
+                },
+                {
+                    extend: 'pdfHtml5',
+                    title: inventory_filename
+                }, 'copy', 'colvis']
+        }
+      }
+      
+    });
+  });
+  </script>
 {% endblock %}

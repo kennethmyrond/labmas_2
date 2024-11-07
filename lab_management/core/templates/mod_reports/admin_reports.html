@@ -1,0 +1,413 @@
+{% extends 'temp_navbar.html' %}
+{% load custom_filters %} 
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="col">
+    <div class="row">
+        <!-- Total Users Card -->
+        <div class="col-xxl-4 col-xl-12">
+            <div class="card info-card customers-card">
+                <!-- <div class="filter">
+                    <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                        <li class="dropdown-header text-start"><h6>Filter</h6></li>
+                        <li><a class="dropdown-item" href="?total_users_filter=today">Today</a></li>
+                        <li><a class="dropdown-item" href="?total_users_filter=this_week">This Week</a></li>
+                        <li><a class="dropdown-item" href="?total_users_filter=this_month">This Month</a></li>
+                        <li><a class="dropdown-item" href="?total_users_filter=this_year">This Year</a></li>
+                    </ul>
+                </div> -->
+                <div class="card-body" id="total-users-content">
+                    <h5 class="card-title">Total Users </h5>
+                    <!-- <span>| {{ filter_type.total_users|title }}</span> -->
+                    <div class="d-flex align-items-center">
+                        <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <div class="ps-3">
+                            <h6>{{ total_active_users }}</h6>
+                            <span class="text-muted small pt-2 ps-1">active users</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Total Users Card -->
+
+        <!-- New Users Card -->
+        <div class="col-xxl-4 col-xl-12">
+            <div class="card info-card customers-card">
+                <div class="filter">
+                    <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                        <li class="dropdown-header text-start"><h6>Filter</h6></li>
+                        <li><a class="dropdown-item" href="?new_users_filter=today">Today</a></li>
+                        <li><a class="dropdown-item" href="?new_users_filter=this_week">This Week</a></li>
+                        <li><a class="dropdown-item" href="?new_users_filter=this_month">This Month</a></li>
+                        <li><a class="dropdown-item" href="?new_users_filter=this_year">This Year</a></li>
+                    </ul>
+                </div>
+                <div class="card-body" id="new-users-content">
+                    <h5 class="card-title">New Users <span>| {{ filter_type.new_users|title }}</span></h5>
+                    <div class="d-flex align-items-center">
+                        <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <div class="ps-3">
+                            <h6>{{ new_users }}</h6>
+                            <span class="text-muted small pt-2 ps-1">new users</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End New Users Card -->
+
+        <!-- Total Users Card -->
+        <div class="col-xxl-4 col-xl-12">
+            <div class="card info-card customers-card">
+                <!-- <div class="filter">
+                    <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                        <li class="dropdown-header text-start"><h6>Filter</h6></li>
+                        <li><a class="dropdown-item" href="?total_users_filter=today">Today</a></li>
+                        <li><a class="dropdown-item" href="?total_users_filter=this_week">This Week</a></li>
+                        <li><a class="dropdown-item" href="?total_users_filter=this_month">This Month</a></li>
+                        <li><a class="dropdown-item" href="?total_users_filter=this_year">This Year</a></li>
+                    </ul>
+                </div> -->
+                <div class="card-body" id="total-users-content">
+                    <h5 class="card-title">Total Laboratories </h5>
+                    <!-- <span>| {{ filter_type.total_users|title }}</span> -->
+                    <div class="d-flex align-items-center">
+                        <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <div class="ps-3">
+                            <h6>{{ total_active_labs }}</h6>
+                            <span class="text-muted small pt-2 ps-1">active laboratories</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Total Users Card -->
+    </div>
+</div>
+
+<!-- Reports Card -->
+<div class="col-12">
+    <div class="card">
+        <div class="filter">
+            <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                <li class="dropdown-header text-start"><h6>Filter</h6></li>
+                <li><a class="dropdown-item" href="?reports_filter=this_week">This Week</a></li>
+                <li><a class="dropdown-item" href="?reports_filter=this_month">This Month</a></li>
+                <li><a class="dropdown-item" href="?reports_filter=this_year">This Year</a></li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">New Users Over Time <span>| {{ reports_filter_display }}</span></h5>
+            <div id="newuser_chart"></div>
+            <!-- <canvas id="reportsChart"></canvas> -->
+        </div>
+    </div>
+</div>
+<!-- End Reports Card -->
+
+<div class="container">
+    <!-- Stack Chart for Users per Laboratory and Role -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Users by Laboratory and Role</h5>
+                <!-- <canvas id="stackedBarChart"></canvas> -->
+                <div id="stackedBarChart"></div>
+                <br><hr>
+                <table class="table users-datatable table-striped">
+                    <!-- datatable -->
+                    <thead>
+                      <tr>
+                        <th style="text-align:left;">Laboratory</th>
+                        <th style="text-align:left;">Description</th>
+                        <th style="text-align:center;">Department</th>
+                        <th style="text-align:right;">Total Users</th>
+                        <th style="display:none"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for lab in labs %}
+                        <tr>
+                          <td style="text-align:left;">{{ lab.name }}</td>
+                          <td style="text-align:left;">{{ lab.description }}</td>
+                          <td style="text-align:center;">{{ lab.department }}</td>
+                          <td style="text-align:right;">{{ lab.user_count }}</td>
+                          <td style="display:none"></td>
+                        </tr>
+                      {% empty %}
+                        <tr>
+                          <td colspan="6">No items found.</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    
+document.addEventListener("DOMContentLoaded", function () {
+    // const ctx = document.getElementById('reportsChart').getContext('2d');
+    // new Chart(ctx, {
+    //     type: 'line',
+    //     data: {
+    //         labels: [{% for entry in reports_data %}"{{ entry.date }}",{% endfor %}],
+    //         datasets: [{
+    //             label: 'New Users',
+    //             data: [{% for entry in reports_data %}{{ entry.count }},{% endfor %}],
+    //             borderColor: 'rgba(75, 192, 192, 1)',
+    //             backgroundColor: 'rgba(75, 192, 192, 0.2)',
+    //             fill: true,
+    //             tension: 0.4
+    //         }]
+    //     },
+    //     options: {
+    //         responsive: true,
+    //         scales: {
+    //             x: { title: { display: true, text: '{{ reports_filter|title }}' } },
+    //             y: { beginAtZero: true }
+    //         }
+    //     }
+    // });
+
+    // const user_labs = document.getElementById('stackedBarChart').getContext('2d');
+    // const colors = [
+    //     'rgba(75, 192, 192, 0.5)', 'rgba(54, 162, 235, 0.5)', 'rgba(255, 206, 86, 0.5)',
+    //     'rgba(153, 102, 255, 0.5)', 'rgba(255, 99, 132, 0.5)', 'rgba(255, 159, 64, 0.5)'
+    // ];
+    // const borderColors = [
+    //     'rgba(75, 192, 192, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)',
+    //     'rgba(153, 102, 255, 1)', 'rgba(255, 99, 132, 1)', 'rgba(255, 159, 64, 1)'
+    // ];
+
+    // const data = {
+    //     labels: [{% for lab in user_labs_data %}'{{ lab.lab_name }}',{% endfor %}],
+    //     datasets: [
+    //         {% for role in default_roles %}
+    //         {
+    //             label: '{{ role.name }}',
+    //             data: [
+    //                 {% for lab in user_labs_data %}
+    //                 {{ lab|get_item:role.name }},
+    //                 {% endfor %}
+    //             ],
+    //             backgroundColor: colors[{{ forloop.counter0 }} % colors.length],
+    //             borderColor: borderColors[{{ forloop.counter0 }} % borderColors.length],
+    //             borderWidth: 1
+    //         },
+    //         {% endfor %}
+    //         {
+    //             label: 'Others',
+    //             data: [{% for lab in user_labs_data %}{{ lab|get_item:'Others' }},{% endfor %}],
+    //             backgroundColor: 'rgba(201, 203, 207, 0.5)',
+    //             borderColor: 'rgba(201, 203, 207, 1)',
+    //             borderWidth: 1
+    //         }
+    //     ]
+    // };
+
+    // new Chart(user_labs, {
+    //     type: 'bar',
+    //     data: data,
+    //     options: {
+    //         indexAxis: 'y',  // This swaps the axes
+    //         plugins: {
+    //             title: {
+    //                 display: true,
+    //                 text: 'User Distribution by Laboratory and Role'
+    //             }
+    //         },
+    //         responsive: true,
+    //         scales: {
+    //             x: {
+    //                 stacked: true
+    //             },
+    //             y: {
+    //                 beginAtZero: true,
+    //                 stacked: true
+    //             }
+    //         }
+    //     }
+    // });
+
+    const today = new Date().toISOString().split('T')[0];
+    TotalUsersPerLab_filename = 'TotalUsersPerLab_' + today;
+    new DataTable('.users-datatable', {
+      layout: {
+        bottomStart: {
+            // buttons: ['copy', 'excel', 'pdf', 'colvis']
+            buttons: [{
+                    extend: 'excelHtml5',
+                    title: TotalUsersPerLab_filename
+                },
+                {
+                    extend: 'pdfHtml5',
+                    title: TotalUsersPerLab_filename
+                }]
+        }
+      }
+      
+    });
+    
+    const reportsFilter = '{{ filter_type.reports|title }}';  // Assuming reports_filter is passed to the template
+    const newusers_filename = 'UsersByLaboratoryAndRole_' + reportsFilter + '_' + today;
+
+    const newusers_options = {
+        chart: {
+            type: 'line',
+            height: 350,
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true,
+                    selection: true,
+                    zoom: true,
+                    zoomin: true,
+                    zoomout: true,
+                    pan: true,
+                    reset: true,
+                    customIcons: []
+                },
+                export: {
+                    csv: {
+                        filename: newusers_filename,
+                    },
+                    svg: {
+                        filename: newusers_filename,
+                    },
+                    png: {
+                        filename: newusers_filename,
+                    }
+                }
+            }
+        },
+        series: [{
+            name: 'New Users',
+            data: [{% for entry in reports_data %}{{ entry.count }},{% endfor %}]
+        }],
+        xaxis: {
+            categories: [{% for entry in reports_data %}"{{ entry.date }}",{% endfor %}],
+            title: {
+                text: '{{ reports_filter|title }}'
+            }
+        },
+        yaxis: {
+            title: {
+                text: 'Count'
+            },
+            min: 0
+        },
+        colors: ['rgba(75, 192, 192, 1)'],
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shade: 'light',
+                type: 'horizontal',
+                shadeIntensity: 0.25,
+                gradientToColors: undefined, // optional, if not defined - uses the shades of same color in series
+                inverseColors: true,
+                opacityFrom: 0.85,
+                opacityTo: 0.85,
+                stops: [50, 0, 100]
+            }
+        },
+        stroke: {
+            curve: 'smooth'
+        },
+        title: {
+            text: 'New Users Over Time',
+            align: 'left'
+        }
+    };
+
+    const newuser_chart = new ApexCharts(document.querySelector("#newuser_chart"), newusers_options);
+    newuser_chart.render();
+
+    const colors = [
+        'rgba(75, 192, 192, 0.5)', 'rgba(54, 162, 235, 0.5)', 'rgba(255, 206, 86, 0.5)',
+        'rgba(153, 102, 255, 0.5)', 'rgba(255, 99, 132, 0.5)', 'rgba(255, 159, 64, 0.5)'
+    ];
+
+    const labusers_series = [
+        {% for role in default_roles %}
+        {
+            name: '{{ role.name }}',
+            data: [
+                {% for lab in user_labs_data %}
+                {{ lab|get_item:role.name }},
+                {% endfor %}
+            ]
+        },
+        {% endfor %}
+        {
+            name: 'Others',
+            data: [{% for lab in user_labs_data %}{{ lab|get_item:'Others' }},{% endfor %}]
+        }
+    ];
+
+    // Get today's date in YYYY-MM-DD format
+    const labusers_filename = 'UsersByLaboratoryAndRole_' + today;
+
+    const labusers_options = {
+        chart: {
+            type: 'bar',
+            stacked: true,
+            height: 500,
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true,
+                    selection: true,
+                    zoom: true,
+                    zoomin: true,
+                    zoomout: true,
+                    pan: true,
+                    reset: true,
+                    customIcons: []
+                },
+                export: {
+                    csv: {
+                        filename: labusers_filename,
+                    },
+                    svg: {
+                        filename: labusers_filename,
+                    },
+                    png: {
+                        filename: labusers_filename,
+                    }
+                }
+            }
+        },
+        plotOptions: {
+            bar: {
+                horizontal: true,
+            },
+        },
+        series: labusers_series,
+        xaxis: {
+            categories: [{% for lab in user_labs_data %}'{{ lab.lab_name }}',{% endfor %}],
+        },
+        colors: colors,
+    };
+
+    const labuser_chart = new ApexCharts(document.querySelector("#stackedBarChart"), labusers_options);
+    labuser_chart.render();
+});
+</script>
+{% endblock %}

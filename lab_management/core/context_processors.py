@@ -13,7 +13,7 @@ def labs_context(request):
     permissions = {}
 
     if request.user.is_authenticated:
-        print(request.user.user_id)
+        # print(request.user.user_id)
         try:
             current_user = user.objects.get(email=request.user.email)
         except user.DoesNotExist:
