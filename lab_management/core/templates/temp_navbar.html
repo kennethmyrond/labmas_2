@@ -310,7 +310,7 @@
       {% if borrow_config.allow_prebook %}
       <li>
           <a href="{% url 'borrowing_studentPrebook' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentPrebook' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>Borrow(Pre-Book)</span>
+              <i class="bi bi-circle"></i><span>Borrow Item (Pre-Book)</span>
           </a>
       </li>
       {%endif%}
@@ -318,7 +318,7 @@
       {% if borrow_config.allow_walkin %}
       <li>
           <a href="{% url 'borrowing_studentWalkin' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentWalkin' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>Borrow(Walk-In)</span>
+              <i class="bi bi-circle"></i><span>Borrow Item (Walk-In)</span>
           </a>
       </li>
       {%endif%}
@@ -338,14 +338,14 @@
       {% if permissions.can_view_booking_requests %}
       <li>
         <a href="{% url 'borrowing_labcoord_prebookrequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_labcoord_prebookrequests borrowing_labcoord_detailedPrebookrequests' %}active{% endif %}">
-            <i class="bi bi-circle"></i><span>Booking Requests</span>
+            <i class="bi bi-circle"></i><span>View Item Borrow Requests </span>
         </a>
       </li>
       {%endif%}
       {% if permissions.can_view_borrowed_items %}
     <li>
       <a href="{% url 'borrowing_labtech_prebookrequests' %}" class="{% if request.resolver_match.url_name == 'borrowing_labtech_prebookrequests' %}active{% endif %}">
-          <i class="bi bi-circle"></i><span>Booking Requests</span>
+          <i class="bi bi-circle"></i><span>View Item Borrowed</span>
       </a>
     </li>
     {%endif%}

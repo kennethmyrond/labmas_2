@@ -28,7 +28,7 @@
     <h1>Borrowing</h1>
     <nav>
       <ol class="breadcrumb">
-        <li class="breadcrumb-item active">Pre-Book Requests</li>
+        <li class="breadcrumb-item active">Item Borrowing Requests</li>
       </ol>
     </nav>
   </div><!-- End Page Title -->
@@ -47,7 +47,7 @@
       <div class="col-lg-12">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Pre-Book Requests</h5>
+            <h5 class="card-title">Item Borrowing Requests</h5>
 
             <!-- Dropdown to filter by status -->
             <form method="GET" id="statusFilterForm">
@@ -65,10 +65,10 @@
             </form>
 
             <!-- Table with stripped rows -->
-            <table class="table datatable">
+            <table class="table borrow-datatable">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th>Reference ID</th>
                   <th>Name</th>
                   <th>Date of Request</th>
                   <th>Date for Booking</th>
@@ -80,7 +80,7 @@
               <tbody>
                 {% for request in borrowing_requests %}
                 <tr>
-                  <td><a href="{% url 'borrowing_labcoord_detailedPrebookrequests' request.borrow_id %}">RF{{ request.borrow_id }}</a></td>
+                  <td><a href="{% url 'borrowing_labcoord_detailedPrebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
                   <td>{{ request.user.firstname}} {{ request.user.lastname}}</td>
                   <td>{{ request.request_date|date:"Y-m-d" }}</td>
                   <td>{{ request.borrow_date|date:"Y-m-d" }}</td>
@@ -125,4 +125,26 @@
       </div>
     </div>
   </section>
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const today = new Date().toISOString().split('T')[0];
+    itemborrowingreqs_filename = '{{selected_lab_name}}_itemborrowingreqs_' + today;
+    new DataTable('.borrow-datatable', {
+      layout: {
+        bottomStart: {
+            // buttons: ['copy', 'excel', 'pdf', 'colvis']
+            buttons: [{
+                    extend: 'excelHtml5',
+                    title: itemborrowingreqs_filename
+                },
+                {
+                    extend: 'pdfHtml5',
+                    title: itemborrowingreqs_filename
+                }, 'copy', 'colvis']
+        }
+      }
+      
+    });
+  });
+  </script>
 {% endblock %}

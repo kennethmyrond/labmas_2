@@ -154,7 +154,7 @@ def suggest_users(request):
 
     # Filter to get users not already assigned to the lab
     assigned_user_ids = laboratory_users.objects.filter(laboratory_id=lab_id).values_list('user_id', flat=True)
-    users = user.objects.exclude(user_id__in=assigned_user_ids).filter(
+    users = user.objects.exclude(Q(user_id__in=assigned_user_ids) | Q(is_superuser=1)).filter(
         Q(username__icontains=query) | Q(firstname__icontains=query) | Q(lastname__icontains=query)
     ).annotate(fullname=Concat(F('email'), Value(' | '), F('firstname'), Value(' '), F('lastname'), output_field=CharField()))
 
@@ -2837,7 +2837,7 @@ def superuser_manage_labs(request):
     if not request.user.is_superuser:
         return render(request, 'error_page.html', {'message': 'Module is allowed for this laboratory.'})
 
-    labs = laboratory.objects.exclude(laboratory_id=0)   # Retrieve all laboratory records
+    labs = laboratory.objects.exclude(Q(laboratory_id=0) | Q(is_available=0)).annotate(user_count=Count('laboratory_users'))   # Retrieve all laboratory records
     context = {
         'labs': labs,
     }

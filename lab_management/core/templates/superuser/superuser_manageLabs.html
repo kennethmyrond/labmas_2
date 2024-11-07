@@ -35,9 +35,10 @@
             <thead>
               <tr>
                 <th style="text-align:left;">Name</th>
-                <th>Department</th>
+                <th style="text-align:left;"  >Description</th>
+                <th>Users</th>
                 <th>Date Created</th>
-                <th>Status</th>
+                <th hidden></th>
                 <th hidden></th>
               </tr>
             </thead>
@@ -45,13 +46,15 @@
               {% for lab in labs %}
               <tr class="clickable-row" onclick="window.location.href='{% url 'superuser_lab_info' lab.laboratory_id %}'">
                 <td style="text-align:left;">{{ lab.name }}</td>
-                <td>{{ lab.department }}</td>
+                <td style="text-align:left;">{{ lab.description }}</td>
+                <td>{{ lab.user_count }}</td>
                 <td>{{ lab.date_created|date:"Y-m-d" }}</td>
-                <td>
+                <!-- <td>
                   <span class="{% if lab.is_available %}status-active{% else %}status-terminated{% endif %}">
                     {{ lab.get_status }}
                   </span>
-                </td>
+                </td> -->
+                <td hidden></td>
                 <td hidden></td>
               </tr>
               {% endfor %}
