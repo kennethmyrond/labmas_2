@@ -198,12 +198,19 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/userlogin'
 
 AUTH_USER_MODEL = 'core.user'
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
-SOCIALACCOUNT_AUTO_SIGNUP = False  # Prevents auto-creation if an account with email already exists
-SOCIALACCOUNT_QUERY_EMAIL = True  # Enables querying of email for existing user account match
 SOCIALACCOUNT_LOGIN_ON_GET=True
+
+
+ACCOUNT_AUTHENTICATION_METHOD = "email" # Defaults to username_email
+SOCIALACCOUNT_QUERY_EMAIL = ACCOUNT_EMAIL_REQUIRED
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = False
+# ACCOUNT_ADAPTER = "core.adapters.MyLoginAccountAdapter"
+# SOCIALACCOUNT_ADAPTER = 'core.adapters.MySocialAccountAdapter'
+
 
 # settings.py
 # SOCIALACCOUNT_ADAPTER = 'core.adapters.MySocialAccountAdapter'

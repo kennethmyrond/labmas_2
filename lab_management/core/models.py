@@ -1,13 +1,30 @@
-import json, qrcode
+import json, qrcode, random
+from datetime import datetime
+from django.utils.crypto import get_random_string
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from io import BytesIO
 from django.core.files import File
 from PIL import Image, ImageDraw
 from django.contrib.postgres.fields import JSONField
 
+
+# class item_remove_inventory(models.Model):
+#     inventory_item_id = models.AutoField(primary_key=True)
+#     remarks = models.CharField(max_length=45, null=True, blank=True)
+#     end_username = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
+#     end_userreason = models.CharField(max_length=45, null=True, blank=True)
+
+# class item_transactions(models.Model): 
+#     transaction_id = models.AutoField(primary_key=True)
+#     user = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True)
+#     timestamp = models.DateTimeField(null=True, blank=True)
+#     remarks = models.CharField(max_length=45, null=True, blank=True)
+
+#     def __str__(self):
+#         return f"Transaction {self.transaction_id}"
 
 class Module(models.Model): 
     MODULE_CHOICES = [
@@ -82,7 +99,7 @@ class UserManager(BaseUserManager):
         return self.create_user(email, firstname, lastname, password, **extra_fields)
 
 class user(AbstractBaseUser):
-    user_id = models.AutoField(primary_key=True)
+    user_id = models.CharField(max_length=20, unique=True, primary_key=True)
     firstname = models.CharField(max_length=45)
     lastname = models.CharField(max_length=45)
     username = models.CharField(max_length=45, unique=True)
@@ -98,6 +115,22 @@ class user(AbstractBaseUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['firstname', 'lastname']
 
+    def save(self, *args, **kwargs):
+        if not self.user_id:
+            current_year = datetime.now().year
+            while True:
+                random_number = get_random_string(length=4, allowed_chars='0123456789')
+                self.user_id = f"{current_year}{random_number}"
+                if not user.objects.filter(user_id=self.user_id).exists():
+                    break
+        super().save(*args, **kwargs)
+
+    def has_perm(self, perm, obj=None):
+        return self.is_superuser
+
+    def has_module_perms(self, app_label):
+        return self.is_superuser
+
     def __str__(self):
         return f"{self.firstname} {self.lastname}"
 
@@ -111,7 +144,7 @@ class laboratory_users(models.Model):
 
 # inventory
 class item_description(models.Model):
-    item_id = models.AutoField(primary_key=True)
+    item_id = models.CharField(max_length=20, unique=True, primary_key=True)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE, null=True, blank=True)
     item_name = models.CharField(max_length=45, null=True, blank=True)
     itemType = models.ForeignKey('item_types', on_delete=models.SET_NULL, null=True, blank=True)
@@ -122,6 +155,16 @@ class item_description(models.Model):
     allow_borrow = models.BooleanField(default=False)
     is_consumable = models.BooleanField(default=False)
     
+    def save(self, *args, **kwargs):
+        if not self.item_id:
+            current_year = datetime.now().year
+            while True:
+                random_number = get_random_string(length=4, allowed_chars='0123456789')
+                self.item_id = f"101{current_year}{random_number}"
+                if not item_description.objects.filter(item_id=self.item_id).exists():
+                    break
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.item_name
 
@@ -181,21 +224,6 @@ class suppliers(models.Model):
     def __str__(self):
         return self.suppliername
     
-# class item_remove_inventory(models.Model):
-#     inventory_item_id = models.AutoField(primary_key=True)
-#     remarks = models.CharField(max_length=45, null=True, blank=True)
-#     end_username = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
-#     end_userreason = models.CharField(max_length=45, null=True, blank=True)
-
-# class item_transactions(models.Model): 
-#     transaction_id = models.AutoField(primary_key=True)
-#     user = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True)
-#     timestamp = models.DateTimeField(null=True, blank=True)
-#     remarks = models.CharField(max_length=45, null=True, blank=True)
-
-#     def __str__(self):
-#         return f"Transaction {self.transaction_id}"
-
 
 # borrowing & Clearance
 class borrowing_config(models.Model):
@@ -257,7 +285,7 @@ class borrowing_config(models.Model):
         return str(self.laboratory)
     
 class borrow_info(models.Model):
-    borrow_id = models.AutoField(primary_key=True)
+    borrow_id = models.CharField(max_length=20, unique=True, primary_key=True)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
     user = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True, related_name='borrowed_by')
     request_date = models.DateTimeField(null=True, blank=True)
@@ -270,6 +298,16 @@ class borrow_info(models.Model):
     questions_responses = models.JSONField(default=dict, blank=True)
     remarks = models.CharField(max_length=45, null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        if not self.borrow_id:
+            current_year = datetime.now().year
+            while True:
+                random_number = get_random_string(length=4, allowed_chars='0123456789')
+                self.borrow_id = f"201{current_year}{random_number}"
+                if not borrow_info.objects.filter(borrow_id=self.borrow_id).exists():
+                    break
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return f"Borrow Info {self.borrow_id}"
     
@@ -300,6 +338,7 @@ class borrowed_items(models.Model):
         return f"Borrowed Item {self.borrow_id} - {self.item_id}"
 
 class reported_items(models.Model): 
+    reference_id = models.CharField(max_length=20, unique=True, primary_key=True)
     borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE)
     item = models.ForeignKey('item_description', on_delete=models.CASCADE)
     qty_reported = models.IntegerField(null=False, blank=False)
@@ -307,6 +346,16 @@ class reported_items(models.Model):
     amount_to_pay = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     reported_date = models.DateTimeField(auto_now_add=True)
     remarks = models.TextField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.report_id:
+            current_year = datetime.now().year
+            while True:
+                random_number = get_random_string(length=4, allowed_chars='0123456789')
+                self.report_id = f"301{current_year}{random_number}"
+                if not reported_items.objects.filter(report_id=self.report_id).exists():
+                    break
+        super().save(*args, **kwargs)
 
     # Add a status field with choices for Pending (1) and Cleared (0)
     STATUS_CHOICES = [
@@ -321,7 +370,7 @@ class reported_items(models.Model):
 
 # Lab Reservation
 class laboratory_reservations(models.Model):
-    reservation_id = models.AutoField(primary_key=True)
+    reservation_id = models.CharField(max_length=20, unique=True, primary_key=True)
     user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='user')
     room = models.ForeignKey('rooms', on_delete=models.CASCADE, related_name='reservations')
     request_date = models.DateTimeField(auto_now_add=True)
@@ -333,6 +382,16 @@ class laboratory_reservations(models.Model):
     num_people = models.IntegerField(null=True, blank=True)
     contact_email = models.EmailField(null=True, blank=True)
     contact_name = models.CharField(max_length=255, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.reservation_id:
+            current_year = datetime.now().year
+            while True:
+                random_number = get_random_string(length=4, allowed_chars='0123456789')
+                self.reservation_id = f"401{current_year}{random_number}"
+                if not laboratory_reservations.objects.filter(reservation_id=self.reservation_id).exists():
+                    break
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Reservation {self.reservation_id} - {self.room.name}"

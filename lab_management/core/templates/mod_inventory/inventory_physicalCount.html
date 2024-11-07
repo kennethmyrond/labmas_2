@@ -54,8 +54,8 @@
                 <thead>
                   <tr>
                     <th style="text-align:left;">Item Name</th>
-                    <th style="text-align:left;">Current Qty</th> <!-- Current qty column added -->
-                    <th>Count Qty</th>
+                    <th>System Quantity</th> <!-- Current qty column added -->
+                    <th>Physical Count Quantity</th>
                     <!-- <th style="display:none;"></th> Hidden column -->
                   </tr>
                 </thead>
@@ -63,10 +63,10 @@
                   {% for item in inventory_items %}
                     <tr>
                       <td style="text-align:left;">{{ item.item_name }}</td> <!-- Item Name -->
-                      <td style="text-align:left;">{{ item.total_qty|default:0 }}</td> <!-- Current Quantity -->
+                      <td >{{ item.total_qty|default:0 }}</td> <!-- Current Quantity -->
                       <td>
                         <!-- Count Qty input field with name based on item_id -->
-                        <input type="number" name="count_qty_{{ item.item_id }}" class="form-control" placeholder="Enter count" required>
+                        <input type="number" name="count_qty_{{ item.item_id }}" class="form-control" placeholder="Enter count" min="0" oninput="validity.valid||(value='');" required>
                       </td>
                     </tr>
                   {% empty %}

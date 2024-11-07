@@ -3,6 +3,11 @@
 {% block title %}Inventory{% endblock %}
 
 {% block content %}
+  <style>
+    .btn-secondary {
+    --bs-btn-color: #353535;
+    --bs-btn-bg: #ececec;}
+  </style>
   <div class="pagetitle">
     <h1>Inventory</h1>
     <nav>
@@ -38,10 +43,10 @@
             </form>
 
             <!-- Table with stripped rows -->
-            <table class="table datatable">
+            <table class="table export-datatable table-stripe">
               <thead>
                 <tr>
-                  <th style="text-align:left;">Status</th>
+                  <th style="text-align:center;">Status</th>
                   <th style="text-align:left;">Item Name</th>
                   <th style="text-align:right;">Qty</th>
                   {% for col in add_cols %}
@@ -56,7 +61,7 @@
               <tbody>
                 {% for item in inventory_items %}
                 <tr>
-                  <td style=" color: {% if item.total_qty > item.alert_qty %}green{% else %}red{% endif %}; text-align:left;">{%if item.total_qty > item.alert_qty%}Available{%else%}Low Stock{%endif%}</td>
+                  <td style=" color: {% if item.total_qty >= item.alert_qty %}green{% else %}red{% endif %}; text-align:center;">{%if item.total_qty >= item.alert_qty%}Available{%else%}Low Stock{%endif%}</td>
                   <td style="text-align:left;"><a href="{% url 'inventory_itemDetails_view' item.item_id %}">{{ item.item_name }}</a></td>
                   <td class="{% if item.total_qty > 0 %}qty-positive{% else %}qty-negative{% endif %}" style="text-align:right;">
                     {{ item.total_qty }}

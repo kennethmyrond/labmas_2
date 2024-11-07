@@ -1,15 +1,23 @@
 {% extends 'temp_navbar.html' %}
+{% block title %}Reports{% endblock %}
 {% block content %}
-
-
 
 <div class="container">
     <!-- Filter Section -->
     <div class="card mb-3">
         <div class="card-body">
-            <h5 class="card-title">Filter by Date Range</h5>
+            <h5 class="card-title">Filter by Date Range and Item</h5>
             <form id="filterForm" method="GET" action="{% url 'reports' %}">
                 <div class="row">
+                    <div class="col-md-3">
+                        <label for="item_id" class="form-label">Select Item:</label>
+                        <select class="form-select" id="item_id" name="item_id">
+                            {% for item in all_items %}
+                                <option value="{{ item.item_id }}" {% if item_id == item.item_id %}selected{% endif %}>{{ item.item_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <div class="col-md-3">
                         <label for="dateType" class="form-label">Select Date Type:</label>
                         <select class="form-select" id="dateType" name="dateType">
@@ -69,7 +77,7 @@
                     <tr>
                         <td>{{ item.item_id }}</td>
                         <td>{{ item.item_name }}</td>
-                        <td>{{ item.item_type__itemType_name}}</td>
+                        <td>{{ item.item_type__itemType_name }}</td>
                         <td>{{ item.current_qty }}</td>
                         <td hidden></td>
                         <td hidden></td>
@@ -81,6 +89,15 @@
         </div>
     </div>
 
+    <!-- Item Trend Graph Section -->
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Item Inventory and Borrowing Trends</h5>
+                <canvas id="itemTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
 
     <!-- Borrowing Trends Report -->
     <h3>Borrowing Trends</h3>
@@ -98,7 +115,6 @@
 
 <script>
     $(document).ready(function () {
-       
         let today = new Date()
         // Handle showing/hiding of input fields based on date type
         $('#dateType').change(function () {
@@ -143,20 +159,15 @@
             }
         });
 
-        $('#startdate').change(function () {
-            var startdate = $(this).val();
-            console.log(startdate)
-            var enddate = document.getElementById("enddate")
-            console.log(enddate)
-            enddate.min = startdate;
-            console.log(enddate)
+        $('#startDate').change(function () {
+            var startDate = $(this).val();
+            $('#endDate').attr('min', startDate);
         });
     });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    
     // Inventory Stock Report Chart
     const inventoryData = {
         labels: [{% for item in combined_data %}'{{ item.item_name }}',{% endfor %}],
@@ -180,27 +191,43 @@
     const inventoryConfig = {
         type: 'bar',
         data: inventoryData,
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
     };
     const inventoryStockChart = new Chart(document.getElementById('inventoryStockChart'), inventoryConfig);
+
+    // Item Trend Chart
+    const itemTrendData = {
+        labels: [{% for data in inventory_data %}'{{ data.date|date:"Y-m-d" }}',{% endfor %}],
+        datasets: [
+            {
+                label: 'Inventory Quantity',
+                data: [{% for data in inventory_data %}{{ data.total_qty }},{% endfor %}],
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+                fill: true
+            },
+            {
+                label: 'Borrowed Quantity',
+                data: [{% for data in borrowing_data %}{{ data.total_borrowed }},{% endfor %}],
+                backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1,
+                fill: true
+            }
+        ]
+    };
+    const itemTrendConfig = {
+        type: 'line',
+        data: itemTrendData,
+        options: { responsive: true, scales: { y: { beginAtZero: true }, x: { type: 'time', time: { unit: "{{ date_type }}" } } } }
+    };
+    const itemTrendChart = new Chart(document.getElementById('itemTrendChart'), itemTrendConfig);
 
     // Borrowing Trends Report Chart
     const borrowingData = {
         labels: [{% for borrow in borrowing_data %}'{{ borrow.item__item_name }}',{% endfor %}],
-        datasets: [{
-            label: 'Total Borrowed Quantity',
-            data: [{% for borrow in borrowing_data %}{{ borrow.total_borrowed }},{% endfor %}],
-            backgroundColor: 'rgba(255, 159, 64, 0.2)',
-            borderColor: 'rgba(255, 159, 64, 1)',
-            borderWidth: 1
-        }]
+        datasets: [{ label: 'Total Borrowed Quantity', data: [{% for borrow in borrowing_data %}{{ borrow.total_borrowed }},{% endfor %}], backgroundColor: 'rgba(255, 159, 64, 0.2)', borderColor: 'rgba(255, 159, 64, 1)', borderWidth: 1 }]
     };
     const borrowingConfig = {
         type: 'bar',
@@ -212,13 +239,7 @@
     // Room Usage Report Chart
     const roomUsageData = {
         labels: [{% for room in room_usage_data %}'{{ room.room__name }}',{% endfor %}],
-        datasets: [{
-            label: 'Total Reservations',
-            data: [{% for room in room_usage_data %}{{ room.total_reservations }},{% endfor %}],
-            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1
-        }]
+        datasets: [{ label: 'Total Reservations', data: [{% for room in room_usage_data %}{{ room.total_reservations }},{% endfor %}], backgroundColor: 'rgba(54, 162, 235, 0.2)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 1 }]
     };
     const roomUsageConfig = {
         type: 'bar',
@@ -230,13 +251,7 @@
     // Maintenance & Repairs Report Chart
     const maintenanceData = {
         labels: [{% for report in maintenance_data %}'{{ report.item__item_name }}',{% endfor %}],
-        datasets: [{
-            label: 'Total Damaged Items Reported',
-            data: [{% for report in maintenance_data %}{{ report.total_reported }},{% endfor %}],
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 1
-        }]
+        datasets: [{ label: 'Total Damaged Items Reported', data: [{% for report in maintenance_data %}{{ report.total_reported }},{% endfor %}], backgroundColor: 'rgba(255, 99, 132, 0.2)', borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 1 }]
     };
     const maintenanceConfig = {
         type: 'bar',

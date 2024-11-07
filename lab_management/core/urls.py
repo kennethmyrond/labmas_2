@@ -12,9 +12,8 @@ urlpatterns = [
     path('edit-profile/', views.edit_profile, name='edit_profile'),
     path('my-profile/', views.my_profile, name='my_profile'),
     path('deactivate-account/', views.deactivate_account, name='deactivate_account'),
-    
+    path('social/signup/', views.signup_redirect, name='signup_redirect'),
     # setup
-    
 
     # inventory
     path('inventory/', views.inventory_view, name='inventory_view'),
@@ -124,7 +123,7 @@ urlpatterns = [
     path('user/<int:user_id>/deactivate/', views.deactivate_user, name='deactivate_user'),
     path('user/<int:user_id>/assign-lab/', views.assign_lab, name='assign_lab'),
 
-    
+    path('late_borrow/', views.late_borrow, name='late_borrow')
 ]
 
 urlpatterns += [

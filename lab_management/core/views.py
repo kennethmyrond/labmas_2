@@ -6,7 +6,7 @@ from django.contrib.auth.hashers import check_password
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat
+from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear
 from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value
 from django.db import connection, models
 from django.utils import timezone
@@ -35,61 +35,65 @@ import json, qrcode, base64, threading, time, re
 
 
 
-
+prev_day = ''
 # thread every midnight query items to check due date if today (for on holding past due date )
-def thread_function():
+def late_borrow(request):
+    global prev_day
     prev_day = timezone.now().day  # Start with the current day
-    
-    while True:
-        # Get current date and time
-        current_datetime = timezone.now()
-        current_day = current_datetime.day
+    output = 'None'
+    # Get current date and time
+    current_datetime = timezone.now()
+    current_day = current_datetime.day
 
-        # Check if the day has changed (execute once every new day)
-        if current_day != prev_day:
-            # Update `prev_day` to track the day change
-            prev_day = current_day
+    # Check if the day has changed (execute once every new day)
+    if current_day != prev_day:
+    # if 1==1 :
+        # Update `prev_day` to track the day change
+        prev_day = current_day
 
-            # 1. Cancel borrows if their `borrow_date` is past today and status is still 'Accepted' ('A')
-            expired_borrows = borrow_info.objects.filter(
-                status='A',  # Accepted borrows
-                borrow_date__lt=current_datetime.date()  # Past borrow dates
-            )
-            for borrow in expired_borrows:
-                borrow.status = 'L'  # Cancel the borrow
-                borrow.remarks = "Automatically cancelled due to expired borrow date."
-                borrow.save()
+        # 1. Cancel borrows if their `borrow_date` is past today and status is still 'Accepted' ('A')
+        expired_borrows = borrow_info.objects.filter(
+            status='A',  # Accepted borrows
+            borrow_date__lt=current_datetime.date()  # Past borrow dates
+        )
+        for borrow in expired_borrows:
+            borrow.status = 'L'  # Cancel the borrow
+            borrow.remarks = "Automatically cancelled due to expired borrow date."
+            borrow.save()
 
-            # 2. Handle borrowed items with past due dates
-            overdue_borrows = borrow_info.objects.filter(
-                status='B',  # Borrowed status
-                due_date__lt=current_datetime.date()  # Past due dates
-            )
-            for borrow in overdue_borrows:
-                # Get the borrowed items
-                borrowed_items_list = borrowed_items.objects.filter(borrow=borrow)
+        # 2. Handle borrowed items with past due dates
+        overdue_borrows = borrow_info.objects.filter(
+            status='B',  # Borrowed status
+            due_date__lt=current_datetime.date()  # Past due dates
+        )
+        for borrow in overdue_borrows:
+            # Get the borrowed items
+            borrowed_items_list = borrowed_items.objects.filter(borrow=borrow)
 
-                for item in borrowed_items_list:
-                    # Check if the item hasn't been fully returned
-                    if item.qty > item.returned_qty:
-                        # Create a reported item for overdue borrowed items
-                        reported_item = reported_items.objects.create(
-                            borrow=borrow,
-                            item=item.item,
-                            qty_reported=item.qty - item.returned_qty,
-                            report_reason="Overdue item",
-                            amount_to_pay=99999,  # You can set an amount if needed
-                            status=1  # Pending
-                        )
-                        reported_item.save()
+            for item in borrowed_items_list:
+                # Check if the item hasn't been fully returned
+                if item.qty > item.returned_qty:
+                    # Create a reported item for overdue borrowed items
+                    reported_item = reported_items.objects.create(
+                        borrow=borrow,
+                        item=item.item,
+                        qty_reported=item.qty - item.returned_qty,
+                        report_reason="Overdue item",
+                        amount_to_pay=99999,  # You can set an amount if needed
+                        status=1  # Pending
+                    )
+                    reported_item.save()
 
-                # Put borrower's clearance on hold
-                borrow.status = 'B'  # Mark borrow as 'Cancelled/On Hold'
-                borrow.remarks = "Automatically placed on hold due to overdue items."
-                borrow.save()
+            # Put borrower's clearance on hold
+            borrow.status = 'B'  # Mark borrow as 'Cancelled/On Hold'
+            borrow.remarks = "Automatically placed on hold due to overdue items."
+            borrow.save()
+        output='late changed'
+    data = {
+        'value': output
+    }
 
-        # Sleep for 1 hour (3600 seconds)
-        time.sleep(3600)
+    return JsonResponse(data)
 
 # Start the thread for daily checking
 # x = threading.Thread(target=thread_function)
@@ -233,13 +237,22 @@ def home(request):
     else:
         return render(request,"home.html")
 
+
+@login_required
 def set_lab(request, laboratory_id):
-    # Set the chosen laboratory in the session
-    lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-    current_user = request.user
-    request.session['selected_lab'] = lab.laboratory_id
-    request.session['selected_lab_name'] = lab.name
-    return redirect(request.META.get('HTTP_REFERER', '/'))  # Redirect back to the previous page
+    # Get the chosen laboratory
+    try:
+        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+        
+        # Check if the laboratory is available
+        if lab.is_available == 1 and laboratory_users.objects.filter(user=request.user, laboratory=lab, is_active=True).exists():
+                # Set the chosen laboratory in the session
+                request.session['selected_lab'] = lab.laboratory_id
+                request.session['selected_lab_name'] = lab.name
+        return redirect(request.META.get('HTTP_REFERER', '/'))  # Redirect back to the previous page
+    except:
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
 
 @login_required
 def logout_view(request):
@@ -282,6 +295,12 @@ def edit_profile(request):
         return redirect('my_profile')
     
     return render(request, 'edit_profile.html', {'user': user})
+
+def signup_redirect(request):
+    messages.error(request, "Something wrong here, it may be that you already have account!")
+    return redirect("homepage")
+
+
 
 # inventory
 @login_required
@@ -501,7 +520,7 @@ def inventory_updateItem_view(request):
                     break
                 if item_inventory_instance.qty >= remaining_amount:
                     try:                    
-                        remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'R', 'Remove')
+                        remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'R', 'Remove from inventory')
                         remaining_amount = 0
                     except ValueError as e:
                         print(e)
@@ -509,7 +528,7 @@ def inventory_updateItem_view(request):
                 else:
                     try:
                         remaining_amount = remaining_amount - int(item_inventory_instance.qty)
-                        remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'R', 'Remove')
+                        remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'R', 'Remove from inventory')
                     except ValueError as e:
                         print(e)
                         break
@@ -736,14 +755,14 @@ def inventory_physicalCount_view(request):
 
                             if item_inventory_instance.qty >= remaining_amount:
                                 try:
-                                    remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'P')
+                                    remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'P', 'Physical Count Adjustment')
                                     remaining_amount = 0
                                 except ValueError as e:
                                     print(e)
                                     break
                             else:
                                 try:
-                                    remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'P')
+                                    remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'P', 'Physical Count Adjustment')
                                     remaining_amount -= item_inventory_instance.qty
                                 except ValueError as e:
                                     print(e)
@@ -1773,12 +1792,11 @@ def clearance_student_viewClearance(request):
         return render(request, 'mod_clearance/student_viewClearance.html', {'error': 'User is not authenticated.'})
 
     # Use the user instance's ID for querying
-    user_id = user.id
     selected_laboratory_id = request.session.get('selected_lab')
 
     try:
         # Retrieve the borrow_info entries for the current user
-        user_borrows = borrow_info.objects.filter(user_id=user_id, laboratory_id=selected_laboratory_id)
+        user_borrows = borrow_info.objects.filter(user=user, laboratory_id=selected_laboratory_id)
 
         # Check if the user has any borrows
         if user_borrows.exists():
@@ -2537,6 +2555,7 @@ def reports_view(request):
     date = request.GET.get('date', None)
     start_date = request.GET.get('startDate', None)
     end_date = request.GET.get('endDate', None)
+    item_id = request.GET.get('item_id')
 
     # Query based on the selected date type
     today = datetime.now().date()
@@ -2588,6 +2607,42 @@ def reports_view(request):
     )
     ).order_by('-current_qty', 'item_name') 
 
+    # Filter item_inventory and borrowing data based on date range
+    if item_id:
+        # Aggregate item inventory data by time unit
+        if date_type == 'day':
+            inventory_data = item_handling.objects.filter(
+                inventory_item__item_id=item_id,
+                timestamp__range=(start_date, end_date)
+            ).annotate(date=TruncDay('timestamp')).values('date').annotate(total_qty=Sum('qty'))
+
+            borrowing_data = borrowed_items.objects.filter(
+                item_id=item_id,
+                borrow__borrow_date__range=(start_date, end_date)
+            ).annotate(date=TruncDay('borrow__borrow_date')).values('date').annotate(total_borrowed=Sum('qty'))
+
+        elif date_type == 'month':
+            inventory_data = item_handling.objects.filter(
+                inventory_item__item_id=item_id,
+                timestamp__range=(start_date, end_date)
+            ).annotate(date=TruncMonth('timestamp')).values('date').annotate(total_qty=Sum('qty'))
+
+            borrowing_data = borrowed_items.objects.filter(
+                item_id=item_id,
+                borrow__borrow_date__range=(start_date, end_date)
+            ).annotate(date=TruncMonth('borrow__borrow_date')).values('date').annotate(total_borrowed=Sum('qty'))
+
+        elif date_type == 'year':
+            inventory_data = item_handling.objects.filter(
+                inventory_item__item_id=item_id,
+                timestamp__range=(start_date, end_date)
+            ).annotate(date=TruncYear('timestamp')).values('date').annotate(total_qty=Sum('qty'))
+
+            borrowing_data = borrowed_items.objects.filter(
+                item_id=item_id,
+                borrow__borrow_date__range=(start_date, end_date)
+            ).annotate(date=TruncYear('borrow__borrow_date')).values('date').annotate(total_borrowed=Sum('qty'))
+
     # Borrowing Data
     borrowing_data = borrowed_items.objects.values('item__item_name').annotate(
         total_borrowed=Sum('qty')
@@ -2614,6 +2669,8 @@ def reports_view(request):
     maintenance_data = reported_items.objects.values('item__item_name').annotate(
         total_reported=Sum('qty_reported')).order_by('-total_reported')
 
+    all_items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=0)
+
     context = {
         'inventory_data': inventory_data,
         'borrowing_data': borrowing_data,
@@ -2623,7 +2680,9 @@ def reports_view(request):
         'date_type': date_type,
         'date': date,
         'start_date': start_date,
-        'end_date': end_date
+        'end_date': end_date,
+        'item_id': item_id,
+        'all_items': all_items,
     }
 
     return render(request, 'mod_reports/reports.html', context)
@@ -2896,7 +2955,7 @@ def add_user_laboratory(request, laboratory_id):
             role=role_instance,
             defaults={'is_active': request.POST['Status'] == 'Active'}
         )
-    messages.success('User added successfully')
+    messages.success(request, 'User added successfully')
     return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 @login_required()
@@ -3034,6 +3093,33 @@ def setup_createlab(request):
         selected_modules = [int(module_id) for module_id in request.POST.getlist('modules[]')]
         new_lab.modules = selected_modules
         new_lab.save()
+        
+        # Check if module ID 2 is selected and create a borrowing config
+        if 2 in selected_modules:
+            borrowing_config.objects.create(
+                laboratory=new_lab,
+                allow_walkin=False,  # Set default values or customize as needed
+                allow_prebook=False,
+                prebook_lead_time=1,
+                allow_shortterm=False,
+                allow_longterm=False,
+                questions_config=[]
+            )
+
+        # Check if module ID 4 is selected and create a reservation config
+        if 4 in selected_modules:
+            reservation_config.objects.create(
+                laboratory=new_lab,
+                reservation_type='class',  # Set default values or customize as needed
+                start_time=None,
+                end_time=None,
+                require_approval=False,
+                require_payment=False,
+                approval_form=None,
+                tc_description='',
+                leadtime=0
+            )
+
 
         # Initialize permissions_data dictionary
         permissions_data = {}
@@ -3074,13 +3160,13 @@ def setup_createlab(request):
         return redirect('superuser_lab_info', new_lab.laboratory_id)
 
     # Prepare data for rendering
-    roles = laboratory_roles.objects.all()
+    roles = laboratory_roles.objects.filter(laboratory=0)
     modules = Module.objects.all()
 
     # Default permissions per role
     default_permissions = {
         1: [7, 8, 9, 10, 11, 1, 2, 3, 4, 5, 6, 12, 13, 14, 15, 16, 17, 18],
-        2: [9, 11, 1, 5, 6, 13, 16, 17, 18],
+        2: [9, 11, 1, 5, 6, 13, 16, 17, 18, 19],
         3: [8, 10, 1, 2, 3, 4, 13, 15],
         4: [1, 18],
         5: [7, 12, 14]
@@ -3190,7 +3276,7 @@ def superuser_setup(request):
 @user_passes_test(lambda u: u.is_superuser)
 def superuser_logout(request):
     logout(request)
-    return redirect("/login/superuser")
+    return redirect("/login")
 
 
 @login_required(login_url='/login/superuser')

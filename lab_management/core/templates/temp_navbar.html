@@ -33,11 +33,15 @@
   <link href="{% static 'assets/css/style.css' %}" rel="stylesheet">
   <link href="{% static 'assets/css/custom.css' %}" rel="stylesheet">
 
-  <link href="{% static 'DataTables/datatables.min.css' %}" rel="stylesheet">
+  <!-- <link href="{% static 'DataTables/datatables.min.css' %}" rel="stylesheet">
+  <link href="{% static 'DataTables/datatables.css' %}" rel="stylesheet"> -->
   
-
+  <!-- <link href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.css" rel="stylesheet"  type="text/css">
+  <link href="https://cdn.datatables.net/buttons/3.1.2/css/buttons.dataTables.css" rel="stylesheet" type="text/css"> -->
   
-
+  <!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet"  type="text/css"> -->
+  <link href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.css" rel="stylesheet"  type="text/css">
+  <link href="https://cdn.datatables.net/buttons/3.1.2/css/buttons.bootstrap5.css" rel="stylesheet"  type="text/css">
   <!-- =======================================================
   * Template Name: NiceAdmin
   * Template URL: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/
@@ -45,6 +49,7 @@
   * Author: BootstrapMade.com
   * License: https://bootstrapmade.com/license/
   ======================================================== -->
+  
   <script type="text/javascript" src="{% static 'jquery-3.7.1.js'%}"></script> 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"  />
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -372,14 +377,14 @@
         {% if permissions.can_view_own_clearance%}
         <li>
           <a href="{% url 'clearance_student_viewClearance' %}" class = "{% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed' %}active{% endif %}">
-            <i class="bi bi-circle"></i><span>STUDENT - View Clearance</span>
+            <i class="bi bi-circle"></i><span>View Clearance</span>
           </a>
         </li>
         {% endif %}
         {% if permissions.can_view_student_clearance%}
         <li>
           <a href="{% url 'clearance_labtech_viewclearance' %}" class = "{% if request.resolver_match.url_name in 'clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed' %}active{% endif %}">
-            <i class="bi bi-circle"></i><span>View Clearance</span>
+            <i class="bi bi-circle"></i><span>Manage Clearances</span>
           </a>
         </li>
         {% endif %}
@@ -482,12 +487,57 @@
   <script src="{% static 'assets/vendor/php-email-form/validate.js' %}"></script>
 
   <!-- Template Main JS File -->
-  <script src="{% static 'assets/js/main.js' %}"></script>
+  <!-- <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.3.1/js/dataTables.buttons.min.js"></script> 
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+  <script type="text/javascript" src="https://cdn.datatables.net/buttons/1.3.1/js/buttons.html5.min.js"></script> -->
+  <!-- <script src="{% static 'DataTables/datatables.min.js' %}"></script>
+  <script src="{% static 'DataTables/datatables.js' %}"></script> -->
+  
 
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.0/dist/jquery.slim.min.js"></script> -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{% static 'DataTables/datatables.min.js' %}"></script>
+
+  <!-- <script tye="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script> -->
+  <script tye="text/javascript" src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
+  <script tye="text/javascript" src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.js"></script>
+  <script tye="text/javascript" src="https://cdn.datatables.net/buttons/3.1.2/js/dataTables.buttons.js"></script>
+  <script tye="text/javascript" src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.bootstrap5.js"></script>
+  <script tye="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script tye="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script tye="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  <script tye="text/javascript" src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
+  <script tye="text/javascript" src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.print.min.js"></script>
+  <script tye="text/javascript" src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.colVis.min.js"></script>
+
+
+  <!-- <script tye="text/javascript" src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
+  <script tye="text/javascript" src="https://cdn.datatables.net/buttons/3.1.2/js/dataTables.buttons.js"></script>
+  <script tye="text/javascript" src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.dataTables.js"></script>
+  <script tye="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script tye="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+  <script tye="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+  <script tye="text/javascript" src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
+  <script tye="text/javascript" src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.print.min.js"></script> -->
+  <script>console.log('pass2')</script>
+
+  <script src="{% static 'assets/js/main.js' %}"></script>
+  
+  <script>
+    new DataTable('.export-datatable', {
+    layout: {
+        bottomStart: {
+            buttons: ['copy', 'excel', 'pdf', 'colvis']
+        }
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const dataTable = new simpleDatatables.DataTable(".datatable");
+      });
+
+    
+  </script>
 </body>
 
 </html>
