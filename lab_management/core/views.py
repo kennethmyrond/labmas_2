@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear
-from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value
+from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When
 from django.db import connection, models
 from django.utils import timezone
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
@@ -2568,151 +2568,260 @@ def get_room_configuration(request, room_id):
 
 
 #  ================================================================= 
+
+# selected_laboratory_id = request.session.get('selected_lab')
+
+#     # inventory report
+#     date_type = request.GET.get('dateType', 'today')  # Get date filter type
+#     date = request.GET.get('date', None)
+#     start_date = request.GET.get('startDate', None)
+#     end_date = request.GET.get('endDate', None)
+#     item_id = request.GET.get('item_id')
+
+#     # Query based on the selected date type
+#     today = datetime.now().date()
+#     query_filter = {}
+
+#     # Filtering logic for different date types
+#     if date_type == 'today':
+#         start_date = '1900-12-30'
+#         end_date = today
+#     elif date_type == 'day' and date:
+#         start_date = '1900-12-30'
+#         end_date = date
+
+#         start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+#         end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+#         start_date = timezone.make_aware(datetime.combine(start_date, datetime.min.time()))
+#         end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
+#     elif date_type == 'week' and date:
+#         date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+#         start_date = date_obj - timedelta(days=date_obj.weekday())
+#         end_date = start_date + timedelta(days=6)
+#     elif date_type == 'month' and date:
+#         date_obj = datetime.strptime(date, '%Y-%m').date()
+#         start_date = date_obj.replace(day=1)
+#         end_date = (date_obj.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+#     elif date_type == 'year' and date:
+#         date_obj = datetime.strptime(date, '%Y').date()
+#         start_date = date_obj.replace(month=1, day=1)
+#         end_date = date_obj.replace(month=12, day=31)
+#     elif date_type == 'timeframe' and start_date and end_date:
+#         start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+#         end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+#     print (start_date, end_date)
+#     # Calculate stock level based on item handling up to the selected end_date
+#     inventory_data = item_description.objects.filter(
+#         laboratory_id=selected_laboratory_id,
+#         is_disabled=False
+#     ).annotate(
+#     current_qty=Greatest(
+#         Coalesce(
+#             Sum('item_inventory__item_handling__qty', filter=Q(item_inventory__item_handling__changes='A', item_inventory__item_handling__timestamp__gte=start_date, item_inventory__item_handling__timestamp__lte=end_date)), 0
+#         ) - 
+#         Coalesce(
+#             Sum('item_inventory__item_handling__qty', filter=Q(item_inventory__item_handling__changes='R') | Q(item_inventory__item_handling__changes='D')& Q(item_inventory__item_handling__timestamp__gte=start_date) & Q(item_inventory__item_handling__timestamp__lte=end_date)), 0
+#         ),
+#         0  # Default value if the result is None
+#     )
+#     ).order_by('-current_qty', 'item_name') 
+
+#     # Filter item_inventory and borrowing data based on date range
+#     if item_id:
+#         # Aggregate item inventory data by time unit
+#         if date_type == 'day':
+#             inventory_data = item_handling.objects.filter(
+#                 inventory_item__item_id=item_id,
+#                 timestamp__range=(start_date, end_date)
+#             ).annotate(date=TruncDay('timestamp')).values('date').annotate(total_qty=Sum('qty'))
+
+#             borrowing_data = borrowed_items.objects.filter(
+#                 item_id=item_id,
+#                 borrow__borrow_date__range=(start_date, end_date)
+#             ).annotate(date=TruncDay('borrow__borrow_date')).values('date').annotate(total_borrowed=Sum('qty'))
+
+#         elif date_type == 'month':
+#             inventory_data = item_handling.objects.filter(
+#                 inventory_item__item_id=item_id,
+#                 timestamp__range=(start_date, end_date)
+#             ).annotate(date=TruncMonth('timestamp')).values('date').annotate(total_qty=Sum('qty'))
+
+#             borrowing_data = borrowed_items.objects.filter(
+#                 item_id=item_id,
+#                 borrow__borrow_date__range=(start_date, end_date)
+#             ).annotate(date=TruncMonth('borrow__borrow_date')).values('date').annotate(total_borrowed=Sum('qty'))
+
+#         elif date_type == 'year':
+#             inventory_data = item_handling.objects.filter(
+#                 inventory_item__item_id=item_id,
+#                 timestamp__range=(start_date, end_date)
+#             ).annotate(date=TruncYear('timestamp')).values('date').annotate(total_qty=Sum('qty'))
+
+#             borrowing_data = borrowed_items.objects.filter(
+#                 item_id=item_id,
+#                 borrow__borrow_date__range=(start_date, end_date)
+#             ).annotate(date=TruncYear('borrow__borrow_date')).values('date').annotate(total_borrowed=Sum('qty'))
+
+#     # Borrowing Data
+#     borrowing_data = borrowed_items.objects.values('item__item_name').annotate(
+#         total_borrowed=Sum('qty')
+#     ).order_by('-total_borrowed')[:10]
+
+#     # Combine Data
+#     combined_data = []
+#     for item in inventory_data:
+#         borrowed_qty = next((borrow['total_borrowed'] for borrow in borrowing_data if borrow['item__item_name'] == item.item_name), 0)
+#         combined_data.append({
+#             'item_name': item.item_name,
+#             'current_qty': item.current_qty,
+#             'total_borrowed': borrowed_qty
+#         })
+
+#     combined_data.sort(key=lambda x: (x['total_borrowed'], x['current_qty']), reverse=True)
+
+
+#     # Room Usage Report
+#     room_usage_data = laboratory_reservations.objects.values('room__name').annotate(
+#         total_reservations=Count('reservation_id')).order_by('-total_reservations')
+
+#     # Maintenance & Repairs Report
+#     maintenance_data = reported_items.objects.values('item__item_name').annotate(
+#         total_reported=Sum('qty_reported')).order_by('-total_reported')
+
+#     all_items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=0)
+
+
+# 'inventory_data': inventory_data,
+#         'borrowing_data': borrowing_data,
+#         'combined_data': combined_data,
+#         'room_usage_data': room_usage_data,
+#         'maintenance_data': maintenance_data,
+#         'date_type': date_type,
+#         'date': date,
+#         'start_date': start_date,
+#         'end_date': end_date,
+#         'item_id': item_id,
+#         'all_items': all_items,
+
 # reports module
 @login_required
 @lab_permission_required('view_reports')
 def reports_view(request):
     selected_laboratory_id = request.session.get('selected_lab')
+    # ==== user reports
+    lab_info = get_object_or_404(
+        laboratory.objects.annotate(user_count=Count('laboratory_users')),
+        laboratory_id=selected_laboratory_id
+    )
 
-    # inventory report
-    date_type = request.GET.get('dateType', 'today')  # Get date filter type
-    date = request.GET.get('date', None)
-    start_date = request.GET.get('startDate', None)
-    end_date = request.GET.get('endDate', None)
+    # Get all roles that are either default or specific to the selected laboratory
+    all_roles = laboratory_roles.objects.filter(
+        Q(laboratory_id=0) | Q(laboratory_id=selected_laboratory_id)
+    )
+
+    # Annotate each role with the count of users
+    role_user_counts = all_roles.annotate(
+        user_count=Count('users', filter=Q(users__laboratory_id=selected_laboratory_id))
+    )
+    role_user_data = {
+        'labels': [role.name for role in role_user_counts],
+        'series': [role.user_count for role in role_user_counts]
+    }
+    
+
+    # inventory reports
+    inventory_items = item_description.objects.filter(
+        laboratory_id=selected_laboratory_id,
+        is_disabled=False  # Only get items that are enabled
+    ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
+    inventory_qty_data = {
+        'categories': [item.item_name for item in inventory_items],
+        'series': [item.total_qty for item in inventory_items]
+    }
+
+    item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
+
+
+    # item inventory trend over time
     item_id = request.GET.get('item_id')
 
-    # Query based on the selected date type
-    today = datetime.now().date()
-    query_filter = {}
+    if not item_id:
+        # If no item is selected, return an empty response
+        trend_data = []
+    else:
+        # Get data for the last 1 year
+        trend_data = item_handling.objects.filter(
+            inventory_item__item__laboratory_id=selected_laboratory_id,
+            inventory_item__item_id=item_id,
+            timestamp__gte=timezone.now() - timezone.timedelta(days=365)
+        ).annotate(date=TruncDay('timestamp')).values('date').annotate(
+            total_qty=Sum(F('qty') * Case(
+                When(changes='A', then=1),
+                When(changes='R', then=-1),
+                When(changes='D', then=-1),
+                default=0
+            ))
+        ).order_by('date')
 
-    # Filtering logic for different date types
-    if date_type == 'today':
-        start_date = '1900-12-30'
-        end_date = today
-    elif date_type == 'day' and date:
-        start_date = '1900-12-30'
-        end_date = date
+        # Convert datetime objects to strings
+        trend_data = [
+            {'date': entry['date'].strftime('%Y-%m-%d'), 'total_qty': entry['total_qty']}
+            for entry in trend_data
+        ]
 
-        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-
-        start_date = timezone.make_aware(datetime.combine(start_date, datetime.min.time()))
-        end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
-    elif date_type == 'week' and date:
-        date_obj = datetime.strptime(date, '%Y-%m-%d').date()
-        start_date = date_obj - timedelta(days=date_obj.weekday())
-        end_date = start_date + timedelta(days=6)
-    elif date_type == 'month' and date:
-        date_obj = datetime.strptime(date, '%Y-%m').date()
-        start_date = date_obj.replace(day=1)
-        end_date = (date_obj.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
-    elif date_type == 'year' and date:
-        date_obj = datetime.strptime(date, '%Y').date()
-        start_date = date_obj.replace(month=1, day=1)
-        end_date = date_obj.replace(month=12, day=31)
-    elif date_type == 'timeframe' and start_date and end_date:
-        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-
-    print (start_date, end_date)
-    # Calculate stock level based on item handling up to the selected end_date
-    inventory_data = item_description.objects.filter(
-        laboratory_id=selected_laboratory_id,
-        is_disabled=False
-    ).annotate(
-    current_qty=Greatest(
-        Coalesce(
-            Sum('item_inventory__item_handling__qty', filter=Q(item_inventory__item_handling__changes='A', item_inventory__item_handling__timestamp__gte=start_date, item_inventory__item_handling__timestamp__lte=end_date)), 0
-        ) - 
-        Coalesce(
-            Sum('item_inventory__item_handling__qty', filter=Q(item_inventory__item_handling__changes='R') | Q(item_inventory__item_handling__changes='D')& Q(item_inventory__item_handling__timestamp__gte=start_date) & Q(item_inventory__item_handling__timestamp__lte=end_date)), 0
-        ),
-        0  # Default value if the result is None
-    )
-    ).order_by('-current_qty', 'item_name') 
-
-    # Filter item_inventory and borrowing data based on date range
-    if item_id:
-        # Aggregate item inventory data by time unit
-        if date_type == 'day':
-            inventory_data = item_handling.objects.filter(
-                inventory_item__item_id=item_id,
-                timestamp__range=(start_date, end_date)
-            ).annotate(date=TruncDay('timestamp')).values('date').annotate(total_qty=Sum('qty'))
-
-            borrowing_data = borrowed_items.objects.filter(
-                item_id=item_id,
-                borrow__borrow_date__range=(start_date, end_date)
-            ).annotate(date=TruncDay('borrow__borrow_date')).values('date').annotate(total_borrowed=Sum('qty'))
-
-        elif date_type == 'month':
-            inventory_data = item_handling.objects.filter(
-                inventory_item__item_id=item_id,
-                timestamp__range=(start_date, end_date)
-            ).annotate(date=TruncMonth('timestamp')).values('date').annotate(total_qty=Sum('qty'))
-
-            borrowing_data = borrowed_items.objects.filter(
-                item_id=item_id,
-                borrow__borrow_date__range=(start_date, end_date)
-            ).annotate(date=TruncMonth('borrow__borrow_date')).values('date').annotate(total_borrowed=Sum('qty'))
-
-        elif date_type == 'year':
-            inventory_data = item_handling.objects.filter(
-                inventory_item__item_id=item_id,
-                timestamp__range=(start_date, end_date)
-            ).annotate(date=TruncYear('timestamp')).values('date').annotate(total_qty=Sum('qty'))
-
-            borrowing_data = borrowed_items.objects.filter(
-                item_id=item_id,
-                borrow__borrow_date__range=(start_date, end_date)
-            ).annotate(date=TruncYear('borrow__borrow_date')).values('date').annotate(total_borrowed=Sum('qty'))
-
-    # Borrowing Data
-    borrowing_data = borrowed_items.objects.values('item__item_name').annotate(
-        total_borrowed=Sum('qty')
-    ).order_by('-total_borrowed')[:10]
-
-    # Combine Data
-    combined_data = []
-    for item in inventory_data:
-        borrowed_qty = next((borrow['total_borrowed'] for borrow in borrowing_data if borrow['item__item_name'] == item.item_name), 0)
-        combined_data.append({
-            'item_name': item.item_name,
-            'current_qty': item.current_qty,
-            'total_borrowed': borrowed_qty
-        })
-
-    combined_data.sort(key=lambda x: (x['total_borrowed'], x['current_qty']), reverse=True)
-
-
-    # Room Usage Report
-    room_usage_data = laboratory_reservations.objects.values('room__name').annotate(
-        total_reservations=Count('reservation_id')).order_by('-total_reservations')
-
-    # Maintenance & Repairs Report
-    maintenance_data = reported_items.objects.values('item__item_name').annotate(
-        total_reported=Sum('qty_reported')).order_by('-total_reported')
-
-    all_items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=0)
-
+    items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
+    
     context = {
-        'inventory_data': inventory_data,
-        'borrowing_data': borrowing_data,
-        'combined_data': combined_data,
-        'room_usage_data': room_usage_data,
-        'maintenance_data': maintenance_data,
-        'date_type': date_type,
-        'date': date,
-        'start_date': start_date,
-        'end_date': end_date,
-        'item_id': item_id,
-        'all_items': all_items,
+        'lab_info': lab_info,
+        'role_user_data': role_user_data,
+
+        'inventory_qty_data': inventory_qty_data,
+        'item_types_list': item_types_list,
+        'laboratory_id': selected_laboratory_id,
+
+        'trend_data': json.dumps(trend_data),
+        'items': items,
+        'selected_item_id': item_id
     }
 
     return render(request, 'mod_reports/reports.html', context)
 
+
+def inventory_data(request, item_type_id, laboratory_id):
+    item_type = item_types.objects.get(pk=item_type_id)
+    items = item_description.objects.filter(
+        itemType_id=item_type_id,
+        laboratory_id=laboratory_id,
+        is_disabled=False  # Only get items that are enabled
+    ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
+
+    add_cols = json.loads(item_type.add_cols)
+
+    items_data = []
+    for item in items:
+        item_data = {
+            'item_id': item.item_id,
+            'item_name': item.item_name,
+            'alert_qty': item.alert_qty,
+            'rec_expiration': item.rec_expiration,
+            'allow_borrow': item.allow_borrow,
+            'is_consumable': item.is_consumable,
+            'total_qty': item.total_qty,
+            'add_cols': json.loads(item.add_cols) if item.add_cols else {}
+        }
+        items_data.append(item_data)
+
+    return JsonResponse({
+        'items': items_data,
+        'add_cols': add_cols
+    })
+
+
 @user_passes_test(lambda u: u.is_superuser)
 def admin_reports_view(request):
+
     # Get separate filters for each card from GET parameters
     total_users_filter = request.GET.get('total_users_filter', 'this_year')
     new_users_filter = request.GET.get('new_users_filter', 'today')

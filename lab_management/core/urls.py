@@ -87,6 +87,7 @@ urlpatterns = [
 
 
     path('reports/', views.reports_view, name='reports'),
+     path('inventory-data/<int:item_type_id>/<int:laboratory_id>/', views.inventory_data, name='inventory_data'),
     path('admin-reports/', views.admin_reports_view, name='admin_reports'),
 
     # Superuser URLs

@@ -1,263 +1,715 @@
 {% extends 'temp_navbar.html' %}
 {% block title %}Reports{% endblock %}
+{% load custom_filters %}
 {% block content %}
+<style>
+    .card-body{
+        padding: 10px 20px 20px 20px;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <div class="container">
     <!-- Filter Section -->
-    <div class="card mb-3">
-        <div class="card-body">
-            <h5 class="card-title">Filter by Date Range and Item</h5>
-            <form id="filterForm" method="GET" action="{% url 'reports' %}">
+    
+
+    <div class="col">
+        <div class="row">
+            <div class="col-sm">
                 <div class="row">
-                    <div class="col-md-3">
-                        <label for="item_id" class="form-label">Select Item:</label>
-                        <select class="form-select" id="item_id" name="item_id">
-                            {% for item in all_items %}
-                                <option value="{{ item.item_id }}" {% if item_id == item.item_id %}selected{% endif %}>{{ item.item_name }}</option>
-                            {% endfor %}
-                        </select>
+                    <!-- Total Users Card -->
+                    <div class="card info-card customers-card">
+                        <!-- <div class="filter">
+                            <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                                <li class="dropdown-header text-start"><h6>Filter</h6></li>
+                                <li><a class="dropdown-item" href="?total_users_filter=today">Today</a></li>
+                                <li><a class="dropdown-item" href="?total_users_filter=this_week">This Week</a></li>
+                                <li><a class="dropdown-item" href="?total_users_filter=this_month">This Month</a></li>
+                                <li><a class="dropdown-item" href="?total_users_filter=this_year">This Year</a></li>
+                            </ul>
+                        </div> -->
+                        <div class="card-body" id="total-users-content">
+                            <h5 class="card-title">Total Laboratory Users </h5>
+                            <!-- <span>| {{ filter_type.total_users|title }}</span> -->
+                            <div class="d-flex align-items-center">
+                                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-people"></i>
+                                </div>
+                                <div class="ps-3">
+                                    <h6>{{lab_info.user_count }}</h6>
+                                    <span class="text-muted small pt-2 ps-1">active users</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-
-                    <div class="col-md-3">
-                        <label for="dateType" class="form-label">Select Date Type:</label>
-                        <select class="form-select" id="dateType" name="dateType">
-                            <option value="today" {% if date_type == 'today' %}selected{% endif %}>Today</option>
-                            <option value="day" {% if date_type == 'day' %}selected{% endif %}>Specific Day</option>
-                            <option value="week" {% if date_type == 'week' %}selected{% endif %}>Specific Week</option>
-                            <option value="month" {% if date_type == 'month' %}selected{% endif %}>Specific Month</option>
-                            <option value="year" {% if date_type == 'year' %}selected{% endif %}>Specific Year</option>
-                            <option value="timeframe" {% if date_type == 'timeframe' %}selected{% endif %}>Timeframe</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-3" id="dateInput" style="display: none;">
-                        <label for="date" class="form-label">Select Date:</label>
-                        <input type="date" class="form-control" id="date" name="date" value="{{date}}">
-                    </div>
-
-                    <div class="col-md-3" id="timeframeInputs1" style="display: none;">
-                        <label for="startDate" class="form-label">From:</label>
-                        <input type="date" class="form-control" id="startDate" name="startDate" value="{{start_date}}">
-                    </div>
-
-                    <div class="col-md-3" id="timeframeInputs2" style="display: none;">
-                        <label for="endDate" class="form-label mt-2">To:</label>
-                        <input type="date" class="form-control" id="endDate" name="endDate" value="{{end_date}}">
-                    </div>
-
-                    <div class="col-md-3 align-self-end">
-                        <button type="submit" class="btn btn-primary">Generate Report</button>
+                     <!-- end total users -->
+                </div>
+                <div class="row">
+                    <div class="card info-card">
+                        <div class="card-body" >
+                            <div class="filter">
+                                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                                    <li class="dropdown-header text-start"><h6>Filter</h6></li>
+                                    <li><a class="dropdown-item" href="#">This Week</a></li>
+                                    <li><a class="dropdown-item" href="#">This Month</a></li>
+                                    <li><a class="dropdown-item" href="#">This Year</a></li>
+                                </ul>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">New Users Over Time <span>| {{ reports_filter_display }}</span></h5>
+                                <div id="newuser_chart"></div>
+                            </div>
+                            <script>
+                                
+                            </script>
+                        </div>
                     </div>
                 </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Inventory Stock Report Table -->
-    <div class="card col">
-        <div class="card-body">
-            <h5 class="card-title">Stock Level Based on the Selected Date</h5>
-            <canvas id="inventoryStockChart"></canvas>
-            <hr>
+                
+            </div>
+            <!-- Users per role Card -->
+            <div class="col-sm ">
+                <div class="card col" >
+                    <div class="card-body">
+                        <h5 class="card-title">Users per role </h5>
+                        <!-- <div class="d-flex align-items-center"> -->
+                            <div id="role_user_chart"></div>
+                            <button class="btn btn-secondary" id="exportButton">Export Chart</button>
+                        <!-- </div> -->
+                    </div>
+                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var selectedLabName = "{{ selected_lab_name }}";  // Replace with the actual lab name
+                        var today = new Date().toISOString().slice(0, 10);
+                        var options = {
+                            chart: {
+                                type: 'pie'
+                            },
+                            series: {{ role_user_data.series|safe }},
+                            labels: {{ role_user_data.labels|safe }}
+                        };
             
-            <table id="inventoryTable" class="table datatable table-striped ">
-                <thead>
-                    <tr>
-                        <th>Item ID</th>
-                        <th>Item Name</th>
-                        <th>Item Type</th>
-                        <th>Current Stock Level</th>
-                        <th hidden></th>
-                        <th hidden></th>
-                        <th hidden></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in inventory_data %}
-                    <tr>
-                        <td>{{ item.item_id }}</td>
-                        <td>{{ item.item_name }}</td>
-                        <td>{{ item.item_type__itemType_name }}</td>
-                        <td>{{ item.current_qty }}</td>
-                        <td hidden></td>
-                        <td hidden></td>
-                        <td hidden></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        var chart = new ApexCharts(document.querySelector("#role_user_chart"), options);
+                        chart.render();
+
+                        document.querySelector("#exportButton").addEventListener("click", function() {
+                            chart.dataURI().then(({ imgURI, svgURI }) => {
+                                var link = document.createElement('a');
+                                link.href = imgURI;
+                                link.download = `${selectedLabName}_userroles_${today}.png`;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            });
+                        });
+                    });
+            
+                </script>
+            </div>
+            <!-- end total users -->  
         </div>
     </div>
 
-    <!-- Item Trend Graph Section -->
-    <div class="container mt-4">
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Current Items Inventory </h5>
+
+            <div id="inventory_chart"></div>
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    const today = new Date().toISOString().split('T')[0];
+                    const selectedLabName = "{{ selected_lab_name }}";  // Replace with the actual lab name
+                    const chartData = {{ inventory_qty_data|safe }};
+                    const inventoryFilename = `${selectedLabName}_inventory_${today}`;
+        
+                    var options = {
+                        series: [{
+                            data: chartData.series
+                        }],
+                        chart: {
+                            type: 'bar',
+                            height: 350,
+                            toolbar: {
+                                show: true,
+                                tools: {
+                                    download: true,
+                                    customIcons: []
+                                },
+                                export: {
+                                    csv: {
+                                        filename: inventoryFilename
+                                    },
+                                    svg: {
+                                        filename: inventoryFilename
+                                    },
+                                    png: {
+                                        filename: inventoryFilename
+                                    }
+                                }
+                            }
+                        },
+                        plotOptions: {
+                            bar: {
+                                borderRadius: 4,
+                                borderRadiusApplication: 'end',
+                                horizontal: true,
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        xaxis: {
+                            categories: chartData.categories
+                        },
+                        title: {
+                            text: 'Inventory Items and Quantities'
+                        }
+                    };
+        
+                    var chart = new ApexCharts(document.querySelector("#inventory_chart"), options);
+                    chart.render();
+                });
+
+                document.addEventListener("DOMContentLoaded", function () {
+                    const today = new Date().toISOString().split('T')[0];
+                    const selectedLabName = "{{ selected_lab_name }}";  // Replace with the actual lab name
+
+                    document.getElementById('itemTypeSelect').addEventListener('change', function () {
+                        const itemTypeId = this.value;
+                        const itemTypeName = this.options[this.selectedIndex].text;
+
+                        if (itemTypeId) {
+                            fetch(`/inventory-data/${itemTypeId}/{{ laboratory_id }}/`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const inventoryFilename = `${selectedLabName}_inventory_${itemTypeName}_${today}`;
+                                    const tableContainer = document.getElementById('inventoryTableContainer');
+                                    tableContainer.innerHTML = `
+                                        <table class="table inventory-datatable table-striped" border="1">
+                                            <thead>
+                                                <tr>
+                                                    <th>Item ID</th>
+                                                    <th>Item Name</th>
+                                                    <th>Alert Quantity</th>
+                                                    ${data.add_cols.map(col => `<th>${col}</th>`).join('')}
+                                                    <th>Total Quantity</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${data.items.map(item => `
+                                                    <tr>
+                                                        <td>${item.item_id}</td>
+                                                        <td>${item.item_name}</td>
+                                                        <td>${item.alert_qty}</td>
+                                                        ${data.add_cols.map(col => `<td>${item.add_cols[col] || ''}</td>`).join('')}
+                                                        <td>${item.total_qty}</td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    `;
+
+                                    new DataTable('.inventory-datatable', {
+                                        layout: {
+                                            bottomStart: {
+                                                // buttons: ['copy', 'excel', 'pdf', 'colvis']
+                                                buttons: [{
+                                                        extend: 'excelHtml5',
+                                                        title: inventoryFilename
+                                                    },
+                                                    {
+                                                        extend: 'pdfHtml5',
+                                                        title: inventoryFilename
+                                                    }, 'copy', 'colvis']
+                                            }
+                                        }
+                                        
+                                    });
+                                });
+                        } else {
+                            document.getElementById('inventoryTableContainer').innerHTML = '';
+                        }
+                    });
+                });
+            </script>
+
+            <div class="row mb-3">
+                <label for="item_type" class="col-sm-2 col-form-label">Select Item Type:</label>
+                <div class="col-sm-10">
+                  <select class="form-select" id="itemTypeSelect">
+                    <option value="">--Select Item Type--</option>
+                    {% for item_type in item_types_list %}
+                        <option value="{{ item_type.itemType_id }}">{{ item_type.itemType_name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+            </div>
+
+            <div id="inventoryTableContainer"></div>
+        </div>
+    </div>
+            
+    <div class="col-12">
         <div class="card">
+            <div class="filter">
+                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                    <li class="dropdown-header text-start"><h6>Filter</h6></li>
+                    <li><a class="dropdown-item" href="?reports_filter=this_week&item_id={{ selected_item_id }}">This Week</a></li>
+                    <li><a class="dropdown-item" href="?reports_filter=this_month&item_id={{ selected_item_id }}">This Month</a></li>
+                    <li><a class="dropdown-item" href="?reports_filter=this_year&item_id={{ selected_item_id }}">This Year</a></li>
+                </ul>
+            </div>
             <div class="card-body">
-                <h5 class="card-title">Item Inventory and Borrowing Trends</h5>
-                <canvas id="itemTrendChart"></canvas>
+                <h5 class="card-title">Inventory Trend Over Time <span id="filter-display">| {{ reports_filter_display }}</span></h5>
+                <form method="get" action="">
+                    <div class="row mb-3">
+                        <label for="itemSelect" class="col-sm-2 col-form-label">Select Item:</label>
+                        <div class="col-sm-10">
+                            <select class="form-control" id="itemSelect" name="item_id" onchange="this.form.submit()">
+                                <option value="">--Select Item--</option>
+                                {% for item in items %}
+                                    <option value="{{ item.item_id }}" {% if item.item_id == selected_item_id %}selected{% endif %}>{{ item.item_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                <div id="chart-line2"></div>
+                <div id="chart-line"></div>
             </div>
         </div>
     </div>
 
-    <!-- Borrowing Trends Report -->
-    <h3>Borrowing Trends</h3>
-    <canvas id="borrowingTrendsChart"></canvas>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const today = new Date().toISOString().split('T')[0];
+            const selectedLabName = "{{ selected_lab_name }}";  // Replace with the actual lab name
+            const inventoryFilename = `InventoryTrend_${today}`;
 
-    <!-- Room Usage Report -->
-    <h3>Room Usage</h3>
-    <canvas id="roomUsageChart"></canvas>
+            const trendData = {{ trend_data|safe }};
+            const categories = trendData.map(entry => new Date(entry.date).getTime());
+            const seriesData = trendData.map(entry => entry.total_qty);
 
-    <!-- Maintenance & Repairs Report -->
-    <h3>Reported Damaged Items</h3>
-    <canvas id="maintenanceRepairsChart"></canvas>
+            var options = {
+                series: [{
+                    name: 'Inventory Quantity',
+                    data: seriesData
+                }],
+                chart: {
+                    id: 'chart2',
+                    type: 'line',
+                    height: 230,
+                    dropShadow: {
+                        enabled: true,
+                        enabledOnSeries: [1]
+                    },
+                    toolbar: {
+                        autoSelected: 'pan',
+                        show: false
+                    }
+                },
+                colors: ['#008FFB'],
+                stroke: {
+                    width: 3
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                fill: {
+                    opacity: [1, 0.75],
+                },
+                markers: {
+                    size: 0
+                },
+                yaxis: {
+                    title: {
+                        text: 'Quantity'
+                    },
+                    min: 0
+                },
+                xaxis: {
+                    type: 'datetime',
+                    categories: categories
+                }
+            };
+
+            var chart = new ApexCharts(document.querySelector("#chart-line2"), options);
+            chart.render();
+
+            var optionsLine = {
+                series: [{
+                    name: 'Inventory Quantity',
+                    data: seriesData
+                }],
+                chart: {
+                    id: 'chart1',
+                    height: 130,
+                    type: 'area',
+                    brush: {
+                        target: 'chart2',
+                        enabled: true
+                    },
+                    selection: {
+                        enabled: true,
+                        xaxis: {
+                            min: new Date().getTime() - 365 * 24 * 60 * 60 * 1000,
+                            max: new Date().getTime()
+                        }
+                    },
+                },
+                colors: ['#008FFB'],
+                stroke: {
+                    width: 1,
+                    curve: 'straight'
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        opacityFrom: 0.91,
+                        opacityTo: 0.1,
+                    }
+                },
+                xaxis: {
+                    type: 'datetime',
+                    categories: categories,
+                    tooltip: {
+                        enabled: false
+                    }
+                },
+                yaxis: {
+                    min: 0
+                }
+            };
+
+            var chartLine = new ApexCharts(document.querySelector("#chart-line"), optionsLine);
+            chartLine.render();
+        });
+
+
+        $(document).ready(function() {
+            // Initialize select2 for item and supplier fields
+            $('#itemSelect').select2({
+                ajax: {
+                    url: '/suggest_items/',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            query: params.term // Search term
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.map(function(item) {
+                                return {
+                                    id: item.item_id,
+                                    text: `${item.item_name} | ${item.add_cols}`
+                                };
+                            })
+                        };
+                    },
+                    placeholder: 'Search for an item',
+                    minimumInputLength: 2
+                }
+            });
+        });
+    </script>
+        
+            
+    
 </div>
 
 
 <script>
-    $(document).ready(function () {
-        let today = new Date()
-        // Handle showing/hiding of input fields based on date type
-        $('#dateType').change(function () {
-            var dateType = $(this).val();
-            if (dateType === 'timeframe') {
-                $('#timeframeInputs1').show();
-                $('#timeframeInputs2').show();
-                $('#dateInput').hide();
-            } else if (dateType !== 'today') {
-                $('#dateInput').show();
-                $('#timeframeInputs1').hide();
-                $('#timeframeInputs2').hide();
-                if(dateType === 'week'){
-                    document.getElementById("date").attributes["type"].value = "week";
-                } else if(dateType === 'month'){
-                    document.getElementById("date").attributes["type"].value = "month";
-                } else if (dateType === 'year'){
-                    var date = document.getElementById("date");
-                    date.attributes["type"].value = "number";
-                    date.min = "1900";
-                    date.max = "2999";
-                    date.value = "2024"
-                } else{
-                    // get date today as max input
-                    var dtToday = new Date();
-                    var month = dtToday.getMonth() + 1;
-                    var day = dtToday.getDate();
-                    var year = dtToday.getFullYear();
-                    if(month < 10)
-                        month = '0' + month.toString();
-                    if(day < 10)
-                        day = '0' + day.toString();
-                    var maxDate = year + '-' + month + '-' + day;    
-                    $('#date').attr('max', maxDate);
+    // <div class="card mb-3">
+    //     <div class="card-body">
+    //         <h5 class="card-title">Filter by Date Range and Item</h5>
+    //         <form id="filterForm" method="GET" action="{% url 'reports' %}">
+    //             <div class="row">
+    //                 <div class="col-md-3">
+    //                     <label for="item_id" class="form-label">Select Item:</label>
+    //                     <select class="form-select" id="item_id" name="item_id">
+    //                         {% for item in all_items %}
+    //                             <option value="{{ item.item_id }}" {% if item_id == item.item_id %}selected{% endif %}>{{ item.item_name }}</option>
+    //                         {% endfor %}
+    //                     </select>
+    //                 </div>
 
-                    document.getElementById("date").attributes["type"].value = "date";
-                }
-            } else {
-                $('#dateInput').hide();
-                $('#timeframeInputs1').hide();
-                $('#timeframeInputs2').hide();
-            }
-        });
+    //                 <div class="col-md-3">
+    //                     <label for="dateType" class="form-label">Select Date Type:</label>
+    //                     <select class="form-select" id="dateType" name="dateType">
+    //                         <option value="today" {% if date_type == 'today' %}selected{% endif %}>Today</option>
+    //                         <option value="day" {% if date_type == 'day' %}selected{% endif %}>Specific Day</option>
+    //                         <option value="week" {% if date_type == 'week' %}selected{% endif %}>Specific Week</option>
+    //                         <option value="month" {% if date_type == 'month' %}selected{% endif %}>Specific Month</option>
+    //                         <option value="year" {% if date_type == 'year' %}selected{% endif %}>Specific Year</option>
+    //                         <option value="timeframe" {% if date_type == 'timeframe' %}selected{% endif %}>Timeframe</option>
+    //                     </select>
+    //                 </div>
 
-        $('#startDate').change(function () {
-            var startDate = $(this).val();
-            $('#endDate').attr('min', startDate);
-        });
-    });
+    //                 <div class="col-md-3" id="dateInput" style="display: none;">
+    //                     <label for="date" class="form-label">Select Date:</label>
+    //                     <input type="date" class="form-control" id="date" name="date" value="{{date}}">
+    //                 </div>
+
+    //                 <div class="col-md-3" id="timeframeInputs1" style="display: none;">
+    //                     <label for="startDate" class="form-label">From:</label>
+    //                     <input type="date" class="form-control" id="startDate" name="startDate" value="{{start_date}}">
+    //                 </div>
+
+    //                 <div class="col-md-3" id="timeframeInputs2" style="display: none;">
+    //                     <label for="endDate" class="form-label mt-2">To:</label>
+    //                     <input type="date" class="form-control" id="endDate" name="endDate" value="{{end_date}}">
+    //                 </div>
+
+    //                 <div class="col-md-3 align-self-end">
+    //                     <button type="submit" class="btn btn-primary">Generate Report</button>
+    //                 </div>
+    //             </div>
+    //         </form>
+    //     </div>
+    // </div>
+    
+
+    // <!-- Inventory Stock Report Table -->
+    // <div class="card col">
+    //     <div class="card-body">
+    //         <h5 class="card-title">Stock Level Based on the Selected Date</h5>
+    //         <canvas id="inventoryStockChart"></canvas>
+    //         <hr>
+            
+    //         <table id="inventoryTable" class="table datatable table-striped ">
+    //             <thead>
+    //                 <tr>
+    //                     <th>Item ID</th>
+    //                     <th>Item Name</th>
+    //                     <th>Item Type</th>
+    //                     <th>Current Stock Level</th>
+    //                     <th hidden></th>
+    //                     <th hidden></th>
+    //                     <th hidden></th>
+    //                 </tr>
+    //             </thead>
+    //             <tbody>
+    //                 {% for item in inventory_data %}
+    //                 <tr>
+    //                     <td>{{ item.item_id }}</td>
+    //                     <td>{{ item.item_name }}</td>
+    //                     <td>{{ item.item_type__itemType_name }}</td>
+    //                     <td>{{ item.current_qty }}</td>
+    //                     <td hidden></td>
+    //                     <td hidden></td>
+    //                     <td hidden></td>
+    //                 </tr>
+    //                 {% endfor %}
+    //             </tbody>
+    //         </table>
+    //     </div>
+    // </div>
+
+    // <!-- Item Trend Graph Section -->
+    // <div class="container mt-4">
+    //     <div class="card">
+    //         <div class="card-body">
+    //             <h5 class="card-title">Item Inventory and Borrowing Trends</h5>
+    //             <canvas id="itemTrendChart"></canvas>
+    //         </div>
+    //     </div>
+    // </div>
+
+    // <!-- Borrowing Trends Report -->
+    // <h3>Borrowing Trends</h3>
+    // <canvas id="borrowingTrendsChart"></canvas>
+
+    // <!-- Room Usage Report -->
+    // <h3>Room Usage</h3>
+    // <canvas id="roomUsageChart"></canvas>
+
+    // <!-- Maintenance & Repairs Report -->
+    // <h3>Reported Damaged Items</h3>
+    // <canvas id="maintenanceRepairsChart"></canvas>
+//     $(document).ready(function () {
+//         let today = new Date()
+//         // Handle showing/hiding of input fields based on date type
+//         $('#dateType').change(function () {
+//             var dateType = $(this).val();
+//             if (dateType === 'timeframe') {
+//                 $('#timeframeInputs1').show();
+//                 $('#timeframeInputs2').show();
+//                 $('#dateInput').hide();
+//             } else if (dateType !== 'today') {
+//                 $('#dateInput').show();
+//                 $('#timeframeInputs1').hide();
+//                 $('#timeframeInputs2').hide();
+//                 if(dateType === 'week'){
+//                     document.getElementById("date").attributes["type"].value = "week";
+//                 } else if(dateType === 'month'){
+//                     document.getElementById("date").attributes["type"].value = "month";
+//                 } else if (dateType === 'year'){
+//                     var date = document.getElementById("date");
+//                     date.attributes["type"].value = "number";
+//                     date.min = "1900";
+//                     date.max = "2999";
+//                     date.value = "2024"
+//                 } else{
+//                     // get date today as max input
+//                     var dtToday = new Date();
+//                     var month = dtToday.getMonth() + 1;
+//                     var day = dtToday.getDate();
+//                     var year = dtToday.getFullYear();
+//                     if(month < 10)
+//                         month = '0' + month.toString();
+//                     if(day < 10)
+//                         day = '0' + day.toString();
+//                     var maxDate = year + '-' + month + '-' + day;    
+//                     $('#date').attr('max', maxDate);
+
+//                     document.getElementById("date").attributes["type"].value = "date";
+//                 }
+//             } else {
+//                 $('#dateInput').hide();
+//                 $('#timeframeInputs1').hide();
+//                 $('#timeframeInputs2').hide();
+//             }
+//         });
+
+//         $('#startDate').change(function () {
+//             var startDate = $(this).val();
+//             $('#endDate').attr('min', startDate);
+//         });
+//     });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Inventory Stock Report Chart
-    const inventoryData = {
-        labels: [{% for item in combined_data %}'{{ item.item_name }}',{% endfor %}],
-        datasets: [
-            {
-                label: 'Stock Quantity',
-                data: [{% for item in combined_data %}{{ item.current_qty }},{% endfor %}],
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            },
-            {
-                label: 'Total Borrowed Quantity',
-                data: [{% for item in combined_data %}{{ item.total_borrowed }},{% endfor %}],
-                backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                borderColor: 'rgba(255, 159, 64, 1)',
-                borderWidth: 1
-            }
-        ]
-    };
-    const inventoryConfig = {
-        type: 'bar',
-        data: inventoryData,
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-    };
-    const inventoryStockChart = new Chart(document.getElementById('inventoryStockChart'), inventoryConfig);
+//     // Inventory Stock Report Chart
+//     const inventoryData = {
+//         labels: [{% for item in combined_data %}'{{ item.item_name }}',{% endfor %}],
+//         datasets: [
+//             {
+//                 label: 'Stock Quantity',
+//                 data: [{% for item in combined_data %}{{ item.current_qty }},{% endfor %}],
+//                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
+//                 borderColor: 'rgba(75, 192, 192, 1)',
+//                 borderWidth: 1
+//             },
+//             {
+//                 label: 'Total Borrowed Quantity',
+//                 data: [{% for item in combined_data %}{{ item.total_borrowed }},{% endfor %}],
+//                 backgroundColor: 'rgba(255, 159, 64, 0.2)',
+//                 borderColor: 'rgba(255, 159, 64, 1)',
+//                 borderWidth: 1
+//             }
+//         ]
+//     };
+//     const inventoryConfig = {
+//         type: 'bar',
+//         data: inventoryData,
+//         options: { responsive: true, scales: { y: { beginAtZero: true } } }
+//     };
+//     const inventoryStockChart = new Chart(document.getElementById('inventoryStockChart'), inventoryConfig);
 
-    // Item Trend Chart
-    const itemTrendData = {
-        labels: [{% for data in inventory_data %}'{{ data.date|date:"Y-m-d" }}',{% endfor %}],
-        datasets: [
-            {
-                label: 'Inventory Quantity',
-                data: [{% for data in inventory_data %}{{ data.total_qty }},{% endfor %}],
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1,
-                fill: true
-            },
-            {
-                label: 'Borrowed Quantity',
-                data: [{% for data in borrowing_data %}{{ data.total_borrowed }},{% endfor %}],
-                backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                borderColor: 'rgba(255, 159, 64, 1)',
-                borderWidth: 1,
-                fill: true
-            }
-        ]
-    };
-    const itemTrendConfig = {
-        type: 'line',
-        data: itemTrendData,
-        options: { responsive: true, scales: { y: { beginAtZero: true }, x: { type: 'time', time: { unit: "{{ date_type }}" } } } }
-    };
-    const itemTrendChart = new Chart(document.getElementById('itemTrendChart'), itemTrendConfig);
+//     // Item Trend Chart
+//     const itemTrendData = {
+//         labels: [{% for data in inventory_data %}'{{ data.date|date:"Y-m-d" }}',{% endfor %}],
+//         datasets: [
+//             {
+//                 label: 'Inventory Quantity',
+//                 data: [{% for data in inventory_data %}{{ data.total_qty }},{% endfor %}],
+//                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
+//                 borderColor: 'rgba(75, 192, 192, 1)',
+//                 borderWidth: 1,
+//                 fill: true
+//             },
+//             {
+//                 label: 'Borrowed Quantity',
+//                 data: [{% for data in borrowing_data %}{{ data.total_borrowed }},{% endfor %}],
+//                 backgroundColor: 'rgba(255, 159, 64, 0.2)',
+//                 borderColor: 'rgba(255, 159, 64, 1)',
+//                 borderWidth: 1,
+//                 fill: true
+//             }
+//         ]
+//     };
+//     const itemTrendConfig = {
+//         type: 'line',
+//         data: itemTrendData,
+//         options: { responsive: true, scales: { y: { beginAtZero: true }, x: { type: 'time', time: { unit: "{{ date_type }}" } } } }
+//     };
+//     const itemTrendChart = new Chart(document.getElementById('itemTrendChart'), itemTrendConfig);
 
-    // Borrowing Trends Report Chart
-    const borrowingData = {
-        labels: [{% for borrow in borrowing_data %}'{{ borrow.item__item_name }}',{% endfor %}],
-        datasets: [{ label: 'Total Borrowed Quantity', data: [{% for borrow in borrowing_data %}{{ borrow.total_borrowed }},{% endfor %}], backgroundColor: 'rgba(255, 159, 64, 0.2)', borderColor: 'rgba(255, 159, 64, 1)', borderWidth: 1 }]
-    };
-    const borrowingConfig = {
-        type: 'bar',
-        data: borrowingData,
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-    };
-    const borrowingTrendsChart = new Chart(document.getElementById('borrowingTrendsChart'), borrowingConfig);
+//     // Borrowing Trends Report Chart
+//     const borrowingData = {
+//         labels: [{% for borrow in borrowing_data %}'{{ borrow.item__item_name }}',{% endfor %}],
+//         datasets: [{ label: 'Total Borrowed Quantity', data: [{% for borrow in borrowing_data %}{{ borrow.total_borrowed }},{% endfor %}], backgroundColor: 'rgba(255, 159, 64, 0.2)', borderColor: 'rgba(255, 159, 64, 1)', borderWidth: 1 }]
+//     };
+//     const borrowingConfig = {
+//         type: 'bar',
+//         data: borrowingData,
+//         options: { responsive: true, scales: { y: { beginAtZero: true } } }
+//     };
+//     const borrowingTrendsChart = new Chart(document.getElementById('borrowingTrendsChart'), borrowingConfig);
 
-    // Room Usage Report Chart
-    const roomUsageData = {
-        labels: [{% for room in room_usage_data %}'{{ room.room__name }}',{% endfor %}],
-        datasets: [{ label: 'Total Reservations', data: [{% for room in room_usage_data %}{{ room.total_reservations }},{% endfor %}], backgroundColor: 'rgba(54, 162, 235, 0.2)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 1 }]
-    };
-    const roomUsageConfig = {
-        type: 'bar',
-        data: roomUsageData,
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-    };
-    const roomUsageChart = new Chart(document.getElementById('roomUsageChart'), roomUsageConfig);
+//     // Room Usage Report Chart
+//     const roomUsageData = {
+//         labels: [{% for room in room_usage_data %}'{{ room.room__name }}',{% endfor %}],
+//         datasets: [{ label: 'Total Reservations', data: [{% for room in room_usage_data %}{{ room.total_reservations }},{% endfor %}], backgroundColor: 'rgba(54, 162, 235, 0.2)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 1 }]
+//     };
+//     const roomUsageConfig = {
+//         type: 'bar',
+//         data: roomUsageData,
+//         options: { responsive: true, scales: { y: { beginAtZero: true } } }
+//     };
+//     const roomUsageChart = new Chart(document.getElementById('roomUsageChart'), roomUsageConfig);
 
-    // Maintenance & Repairs Report Chart
-    const maintenanceData = {
-        labels: [{% for report in maintenance_data %}'{{ report.item__item_name }}',{% endfor %}],
-        datasets: [{ label: 'Total Damaged Items Reported', data: [{% for report in maintenance_data %}{{ report.total_reported }},{% endfor %}], backgroundColor: 'rgba(255, 99, 132, 0.2)', borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 1 }]
-    };
-    const maintenanceConfig = {
-        type: 'bar',
-        data: maintenanceData,
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-    };
-    const maintenanceRepairsChart = new Chart(document.getElementById('maintenanceRepairsChart'), maintenanceConfig);
+//     // Maintenance & Repairs Report Chart
+//     const maintenanceData = {
+//         labels: [{% for report in maintenance_data %}'{{ report.item__item_name }}',{% endfor %}],
+//         datasets: [{ label: 'Total Damaged Items Reported', data: [{% for report in maintenance_data %}{{ report.total_reported }},{% endfor %}], backgroundColor: 'rgba(255, 99, 132, 0.2)', borderColor: 'rgba(255, 99, 132, 1)', borderWidth: 1 }]
+//     };
+//     const maintenanceConfig = {
+//         type: 'bar',
+//         data: maintenanceData,
+//         options: { responsive: true, scales: { y: { beginAtZero: true } } }
+//     };
+//     const maintenanceRepairsChart = new Chart(document.getElementById('maintenanceRepairsChart'), maintenanceConfig);
+
+
+
+    // document.addEventListener("DOMContentLoaded", function () {
+    //     const today = new Date().toISOString().split('T')[0];
+    //     const selectedLabName = "{{ selected_lab_name }}";  // Replace with the actual lab name
+    //     const inventory_filename = ''
+
+    //     new DataTable('.inventory-datatable', {
+    //         layout: {
+    //             bottomStart: {
+    //                 // buttons: ['copy', 'excel', 'pdf', 'colvis']
+    //                 buttons: [{
+    //                         extend: 'excelHtml5',
+    //                         title: undefined
+    //                     },
+    //                     {
+    //                         extend: 'pdfHtml5',
+    //                         title: undefined
+    //                     }, 'copy', 'colvis']
+    //             }
+    //         }    
+    //     });
+
+    //     document.querySelectorAll('.inventory-datatable').forEach(function(table) {
+    //         const itemType = table.getAttribute('data-item-type');
+    //         inventory_filename = `${selectedLabName}_inventory_${itemType}_${today}`;
+    //     });
+    // });
+</script>
+
+<script>
+    
 </script>
 {% endblock %}

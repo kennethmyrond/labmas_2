@@ -104,7 +104,7 @@
     </div>
   </section>
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
     const today = new Date().toISOString().split('T')[0];
     inventory_filename = '{{selected_lab_name}}_inventory_' + today;
     new DataTable('.inventory-datatable', {

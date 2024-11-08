@@ -1,4 +1,4 @@
-import base64
+import base64, json
 from django import template
 
 register = template.Library()
@@ -24,6 +24,13 @@ def dict_key(value, key):
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
+
+@register.filter
+def get_item_report(dictionary, key):
+    try:
+        return json.loads(dictionary).get(key, '')
+    except (ValueError, TypeError):
+        return ''
 
 @register.filter
 def range_filter(value):
