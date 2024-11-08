@@ -283,32 +283,33 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Add click event listeners to all "Add" buttons
-    document.querySelectorAll('.add-equipment-btn').forEach(button => {
-          button.addEventListener('click', function () {
-              const itemName = this.getAttribute('data-item-name');
-              const itemId = this.getAttribute('data-item-id');
-              const availableQty = parseInt(this.getAttribute('data-available-qty'));
+   // Use event delegation for adding equipment
+   document.body.addEventListener('click', function (event) {
+        if (event.target.classList.contains('add-equipment-btn')) {
+            const button = event.target;
+            const itemName = button.getAttribute('data-item-name');
+            const itemId = button.getAttribute('data-item-id');
+            const availableQty = parseInt(button.getAttribute('data-available-qty'));
 
-              // Check if equipment is already added to prevent duplicates
-              const existingEquipmentRows = equipmentRowsContainer.getElementsByClassName('equipment-row');
-              let equipmentExists = false;
+            // Check if equipment is already added to prevent duplicates
+            const existingEquipmentRows = equipmentRowsContainer.getElementsByClassName('equipment-row');
+            let equipmentExists = false;
 
-              for (let row of existingEquipmentRows) {
-                  const equipmentInput = row.querySelector('input[type="text"]');
-                  if (equipmentInput.value === itemName) {
-                      equipmentExists = true;
-                      break;
-                  }
-              }
+            for (let row of existingEquipmentRows) {
+                const equipmentInput = row.querySelector('input[type="text"]');
+                if (equipmentInput.value === itemName) {
+                    equipmentExists = true;
+                    break;
+                }
+            }
 
-              if (!equipmentExists) {
-                  addEquipmentRow(itemName, itemId, availableQty);
-              } else {
-                  displayValidationMessage('This equipment is already added.');
-              }
-          });
-      });
+            if (!equipmentExists) {
+                addEquipmentRow(itemName, itemId, availableQty);
+            } else {
+                displayValidationMessage('This equipment is already added.');
+            }
+        }
+    });
 
     // Function to display validation message
     function displayValidationMessage(message) {
