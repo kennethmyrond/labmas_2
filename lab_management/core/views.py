@@ -174,7 +174,7 @@ def remove_item_from_inventory(inventory_item, amount, user, change_type, remark
         inventory_item=inventory_item,
         updated_by=user,
         changes=change_type,
-        qty=amount,
+        qty=0-amount,
         remarks=remarks,
     )
 
@@ -741,7 +741,7 @@ def inventory_physicalCount_view(request):
                         item_handling.objects.create(
                             inventory_item=item_inventory_instance,
                             updated_by=current_user,
-                            changes='A',  # A for Add
+                            changes='P',  # A for Add
                             remarks = "Physical count adjustment",
                             qty=discrepancy_qty
                         )
@@ -2749,26 +2749,41 @@ def reports_view(request):
 
     if not item_id:
         # If no item is selected, return an empty response
-        trend_data = []
+        trend_data_added = []
+        trend_data_removed = []
     else:
         # Get data for the last 1 year
-        trend_data = item_handling.objects.filter(
+        trend_data_added = item_handling.objects.filter(
             inventory_item__item__laboratory_id=selected_laboratory_id,
             inventory_item__item_id=item_id,
             timestamp__gte=timezone.now() - timezone.timedelta(days=365)
         ).annotate(date=TruncDay('timestamp')).values('date').annotate(
-            total_qty=Sum(F('qty') * Case(
-                When(changes='A', then=1),
-                When(changes='R', then=-1),
-                When(changes='D', then=-1),
-                default=0
+            total_qty=Sum(Case(
+                When(qty__gt=0, then=F('qty')),
+                default=Value(0)
+            ))
+        ).order_by('date')
+
+        trend_data_removed = item_handling.objects.filter(
+            inventory_item__item__laboratory_id=selected_laboratory_id,
+            inventory_item__item_id=item_id,
+            timestamp__gte=timezone.now() - timezone.timedelta(days=365)
+        ).annotate(date=TruncDay('timestamp')).values('date').annotate(
+            total_qty=Sum(Case(
+                When(qty__lt=0, then=-F('qty')),
+                default=Value(0)
             ))
         ).order_by('date')
 
         # Convert datetime objects to strings
-        trend_data = [
+        trend_data_added = [
             {'date': entry['date'].strftime('%Y-%m-%d'), 'total_qty': entry['total_qty']}
-            for entry in trend_data
+            for entry in trend_data_added
+        ]
+
+        trend_data_removed = [
+            {'date': entry['date'].strftime('%Y-%m-%d'), 'total_qty': entry['total_qty']}
+            for entry in trend_data_removed
         ]
 
     items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
@@ -2781,7 +2796,8 @@ def reports_view(request):
         'item_types_list': item_types_list,
         'laboratory_id': selected_laboratory_id,
 
-        'trend_data': json.dumps(trend_data),
+        'trend_data_added': json.dumps(trend_data_added),
+        'trend_data_removed': json.dumps(trend_data_removed),
         'items': items,
         'selected_item_id': item_id
     }

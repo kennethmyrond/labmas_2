@@ -103,10 +103,12 @@
         <table class="table datatable">
           <thead>
             <tr>
-              <th>Qty</th>
               <th>Date Created</th>
               <th>Remarks</th>
-              <th>Expirations</th>
+              <th>Qty</th>
+              {% if item.rec_expiration %}
+                <th>Expirations</th>
+              {% endif %}
               <th></th>
               <th style="display:none"></th>
             </tr>
@@ -116,13 +118,6 @@
               {% for handling in inventory.item_handling_set.all %}
               <tr>
                 <!-- Quantity (positive or negative) -->
-                <td class="{% if  handling.changes == 'A' %}qty-positive {% else %}qty-negative{% endif %}" text-align="left" >
-                  {% if handling.changes == 'A' %}
-                    +{{ handling.qty }}
-                  {% else %}
-                    -{{ handling.qty }}
-                  {% endif %}
-                </td>
                 <td>
                   {% if handling.timestamp %}
                     {{ handling.timestamp|date:"Y-m-d H:i" }}
@@ -131,15 +126,13 @@
                   {% endif %}
                 </td>
                 <td>
-                  <!-- {% if handling.changes == 'A' %}
-                    Add to inventory
-                  {% elif handling.changes == 'R' %}
-                    remove from inventory
-                  {% elif handling.changes == 'P' or handling.changes == 'Y' %}
-                    Physical Count Adjustment
-                  {% endif %} -->
                   {{handling.remarks}}
                 </td>
+                <td text-align="left" > 
+                  <!-- style=" color:{% if  handling.changes == 'A' %}green{% else %}red{% endif %};"  -->             
+                    {{ handling.qty }}
+                </td>
+                {% if item.rec_expiration %}
                 <td>
                   {% if inventory.expiration_date %}
                     {{ inventory.expiration_date|date:"Y-m-d" }}
@@ -147,6 +140,7 @@
                     Not Applicable
                   {% endif %}
                 </td>
+                {%endif%}
                 
                 <td>
                   <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#inventoryDetailsModal{{ inventory.inventory_item_id }}">
