@@ -435,16 +435,46 @@
 
       {% if 5 in selected_lab_modules or logged_user.is_superuser %}
       <li class="nav-item">
-        <a class="nav-link {% if request.resolver_match.url_name in 'reports admin_reports'%}active{% else %}collapsed{% endif %}" data-bs-target="#reports-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link {% if request.resolver_match.url_name in 'reports admin_reports inventory_reports borrowing_reports'%}active{% else %}collapsed{% endif %}" data-bs-target="#reports-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-bar-chart"></i><span>Reports</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="reports-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'reports admin_reports'%}show{% endif %}" data-bs-parent="#sidebar-nav">
+        <ul id="reports-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'reports admin_reports inventory_reports borrowing_reports'%}show{% endif %}" data-bs-parent="#sidebar-nav">
           {% if permissions.can_view_reports or logged_user.is_superuser%}
           <li>
             <a href="{% if logged_user.is_superuser %}{% url 'admin_reports' %}{%else%}{% url 'reports' %}{%endif%}" class="{% if request.resolver_match.url_name in 'reports admin_reports'%}active{% else %}collapsed{% endif %}">
-              <i class="bi bi-circle"></i><span>Reports</span>
+              <i class="bi bi-circle"></i><span>User Reports</span>
             </a>
           </li>
+          {% endif %}
+          {% if not logged_user.is_superuser%}
+            {% if 1 in selected_lab_modules%}
+            <li>
+              <a href="{% url 'inventory_reports' %}" class="{% if request.resolver_match.url_name in 'inventory_reports'%}active{% else %}collapsed{% endif %}">
+                <i class="bi bi-circle"></i><span>Inventory Reports</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if 2 in selected_lab_modules%}
+            <li>
+              <a href="{% url 'borrowing_reports' %}" class="{% if request.resolver_match.url_name in 'borrowing_reports'%}active{% else %}collapsed{% endif %}">
+                <i class="bi bi-circle"></i><span>Borrowing Reports</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if 3 in selected_lab_modules%}
+            <li>
+              <a href="{% if logged_user.is_superuser %}{% url 'admin_reports' %}{%else%}{% url 'reports' %}{%endif%}" class="{% if request.resolver_match.url_name in 'reports admin_reports'%}active{% else %}collapsed{% endif %}">
+                <i class="bi bi-circle"></i><span>Clearance Reports</span>
+              </a>
+            </li>
+            {% endif %}
+            {% if 4 in selected_lab_modules%}
+            <li>
+              <a href="{% if logged_user.is_superuser %}{% url 'admin_reports' %}{%else%}{% url 'reports' %}{%endif%}" class="{% if request.resolver_match.url_name in 'reports admin_reports'%}active{% else %}collapsed{% endif %}">
+                <i class="bi bi-circle"></i><span>Lab Reservation Reports</span>
+              </a>
+            </li>
+            {% endif %}
           {% endif %}
         </ul>
       </li><!-- End Icons Nav -->

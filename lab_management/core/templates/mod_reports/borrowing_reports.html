@@ -1,0 +1,227 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}Reports{% endblock %}
+{% load custom_filters %}
+{% block content %}
+<style>
+    .card-body{
+        padding: 10px 20px 20px 20px;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<div class="container">
+    <!-- Filter Section -->
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Borrows per Day Over Time</h5>  
+                    <div id="borrow_chart-line2"></div>
+                    <div id="borrow_chart-line"></div>
+                </div>
+            </div>
+        </div>
+    
+        <script>
+            // Sample data from the Django view
+            const borrow_chartData = {{ day_borrowing_data|safe }};
+    
+            var borrow_options = {
+                series: [{
+                    name: 'Borrows',
+                    data: borrow_chartData.counts
+                }],
+                chart: {
+                    id: 'chart2',
+                    type: 'line',
+                    height: 230,
+                    dropShadow: {
+                        enabled: true,
+                        enabledOnSeries: [0]
+                    },
+                    toolbar: {
+                        autoSelected: 'pan',
+                        show: false
+                    }
+                },
+                colors: ['#008FFB'],
+                stroke: {
+                    width: [2, 6],
+                    curve: ['straight', 'monotoneCubic']
+                },
+                fill: {
+                    opacity: [1, 0.75],
+                },
+                markers: {
+                    size: 0
+                },
+                yaxis: {
+                    axisTicks: {
+                        show: true,
+                        color: '#008FFB'
+                    },
+                    axisBorder: {
+                        show: true,
+                        color: '#008FFB'
+                    },
+                    labels: {
+                        style: {
+                            colors: '#008FFB',
+                        }
+                    },
+                    title: {
+                        text: "Borrows",
+                        style: {
+                            color: '#008FFB'
+                        }
+                    },
+                },
+                xaxis: {
+                    type: 'datetime',
+                    categories: borrow_chartData.dates
+                }
+            };
+    
+            var borrow_chart = new ApexCharts(document.querySelector("#borrow_chart-line2"), borrow_options);
+            borrow_chart.render();
+    
+            var borrow_optionsLine = {
+                series: [{
+                    name: 'Borrows',
+                    data: borrow_chartData.counts
+                }],
+                chart: {
+                    id: 'chart1',
+                    height: 130,
+                    type: 'area',
+                    brush: {
+                        target: 'chart2',
+                        enabled: true
+                    },
+                    selection: {
+                        enabled: true,
+                        xaxis: {
+                            min: new Date(borrow_chartData.dates[0]).getTime(),
+                            max: new Date(borrow_chartData.dates[borrow_chartData.dates.length - 1]).getTime()
+                        }
+                    },
+                },
+                colors: ['#008FFB'],
+                stroke: {
+                    width: [1, 3],
+                    curve: ['straight', 'monotoneCubic']
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        opacityFrom: 0.91,
+                        opacityTo: 0.1,
+                    }
+                },
+                xaxis: {
+                    type: 'datetime',
+                    categories: borrow_chartData.dates,
+                    tooltip: {
+                        enabled: false
+                    }
+                },
+                yaxis: {
+                    max: Math.max(...borrow_chartData.counts) + 1,
+                    tickAmount: 2
+                }
+            };
+    
+            var borrow_chartLine = new ApexCharts(document.querySelector("#borrow_chart-line"), borrow_optionsLine);
+            borrow_chartLine.render();
+        </script>
+    
+
+    <div class="col">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">Borrowed Items</h2>
+                <form method="get" action="" class="form-inline mb-3">
+                    <label for="filter_type" class="mr-2">Filter:</label>
+                    <select name="filter_type" id="filter_type" class="form-control mr-2 mt-4">
+                        <option value="today" {% if filter_type == 'today' %}selected{% endif %}>Today</option>
+                        <option value="this_week" {% if filter_type == 'this_week' %}selected{% endif %}>This Week</option>
+                        <option value="this_month" {% if filter_type == 'this_month' %}selected{% endif %}>This Month</option>
+                        <option value="this_year" {% if filter_type == 'this_year' %}selected{% endif %}>This Year</option>
+                        <option value="custom" {% if filter_type == 'custom' %}selected{% endif %}>Custom</option>
+                    </select>
+                    <div id="custom-date-range" class="form-inline mt-4" style="display: none;">
+                        <label for="start_date" class="mr-2 mt-4">Start Date:</label>
+                        <input type="date" name="start_date" id="start_date" class="form-control mr-2" value="{{ start_date }}">
+                        <label for="end_date" class="mr-2 mt-4">End Date:</label>
+                        <input type="date" name="end_date" id="end_date" class="form-control mr-2" value="{{ end_date }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-4">Apply Filter</button>
+                </form>
+                <hr>
+                <table class="table borrowing-datatable table-striped" class="display">
+                    <thead>
+                        <tr>
+                            <th>Item ID</th>
+                            <th>Item Name</th>
+                            <th>Item Type</th>       
+                            <th>Total Quantity Borrowed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in borrowed_items_data %}
+                        <tr>
+                            <td>{{ item.item__item_id }}</td>
+                            <td>{{ item.item__item_name }}</td>
+                            <td>{{ item.item__itemType__itemType_name }}</td>
+                            <td>{{ item.total_qty }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#borrowedItemsTable').DataTable();
+
+            // Show/hide custom date range inputs based on filter type
+            $('#filter_type').change(function() {
+                if ($(this).val() === 'custom') {
+                    $('#custom-date-range').show();
+                } else {
+                    $('#custom-date-range').hide();
+                }
+            });
+
+            // Trigger change event on page load to set initial state
+            $('#filter_type').trigger('change');
+        });
+        document.addEventListener("DOMContentLoaded", function () {
+            const today = new Date().toISOString().split('T')[0];
+            const selectedLabName = "{{ selected_lab_name }}";
+            const borrowFilename = `${selectedLabName}_qtyborroweditem__{{start_date}}_to_{{end_date}}`;
+            
+            new DataTable('.borrowing-datatable', {
+                layout: {
+                    bottomStart: {
+                        // buttons: ['copy', 'excel', 'pdf', 'colvis']
+                        buttons: [{
+                                extend: 'excelHtml5',
+                                title: borrowFilename
+                            },
+                            {
+                                extend: 'pdfHtml5',
+                                title: borrowFilename
+                            }, 'copy', 'colvis']
+                    }
+                }
+                
+            });
+        });
+    </script>
+
+</div>
+
+{% endblock %}
