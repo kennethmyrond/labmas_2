@@ -88,10 +88,10 @@
             {% load custom_filters %}
             <div class="calendar">
               {% if selected_month %}
-                  {% for day in 31|range_filter %}
+                  {% for day in days_range %}
                       <div class="day" data-day="{{ day }}" data-toggle="modal" data-target="#scheduleModal" 
                            data-schedules="{% with reservations=reservations_by_day|get_item:day %}{% if reservations %}{% for reservation in reservations %}<div class='reservation'><strong>{{ reservation.start_time|time:'h:i A' }} - {{ reservation.end_time|time:'h:i A' }}</strong>
-                            <br>ID: {{ reservation.reservation_id }}<br>Name: {{ reservation.contact_name }}<br>Email: {{ reservation.contact_email }}<br>Purpose: {{ reservation.purpose }}</div>{% endfor %} {% endif %}{% endwith %}">
+                                          <br>ID: {{ reservation.reservation_id }}<br>Name: {{ reservation.contact_name }}<br>Email: {{ reservation.contact_email }}<br>Purpose: {{ reservation.purpose }}</div>{% endfor %} {% endif %}{% endwith %}">
                           <div class="day-header">{{ day }}</div>
                           {% with reservations=reservations_by_day|get_item:day %}
                               {% if reservations %}
@@ -99,11 +99,9 @@
                                       <strong>{{ reservations.0.start_time|time:"h:i A" }} - {{ reservations.0.end_time|time:"h:i A" }}</strong><br>
                                       ID: {{ reservations.0.reservation_id }}<br>
                                       Name: {{ reservations.0.contact_name }}<br>
-                                      Email: {{ reservations.0.contact_email }}<br>
-                                      Purpose: {{ reservations.0.purpose }}
                                   </div>
                                   {% if reservations|length > 1 %}
-                                      <div class="more-schedules" >
+                                      <div class="more-schedules">
                                         Click to view {{ reservations|length|add:"-1" }} more schedule(s).
                                       </div>
                                   {% endif %}
@@ -114,7 +112,9 @@
               {% else %}
                   <p>No reservations found for the selected month.</p>
               {% endif %}
-            </div>
+          </div>
+          
+            
           </div>
 
           <!-- Modal -->
