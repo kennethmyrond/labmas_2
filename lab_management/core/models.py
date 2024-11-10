@@ -340,7 +340,8 @@ class borrowed_items(models.Model):
 class reported_items(models.Model): 
     report_id = models.CharField(max_length=20, unique=True, primary_key=True)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
-    borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE)
+    borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey('user', on_delete=models.CASCADE, null=True, blank=True)  # Add this line
     item = models.ForeignKey('item_description', on_delete=models.CASCADE)
     qty_reported = models.IntegerField(null=False, blank=False)
     report_reason = models.CharField(max_length=255)
@@ -349,14 +350,11 @@ class reported_items(models.Model):
     remarks = models.TextField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.report_id:
-            current_year = datetime.now().year
-            while True:
-                random_number = get_random_string(length=4, allowed_chars='0123456789')
-                self.report_id = f"301{current_year}{random_number}"
-                if not reported_items.objects.filter(report_id=self.report_id).exists():
-                    break
-        super().save(*args, **kwargs)
+            if not self.report_id:
+                last_report = reported_items.objects.all().order_by('report_id').last()
+                new_report_id = int(last_report.report_id) + 1 if last_report else 1001
+                self.report_id = str(new_report_id)
+            super().save(*args, **kwargs)
 
     # Add a status field with choices for Pending (1) and Cleared (0)
     STATUS_CHOICES = [

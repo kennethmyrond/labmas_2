@@ -1902,55 +1902,98 @@ def clearance_student_viewClearanceDetailed(request, borrow_id):
 
 @login_required
 @lab_permission_required('view_student_clearance')
+
 def clearance_labtech_viewclearance(request):
-    # Get the currently logged-in user (labtech)
-    user = request.user
     selected_laboratory_id = request.session.get('selected_lab')
+    users = user.objects.filter(is_deactivated=False)
+    items = item_description.objects.filter(is_disabled=0, allow_borrow=1)
 
-    try:
-         # Fetch all reported items related to the selected laboratory, regardless of status
-        reports = reported_items.objects.filter(borrow__laboratory_id=selected_laboratory_id)
+    if request.method == 'POST':
+        try:
+            selected_user_id = request.POST.get('user')
+            item_name = request.POST.get('item')
+            reason = request.POST.get('reason')
+            amount = request.POST.get('amount')
+            quantity = request.POST.get('quantity')
 
-        # Filter by status if needed
-        status_filter = request.GET.get('status', 'All')
-        if status_filter == 'Cleared':
-            reports = reports.filter(status=0)  # status=0 means Cleared
-        elif status_filter == 'Pending':
-            reports = reports.filter(status=1)  # status=1 means Pending
+            selected_user = user.objects.get(user_id=selected_user_id)
+            item_obj = get_object_or_404(item_description, item_name__iexact=item_name)
 
-        # Create a context with the reports
-        report_data = []
-        for report in reports:
+            # Save the manual entry with the selected user
+            reported_items.objects.create(
+                laboratory_id=selected_laboratory_id,
+                borrow=None,
+                user=selected_user,  # Save the user object
+                item=item_obj,
+                qty_reported=quantity,
+                report_reason=reason,
+                amount_to_pay=amount,
+                status=1,
+            )
+
+            messages.success(request, "Manual clearance added successfully!")
+        except Exception as e:
+            messages.error(request, f"Error adding clearance: {e}")
+    
+    reports = reported_items.objects.filter(
+        Q(borrow__laboratory_id=selected_laboratory_id) | Q(borrow=None)
+    )
+    status_filter = request.GET.get('status', 'All')
+    if status_filter == 'Cleared':
+        reports = reports.filter(status=0)
+    elif status_filter == 'Pending':
+        reports = reports.filter(status=1)
+
+    report_data = []
+    for report in reports:
             borrow_info_obj = report.borrow
-            user_obj = borrow_info_obj.user
-            item_obj = report.item
+            user_obj = borrow_info_obj.user if borrow_info_obj else report.user
 
-            # Add data to the context
             report_data.append({
                 'report_id': report.report_id,
-                'borrow_id': borrow_info_obj.borrow_id,  # RF#
-                'user_name': f"{user_obj.firstname} {user_obj.lastname}",  # Student's Name
-                'id_number': user_obj.personal_id,  # Fetch ID number from user
-                'item_name': item_obj.item_name,  # Item Name
-                'reason': report.report_reason,  # Report Reason
-                'amount_due': report.amount_to_pay,  # Amount to Pay
-                'status': 'Pending' if report.status == 1 else 'Cleared',  # Status
+                'borrow_id': borrow_info_obj.borrow_id if borrow_info_obj else "Manual Entry",
+                'user_name': f"{user_obj.firstname} {user_obj.lastname}" if user_obj else "Unknown",
+                'id_number': user_obj.personal_id if user_obj else "N/A",
+                'item_name': report.item.item_name,
+                'reason': report.report_reason,
+                'amount_due': report.amount_to_pay,
+                'status': 'Pending' if report.status == 1 else 'Cleared',
+                'quantity': report.qty_reported,
             })
 
-    except Exception as e:
-        report_data = []  # In case of an error, show an empty list
-        print(f"Error fetching reports: {e}")
 
     context = {
         'reports': report_data,
+        'users': users,
+        'items': items,
     }
     return render(request, 'mod_clearance/labtech_viewclearance.html', context)
+
+
+
 
 @login_required
 @lab_permission_required('view_student_clearance')
 def clearance_labtech_viewclearanceDetailed(request, report_id):
     # Get the reported item by ID
     report = get_object_or_404(reported_items, report_id=report_id)
+
+    # Prepare report data in a similar structure as in 'clearance_labtech_viewclearance'
+    borrow_info_obj = report.borrow
+    user_obj = borrow_info_obj.user if borrow_info_obj else report.user
+
+    report_data = {
+        'report_id': report.report_id,
+        'borrow_id': borrow_info_obj.borrow_id if borrow_info_obj else "Manual Entry",
+        'user_name': f"{user_obj.firstname} {user_obj.lastname}" if user_obj else "Unknown",
+        'id_number': user_obj.personal_id if user_obj else "N/A",
+        'item_name': report.item.item_name,
+        'reason': report.report_reason,
+        'amount_due': report.amount_to_pay,
+        'status': 'Pending' if report.status == 1 else 'Cleared',
+        'quantity': report.qty_reported,
+        'remarks': report.remarks if report.remarks else '',
+    }
 
     if request.method == 'POST':
         # Handle remarks submission and marking as cleared
@@ -1965,18 +2008,11 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
         # Redirect to the same page or to the view clearance page
         return HttpResponseRedirect(request.path_info)
 
-     # Prepare the context for rendering
+    # Pass the report_data to the context for rendering
     context = {
-        'RFno': report.borrow.borrow_id,  # RF#
-        'student_name': f"{report.borrow.user.firstname} {report.borrow.user.lastname}",  # Student's Name
-        'ID_number': report.borrow.user.personal_id,  # Student's Name
-        'item_name': report.item.item_name,  # Item Name
-        'reason': report.report_reason,  # Reason
-        'amount_due': report.amount_to_pay,  # Amount Due
-        'status': 'Pending' if report.status == 1 else 'Cleared',  # Status
-        'remarks': report.remarks if report.remarks else '',  # Fetch remarks if they exist
+        'report_data': report_data,
     }
-    
+
     return render(request, 'mod_clearance/labtech_viewclearanceDetailed.html', context)
 
 

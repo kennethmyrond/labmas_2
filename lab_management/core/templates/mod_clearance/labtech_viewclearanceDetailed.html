@@ -53,49 +53,49 @@
               <div class="row mb-3">
                 <label for="RFno" class="col-sm-2 col-form-label">RF No.:</label>
                 <div class="col-sm-10">
-                  <input type="text" class="form-control" id="RFno" disabled name="RFno" value="{{ RFno }}">
+                  <input type="text" class="form-control" id="RFno" disabled name="RFno" value="{{ report_data.borrow_id }}">
                 </div>
               </div>
   
               <div class="row mb-3">
                 <label for="studentName" class="col-sm-2 col-form-label">Student Name:</label>
                 <div class="col-sm-10">
-                  <input type="text" class="form-control" id="studentName" disabled name="studentName" value="{{ student_name }}">
+                  <input type="text" class="form-control" id="studentName" disabled name="studentName" value="{{ report_data.user_name }}">
                 </div>
               </div>
 
               <div class="row mb-3">
                 <label for="IDNumber" class="col-sm-2 col-form-label">ID Number:</label>
                 <div class="col-sm-10">
-                  <input type="text" class="form-control" id="IDNumber" disabled name="IDNumber" value="{{ ID_number }}">
+                  <input type="text" class="form-control" id="IDNumber" disabled name="IDNumber" value="{{ report_data.id_number }}">
                 </div>
               </div>
   
               <div class="row mb-3">
                 <label for="itemName" class="col-sm-2 col-form-label">Item:</label>
                 <div class="col-sm-10">
-                  <input type="text" class="form-control" id="itemName" disabled name="itemName" value="{{ item_name }}">
+                  <input type="text" class="form-control" id="itemName" disabled name="itemName" value="{{ report_data.item_name }}">
                 </div>
               </div>
   
               <div class="row mb-3">
                 <label for="reason" class="col-sm-2 col-form-label">Reason:</label>
                 <div class="col-sm-10">
-                  <input type="text" class="form-control" id="reason" disabled name="reason" value="{{ reason }}">
+                  <input type="text" class="form-control" id="reason" disabled name="reason" value="{{ report_data.reason }}">
                 </div>
               </div>
   
               <div class="row mb-3">
                 <label for="amtdue" class="col-sm-2 col-form-label">Amount Due (₱):</label>
                 <div class="col-sm-10">
-                  <input type="number" class="form-control" id="amtdue" disabled name="amtdue" value="{{ amount_due }}">
+                  <input type="number" class="form-control" id="amtdue" disabled name="amtdue" value="{{ report_data.amount_due }}">
                 </div>
               </div>
   
               <div class="row mb-3">
                 <label for="remarks" class="col-sm-2 col-form-label">Remarks:</label>
                 <div class="col-sm-10">
-                  <textarea class="form-control" id="remarks" name="remarks">{{ remarks }}</textarea>
+                  <textarea class="form-control" id="remarks" name="remarks">{{ report_data.remarks }}</textarea>
                 </div>
               </div>
   

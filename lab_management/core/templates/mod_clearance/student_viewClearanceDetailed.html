@@ -3,6 +3,12 @@
 
 {% block content %}
   
+<style>
+  .red-text {
+    color: red !important; /* Forcefully apply the red color */
+}
+</style>
+
   <div class="pagetitle">
     <h1>Clearance</h1>
     <nav>
@@ -58,7 +64,7 @@
                 {% for report in reports %}
                 <tr>
                   <td>{{ report.item.item_name }}</td>
-                  <td>{{ report.report_reason }}</td>
+                  <td class="red-text">{{ report.report_reason }}</td> <!-- Reason text will be red -->
                   <td>{{ report.qty_reported }}</td>
                   <td>{{ report.amount_to_pay }}</td>
                 </tr>

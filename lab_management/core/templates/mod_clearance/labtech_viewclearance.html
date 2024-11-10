@@ -22,111 +22,188 @@
 
 </style>
 
-  <div class="pagetitle">
-    <h1>Clearance</h1>
-    <nav>
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item active">View Clearance</li>
-      </ol>
-    </nav>
-  </div><!-- End Page Title -->
+<div class="pagetitle">
+  <h1>Clearance</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item active">View Clearance</li>
+    </ol>
+  </nav>
+</div><!-- End Page Title -->
 
-  <!-- Success message -->
-  {% if messages %}
-    <div class="alert alert-success">
-      {% for message in messages %}
-        {{ message }}
-      {% endfor %}
-    </div>
-  {% endif %}
+<!-- Success message -->
+{% if messages %}
+  <div class="alert alert-success">
+    {% for message in messages %}
+      {{ message }}
+    {% endfor %}
+  </div>
+{% endif %}
 
-  <section class="section">
-    <div class="row">
-      <div class="col-lg-12">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">View Active Clearance</h5>
+<section class="section">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">View Active Clearance</h5>
 
-            <!-- Dropdown to filter by status -->
-            <form method="GET" id="statusFilterForm">
-              <div class="row mb-3">
-                <label for="status" class="col-sm-2 col-form-label">Filter by Status:</label>
-                <div class="col-sm-10">
-                  <select class="form-select" id="status" name="status" onchange="document.getElementById('statusFilterForm').submit()">
-                    <option value="Pending" {% if request.GET.status == "Pending" %}selected{% endif %}>Pending</option>
-                    <option value="Cleared" {% if request.GET.status == "Cleared" %}selected{% endif %}>Cleared</option>
-                    <option value="All" {% if request.GET.status == "All" %}selected{% endif %}>All</option>
-                  </select>
-                </div>
+          <!-- Dropdown to filter by status -->
+          <form method="GET" id="statusFilterForm">
+            <div class="row mb-3">
+              <label for="status" class="col-sm-2 col-form-label">Filter by Status:</label>
+              <div class="col-sm-10">
+                <select class="form-select" id="status" name="status" onchange="document.getElementById('statusFilterForm').submit()">
+                  <option value="Pending" {% if request.GET.status == "Pending" %}selected{% endif %}>Pending</option>
+                  <option value="Cleared" {% if request.GET.status == "Cleared" %}selected{% endif %}>Cleared</option>
+                  <option value="All" {% if request.GET.status == "All" %}selected{% endif %}>All</option>
+                </select>
               </div>
-            </form>
+            </div>
+          </form>
 
-            <!-- Table with stripped rows -->
-            <table class="table clearance-datatable table-striped">
-              <thead>
-                <tr>
-                  <th>Report ID</th>
-                  <th>Borrow ID</th>
-                  <th>Name</th>
-                  <th>ID Number</th>
-                  <th>Item</th>
-                  <th>Reason</th>
-                  <th>Amount Due (₱)</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for report in reports %}
-                <tr>
-                  <td><a href="{% url 'clearance_labtech_viewclearanceDetailed' report.report_id %}">{{ report.report_id }}</a></td>
-                  <td>{{ report.borrow_id }}</td>  <!-- RF# (Borrow ID) -->
-                  <td>{{ report.user_name }}</td>  <!-- Student's Name -->
-                  <td>{{ report.id_number }}</td>
-                  <td>{{ report.item_name }}</td>  <!-- Item Name -->
-                  <td>{{ report.reason }}</td>  <!-- Report Reason -->
-                  <td>{{ report.amount_due }}</td>  <!-- Amount to Pay -->
-                  <td>
-                    {% if report.status == 'Pending' %}
-                        <span class="status-pending">{{ report.status }}</span>
-                    {% else %}
-                        <span class="status-cleared">{{ report.status }}</span>
-                    {% endif %}
-                </td>
-                
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+          <!-- Add Manual Clearance Button -->
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#manualClearanceModal">
+            Add Manual Clearance
+          </button>
 
-            <!-- End Table with stripped rows -->
+          <!-- Table with stripped rows -->
+          <table class="table clearance-datatable table-striped">
+            <thead>
+              <tr>
+                <th>Report ID</th>
+                <th>Borrow ID</th>
+                <th>Name</th>
+                <th>ID Number</th>
+                <th>Item</th>
+                <th>Reason</th>
+                <th>Amount Due (₱)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for report in reports %}
+              <tr>
+                <td><a href="{% url 'clearance_labtech_viewclearanceDetailed' report.report_id %}">{{ report.report_id }}</a></td>
+                <td>{{ report.borrow_id }}</td> <!-- Show RF# (Borrow ID) -->
+                <td>{{ report.user_name }}</td> <!-- User Name with Manual Entry fallback -->
+                <td>{{ report.id_number }}</td>
+                <td>{{ report.item_name }}</td>  <!-- Item Name -->
+                <td>{{ report.reason }}</td>
+                <td>{{ report.amount_due }}</td>  <!-- Amount to Pay -->
+                <td>
+                  {% if report.status == 'Pending' %}
+                      <span class="status-pending">{{ report.status }}</span>
+                  {% else %}
+                      <span class="status-cleared">{{ report.status }}</span>
+                  {% endif %}
+              </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
 
+          <!-- Modal for Adding Manual Clearance -->
+          <div class="modal fade" id="manualClearanceModal" tabindex="-1" aria-labelledby="manualClearanceModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="manualClearanceModalLabel">Add Manual Clearance</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST">
+                  {% csrf_token %}
+                  <div class="modal-body">
+                    <!-- User Dropdown -->
+                    <div class="mb-3">
+                      <label for="user" class="form-label">Select User</label>
+                      <select class="form-select" id="user" name="user" required onchange="updateIdNumber()">
+                        <option value="" selected disabled>Select a user</option>
+                        {% for user in users %}
+                          <option value="{{ user.user_id }}" data-id="{{ user.personal_id }}">{{ user.firstname }} {{ user.lastname }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    
+                    <!-- ID Number (will be populated by JavaScript based on selected user) -->
+                    <div class="mb-3">
+                      <label for="id_number" class="form-label">ID Number</label>
+                      <input type="text" class="form-control" id="id_number" name="id_number" readonly required>
+                    </div>
+
+                    <!-- Item Dropdown -->
+                    <div class="mb-3">
+                      <label for="item">Select Item:</label>
+                    <select name="item" id="item">
+                        {% for item in items %}
+                            <option value="{{ item.item_name }}">{{ item.item_name }}</option>  <!-- Ensure item_name is used here -->
+                        {% endfor %}
+                    </select>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="quantity" class="form-label">Quantity</label>
+                      <input type="number" class="form-control" id="quantity" name="quantity" required min="1">
+                    </div>
+
+                    <!-- Reason input -->
+                    <div class="mb-3">
+                      <label for="reason" class="form-label">Reason</label>
+                      <textarea class="form-control" id="reason" name="reason" required></textarea>
+                    </div>
+
+                    <!-- Amount input -->
+                    <div class="mb-3">
+                      <label for="amount" class="form-label">Amount</label>
+                      <input type="number" class="form-control" id="amount" name="amount" required>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Clearance</button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
+
         </div>
       </div>
     </div>
-  </section>
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-            const today = new Date().toISOString().split('T')[0];
-            const selectedLabName = "{{ selected_lab_name }}";
-            const borrowFilename = `${selectedLabName}_qtyborroweditem__{{start_date}}_to_{{end_date}}`;
-            
-            new DataTable('.clearance-datatable', {
-                layout: {
-                    bottomStart: {
-                        // buttons: ['copy', 'excel', 'pdf', 'colvis']
-                        buttons: [{
-                                extend: 'excelHtml5',
-                                title: borrowFilename
-                            },
-                            {
-                                extend: 'pdfHtml5',
-                                title: borrowFilename
-                            }, 'copy', 'colvis']
-                    }
-                }
-                
-            });
-        });
-  </script>
+  </div>
+</section>
+
+<script>
+  function updateIdNumber() {
+    const userSelect = document.getElementById('user');
+    const selectedOption = userSelect.options[userSelect.selectedIndex];
+    const idNumberField = document.getElementById('id_number');
+    
+    // Update the ID number field with the selected user's personal_id
+    idNumberField.value = selectedOption.getAttribute('data-id');
+  }
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const today = new Date().toISOString().split('T')[0];
+    const selectedLabName = "{{ selected_lab_name }}";
+    const borrowFilename = `${selectedLabName}_qtyborroweditem__{{start_date}}_to_{{end_date}}`;
+    
+    new DataTable('.clearance-datatable', {
+        layout: {
+            bottomStart: {
+                buttons: [{
+                        extend: 'excelHtml5',
+                        title: borrowFilename
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        title: borrowFilename
+                    }, 'copy', 'colvis']
+            }
+        }
+    });
+  });
+</script>
+
 {% endblock %}
