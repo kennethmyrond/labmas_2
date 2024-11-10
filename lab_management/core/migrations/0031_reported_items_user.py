@@ -8,13 +8,14 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0030_alter_reported_items_borrow'),
+        ('core', '0030_alter_reported_items_borrow_and_more'),
     ]
 
     operations = [
         migrations.AddField(
             model_name='reported_items',
             name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(default=2, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+            preserve_default=False,
         ),
     ]

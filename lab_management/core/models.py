@@ -26,6 +26,27 @@ from django.contrib.postgres.fields import JSONField
 #     def __str__(self):
 #         return f"Transaction {self.transaction_id}"
 
+''' 
+convention for pks
+ year - user
+
+ 001 - laboratory
+ oo2 - rooms
+
+ inventory
+ 101
+
+ borrow
+ 201
+
+ clearance
+ 301
+
+ reservations
+ 401
+'''
+
+
 class Module(models.Model): 
     MODULE_CHOICES = [
         ('inventory', 'Inventory Management'),
@@ -50,13 +71,23 @@ class permissions(models.Model):
         return self.codename
 
 class laboratory(models.Model):
-    laboratory_id = models.AutoField(primary_key=True)
+    laboratory_id = models.CharField(max_length=20, unique=True, primary_key=True)
     name = models.CharField(max_length=45, null=True, blank=True)
     description = models.CharField(max_length=45, null=True, blank=True)
     department = models.CharField(max_length=45, null=True, blank=True)
     is_available = models.BooleanField(default=True)  # 1 for active, 0 for terminated
     date_created = models.DateTimeField(default=timezone.now)
     modules = models.JSONField(blank=True, default=list)
+
+    def save(self, *args, **kwargs):
+        if not self.laboratory_id:
+            current_year = datetime.now().year
+            while True:
+                random_number = get_random_string(length=4, allowed_chars='0123456789')
+                self.laboratory_id = f"001{current_year}{random_number}"
+                if not laboratory.objects.filter(laboratory_id=self.laboratory_id).exists():
+                    break
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -133,6 +164,9 @@ class user(AbstractBaseUser):
 
     def __str__(self):
         return f"{self.firstname} {self.lastname}"
+    
+    def get_fullname(self):
+        return f"{self.firstname} {self.lastname}"
 
 class laboratory_users(models.Model):
     user = models.ForeignKey(user, on_delete=models.CASCADE)
@@ -140,7 +174,28 @@ class laboratory_users(models.Model):
     role = models.ForeignKey(laboratory_roles, on_delete=models.CASCADE, related_name='users')
     is_active = models.BooleanField(default=True)
 
+class rooms(models.Model):
+    room_id = models.CharField(max_length=20, unique=True, primary_key=True)
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
+    name = models.CharField(max_length=45, null=True, blank=True)
+    capacity = models.IntegerField(default=0)
+    description = models.CharField(max_length=45, null=True, blank=True)
+    is_disabled = models.BooleanField(default=False)
+    is_reservable = models.BooleanField(default=True)
+    blocked_time = models.CharField(max_length=45, null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        if not self.room_id:
+            current_year = datetime.now().year
+            while True:
+                random_number = get_random_string(length=4, allowed_chars='0123456789')
+                self.room_id = f"002{current_year}{random_number}"
+                if not rooms.objects.filter(room_id=self.room_id).exists():
+                    break
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.name
 
 # inventory
 class item_description(models.Model):
@@ -404,17 +459,7 @@ class laboratory_reservations(models.Model):
             'C': 'Cancelled',
         }
         return status_mapping.get(self.status, 'Unknown')
-
-class rooms(models.Model):
-    room_id = models.AutoField(primary_key=True)
-    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
-    name = models.CharField(max_length=45, null=True, blank=True)
-    capacity = models.IntegerField(default=0)
-    description = models.CharField(max_length=45, null=True, blank=True)
-    is_disabled = models.BooleanField(default=False)
-    is_reservable = models.BooleanField(default=True)
-    blocked_time = models.CharField(max_length=45, null=True, blank=True)
-
+    
 class reservation_config(models.Model):
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
     reservation_type = models.CharField(max_length=10, choices=[('class', 'Class Time'), ('hourly', 'Hourly')], default='class')
