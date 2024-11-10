@@ -1526,19 +1526,14 @@ def borrowing_labcoord_prebookrequests(request):
 @lab_permission_required('configure_borrowing')
 def borrowing_labcoord_borrowconfig(request):
     selected_laboratory_id = request.session.get('selected_lab')
-
-    # Fetch all active (not disabled) items under the selected laboratory
     items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
-
-    # Fetch all item types under the selected laboratory
     item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
-
-    # Fetch the lab's borrowing configuration
     lab = get_object_or_404(borrowing_config, laboratory_id=selected_laboratory_id)
 
     # Annotate each item type to check if all items under it are borrowable
     for type in item_types_list:
         type.all_items_borrowable = item_description.objects.filter(itemType_id=type.itemType_id, allow_borrow=False).count() == 0
+        type.all_items_consumable = item_description.objects.filter(itemType_id=type.itemType_id, is_consumable=False).count() == 0
 
     if request.method == 'POST':
         if 'lab_config_form' in request.POST:
@@ -1555,32 +1550,37 @@ def borrowing_labcoord_borrowconfig(request):
             allowed_items = request.POST.getlist('borrow_item')  # Items explicitly checked
             allowed_item_types = request.POST.getlist('borrow_item_type')  # Item types explicitly checked
 
-            # Reset borrowability for all items to False
-            item_description.objects.filter(laboratory_id=selected_laboratory_id).update(allow_borrow=False)
+            is_consumable_list = request.POST.getlist('is_consumable')
+            is_consumable_type_list = request.POST.getlist('is_consumable_type')
 
-            # Handle individual items: Set allow_borrow=True for explicitly checked items
+            item_description.objects.filter(laboratory_id=selected_laboratory_id).update(allow_borrow=False, is_consumable=False)
+
+            # Handle individual items: Set allow_borrow=True and is_consumable=True for explicitly checked items
             if allowed_items:
                 item_description.objects.filter(item_id__in=allowed_items).update(allow_borrow=True)
-                # p2=get_object_or_404(item_description, item_id__in=allowed_items)
-                # print(p2.item_name)
-                # print(p2.allow_borrow)
+            
+            if is_consumable_list:
+                item_description.objects.filter(item_id__in=is_consumable_list).update(is_consumable=True)
 
             # Handle item types: Set allow_borrow=True for all items under the checked item types
             if allowed_item_types:
                 item_description.objects.filter(itemType_id__in=allowed_item_types).update(allow_borrow=True)
-
-            # Update is_consumable for item types and handle unchecking of item types
-            for type in item_types_list:
-                # Update the consumable status of the item type
-                type.is_consumable = f'is_consumable_{type.itemType_id}' in request.POST
-                type.save()
-
-                # If the item type is checked in the form, mark all items under this type as borrowable
-                if str(type.itemType_id) in allowed_item_types:
-                    item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=True)
-                else:
-                    # If unchecked, ensure items under this type are set to allow_borrow=False
-                    item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=False)
+                for type in item_types_list:
+                    # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
+                    if str(type.itemType_id) in allowed_item_types:
+                        item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=True)
+                    else:
+                        # If unchecked, ensure items under this type are set to allow_borrow=False and is_consumable=False
+                        item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=False)
+            
+            if is_consumable_type_list:
+                item_description.objects.filter(itemType_id__in=is_consumable_type_list).update(is_consumable=False)
+                for type in item_types_list:
+                    # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
+                    if str(type.itemType_id) in is_consumable_type_list:
+                        item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=True)
+                    else:
+                        item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=False)
 
             messages.success(request, "Borrowing configuration updated successfully!")
             return redirect('borrowing_labcoord_borrowconfig')
@@ -1667,10 +1667,11 @@ def return_borrowed_items(request):
     borrow_entry = None
     borrowed_items_list = None
     consumed_items_list = None
+    selected_laboratory_id = request.session.get('selected_lab')
 
     if borrow_id:
         try:
-            selected_laboratory_id = request.session.get('selected_lab')
+            
             borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id, laboratory_id=selected_laboratory_id)
 
             # Display error message if status is not 'B' (borrowed)
@@ -1706,7 +1707,8 @@ def return_borrowed_items(request):
                     item=item.item,
                     qty_reported=item.qty - item.returned_qty,  # Remaining items not returned
                     report_reason=remarks,
-                    amount_to_pay=amount_to_pay or 0
+                    amount_to_pay=amount_to_pay or 0,
+                    laboratory_id=selected_laboratory_id
                 )
 
         # Automatically mark all consumed items as returned
@@ -1719,7 +1721,8 @@ def return_borrowed_items(request):
            all(item.qty == item.returned_qty for item in consumed_items_list):
             borrow_entry.status = 'X'  # Mark as completed
             borrow_entry.save()
-
+        
+        messages.success(request, 'Successfully Returned an Item')
         return redirect('return_borrowed_items')
 
     return render(request, 'mod_borrowing/borrowing_return_borrowed_items.html', {
@@ -1856,7 +1859,7 @@ def clearance_student_viewClearanceDetailed(request, borrow_id):
         return render(request, 'mod_clearance/student_viewClearanceDetailed.html', {'error': 'User is not authenticated.'})
 
     # Use the user instance's ID for querying
-    user_id = user.id
+    user_id = request.user
 
     try:
         # Retrieve the borrow_info entries for the current user
@@ -1895,12 +1898,6 @@ def clearance_student_viewClearanceDetailed(request, borrow_id):
 def clearance_labtech_viewclearance(request):
     # Get the currently logged-in user (labtech)
     user = request.user
-
-    # Ensure the user is authenticated
-    if not user.is_authenticated:
-        return render(request, 'mod_clearance/labtech_viewclearance.html', {'error': 'User is not authenticated.'})
-
-    # Retrieve the selected laboratory ID from the session
     selected_laboratory_id = request.session.get('selected_lab')
 
     try:
@@ -1923,10 +1920,10 @@ def clearance_labtech_viewclearance(request):
 
             # Add data to the context
             report_data.append({
-                'report_id': report.id,
+                'report_id': report.report_id,
                 'borrow_id': borrow_info_obj.borrow_id,  # RF#
                 'user_name': f"{user_obj.firstname} {user_obj.lastname}",  # Student's Name
-                'id_number': user_obj.id_number,  # Fetch ID number from user
+                'id_number': user_obj.personal_id,  # Fetch ID number from user
                 'item_name': item_obj.item_name,  # Item Name
                 'reason': report.report_reason,  # Report Reason
                 'amount_due': report.amount_to_pay,  # Amount to Pay
@@ -1946,7 +1943,7 @@ def clearance_labtech_viewclearance(request):
 @lab_permission_required('view_student_clearance')
 def clearance_labtech_viewclearanceDetailed(request, report_id):
     # Get the reported item by ID
-    report = get_object_or_404(reported_items, id=report_id)
+    report = get_object_or_404(reported_items, report_id=report_id)
 
     if request.method == 'POST':
         # Handle remarks submission and marking as cleared
@@ -1965,7 +1962,7 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
     context = {
         'RFno': report.borrow.borrow_id,  # RF#
         'student_name': f"{report.borrow.user.firstname} {report.borrow.user.lastname}",  # Student's Name
-        'ID_number': report.borrow.user.id_number,  # Student's Name
+        'ID_number': report.borrow.user.personal_id,  # Student's Name
         'item_name': report.item.item_name,  # Item Name
         'reason': report.report_reason,  # Reason
         'amount_due': report.amount_to_pay,  # Amount Due
@@ -2569,141 +2566,6 @@ def get_room_configuration(request, room_id):
 
 #  ================================================================= 
 
-# selected_laboratory_id = request.session.get('selected_lab')
-
-#     # inventory report
-#     date_type = request.GET.get('dateType', 'today')  # Get date filter type
-#     date = request.GET.get('date', None)
-#     start_date = request.GET.get('startDate', None)
-#     end_date = request.GET.get('endDate', None)
-#     item_id = request.GET.get('item_id')
-
-#     # Query based on the selected date type
-#     today = datetime.now().date()
-#     query_filter = {}
-
-#     # Filtering logic for different date types
-#     if date_type == 'today':
-#         start_date = '1900-12-30'
-#         end_date = today
-#     elif date_type == 'day' and date:
-#         start_date = '1900-12-30'
-#         end_date = date
-
-#         start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-#         end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-
-#         start_date = timezone.make_aware(datetime.combine(start_date, datetime.min.time()))
-#         end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
-#     elif date_type == 'week' and date:
-#         date_obj = datetime.strptime(date, '%Y-%m-%d').date()
-#         start_date = date_obj - timedelta(days=date_obj.weekday())
-#         end_date = start_date + timedelta(days=6)
-#     elif date_type == 'month' and date:
-#         date_obj = datetime.strptime(date, '%Y-%m').date()
-#         start_date = date_obj.replace(day=1)
-#         end_date = (date_obj.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
-#     elif date_type == 'year' and date:
-#         date_obj = datetime.strptime(date, '%Y').date()
-#         start_date = date_obj.replace(month=1, day=1)
-#         end_date = date_obj.replace(month=12, day=31)
-#     elif date_type == 'timeframe' and start_date and end_date:
-#         start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-#         end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-
-#     print (start_date, end_date)
-#     # Calculate stock level based on item handling up to the selected end_date
-#     inventory_data = item_description.objects.filter(
-#         laboratory_id=selected_laboratory_id,
-#         is_disabled=False
-#     ).annotate(
-#     current_qty=Greatest(
-#         Coalesce(
-#             Sum('item_inventory__item_handling__qty', filter=Q(item_inventory__item_handling__changes='A', item_inventory__item_handling__timestamp__gte=start_date, item_inventory__item_handling__timestamp__lte=end_date)), 0
-#         ) - 
-#         Coalesce(
-#             Sum('item_inventory__item_handling__qty', filter=Q(item_inventory__item_handling__changes='R') | Q(item_inventory__item_handling__changes='D')& Q(item_inventory__item_handling__timestamp__gte=start_date) & Q(item_inventory__item_handling__timestamp__lte=end_date)), 0
-#         ),
-#         0  # Default value if the result is None
-#     )
-#     ).order_by('-current_qty', 'item_name') 
-
-#     # Filter item_inventory and borrowing data based on date range
-#     if item_id:
-#         # Aggregate item inventory data by time unit
-#         if date_type == 'day':
-#             inventory_data = item_handling.objects.filter(
-#                 inventory_item__item_id=item_id,
-#                 timestamp__range=(start_date, end_date)
-#             ).annotate(date=TruncDay('timestamp')).values('date').annotate(total_qty=Sum('qty'))
-
-#             borrowing_data = borrowed_items.objects.filter(
-#                 item_id=item_id,
-#                 borrow__borrow_date__range=(start_date, end_date)
-#             ).annotate(date=TruncDay('borrow__borrow_date')).values('date').annotate(total_borrowed=Sum('qty'))
-
-#         elif date_type == 'month':
-#             inventory_data = item_handling.objects.filter(
-#                 inventory_item__item_id=item_id,
-#                 timestamp__range=(start_date, end_date)
-#             ).annotate(date=TruncMonth('timestamp')).values('date').annotate(total_qty=Sum('qty'))
-
-#             borrowing_data = borrowed_items.objects.filter(
-#                 item_id=item_id,
-#                 borrow__borrow_date__range=(start_date, end_date)
-#             ).annotate(date=TruncMonth('borrow__borrow_date')).values('date').annotate(total_borrowed=Sum('qty'))
-
-#         elif date_type == 'year':
-#             inventory_data = item_handling.objects.filter(
-#                 inventory_item__item_id=item_id,
-#                 timestamp__range=(start_date, end_date)
-#             ).annotate(date=TruncYear('timestamp')).values('date').annotate(total_qty=Sum('qty'))
-
-#             borrowing_data = borrowed_items.objects.filter(
-#                 item_id=item_id,
-#                 borrow__borrow_date__range=(start_date, end_date)
-#             ).annotate(date=TruncYear('borrow__borrow_date')).values('date').annotate(total_borrowed=Sum('qty'))
-
-#     # Borrowing Data
-#     borrowing_data = borrowed_items.objects.values('item__item_name').annotate(
-#         total_borrowed=Sum('qty')
-#     ).order_by('-total_borrowed')[:10]
-
-#     # Combine Data
-#     combined_data = []
-#     for item in inventory_data:
-#         borrowed_qty = next((borrow['total_borrowed'] for borrow in borrowing_data if borrow['item__item_name'] == item.item_name), 0)
-#         combined_data.append({
-#             'item_name': item.item_name,
-#             'current_qty': item.current_qty,
-#             'total_borrowed': borrowed_qty
-#         })
-
-#     combined_data.sort(key=lambda x: (x['total_borrowed'], x['current_qty']), reverse=True)
-
-
-#     # Room Usage Report
-#     room_usage_data = laboratory_reservations.objects.values('room__name').annotate(
-#         total_reservations=Count('reservation_id')).order_by('-total_reservations')
-
-#     # Maintenance & Repairs Report
-#     maintenance_data = reported_items.objects.values('item__item_name').annotate(
-#         total_reported=Sum('qty_reported')).order_by('-total_reported')
-
-#     all_items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=0)
-
-
-# 'inventory_data': inventory_data,
-#         'borrowing_data': borrowing_data,
-#         'combined_data': combined_data,
-#         'room_usage_data': room_usage_data,
-#         'maintenance_data': maintenance_data,
-#         'date_type': date_type,
-#         'date': date,
-#         'start_date': start_date,
-#         'end_date': end_date,
-#         'item_id': item_id,
-#         'all_items': all_items,
 
 # reports module
 @login_required
@@ -2917,7 +2779,6 @@ def reports_view(request):
     }
 
     return render(request, 'mod_reports/reports.html', context)
-
 
 def inventory_reports(request):
     selected_laboratory_id = request.session.get('selected_lab')
@@ -3148,6 +3009,114 @@ def borrowing_reports(request):
 
     return render(request, 'mod_reports/borrowing_reports.html', context)
 
+def clearance_reports(request):
+    # Get filter type from GET parameters, defaulting to 'today'
+    selected_laboratory_id = request.session.get('selected_lab')
+    filter_type = request.GET.get('filter_type', 'today')
+    reports_filter = request.GET.get('reports_filter', 'today')
+    start_date = end_date = None
+    today = timezone.now().date()
+    
+    if filter_type == 'today':
+        start_date = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    elif filter_type == 'this_week':
+        start_date = today - timedelta(days=today.weekday())  # Start of the week
+        end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    elif filter_type == 'this_month':
+        start_date = today.replace(day=1)
+        end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    elif filter_type == 'this_year':
+        start_date = today.replace(month=1, day=1)
+        end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    elif filter_type == 'custom':
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        if start_date:
+            start_date = timezone.make_aware(datetime.strptime(start_date, '%Y-%m-%d')).replace(hour=0, minute=0, second=0, microsecond=0)
+        if end_date:
+            end_date = timezone.make_aware(datetime.strptime(end_date, '%Y-%m-%d')).replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    date_range = [start_date, end_date]
+    print(start_date, ' - ', end_date)
+
+    # Calculate the on-hold user count within the laboratory and date range
+    on_hold_users_count = reported_items.objects.filter(
+        laboratory_id=selected_laboratory_id,
+        borrow__user__isnull=False,
+        reported_date__range=[start_date, end_date] if start_date and end_date else None
+    ).values('borrow__user').annotate(total_on_hold=Sum('status')).filter(total_on_hold__gt=0).count()
+
+    # Set incidents_start_date based on reports_filter
+    if reports_filter == 'today':
+        incidents_start_date = today
+    elif reports_filter == 'this_week':
+        incidents_start_date = today - timedelta(days=today.weekday())
+    elif reports_filter == 'this_month':
+        incidents_start_date = today.replace(day=1)
+    elif reports_filter == 'this_year':
+        incidents_start_date = today.replace(month=1, day=1)
+    else:
+        incidents_start_date = None
+
+    # Calculate total reports count in the lab based on incidents_start_date
+    total_reports_count = reported_items.objects.filter(
+        laboratory_id=selected_laboratory_id,
+        reported_date__date__gte=incidents_start_date if incidents_start_date else None
+    ).count()
+
+    # If the request is AJAX, return JSON with total_reports_count and filter display
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'total_reports_count': total_reports_count,
+            'reports_filter_display': reports_filter.replace("_", " ").title()
+        })
+
+
+
+    # Filter reported_items within the date range and specific laboratory
+    clearance_data = reported_items.objects.filter(
+        laboratory_id=selected_laboratory_id,
+        reported_date__range=date_range,
+    ).values(
+        user_id=F('borrow__user__user_id'),
+        user_name=Concat(F('borrow__user__firstname'), Value(' '), F('borrow__user__lastname')),
+        personal_id=F('borrow__user__personal_id')
+    ).annotate(
+        total_amount_due=Sum('amount_to_pay'),
+        reported_items_count=Count('report_id'),
+        status=Sum('status'),
+    )
+
+    # Add clearance status for each user
+    for record in clearance_data:
+        record['clearance_status'] = 'Cleared' if record['status'] == 0 else 'On Hold'
+
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'total_reports_count': total_reports_count,
+            'reports_filter_display': context['reports_filter_display']
+        })    
+
+    context = {
+        'reported_items_data': clearance_data,
+
+        'filter_type': filter_type,
+        'start_date': start_date,
+        'end_date': end_date,
+
+        'total_on_hold_users': on_hold_users_count,
+        'total_reports_count': total_reports_count,
+        'reports_filter_display': reports_filter.replace("_", " ").title(),
+    }
+
+    return render(request, 'mod_reports/clearance_reports.html', context)
+
+def labres_reports(request):
+    context={}
+    return render(request, 'mod_reports/labres_reports.html', context)
 
 def inventory_data(request, item_type_id, laboratory_id):
     item_type = item_types.objects.get(pk=item_type_id)
@@ -3177,6 +3146,7 @@ def inventory_data(request, item_type_id, laboratory_id):
         'items': items_data,
         'add_cols': add_cols
     })
+
 
 @user_passes_test(lambda u: u.is_superuser)
 def admin_reports_view(request):

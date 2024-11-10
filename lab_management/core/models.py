@@ -338,7 +338,8 @@ class borrowed_items(models.Model):
         return f"Borrowed Item {self.borrow_id} - {self.item_id}"
 
 class reported_items(models.Model): 
-    reference_id = models.CharField(max_length=20, unique=True, primary_key=True)
+    report_id = models.CharField(max_length=20, unique=True, primary_key=True)
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
     borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE)
     item = models.ForeignKey('item_description', on_delete=models.CASCADE)
     qty_reported = models.IntegerField(null=False, blank=False)

@@ -62,10 +62,11 @@
             </form>
 
             <!-- Table with stripped rows -->
-            <table class="table datatable">
+            <table class="table clearance-datatable table-striped">
               <thead>
                 <tr>
-                  <th>RF#</th>
+                  <th>Report ID</th>
+                  <th>Borrow ID</th>
                   <th>Name</th>
                   <th>ID Number</th>
                   <th>Item</th>
@@ -77,10 +78,11 @@
               <tbody>
                 {% for report in reports %}
                 <tr>
+                  <td><a href="{% url 'clearance_labtech_viewclearanceDetailed' report.report_id %}">{{ report.report_id }}</a></td>
                   <td>{{ report.borrow_id }}</td>  <!-- RF# (Borrow ID) -->
                   <td>{{ report.user_name }}</td>  <!-- Student's Name -->
                   <td>{{ report.id_number }}</td>
-                  <td><a href="{% url 'clearance_labtech_viewclearanceDetailed' report.report_id %}">{{ report.item_name }}</a></td>  <!-- Item Name -->
+                  <td>{{ report.item_name }}</td>  <!-- Item Name -->
                   <td>{{ report.reason }}</td>  <!-- Report Reason -->
                   <td>{{ report.amount_due }}</td>  <!-- Amount to Pay -->
                   <td>
@@ -103,4 +105,28 @@
       </div>
     </div>
   </section>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+            const today = new Date().toISOString().split('T')[0];
+            const selectedLabName = "{{ selected_lab_name }}";
+            const borrowFilename = `${selectedLabName}_qtyborroweditem__{{start_date}}_to_{{end_date}}`;
+            
+            new DataTable('.clearance-datatable', {
+                layout: {
+                    bottomStart: {
+                        // buttons: ['copy', 'excel', 'pdf', 'colvis']
+                        buttons: [{
+                                extend: 'excelHtml5',
+                                title: borrowFilename
+                            },
+                            {
+                                extend: 'pdfHtml5',
+                                title: borrowFilename
+                            }, 'copy', 'colvis']
+                    }
+                }
+                
+            });
+        });
+  </script>
 {% endblock %}

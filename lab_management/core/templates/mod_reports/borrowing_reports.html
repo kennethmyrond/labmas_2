@@ -198,6 +198,7 @@
             // Trigger change event on page load to set initial state
             $('#filter_type').trigger('change');
         });
+        
         document.addEventListener("DOMContentLoaded", function () {
             const today = new Date().toISOString().split('T')[0];
             const selectedLabName = "{{ selected_lab_name }}";

@@ -45,8 +45,8 @@
                     <th>RF Number</th>
                     <th>Borrower</th>
                     <th>Items</th>
-                    <th></th>
-                    <th></th>
+                    <th>Confirm</th>
+                    <th>Canel</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -86,14 +86,14 @@
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Future Borrows</h5>
-              <table class="table table-striped datatable">
+              <table class="table datatable table-striped ">
                 <thead>
                   <tr>
                     <th>RF Number</th>
                     <th>Borrower</th>
                     <th>Items</th>
-                    <th></th>
-                    <th></th>
+                    <th hidden></th>
+                    <th hidden></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -108,12 +108,13 @@
                         {% endfor %}
                       </ul>
                     </td>
-                    <td>
+
+                    <!-- <td>
                       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" data-id="{{ request.borrow_id }}">Mark as Borrowed</button>
                     </td>
                     <td>
                       <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal" data-id="{{ request.borrow_id }}">Cancel</button>
-                    </td>
+                    </td> -->
                   </tr>
                   {% endfor %}
                 </tbody>
@@ -261,15 +262,15 @@
         <div class="col-lg-12">
           <div class="card">
             <div class="card-body">
-              <h5 class="card-title">Accepted Borrows (Sorted by Request Date)</h5>
+              <h5 class="card-title">All requests</h5>
               <table class="table table-striped datatable">
                 <thead>
                   <tr>
                     <th>RF Number</th>
                     <th>Borrower</th>
                     <th>Request Date</th>
-                    <th></th>
-                    <th></th>
+                    <th hidden></th>
+                    <th hidden></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -278,12 +279,12 @@
                     <td><a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
                     <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
                     <td>{{ request.request_date|date:"Y/m/d" }}</td>
-                    <td>
+                    <!-- <td>
                       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" data-id="{{ request.borrow_id }}">Mark as Borrowed</button>
                     </td>
                     <td>
                       <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal" data-id="{{ request.borrow_id }}">Cancel</button>
-                    </td>
+                    </td> -->
                   </tr>
                   {% endfor %}
                 </tbody>

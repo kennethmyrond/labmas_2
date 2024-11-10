@@ -99,85 +99,80 @@
 
             <form method="POST" id="borrowConfigForm">
               {% csrf_token %}
-              <input type="none" name="borrow_config_form" value="1" hidden> <!-- none input to differentiate forms -->
-
+              <input type="hidden" name="borrow_config_form" value="1"> <!-- hidden input to differentiate forms -->
+          
               <div class="form-group">
-                <label>Select Borrowing Configuration Mode:</label><br>
-                <input type="radio" id="itemMode" name="borrowMode" value="item" checked>
-                <label for="itemMode">By Specific Item</label><br>
-                <input type="radio" id="typeMode" name="borrowMode" value="type">
-                <label for="typeMode">By Item Type</label><br>
+                  <label>Select Borrowing Configuration Mode:</label><br>
+                  <input type="radio" id="itemMode" name="borrowMode" value="item" checked>
+                  <label for="itemMode">By Specific Item</label><br>
+                  <input type="radio" id="typeMode" name="borrowMode" value="type">
+                  <label for="typeMode">By Item Type</label><br>
               </div>
-
+          
               <!-- Section to configure by specific items -->
               <section id="itemConfigSection">
-                <h5 class="card-title">Borrowable Items Configurations</h5>
-                <table class="table datatable">
-                  <thead>
-                    <tr>
-                      <th>Item Name</th>
-                      <th>Item Type</th>
-                      <th>Allow Borrowing?</th>
-                      <th style="display:none"></th>
-                      <th style="display:none"></th>
-                      <th style="display:none"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for item in items %}
-                    <tr>
-                      <td>{{ item.item_name }}</td>
-                      <td>{{ item.itemType.itemType_name }}</td> <!-- Item Type column -->
-                      <td>
-                        <input type="checkbox" name="borrow_item" value="{{ item.item_id }}" 
-                               {% if item.allow_borrow %}checked{% endif %}>
-                      </td>
-                      <td style="display:none"></td>
-                      <td style="display:none"></td>
-                      <td style="display:none"></td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+                  <h5 class="card-title">Borrowable Items Configurations</h5>
+                  <table class="table datatable">
+                      <thead>
+                          <tr>
+                              <th>Item Name</th>
+                              <th>Item Type</th>
+                              <th>Allow Borrowing?</th>
+                              <th>Is Consumable?</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {% for item in items %}
+                          <tr>
+                              <td>{{ item.item_name }}</td>
+                              <td>{{ item.itemType.itemType_name }}</td> <!-- Item Type column -->
+                              <td>
+                                  <input type="checkbox" name="borrow_item" value="{{ item.item_id }}" 
+                                         {% if item.allow_borrow %}checked{% endif %}>
+                              </td>
+                              <td>
+                                  <input type="checkbox" name="is_consumable" value="{{ item.item_id }}" 
+                                         {% if item.is_consumable %}checked{% endif %}>
+                              </td>
+                          </tr>
+                          {% endfor %}
+                      </tbody>
+                  </table>
               </section>
-
+          
               <!-- Section to configure by item types -->
               <section id="itemTypeConfigSection" style="display:none;">
-                <h5 class="card-title">Borrowable Item Types Configurations</h5>
-                <table class="table datatable">
-                  <thead>
-                    <tr>
-                      <th>Item Type</th>
-                      <th>Allow Borrowing?</th>
-                      <th>Make Consumable?</th>
-                      <th style="display:none"></th>
-                      <th style="display:none"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for type in item_types_list %}
-                    <tr>
-                      <td>{{ type.itemType_name }}</td>
-                      <td>
-                        <input type="checkbox" class="borrow-type-checkbox" name="borrow_item_type" value="{{ type.itemType_id }}" 
-                               {% if type.all_items_borrowable %}checked{% endif %}>
-                      </td>
-                      <td>
-                        <input type="checkbox" name="is_consumable_{{ type.itemType_id }}" 
-                               {% if type.is_consumable %}checked{% endif %}>
-                      </td>
-                      <td style="display:none"></td>
-                      <td style="display:none"></td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+                  <h5 class="card-title">Borrowable Item Types Configurations</h5>
+                  <table class="table datatable">
+                      <thead>
+                          <tr>
+                              <th>Item Type</th>
+                              <th>Allow Borrowing?</th>
+                              <th>Make Consumable?</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {% for type in item_types_list %}
+                          <tr>
+                              <td>{{ type.itemType_name }}</td>
+                              <td>
+                                  <input type="checkbox" class="borrow-type-checkbox" name="borrow_item_type" value="{{ type.itemType_id }}" 
+                                         {% if type.all_items_borrowable %}checked{% endif %}>
+                              </td>
+                              <td>
+                                  <input type="checkbox" name="is_consumable_type" value="{{ type.itemType_id }}" 
+                                         {% if type.all_items_consumable %}checked{% endif %}>
+                              </td>
+                          </tr>
+                          {% endfor %}
+                      </tbody>
+                  </table>
               </section>
-
+          
               <div class="btncontainer">
-                <button class="btn btn-primary" id="savebtn-borrow-config">Save</button>
+                  <button class="btn btn-primary" id="savebtn-borrow-config">Save</button>
               </div>
-            </form>
+          </form>
           </div>
         </div>
       </div>

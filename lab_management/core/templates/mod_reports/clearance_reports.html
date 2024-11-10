@@ -1,0 +1,182 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}Reports{% endblock %}
+{% load custom_filters %}
+{% block content %}
+<style>
+    .card-body{
+        padding: 10px 20px 20px 20px;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<div class="container">
+    <!-- Filter Section -->
+    <div class="col">
+        <div class="row">
+            <!-- On-Hold Clearances Card -->
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Users with On-Hold Clearances</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="bi bi-person-x"></i>
+                            </div>
+                            <div class="ps-3">
+                                <h6>{{ total_on_hold_users }}</h6>
+                                <span class="text-muted small pt-2 ps-1">users on hold</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Total Reports Card with Filter -->
+<div class="col">
+    <div class="card">
+        <div class="card-body">
+            <div class="filter">
+                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                    <li class="dropdown-header text-start"><h6>Filter</h6></li>
+                    <li><a class="dropdown-item filter-option" href="#" data-filter="today">Today</a></li>
+                    <li><a class="dropdown-item filter-option" href="#" data-filter="this_week">This Week</a></li>
+                    <li><a class="dropdown-item filter-option" href="#" data-filter="this_month">This Month</a></li>
+                    <li><a class="dropdown-item filter-option" href="#" data-filter="this_year">This Year</a></li>
+                </ul>
+            </div>
+            <h5 class="card-title">Total Incidents <span>| <span id="filter-display">{{ reports_filter_display }}</span></span></h5>
+            <div class="d-flex align-items-center">
+                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div class="ps-3">
+                    <h6 id="total-used">{{ total_reports_count }}</h6>
+                    <span class="text-muted small pt-2 ps-1">total reports</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+    const filterOptions = document.querySelectorAll(".filter-option");
+
+    filterOptions.forEach(option => {
+        option.addEventListener("click", function (event) {
+            event.preventDefault();
+
+            const filterType = option.getAttribute("data-filter");
+            fetchReportsData(filterType);
+        });
+    });
+
+    function fetchReportsData(filterType) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("reports_filter", filterType);
+
+        fetch(url, {
+            headers: {
+                'x-requested-with': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("total-used").innerText = data.total_reports_count;
+            document.getElementById("filter-display").innerText = data.reports_filter_display;
+        })
+        .catch(error => console.error("Error fetching data:", error));
+    }
+});
+
+    </script>
+    
+
+    <div class="col">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">User Clearance Status</h2>
+                <form method="get" action="" class="form-inline mb-3">
+                    <label for="filter_type" class="mr-2">Filter:</label>
+                    <select name="filter_type" id="filter_type" class="form-control mr-2 mt-4">
+                        <option value="today" {% if filter_type == 'today' %}selected{% endif %}>Today</option>
+                        <option value="this_week" {% if filter_type == 'this_week' %}selected{% endif %}>This Week</option>
+                        <option value="this_month" {% if filter_type == 'this_month' %}selected{% endif %}>This Month</option>
+                        <option value="this_year" {% if filter_type == 'this_year' %}selected{% endif %}>This Year</option>
+                        <option value="custom" {% if filter_type == 'custom' %}selected{% endif %}>Custom</option>
+                    </select>
+                    <div id="custom-date-range" class="form-inline mt-4" style="display: none;">
+                        <label for="start_date" class="mr-2 mt-4">Start Date:</label>
+                        <input type="date" name="start_date" id="start_date" class="form-control mr-2" value="{{ start_date }}">
+                        <label for="end_date" class="mr-2 mt-4">End Date:</label>
+                        <input type="date" name="end_date" id="end_date" class="form-control mr-2" value="{{ end_date }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-4">Apply Filter</button>
+                </form>
+                <hr>
+                <table class="table clearance-datatable table-striped">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Name</th>
+                            <th>Personal ID</th>
+                            <th>Total Amount Due</th>
+                            <th>Reported Items Count</th>
+                            <th>Clearance Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in reported_items_data %}
+                        <tr>
+                            <td>{{ user.user_id }}</td>
+                            <td>{{ user.user_name }}</td>
+                            <td>{{ user.personal_id }}</td>
+                            <td style="text-align: right;">₱{{ user.total_amount_due|floatformat:2 }}</td>
+                            <td>{{ user.reported_items_count }}</td>
+                            <td>{{ user.clearance_status }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            // Show/hide custom date range inputs based on filter type
+            $('#filter_type').change(function() {
+                if ($(this).val() === 'custom') {
+                    $('#custom-date-range').show();
+                } else {
+                    $('#custom-date-range').hide();
+                }
+            });
+    
+            // Trigger change event on page load to set initial state
+            $('#filter_type').trigger('change');
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            new DataTable('.clearance-datatable', {
+                layout: {
+                    bottomStart: {
+                        // buttons: ['copy', 'excel', 'pdf', 'colvis']
+                        buttons: [{
+                                extend: 'excelHtml5',
+                                title: '{{selected_lab_name}}_ClearanceReport_{{ start_date }}_to_{{ end_date }}'
+                            },
+                            {
+                                extend: 'pdfHtml5',
+                                title: '{{selected_lab_name}}_ClearanceReport_{{ start_date }}_to_{{ end_date }}'
+                            }, 'copy', 'colvis']
+                    }
+                }
+                
+            });
+        });
+    </script>
+{% endblock %}

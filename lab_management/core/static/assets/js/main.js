@@ -6,8 +6,6 @@
 * License: https://bootstrapmade.com/license/
 */
 
-console.log('pass1');
-
 (function() {
   "use strict";
 
@@ -283,48 +281,26 @@ console.log('pass1');
   /**
    * Initiate Datatables
    */
-  // const datatables = select('.datatable', true)
-  // datatables.forEach(datatable => {
-  //   new simpleDatatables.DataTable(datatable, {
-  //     perPageSelect: [5, 10, 15, ["All", -1]],
-  //   //   buttons: [
-  //   //     'copy', 'excel', 'pdf', 'print', 'csv',
-  //   //     {
-  //   //         text: 'JSON',
-  //   //         action: function (e, dt, button, config) {
-  //   //             var data = dt.buttons.exportData();
-
-  //   //             $.fn.dataTable.fileSave(
-  //   //                 new Blob([JSON.stringify(data)]),
-  //   //                 'Export.json'
-  //   //             );
-  //   //         }
-  //   //     }
-  //   // ],
-  //     layout: {
-  //       topStart: {
-  //           buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
-  //       }
-  //     },
-  //     columns: [{
-  //         select: 2,
-  //         sortSequence: ["desc", "asc"]
-  //       },
-  //       {
-  //         select: 3,
-  //         sortSequence: ["desc"]
-  //       },
-  //       {
-  //         select: 4,
-  //         cellClass: "green",
-  //         headerClass: "red"
-  //       }
-  //     ]
-      
-  //   });
-  // })
-
-  
+  const datatables = select('.datatable', true)
+  datatables.forEach(datatable => {
+    new simpleDatatables.DataTable(datatable, {
+      perPageSelect: [5, 10, 15, ["All", -1]],
+      columns: [{
+          select: 2,
+          sortSequence: ["desc", "asc"]
+        },
+        {
+          select: 3,
+          sortSequence: ["desc"]
+        },
+        {
+          select: 4,
+          cellClass: "green",
+          headerClass: "red"
+        }
+      ]
+    });
+  })
 
   /**
    * Autoresize echart charts
@@ -341,4 +317,3 @@ console.log('pass1');
   }
 
 })();
-

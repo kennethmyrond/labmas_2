@@ -87,10 +87,10 @@ urlpatterns = [
 
 
     path('reports/', views.reports_view, name='reports'),
-    path('inventory_reports/', views.inventory_reports, name='inventory_reports'),
-    path('borrowing_reports/', views.borrowing_reports, name='borrowing_reports'),
-    # path('clearance_reports/', views.clearance_reports, name='clearance_reports'),
-    # path('labres_reports/', views.labres_reports, name='labres_reports'),
+    path('inventory-reports/', views.inventory_reports, name='inventory_reports'),
+    path('borrowing-reports/', views.borrowing_reports, name='borrowing_reports'),
+    path('clearance-reports/', views.clearance_reports, name='clearance_reports'),
+    path('labres-reports/', views.labres_reports, name='labres_reports'),
 
     path('inventory-data/<int:item_type_id>/<int:laboratory_id>/', views.inventory_data, name='inventory_data'),
     path('admin-reports/', views.admin_reports_view, name='admin_reports'),
