@@ -1,0 +1,295 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}Lab Reservation Reports{% endblock %}
+{% load custom_filters %}
+{% block content %}
+<style>
+    .card-body{
+        padding: 10px 20px 20px 20px;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<div class="container">
+    
+    <div class="row">
+        <!-- Total Number of Rooms Card -->
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Number of Rooms</h5>
+                    <div class="d-flex align-items-center">
+                        <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="bi bi-door-closed"></i>
+                        </div>
+                        <div class="ps-3">
+                            <h6>{{ total_rooms }}</h6>
+                            <span class="text-muted small pt-2 ps-1">rooms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Total Number of Rooms Card -->
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Reservable Rooms</h5>
+                    <div class="d-flex align-items-center">
+                        <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="bi bi-door-closed"></i>
+                        </div>
+                        <div class="ps-3">
+                            <h6>{{ reservable_rooms }}</h6>
+                            <span class="text-muted small pt-2 ps-1">rooms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Total Laboratory Reservations with Filter -->
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <div class="filter">
+                        <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                            <li class="dropdown-header text-start"><h6>Filter</h6></li>
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="today">Today</a></li>
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="this_week">This Week</a></li>
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="this_month">This Month</a></li>
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="this_year">This Year</a></li>
+                        </ul>
+                    </div>
+                    <h5 class="card-title">Total Laboratory Reservations <span>| <span id="filter-display">{{ reports_filter_display }}</span></span></h5>
+                    <div class="d-flex align-items-center">
+                        <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="bi bi-calendar-check"></i>
+                        </div>
+                        <div class="ps-3">
+                            <h6 id="total-reservations">{{ total_reservations }}</h6>
+                            <span class="text-muted small pt-2 ps-1">reservations</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const filterOptions = document.querySelectorAll(".filter-option");
+    
+            filterOptions.forEach(option => {
+                option.addEventListener("click", function (event) {
+                    event.preventDefault();
+    
+                    const filterType = option.getAttribute("data-filter");
+                    fetchReportsData(filterType);
+                });
+            });
+    
+            function fetchReportsData(filterType) {
+                const url = new URL(window.location.href);
+                url.searchParams.set("reservations_filter", filterType);
+    
+                fetch(url, {
+                    headers: {
+                        'x-requested-with': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("total-reservations").innerText = data.total_reservations;
+                    document.getElementById("filter-display").innerText = data.reports_filter_display;
+                })
+                .catch(error => console.error("Error fetching data:", error));
+            }
+        });
+    </script>
+
+
+    <!-- Room Reservation Summary Table with Independent Filter -->
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <div class="filter">
+                    <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                        <li class="dropdown-header text-start"><h6>Show in </h6></li>
+                        <li><a class="dropdown-item filter-option" href="#" data-filter="today">Table</a></li>
+                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_week">Graph</a></li>
+                    </ul>
+                </div>
+                <h2 class="card-title">Room Reservation Summary</h2>
+                
+                <form method="get" action="" class="form-inline mb-3">
+                    <label for="room_filter_type" class="mr-2">Filter by Date:</label>
+                    <select name="room_filter_type" id="room_filter_type" class="form-control mr-2 mt-2">
+                        <option value="today" {% if room_filter_type == 'today' %}selected{% endif %}>Today</option>
+                        <option value="this_week" {% if room_filter_type == 'this_week' %}selected{% endif %}>This Week</option>
+                        <option value="this_month" {% if room_filter_type == 'this_month' %}selected{% endif %}>This Month</option>
+                        <option value="this_year" {% if room_filter_type == 'this_year' %}selected{% endif %}>This Year</option>
+                        <option value="custom" {% if room_filter_type == 'custom' %}selected{% endif %}>Custom</option>
+                    </select>
+                    <div id="room-custom-date-range" class="form-inline mt-3" style="display: none;">
+                        <label for="start_date" class="mr-2">Start Date:</label>
+                        <input type="date" name="start_date" id="start_date" class="form-control mr-2" value="{{ start_date }}">
+                        <label for="end_date" class="mr-2">End Date:</label>
+                        <input type="date" name="end_date" id="end_date" class="form-control mr-2" value="{{ end_date }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">Apply Filter</button>
+                </form>
+                <hr>
+                <p><strong>Date Range: {{ start_date }} to {{ end_date }}</strong></p>
+                <table class="table room-datatable table-striped">
+                    <thead>
+                        <tr>
+                            
+                            <th>Room Name</th>
+                            <th>Capacity</th>
+                            <th style=" text-align:center;">Reservable?</th>
+                            <th>Total Reservations</th>
+                            <th>Cumulative Reserved Time (Hours)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for room in room_data %}
+                        <tr>
+                            
+                            <td>{{ room.name }}</td>
+                            <td>{{ room.capacity }}</td>
+                            <td style="color: {% if room.is_reservable %} green {%else%} red {%endif%}; text-align:center;">{% if room.is_reservable %} Yes {%else%} No {%endif%}</td>
+                            <td>{{ room.total_reservations }}</td>
+                            <td>{{ room.cumulative_time|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Room Reservation Summary Filter
+        document.addEventListener("DOMContentLoaded", function () {
+        $('#room_filter_type').change(function () {
+            if ($(this).val() === 'custom') {
+                $('#room-custom-date-range').show();
+            } else {
+                $('#room-custom-date-range').hide();
+            }
+        }).trigger('change');
+
+        new DataTable('.room-datatable', {
+            layout: {
+                bottomStart: {
+                    buttons: [{
+                            extend: 'excelHtml5',
+                            title: '{{selected_lab_name}}_RoomReservationSummary_{{ start_date }}_to_{{ end_date }}'
+                        },
+                        {
+                            extend: 'pdfHtml5',
+                            title: '{{selected_lab_name}}_RoomReservationSummary_{{ start_date }}_to_{{ end_date }}'
+                        }, 'copy', 'colvis']
+                }
+            }
+        });
+
+        
+    });
+    </script>
+    
+    
+
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">Laboratory Reservations</h2>
+                <!-- Filter Section -->
+                <form method="get" action="" class="form-inline mb-3">
+                    <label for="reservation_filter_type" class="mr-2">Filter by Date:</label>
+                    <select name="reservation_filter_type" id="reservation_filter_type" class="form-control mr-2 mt-2">
+                        <option value="today" {% if reservation_filter_type == 'today' %}selected{% endif %}>Today</option>
+                        <option value="this_week" {% if reservation_filter_type == 'this_week' %}selected{% endif %}>This Week</option>
+                        <option value="this_month" {% if reservation_filter_type == 'this_month' %}selected{% endif %}>This Month</option>
+                        <option value="this_year" {% if reservation_filter_type == 'this_year' %}selected{% endif %}>This Year</option>
+                        <option value="custom" {% if reservation_filter_type == 'custom' %}selected{% endif %}>Custom</option>
+                    </select>
+                    <div id="custom-date-range" class="form-inline mt-3" style="display: none;">
+                        <label for="start_date" class="mr-2">Start Date:</label>
+                        <input type="date" name="start_date" id="start_date" class="form-control mr-2" value="{{ start_date }}">
+                        <label for="end_date" class="mr-2">End Date:</label>
+                        <input type="date" name="end_date" id="end_date" class="form-control mr-2" value="{{ end_date }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">Apply Filter</button>
+                </form>
+                <hr>
+                <p><strong>Date Range: {{ start_date }} to {{ end_date }}</strong></p>
+                <table class="table reservation-datatable table-striped">
+                    <thead>
+                        <tr>
+                            <th>Reservation ID</th>
+                            <th>User</th>
+                            <th>Room</th>
+                            <th>Start Date</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Purpose</th>
+                            <th>Contact Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reservation in laboratory_reservations %}
+                        <tr>
+                            <td>{{ reservation.reservation_id }}</td>
+                            <td>{{ reservation.user }}</td>
+                            <td>{{ reservation.room.name }}</td>
+                            <td>{{ reservation.start_date }}</td>
+                            <td>{{ reservation.start_time }}</td>
+                            <td>{{ reservation.end_time }}</td>
+                            <td>{{ reservation.purpose }}</td>
+                            <td>{{ reservation.contact_name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            // Show/hide custom date range inputs based on filter type
+            $('#reservation_filter_type').change(function() {
+                if ($(this).val() === 'custom') {
+                    $('#custom-date-range').show();
+                } else {
+                    $('#custom-date-range').hide();
+                }
+            });
+    
+            // Trigger change event on page load to set initial state
+            $('#reservation_filter_type').trigger('change');
+        });
+    
+        document.addEventListener("DOMContentLoaded", function () {
+            new DataTable('.reservation-datatable', {
+                layout: {
+                    bottomStart: {
+                        buttons: [{
+                                extend: 'excelHtml5',
+                                title: '{{selected_lab_name}}_Reservations_{{ start_date }}_to_{{ end_date }}'
+                            },
+                            {
+                                extend: 'pdfHtml5',
+                                title: '{{selected_lab_name}}_Reservations_{{ start_date }}_to_{{ end_date }}'
+                            }, 'copy', 'colvis']
+                    }
+                }
+            });
+        });
+    </script>
+    
+{% endblock %}

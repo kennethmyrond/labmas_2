@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear
-from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When
+from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField
 from django.db import connection, models
 from django.utils import timezone
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
@@ -3080,9 +3080,9 @@ def clearance_reports(request):
         laboratory_id=selected_laboratory_id,
         reported_date__range=date_range,
     ).values(
-        user_id=F('borrow__user__user_id'),
-        user_name=Concat(F('borrow__user__firstname'), Value(' '), F('borrow__user__lastname')),
-        personal_id=F('borrow__user__personal_id')
+        reported_user_id=F('user__user_id'),
+        user_name=Concat(F('user__firstname'), Value(' '), F('user__lastname')),
+        personal_id=F('user__personal_id')
     ).annotate(
         total_amount_due=Sum('amount_to_pay'),
         reported_items_count=Count('report_id'),
@@ -3092,6 +3092,49 @@ def clearance_reports(request):
     # Add clearance status for each user
     for record in clearance_data:
         record['clearance_status'] = 'Cleared' if record['status'] == 0 else 'On Hold'
+
+    
+    # Fetch reported items data for the specified laboratory and filter criteria
+    # Filters for Reported Items Count
+    item_filter_type = request.GET.get('item_filter_type', 'today')
+    item_start_date = item_end_date = None
+    today = timezone.now().date()
+    
+    if item_filter_type == 'today':
+        item_start_date = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        item_end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    elif item_filter_type == 'this_week':
+        item_start_date = today - timedelta(days=today.weekday())
+        item_end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    elif item_filter_type == 'this_month':
+        item_start_date = today.replace(day=1)
+        item_end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    elif item_filter_type == 'this_year':
+        item_start_date = today.replace(month=1, day=1)
+        item_end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+    elif item_filter_type == 'custom':
+        item_start_date = request.GET.get('item_start_date')
+        item_end_date = request.GET.get('item_end_date')
+        if item_start_date:
+            item_start_date = timezone.make_aware(datetime.strptime(item_start_date, '%Y-%m-%d')).replace(
+                hour=0, minute=0, second=0, microsecond=0)
+        if item_end_date:
+            item_end_date = timezone.make_aware(datetime.strptime(item_end_date, '%Y-%m-%d')).replace(
+                hour=23, minute=59, second=59, microsecond=999999)
+
+    item_date_range = [item_start_date, item_end_date]
+
+    # Fetch Reported Items Count data
+    reported_items_summary = reported_items.objects.filter(
+        laboratory_id=selected_laboratory_id,
+        reported_date__range=item_date_range if item_start_date and item_end_date else None
+    ).values(
+        reported_item_id=F('item__item_id'),
+        item_name=F('item__item_name')
+    ).annotate(
+        report_count=Count('report_id'),
+        total_qty_reported=Sum('qty_reported')
+    )
 
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -3110,12 +3153,109 @@ def clearance_reports(request):
         'total_on_hold_users': on_hold_users_count,
         'total_reports_count': total_reports_count,
         'reports_filter_display': reports_filter.replace("_", " ").title(),
+
+        'reported_items_summary': reported_items_summary,
+        'item_filter_type': item_filter_type,
+        'item_start_date': item_start_date,
+        'item_end_date': item_end_date,
+
     }
 
     return render(request, 'mod_reports/clearance_reports.html', context)
 
 def labres_reports(request):
-    context={}
+    selected_laboratory_id = request.session.get('selected_lab')
+    reservations_filter = request.GET.get('reservations_filter', 'today')
+    today = timezone.now().date()
+
+    # Get total rooms for the selected laboratory
+    total_rooms = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=0).count()
+    reservable_rooms = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_reservable=1, is_disabled=0).count()
+
+    # Set start_date based on filter type
+    if reservations_filter == 'today':
+        start_date = today
+    elif reservations_filter == 'this_week':
+        start_date = today - timedelta(days=today.weekday())  # Start of the week
+    elif reservations_filter == 'this_month':
+        start_date = today.replace(day=1)  # Start of the month
+    elif reservations_filter == 'this_year':
+        start_date = today.replace(month=1, day=1)  # Start of the year
+    else:
+        start_date = None  # No filter applied
+
+    # Total number of reservations for selected laboratory with optional filtering
+    lab_reservations_qs = laboratory_reservations.objects.filter(
+        room__laboratory_id=selected_laboratory_id
+    )
+    if start_date:
+        lab_reservations_qs = lab_reservations_qs.filter(start_date__gte=start_date)
+    
+    total_reservations = lab_reservations_qs.count()
+
+    reservation_filter_type = request.GET.get('reservation_filter_type', 'today')
+    start_date = end_date = None
+
+    start_date, end_date
+
+    # Filter laboratory reservations with status 'R' for the selected lab
+    lab_reservations_qs = laboratory_reservations.objects.filter(
+        room__laboratory_id=selected_laboratory_id,
+        status='R'
+    )
+    if start_date and end_date:
+        lab_reservations_qs = lab_reservations_qs.filter(start_date__range=(start_date, end_date))
+
+
+    # Room Reservation Filter
+    room_filter_type = request.GET.get('room_filter_type', 'today')
+    room_start_date, room_end_date = calculate_date_range(room_filter_type)
+
+    # Query for room reservation summary with filter
+    room_data = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False).annotate(
+        total_reservations=Count(
+            'reservations', 
+            filter=Q(reservations__start_date__range=(room_start_date, room_end_date))
+        ),
+        cumulative_time=Sum(
+            ExpressionWrapper(
+                (F('reservations__end_time__hour') * 60 + F('reservations__end_time__minute')) -
+                (F('reservations__start_time__hour') * 60 + F('reservations__start_time__minute')),
+                output_field=IntegerField()
+            ),
+            filter=Q(reservations__start_date__range=(room_start_date, room_end_date))
+        ) / 60.0  # Convert minutes to hours
+    )
+
+    # Replace None with 0 for cumulative_time
+    for room in room_data:
+        if room.cumulative_time is None:
+            room.cumulative_time = 0
+
+    context = {
+        'total_rooms': total_rooms,
+        'reservable_rooms': reservable_rooms,
+        'total_reservations': total_reservations,
+        'reports_filter_display': reservations_filter.replace("_", " ").title(),
+
+        'laboratory_reservations': lab_reservations_qs,
+        'reservation_filter_type': reservation_filter_type,
+        'start_date': start_date,
+        'end_date': end_date,
+
+        'room_data': room_data,
+        'filter_type': room_filter_type,
+        'start_date': room_start_date,
+        'end_date': room_end_date,
+    }
+
+    # If AJAX request, return JSON response for dynamic filter update
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'total_reservations': total_reservations,
+            'reports_filter_display': context['reports_filter_display']
+        })
+
     return render(request, 'mod_reports/labres_reports.html', context)
 
 def inventory_data(request, item_type_id, laboratory_id):
@@ -3147,6 +3287,29 @@ def inventory_data(request, item_type_id, laboratory_id):
         'add_cols': add_cols
     })
 
+def calculate_date_range(filter_type):
+    """ Helper function to determine start and end dates based on the filter type """
+    today = timezone.now().date()
+    if filter_type == 'today':
+        return today, today
+    elif filter_type == 'this_week':
+        start_date = today - timedelta(days=today.weekday())
+        return start_date, today
+    elif filter_type == 'this_month':
+        start_date = today.replace(day=1)
+        return start_date, today
+    elif filter_type == 'this_year':
+        start_date = today.replace(month=1, day=1)
+        return start_date, today
+    elif filter_type == 'custom':
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        if start_date:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        if end_date:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        return start_date, end_date
+    return None, None
 
 @user_passes_test(lambda u: u.is_superuser)
 def admin_reports_view(request):

@@ -95,7 +95,7 @@
     </script>
     
 
-    <div class="col">
+    <div class="row">
         <div class="card">
             <div class="card-body">
                 <h2 class="card-title">User Clearance Status</h2>
@@ -116,7 +116,8 @@
                     </div>
                     <button type="submit" class="btn btn-primary mt-4">Apply Filter</button>
                 </form>
-                <hr>
+                <br><hr><br>
+                <p>Date Range: <strong>{{ start_date }} to {{ end_date }}</strong></p>
                 <table class="table clearance-datatable table-striped">
                     <thead>
                         <tr>
@@ -131,7 +132,7 @@
                     <tbody>
                         {% for user in reported_items_data %}
                         <tr>
-                            <td>{{ user.user_id }}</td>
+                            <td>{{ user.reported_user_id }}</td>
                             <td>{{ user.user_name }}</td>
                             <td>{{ user.personal_id }}</td>
                             <td style="text-align: right;">₱{{ user.total_amount_due|floatformat:2 }}</td>
@@ -167,11 +168,11 @@
                         // buttons: ['copy', 'excel', 'pdf', 'colvis']
                         buttons: [{
                                 extend: 'excelHtml5',
-                                title: '{{selected_lab_name}}_ClearanceReport_{{ start_date }}_to_{{ end_date }}'
+                                title: '{{selected_lab_name}}_UserClearanceReport_{{ start_date }}_to_{{ end_date }}'
                             },
                             {
                                 extend: 'pdfHtml5',
-                                title: '{{selected_lab_name}}_ClearanceReport_{{ start_date }}_to_{{ end_date }}'
+                                title: '{{selected_lab_name}}_UserClearanceReport_{{ start_date }}_to_{{ end_date }}'
                             }, 'copy', 'colvis']
                     }
                 }
@@ -179,4 +180,87 @@
             });
         });
     </script>
+
+<!-- Reported Items Count Section -->
+<div class="row">
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title">Reported Items Summary</h2>
+            <form method="get" action="" class="form-inline mb-3">
+                <label for="item_filter_type" class="mr-2">Filter:</label>
+                <select name="item_filter_type" id="item_filter_type" class="form-control mr-2 mt-4">
+                    <option value="today" {% if item_filter_type == 'today' %}selected{% endif %}>Today</option>
+                    <option value="this_week" {% if item_filter_type == 'this_week' %}selected{% endif %}>This Week</option>
+                    <option value="this_month" {% if item_filter_type == 'this_month' %}selected{% endif %}>This Month</option>
+                    <option value="this_year" {% if item_filter_type == 'this_year' %}selected{% endif %}>This Year</option>
+                    <option value="custom" {% if item_filter_type == 'custom' %}selected{% endif %}>Custom</option>
+                </select>
+                <div id="item-custom-date-range" class="form-inline mt-4" style="display: none;">
+                    <label for="item_start_date" class="mr-2 mt-4">Start Date:</label>
+                    <input type="date" name="item_start_date" id="item_start_date" class="form-control mr-2" value="{{ item_start_date }}">
+                    <label for="item_end_date" class="mr-2 mt-4">End Date:</label>
+                    <input type="date" name="item_end_date" id="item_end_date" class="form-control mr-2" value="{{ item_end_date }}">
+                </div>
+                <button type="submit" class="btn btn-primary mt-4">Apply Filter</button>
+            </form>
+            <hr>
+            <p>Date Range: <strong>{{ item_start_date }} to {{ item_end_date }}</strong></p>
+            <table class="table reporteditems-datatable table-striped">
+                <thead>
+                    <tr>
+                        <th>Item ID</th>
+                        <th>Item Name</th>
+                        <th>Number of Reports</th>
+                        <th>Total Reported Quantity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in reported_items_summary %}
+                    <tr>
+                        <td>{{ item.reported_item_id }}</td>
+                        <td>{{ item.item_name }}</td>
+                        <td>{{ item.report_count }}</td>
+                        <td>{{ item.total_qty_reported }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // Show/hide custom date range inputs based on Reported Items filter type
+        $('#item_filter_type').change(function() {
+            if ($(this).val() === 'custom') {
+                $('#item-custom-date-range').show();
+            } else {
+                $('#item-custom-date-range').hide();
+            }
+        });
+
+        // Trigger change event on page load to set initial state
+        $('#item_filter_type').trigger('change');
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        new DataTable('.reporteditems-datatable', {
+            layout: {
+                bottomStart: {
+                    buttons: [{
+                            extend: 'excelHtml5',
+                            title: '{{ selected_lab_name }}_ReportedItemsSummary_{{ item_start_date }}_to_{{ item_end_date }}'
+                        },
+                        {
+                            extend: 'pdfHtml5',
+                            title: '{{ selected_lab_name }}_ReportedItemsSummary_{{ item_start_date }}_to_{{ item_end_date }}'
+                        }, 'copy', 'colvis']
+                }
+            }
+        });
+    });
+</script>
+
+<!-- end reported items count section -->
 {% endblock %}
