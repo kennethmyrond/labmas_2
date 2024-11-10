@@ -397,7 +397,7 @@ class reported_items(models.Model):
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
     borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE, null=True, blank=True)
     user = models.ForeignKey('user', on_delete=models.CASCADE, null=True, blank=True)  # Add this line
-    item = models.ForeignKey('item_description', on_delete=models.CASCADE)
+    item = models.ForeignKey('item_description', on_delete=models.CASCADE, null=True, blank=True)
     qty_reported = models.IntegerField(null=False, blank=False)
     report_reason = models.CharField(max_length=255)
     amount_to_pay = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
