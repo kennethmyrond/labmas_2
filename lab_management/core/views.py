@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear
-from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When
+from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, Max
 from django.db import connection, models
 from django.utils import timezone
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
@@ -372,11 +372,16 @@ def inventory_itemDetails_view(request, item_id):
     # Get the related laboratory instance
     lab = get_object_or_404(laboratory, laboratory_id=item.laboratory_id)
 
-    
-    # Prefetch item_handling related to item_inventory
-    item_handling_prefetch = Prefetch('item_handling_set', queryset=item_handling.objects.all().order_by('timestamp'))
-    # Filter item_inventory and prefetch related supplier and item_handling data
-    item_inventories = item_inventory.objects.filter(item=item).select_related('supplier').prefetch_related(item_handling_prefetch)
+    # Prefetch item_handling related to item_inventory, ordered by timestamp in descending order
+    item_handling_prefetch = Prefetch('item_handling_set', queryset=item_handling.objects.all().order_by('-timestamp'))
+
+    # Annotate the latest handling timestamp for each inventory item
+    item_inventories = item_inventory.objects.filter(item=item)\
+        .select_related('supplier')\
+        .prefetch_related(item_handling_prefetch)\
+        .annotate(latest_handling_timestamp=Max('item_handling__timestamp'))\
+        .order_by('-latest_handling_timestamp')  # Use the annotated field for ordering
+
     print(item_inventories)
 
     # Calculate the total quantity
@@ -384,17 +389,19 @@ def inventory_itemDetails_view(request, item_id):
 
     qr_code_data = generate_qr_code(item.item_id)
 
-     # Fetch expiration data and attach it to each inventory item if applicable
+    # Fetch expiration data and attach it to each inventory item if applicable
     if item.rec_expiration:
         expirations = item_expirations.objects.filter(inventory_item__in=item_inventories)
         expiration_data = {exp.inventory_item.inventory_item_id: exp.expired_date for exp in expirations}
         
         # Attach expiration_date directly to each inventory instance
         for inventory in item_inventories:
+            latest_handling = inventory.item_handling_set.first()  # Access related item_handling
             inventory.expiration_date = expiration_data.get(inventory.inventory_item_id)
     else:
         # If no expirations are recorded, set expiration_date to None for consistency
         for inventory in item_inventories:
+            latest_handling = inventory.item_handling_set.first()  # Access related item_handling
             inventory.expiration_date = None
 
     # Prepare context for rendering
