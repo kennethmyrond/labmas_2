@@ -2272,7 +2272,7 @@ def labres_lab_schedule(request):
     selected_room = None
     reservations_by_day = {}
 
-      # Get the current month
+    # Get the current month
     current_month = timezone.now().strftime('%Y-%m')
 
     if selected_laboratory_id:
@@ -2310,6 +2310,9 @@ def labres_lab_schedule(request):
                 for reservation in reservations:
                     reservations_by_day[reservation.start_date.day].append(reservation)
 
+                # Pass the range of days to the template
+                days_range = range(1, days_in_month + 1)
+
             except rooms.DoesNotExist:
                 print(f"Room '{selected_room}' does not exist.")
             except Exception as e:
@@ -2320,6 +2323,7 @@ def labres_lab_schedule(request):
         'reservations_by_day': reservations_by_day,  # Pass the organized reservations
         'selected_month': selected_month,
         'selected_room': selected_room,
+        'days_range': days_range,  # Pass the range of days
     }
 
     return render(request, 'mod_labRes/labres_lab_schedule.html', context)
