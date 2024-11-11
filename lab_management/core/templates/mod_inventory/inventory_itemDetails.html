@@ -136,6 +136,9 @@
                 <td>
                   {% if inventory.expiration_date %}
                     {{ inventory.expiration_date|date:"Y-m-d" }}
+                    {% if inventory.expiration_date <= date_today %}
+                        <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
+                    {% endif %}
                   {% else %}
                     Not Applicable
                   {% endif %}

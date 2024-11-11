@@ -7,13 +7,14 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear
-from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField
+from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField, Max
 from django.db import connection, models
 from django.utils import timezone
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from django.urls import reverse
 from collections import defaultdict
 from functools import wraps
+
 
 from django import forms
 # from allauth.socialaccount.helpers import provider_login_url
@@ -368,6 +369,7 @@ def inventory_itemDetails_view(request, item_id):
 
     # Get the related itemType instance
     item_type = item.itemType
+    date_today = date.today()
 
     # Get the related laboratory instance
     lab = get_object_or_404(laboratory, laboratory_id=item.laboratory_id)
@@ -414,6 +416,7 @@ def inventory_itemDetails_view(request, item_id):
         'add_cols_data': add_cols_data,
         'is_edit_mode': False,  # Not in edit mode
         'qr_code_data': qr_code_data,
+        'date_today': date_today
     }
 
     return render(request, 'mod_inventory/inventory_itemDetails.html', context)
@@ -1680,6 +1683,7 @@ def return_borrowed_items(request):
         try:
             
             borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id, laboratory_id=selected_laboratory_id)
+            user_borrowed = borrow_entry.user
 
             # Display error message if status is not 'B' (borrowed)
             if borrow_entry.status != 'B':
@@ -1715,7 +1719,8 @@ def return_borrowed_items(request):
                     qty_reported=item.qty - item.returned_qty,  # Remaining items not returned
                     report_reason=remarks,
                     amount_to_pay=amount_to_pay or 0,
-                    laboratory_id=selected_laboratory_id
+                    laboratory_id=selected_laboratory_id,
+                    user=user_borrowed
                 )
 
         # Automatically mark all consumed items as returned
@@ -2175,6 +2180,7 @@ def lab_reservation_student_reserveLabConfirm(request):
 
         # Save the reservation data in session temporarily for confirmation
         request.session['reservation_data'] = {
+            'id': selected_room.room_id,
             'room': selected_room.name,
             'selected_date': selected_date,
             'start_time': selected_start_time,
@@ -2189,6 +2195,7 @@ def lab_reservation_student_reserveLabConfirm(request):
 @lab_permission_required('reserve_laboratory')
 def lab_reservation_student_reserveLabConfirmDetails(request):
     reservation_data = request.session.get('reservation_data')
+    print(reservation_data)
     current_user = request.user
     selected_laboratory_id = request.session.get('selected_lab')
     reservation_config_obj = get_object_or_404(reservation_config,laboratory_id=selected_laboratory_id)
@@ -2212,7 +2219,7 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
 
         reservation = laboratory_reservations.objects.create(
             user=current_user or None,
-            room=rooms.objects.get(name=reservation_data['room']),
+            room=rooms.objects.get(room_id=reservation_data['id']),
             start_date=reservation_data['selected_date'],
             start_time=reservation_data['start_time'],
             end_time=reservation_data['end_time'],
@@ -2307,6 +2314,7 @@ def labres_lab_schedule(request):
     selected_month = None
     selected_room = None
     reservations_by_day = {}
+    days_range = None
 
     # Get the current month
     current_month = timezone.now().strftime('%Y-%m')
@@ -2348,6 +2356,8 @@ def labres_lab_schedule(request):
 
                 # Pass the range of days to the template
                 days_range = range(1, days_in_month + 1)
+
+                
 
             except rooms.DoesNotExist:
                 print(f"Room '{selected_room}' does not exist.")
@@ -2829,57 +2839,8 @@ def reports_view(request):
 
 def inventory_reports(request):
     selected_laboratory_id = request.session.get('selected_lab')
-    inventory_items = item_description.objects.filter(
-        laboratory_id=selected_laboratory_id,
-        is_disabled=False  # Only get items that are enabled
-    ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
-    inventory_qty_data = {
-        'categories': [item.item_name for item in inventory_items],
-        'series': [item.total_qty for item in inventory_items]
-    }
-
-    item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
+    current_date = date.today()
     filter_type = request.GET.get('reports_filter', 'this_week')
-    item_id = request.GET.get('item_id')
-
-    if not item_id:
-        # If no item is selected, return an empty response
-        trend_data_added = []
-        trend_data_removed = []
-    else:
-        # Get data for the last 1 year
-        trend_data_added = item_handling.objects.filter(
-            inventory_item__item__laboratory_id=selected_laboratory_id,
-            inventory_item__item_id=item_id,
-            timestamp__gte=timezone.now() - timezone.timedelta(days=365)
-        ).annotate(date=TruncDay('timestamp')).values('date').annotate(
-            total_qty=Sum(Case(
-                When(qty__gt=0, then=F('qty')),
-                default=Value(0)
-            ))
-        ).order_by('date')
-
-        trend_data_removed = item_handling.objects.filter(
-            inventory_item__item__laboratory_id=selected_laboratory_id,
-            inventory_item__item_id=item_id,
-            timestamp__gte=timezone.now() - timezone.timedelta(days=365)
-        ).annotate(date=TruncDay('timestamp')).values('date').annotate(
-            total_qty=Sum(Case(
-                When(qty__lt=0, then=-F('qty')),
-                default=Value(0)
-            ))
-        ).order_by('date')
-
-        # Convert datetime objects to strings
-        trend_data_added = [
-            {'date': entry['date'].strftime('%Y-%m-%d'), 'total_qty': entry['total_qty']}
-            for entry in trend_data_added
-        ]
-
-        trend_data_removed = [
-            {'date': entry['date'].strftime('%Y-%m-%d'), 'total_qty': entry['total_qty']}
-            for entry in trend_data_removed
-        ]
 
     # Calculate total quantities based on the filter type
     if filter_type == 'today':
@@ -2934,17 +2895,8 @@ def inventory_reports(request):
             timestamp__gte=timezone.now() - timezone.timedelta(days=365)
         ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return JsonResponse({
-            'total_purchased': total_purchased,
-            'total_used': abs(total_used)  # Convert to positive number
-        })
     
-
     # total qty of expired items
-    current_date = date.today()
-
-    # Query to get the total quantity of expired items
     expired_items_qty = item_inventory.objects.filter(
         item_expirations__expired_date__lt=current_date
     ).aggregate(total_qty=Sum('qty'))['total_qty']
@@ -2953,7 +2905,69 @@ def inventory_reports(request):
     if expired_items_qty is None:
         expired_items_qty = 0
 
+    # inventory items table
+    inventory_items = item_description.objects.filter(
+        laboratory_id=selected_laboratory_id,
+        is_disabled=False  # Only get items that are enabled
+    ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
+    inventory_qty_data = {
+        'categories': [item.item_name for item in inventory_items],
+        'series': [item.total_qty for item in inventory_items]
+    }
 
+    
+    
+
+    item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
+    item_id = request.GET.get('item_id')
+
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=365)
+
+    daily_data = {}
+    current_day = start_date  # Changed from 'date' to 'current_day'
+    while current_day <= end_date:
+        daily_data[current_day] = {"added_qty": 0, "removed_qty": 0}
+        current_day += timedelta(days=1)
+
+    if item_id:
+        added_quantities = item_handling.objects.filter(
+            inventory_item__item__laboratory_id=selected_laboratory_id,
+            inventory_item__item_id=item_id,
+            qty__gt=0,
+            timestamp__date__range=(start_date, end_date)
+        ).annotate(date=TruncDay('timestamp')).values('date').annotate(total_qty=Sum('qty')).order_by('date')
+
+        removed_quantities = item_handling.objects.filter(
+            inventory_item__item__laboratory_id=selected_laboratory_id,
+            inventory_item__item_id=item_id,
+            qty__lt=0,
+            timestamp__date__range=(start_date, end_date)
+        ).annotate(date=TruncDay('timestamp')).values('date').annotate(total_qty=Sum('qty')).order_by('date')
+
+        for entry in added_quantities:
+            entry_date = entry['date'].date()  # Renamed to entry_date to avoid conflict
+            daily_data[entry_date]["added_qty"] = entry['total_qty']
+
+        for entry in removed_quantities:
+            entry_date = entry['date'].date()
+            daily_data[entry_date]["removed_qty"] = entry['total_qty']
+
+    trend_data_added = [
+        {"date": day.strftime('%Y-%m-%d'), "total_qty": data["added_qty"]}
+        for day, data in daily_data.items()
+    ]
+    trend_data_removed = [
+        {"date": day.strftime('%Y-%m-%d'), "total_qty": data["removed_qty"]}
+        for day, data in daily_data.items()
+    ]
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'total_purchased': total_purchased,
+            'total_used': abs(total_used)  # Convert to positive number
+        })
+    
     items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
 
     context = {
@@ -2965,6 +2979,8 @@ def inventory_reports(request):
         'trend_data_removed': json.dumps(trend_data_removed),
         'items': items,
         'selected_item_id': item_id,
+
+
         'total_purchased': total_purchased,
         'total_used': abs(total_used),  # Convert to positive number
         'reports_filter_display': filter_type.replace('_', ' ').title(),
@@ -2999,16 +3015,27 @@ def borrowing_reports(request):
             all_dates[entry['borrow_date']] = entry['total_borrows']
 
         # Convert data to JSON format for ApexCharts
+        # day_borrowing_data = {
+        #     'dates': [date.strftime('%Y-%m-%d') for date in all_dates.keys()],
+        #     'counts': list(all_dates.values())
+        # }
+        # day_borrowing_data = {
+        #     'dates': [date.isoformat() for date in all_dates.keys()],
+        #     'counts': list(all_dates.values())
+        # }
         day_borrowing_data = {
             'dates': [date.strftime('%Y-%m-%d') for date in all_dates.keys()],
             'counts': list(all_dates.values())
         }
+
     else:
         day_borrowing_data = {
             'dates': [],
             'counts': []
         }
     
+    print(day_borrowing_data)
+
     # borrow table ============================
     # Get filter parameters from request
     filter_type = request.GET.get('filter_type', 'today')

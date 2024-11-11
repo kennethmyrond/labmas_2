@@ -250,9 +250,9 @@
                   {% for roles in lab_roles %}
                   <tr>
                       <td style="text-align:left; padding-left: 50px;">{{ roles.name }}</td>
-                      <td style="text-align:center; padding-right: 50px;">{% if roles.laboratory_id == 0 %} <i>default</i>{% endif %}</td>
+                      <td style="text-align:center; padding-right: 50px;">{% if roles.laboratory_id == '0' %} <i>default</i>{% endif %}</td>
                       <td style="text-align:center; padding-right: 50px;">
-                          {% if not roles.laboratory_id == 0 %}
+                          {% if not roles.laboratory_id == '0' %}
                           <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#editRoleModal{{ roles.roles_id }}" {% if not lab.is_available %} disabled {% endif %}>✎</button>
                           <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteRoleModal{{ roles.roles_id }}" {% if not lab.is_available %} disabled {% endif %}>🗑</button>
                           {% endif %}
