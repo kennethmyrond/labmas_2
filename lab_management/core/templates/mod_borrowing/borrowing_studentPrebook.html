@@ -166,17 +166,18 @@
                         <div class="modal-dialog modal-dialog-centered" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="confirmBorrowLabel">Confirm Borrow Details</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
+                                   <strong> <p class="modal-title" id="confirmBorrowLabel">Confirm Borrow Details</p></strong>
+                            
                                 </div>
                                 <div class="modal-body">
-                                    <h6>Borrow Type: <span id="confirmBorrowType"></span></h6>
-                                    <h6>Borrow Date: <span id="confirmBorrowDate"></span></h6>
-                                    <h6>Due Date: <span id="confirmDueDate"></span></h6>
-                                    <h6>Equipment List:</h6>
-                                    <ul id="confirmEquipmentList"></ul>
+                                    <!-- Adding line breaks and spacing for better formatting -->
+                                    <p><strong>Borrow Type:</strong> <span id="confirmBorrowType"></span></p>
+                                    <p><strong>Borrow Date:</strong> <span id="confirmBorrowDate"></span></p>
+                                    <p><strong>Due Date:</strong> <span id="confirmDueDate"></span></p>
+                                    
+                                    <!-- Equipment List -->
+                                    <p><strong>Equipment List:</strong></p>
+                                    <div id="confirmEquipmentList"></div>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -196,31 +197,61 @@
 <script>
     // Function to populate modal with borrow details
     document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('borrow-form');
-        const confirmBorrowType = document.getElementById('confirmBorrowType');
-        const confirmBorrowDate = document.getElementById('confirmBorrowDate');
-        const confirmDueDate = document.getElementById('confirmDueDate');
-        const confirmPurpose = document.getElementById('confirmPurpose');
-        const confirmEquipmentList = document.getElementById('confirmEquipmentList');
-    
-        document.querySelector('[data-target="#confirmBorrowModal"]').addEventListener('click', function() {
-            confirmBorrowType.innerText = document.getElementById('borrowing-type').value;
-            confirmBorrowDate.innerText = document.getElementById('one-day-booking-date').value || document.getElementById('from-date').value;
-            confirmDueDate.innerText = document.getElementById('to-date').value || document.getElementById('one-day-booking-date').value;
-            confirmPurpose.innerText = form.querySelector('[name="purpose"]').value;
-    
-            // Populate equipment list
-            confirmEquipmentList.innerHTML = '';
-            const equipmentRows = document.querySelectorAll('.equipment-row');
-            equipmentRows.forEach(function(row) {
-                const equipmentName = row.querySelector('input[type="text"]').value;
-                const equipmentQty = row.querySelector('input[name="quantities[]"]').value;
-                const li = document.createElement('li');
-                li.innerText = `${equipmentName} - Quantity: ${equipmentQty}`;
-                confirmEquipmentList.appendChild(li);
+    const form = document.getElementById('borrow-form');
+    const confirmBorrowType = document.getElementById('confirmBorrowType');
+    const confirmBorrowDate = document.getElementById('confirmBorrowDate');
+    const confirmDueDate = document.getElementById('confirmDueDate');
+    const confirmEquipmentList = document.getElementById('confirmEquipmentList');
+
+            document.querySelector('[data-target="#confirmBorrowModal"]').addEventListener('click', function() {
+                confirmBorrowType.innerText = document.getElementById('borrowing-type').value;
+                confirmBorrowDate.innerText = document.getElementById('one-day-booking-date').value || document.getElementById('from-date').value;
+                confirmDueDate.innerText = document.getElementById('to-date').value || document.getElementById('one-day-booking-date').value;
+                
+                // Clear previous content
+                confirmEquipmentList.innerHTML = '';
+
+                // Add table headers
+                let equipmentTable = `
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Equipment Name</th>
+                                <th>Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                // Capture dynamically added equipment
+                const equipmentRows = document.querySelectorAll('.equipment-row');
+                equipmentRows.forEach(function(row) {
+                    const equipmentName = row.querySelector('input[type="text"]').value;
+                    const equipmentQty = row.querySelector('input[name="quantities[]"]').value;
+
+                    // Only add equipment with a non-zero quantity
+                    if (equipmentQty > 0) {
+                        equipmentTable += `
+                            <tr>
+                                <td>${equipmentName}</td>
+                                <td>${equipmentQty}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                // Close table tag
+                equipmentTable += `
+                        </tbody>
+                    </table>
+                `;
+
+                // Append table to modal content
+                confirmEquipmentList.innerHTML = equipmentTable;
             });
         });
-    });
+
+
     </script>
 
 <script>

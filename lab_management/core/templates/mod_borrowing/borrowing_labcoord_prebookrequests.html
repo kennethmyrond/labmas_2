@@ -108,7 +108,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="borrow_id" value="{{ request.borrow_id }}">
                         <button type="submit" name="action" value="approve" id="approve">Approve</button>
-                        <button type="submit" name="action" value="reject" id="reject">Reject</button>
+                        <button type="submit" name="action" value="reject" id="reject">Declined</button>
                       </form>
                     {% else %}
                       <span>None</span>

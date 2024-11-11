@@ -1538,7 +1538,7 @@ def borrowing_labcoord_prebookrequests(request):
             borrow_request.status = 'D'
             borrow_request.approved_by = request.user
             borrow_request.save()
-            messages.success(request, f"Borrow request {borrow_id} has been rejected.")
+            messages.success(request, f"Borrow request {borrow_id} has been declined.")
 
         return redirect('borrowing_labcoord_prebookrequests')
 
@@ -2193,7 +2193,7 @@ def lab_reservation_student_reserveLabConfirm(request):
 
         # Save the reservation data in session temporarily for confirmation
         request.session['reservation_data'] = {
-            'room': selected_room.name,
+            'room_id': selected_room.room_id,
             'selected_date': selected_date,
             'start_time': selected_start_time,
             'end_time': selected_end_time,
@@ -2228,9 +2228,13 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
         else: 
             stat='R'
 
+         # Use the room_id from the session data instead of the room name
+        room_id = reservation_data.get('room_id')  # Adjusted to use room_id
+        room = get_object_or_404(rooms, room_id=room_id)
+
         reservation = laboratory_reservations.objects.create(
             user=current_user or None,
-            room=rooms.objects.get(name=reservation_data['room']),
+            room=room,
             start_date=reservation_data['selected_date'],
             start_time=reservation_data['start_time'],
             end_time=reservation_data['end_time'],
@@ -2325,7 +2329,7 @@ def labres_lab_schedule(request):
     selected_month = None
     selected_room = None
     reservations_by_day = {}
-
+    days_range = None
     # Get the current month
     current_month = timezone.now().strftime('%Y-%m')
 
