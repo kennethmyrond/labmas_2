@@ -11,18 +11,20 @@
 </div>
 {% endif %}
   
-<h1>Welcome to Labmas, {{ user.email }}</h1>
+<h1>Welcome to Labmas, {{ request.user }}</h1>
 
 <div class="row">
   {% for lab in laboratories %}
   <div class="col-md-4 d-flex align-items-stretch">
-    <div class="card mb-3 w-100">
+    <div class="card {% if lab.laboratory_id == selected_lab_id %}border-primary{% else %}border-secondary{% endif %} mb-3 w-100" >
       <div class="card-body d-flex flex-column p-4">
         <h5 class="card-title">{{ lab.name }}</h5>
         <p class="card-text"><strong>Lab Head:</strong> {{ lab.lab_head }}</p>
         <p class="card-text"><strong>Description:</strong> {{ lab.description }}</p>
         <div class="mt-auto">
-          <a href="{% url 'set_lab' lab.laboratory_id %}" class="btn btn-primary w-100">Select Laboratory</a>
+          <a href="{% url 'set_lab' lab.laboratory_id %}" class="btn {% if lab.laboratory_id == selected_lab_id %}btn-primary{% else %}btn-secondary{% endif %} w-100">
+            {% if lab.laboratory_id == selected_lab_id %}Selected Laboratory{% else %}Select Laboratory{% endif %}
+          </a>
         </div>
       </div>
     </div>

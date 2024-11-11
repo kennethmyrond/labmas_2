@@ -17,7 +17,7 @@
       <div class="card">
         <div class="card-body">
 
-        <h5 class="card-title">Select Room</h5>
+        <h5 class="card-title">Filter</h5>
 
         <!-- Select Room -->
         <form id="roomSelector" method="GET">
@@ -27,15 +27,13 @@
                     <select id="roomSelect" name="roomSelect" class="form-control">
                         <option value="">Select a Room</option>
                         {% for room in room_list %}
-                            <option value="{{ room.name }}" {% if selected_room == room.name %}selected{% endif %}>
+                            <option value="{{ room.room_id }}" {% if selected_room == room.name %}selected{% endif %}>
                                 {{ room.name }}
                             </option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
-
-            <h5 class="card-title">Day Schedule</h5>
             <div class="row mb-3">
                 <label for="selectDate" class="col-sm-2 col-form-label">Select Date:</label>
                 <div class="col-sm-6">
@@ -55,9 +53,10 @@
             <thead>
                 <tr>
                     <th>Reservation ID</th>
+                    <th>Room</th>
                     <th>Start Time</th>
                     <th>End Time</th>
-                    <th>Interval</th>
+                    <th>Duration</th>
                     <th>Purpose</th>
                     <th>Status</th> 
                     <th>Actions</th>
@@ -71,6 +70,7 @@
                           {{ reservation.reservation_id }}
                       </a>
                   </td>
+                  <td>{{ reservation.room_name }}</td>
                   <td>{{ reservation.formatted_start_time }}</td>
                   <td>{{ reservation.formatted_end_time }}</td>
                   <td>{{ reservation.time_interval }} minutes</td>

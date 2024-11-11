@@ -6,7 +6,7 @@ from django.contrib.auth.hashers import check_password
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear
+from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear, Abs
 from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField, Max
 from django.db import connection, models
 from django.utils import timezone
@@ -251,10 +251,11 @@ def userlogin(request):
 
 @login_required(login_url='/login')
 def home(request):
+
     if request.user.is_superuser:
         return redirect('setup_createlab')
     else:
-         return render(request, "home.html", {'user': request.user})
+        return render(request, "home.html", {'user': request.user})
 
 
 @login_required
@@ -2199,6 +2200,7 @@ def lab_reservation_student_reserveLabConfirm(request):
         # Save the reservation data in session temporarily for confirmation
         request.session['reservation_data'] = {
             'room_id': selected_room.room_id,
+            'room_name': selected_room.name,
             'selected_date': selected_date,
             'start_time': selected_start_time,
             'end_time': selected_end_time,
@@ -2231,8 +2233,10 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
         # Save the reservation to the database
         if reservation_config_obj.require_approval: 
             stat='P' 
+            message = 'Reservation forwarded for Review'
         else: 
             stat='R'
+            message = 'Reservation in Pending Status'
 
          # Use the room_id from the session data instead of the room name
         room_id = reservation_data.get('room_id')  # Adjusted to use room_id
@@ -2253,6 +2257,7 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
 
         # Clear session data and redirect to the booking list page
         del request.session['reservation_data']
+        messages.success(request,message)
         return redirect('lab_reservation_detail', reservation.reservation_id)
 
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabConfirm.html', {
@@ -2348,7 +2353,7 @@ def labres_lab_schedule(request):
         
         if selected_room and selected_month:
             try:
-                room = rooms.objects.get(name=selected_room, laboratory_id=selected_laboratory_id)
+                room = rooms.objects.get(room_id=selected_room, laboratory_id=selected_laboratory_id)
 
                 # Get the first and last day of the selected month
                 year, month = map(int, selected_month.split('-'))
@@ -2412,7 +2417,7 @@ def labres_lab_reservationreqs(request):
 
         if selected_room and selected_date:
             try:
-                room = rooms.objects.get(name=selected_room, laboratory_id=selected_laboratory_id)
+                room = rooms.objects.get(room_id=selected_room, laboratory_id=selected_laboratory_id)
                 reservations = laboratory_reservations.objects.filter(
                     room=room,
                     start_date=selected_date,
@@ -2435,8 +2440,23 @@ def labres_lab_reservationreqs(request):
 
             except rooms.DoesNotExist:
                 pass
+        else:
+            reservations = laboratory_reservations.objects.filter(room__laboratory_id=selected_laboratory_id).annotate(room_name=F('room__name'))
+            # Format start_time, end_time and calculate interval
+            for reservation in reservations:
+                # Format time as 9:00AM
+                reservation.formatted_start_time = reservation.start_time.strftime("%I:%M%p")
+                reservation.formatted_end_time = reservation.end_time.strftime("%I:%M%p")
 
-        # Handle POST requests for Accept and Delete actions
+                # Combine start_date with start_time and end_time to get datetime objects
+                start_datetime = datetime.combine(reservation.start_date, reservation.start_time)
+                end_datetime = datetime.combine(reservation.start_date, reservation.end_time)
+
+                # Calculate the time difference in minutes
+                time_difference = end_datetime - start_datetime
+                reservation.time_interval = int(time_difference.total_seconds() // 60)
+
+    # Handle POST requests for Accept and Delete actions
     if request.method == "POST":
         action = request.POST.get('action')
 
@@ -2963,7 +2983,7 @@ def inventory_reports(request):
             inventory_item__item_id=item_id,
             qty__lt=0,
             timestamp__date__range=(start_date, end_date)
-        ).annotate(date=TruncDay('timestamp')).values('date').annotate(total_qty=Sum('qty')).order_by('date')
+        ).annotate(date=TruncDay('timestamp')).values('date').annotate(total_qty=Abs(Sum('qty'))).order_by('date')
 
         for entry in added_quantities:
             entry_date = entry['date'].date()  # Renamed to entry_date to avoid conflict

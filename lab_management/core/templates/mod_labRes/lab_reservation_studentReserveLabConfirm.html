@@ -24,7 +24,7 @@
           <table class="table">
             <tr>
               <th>Room</th>
-              <td>{{ reservation_data.room }}</td>
+              <td>{{ reservation_data.room_name }}</td>
             </tr>
             <tr>
               <th>Date</th>
@@ -43,21 +43,21 @@
           <h5 class="card-title mt-4">User Details</h5>
 
           <!-- User Details Form -->
-          <form method="POST">
+          <form method="POST" onsubmit="return validateForm()">
             {% csrf_token %}
 
               <!-- If the user is logged in, show pre-filled details -->
               <div class="row mb-3">
                 <label class="col-sm-2 col-form-label">Name:</label>
                 <div class="col-sm-10">
-                  <input type="text" class="form-control" id="contact_name" name="contact_name" {% if user %} value="{{ user.first_name }} {{ user.last_name }}"  {% else %} required {% endif %}>
+                  <input type="text" class="form-control" id="contact_name" name="contact_name" {% if request.user.is_authenticated %} value="{{ request.user.firstname }} {{ request.user.lastname }}" readonly {% else %} required {% endif %}>
                 </div>
               </div>
 
               <div class="row mb-3">
                 <label class="col-sm-2 col-form-label">Email:</label>
                 <div class="col-sm-10">
-                  <input type="email" class="form-control" id="contact_email" name="contact_email" {% if user %} value="{{ user.email }}"  {% else %} required {% endif %}>
+                  <input type="email" class="form-control" id="contact_email" name="contact_email" {% if request.user.is_authenticated %} value="{{ request.user.email }}" readonly {% else %} required {% endif %}>
                 </div>
               </div>
 
@@ -76,10 +76,36 @@
             </div>
 
             <!-- Terms and Conditions -->
-            <div class="p-3 mb-2 bg-secondary text-white">
-              <h5 class="card-title text-white">Terms and Conditions</h5>
-              <p style="white-space: pre-line;">{{reserv_config.tc_description}}</p>
+            {% if reserv_config.tc_description %}
+            <div class="row mb-3">
+              <div class="col-sm-10 offset-sm-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="accept_tc" required>
+                  <label class="form-check-label" for="accept_tc">
+                    I accept the <a href="#" data-bs-toggle="modal" data-bs-target="#tcModal">terms and conditions</a>.
+                  </label>
+                </div>
+              </div>
             </div>
+
+            <!-- Modal -->
+            <div class="modal fade" id="tcModal" tabindex="-1" aria-labelledby="tcModalLabel" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="tcModalLabel">Terms and Conditions</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <p style="white-space: pre-line;">{{ reserv_config.tc_description }}</p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
 
             <div class="row mb-3">
               <button type="submit" class="btn btn-primary btn-lg btn-block">Confirm Booking</button>
@@ -91,5 +117,15 @@
     </div>
   </div>
 </section>
+
+<script>
+  function validateForm() {
+    if (!document.getElementById('accept_tc').checked) {
+      alert('You must accept the terms and conditions before confirming your booking.');
+      return false;
+    }
+    return true;
+  }
+</script>
 
 {% endblock %}

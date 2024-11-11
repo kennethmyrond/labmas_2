@@ -67,7 +67,7 @@
                 <select id="roomSelect" name="roomSelect" class="form-control">
                   <option value="">Select a Room</option>
                   {% for room in room_list %}
-                    <option value="{{ room.name }}" {% if selected_room == room.name %}selected{% endif %}>
+                    <option value="{{ room.room_id }}" {% if selected_room == room.name %}selected{% endif %}>
                       {{ room.name }}
                     </option>
                   {% endfor %}

@@ -86,7 +86,7 @@ urlpatterns = [
     path('lab-reservation/lab/reservationRequests_detailed/<int:reservation_id>/', views.labres_lab_reservationreqsDetailed, name='labres_lab_reservationreqsDetailed'),
 
 
-    path('reports/', views.reports_view, name='reports'),
+    path('user-reports/', views.reports_view, name='user_reports'),
     path('inventory-reports/', views.inventory_reports, name='inventory_reports'),
     path('borrowing-reports/', views.borrowing_reports, name='borrowing_reports'),
     path('clearance-reports/', views.clearance_reports, name='clearance_reports'),
