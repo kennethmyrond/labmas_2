@@ -235,7 +235,7 @@ def home(request):
     if request.user.is_superuser:
         return redirect('setup_createlab')
     else:
-        return render(request,"home.html")
+         return render(request, "home.html", {'user': request.user})
 
 
 @login_required

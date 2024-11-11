@@ -1,4 +1,3 @@
-
 {% extends 'temp_navbar.html' %}
 {% load socialaccount %}
 {% block title %}Home{% endblock %}
@@ -11,27 +10,21 @@
   {% endfor %}
 </div>
 {% endif %}
-    <h1>Welcome to Labmas, {{user.first_name}}</h1>
+  
+<h1>Welcome to Labmas, {{ user.email }}</h1>
 
-    <a class="form-select d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">    
-        <span class="d-none d-md-block dropdown-toggle ps-2">{{ selected_lab_name|default:"Choose Laboratory" }}</span>
-    </a>
-
-    <ul class="dropdown-menu">
-        <li>
-        <hr class="dropdown-divider">
-        </li>
-
-        {% for lab in laboratories %}
-        <li>
-        <a class="dropdown-item d-flex align-items-center" href="{% url 'set_lab' lab.laboratory_id %}">
-            <i class="bi bi-house"></i>
-            <span>{{ lab.name }}</span>
-        </a>
-        </li>
-        <li>
-        <hr class="dropdown-divider">
-        </li>
-        {% endfor %}
-    </ul>
+<div class="row">
+  {% for lab in laboratories %}
+  <div class="col-md-4">
+    <div class="card mb-3" style="width: 18rem;">
+      <div class="card-body">
+        <h5 class="card-title">{{ lab.name }}</h5>
+        <p class="card-text"><strong>Lab Head:</strong> {{ lab.lab_head }}</p>
+        <p class="card-text"><strong>Description:</strong> {{ lab.description }}</p>
+        <a href="{% url 'set_lab' lab.laboratory_id %}" class="btn btn-primary">Select Laboratory</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 {% endblock %}
