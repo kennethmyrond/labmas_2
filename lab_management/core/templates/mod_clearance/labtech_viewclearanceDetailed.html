@@ -102,10 +102,10 @@
               <div class="row mb-3">
                 <label for="status" class="col-sm-2 col-form-label">Status:</label>
                 <div class="col-sm-10">
-                    {% if status == 'Pending' %}
-                        <span class="status-pending">{{ status }}</span>
+                    {% if report_data.status == 'Pending' %}
+                        <span class="status-pending">{{ report_data.status }}</span>
                     {% else %}
-                        <span class="status-cleared">{{ status }}</span>
+                        <span class="status-cleared">{{ report_data.status }}</span>
                     {% endif %}
                 </div>
             </div>

@@ -9,6 +9,7 @@
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.27.3"></script>
 
 <div class="container">
     <!-- Filter Section -->
@@ -279,103 +280,54 @@
             const seriesDataAdded = trendDataAdded.map(entry => entry.total_qty);
             const seriesDataRemoved = trendDataRemoved.map(entry => entry.total_qty);
 
+            // Primary Chart Options
             var options = {
-                series: [{
-                    name: 'Added Quantity',
-                    data: seriesDataAdded
-                }, {
-                    name: 'Removed Quantity',
-                    data: seriesDataRemoved
-                }],
+                series: [
+                    { name: 'Added Quantity', data: seriesDataAdded },
+                    { name: 'Removed Quantity', data: seriesDataRemoved }
+                ],
                 chart: {
                     id: 'chart2',
                     type: 'line',
                     height: 230,
-                    dropShadow: {
-                        enabled: true,
-                        enabledOnSeries: [1]
-                    },
-                    toolbar: {
-                        autoSelected: 'pan',
-                        show: false
-                    }
+                    toolbar: { show: false }
                 },
                 colors: ['#008FFB', '#FF4560'],
-                stroke: {
-                    width: 3
-                },
-                dataLabels: {
-                    enabled: false
-                },
-                fill: {
-                    opacity: [1, 0.75],
-                },
-                markers: {
-                    size: 0
-                },
-                yaxis: {
-                    title: {
-                        text: 'Quantity'
-                    },
-                    min: 0
-                },
-                xaxis: {
-                    type: 'datetime',
-                    categories: categories
-                }
+                stroke: { width: 3 },
+                markers: { size: 2 },
+                xaxis: { type: 'datetime', categories: categories },
+                yaxis: { title: { text: 'Quantity' }, min: 0 }
             };
-
             var inventory_chart = new ApexCharts(document.querySelector("#inventory_chart-line2"), options);
             inventory_chart.render();
 
             var optionsLine = {
-                series: [{
-                    name: 'Added Quantity',
-                    data: seriesDataAdded
-                }, {
-                    name: 'Removed Quantity',
-                    data: seriesDataRemoved
-                }],
+                series: [
+                    { name: 'Added Quantity', data: seriesDataAdded },
+                    { name: 'Removed Quantity', data: seriesDataRemoved }
+                ],
                 chart: {
                     id: 'chart1',
                     height: 130,
                     type: 'area',
-                    brush: {
-                        target: 'chart2',
-                        enabled: true
-                    },
+                    brush: { target: 'chart2', enabled: true },
                     selection: {
                         enabled: true,
                         xaxis: {
-                            min: new Date().getTime() - 365 * 24 * 60 * 60 * 1000,
-                            max: new Date().getTime()
+                            min: new Date(categories[0]).getTime(),
+                            max: new Date(categories[categories.length - 1]).getTime()
                         }
-                    },
+                    }
                 },
                 colors: ['#008FFB', '#FF4560'],
-                stroke: {
-                    width: 1,
-                    curve: 'straight'
-                },
+                stroke: { width: 1, curve: 'smooth' },
                 fill: {
                     type: 'gradient',
-                    gradient: {
-                        opacityFrom: 0.91,
-                        opacityTo: 0.1,
-                    }
+                    gradient: { opacityFrom: 0.91, opacityTo: 0.1 },
                 },
-                xaxis: {
-                    type: 'datetime',
-                    categories: categories,
-                    tooltip: {
-                        enabled: false
-                    }
-                },
-                yaxis: {
-                    min: 0
-                }
+                xaxis: { type: 'datetime', categories: categories, tooltip: { enabled: false } },
+                yaxis: { min: 0 }
             };
-
             var inventory_chartLine = new ApexCharts(document.querySelector("#inventory_chart-line"), optionsLine);
             inventory_chartLine.render();
 
