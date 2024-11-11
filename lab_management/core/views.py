@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear
-from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField
+from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField, Max
 from django.db import connection, models
 from django.utils import timezone
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
@@ -117,16 +117,34 @@ def check_item_expiration(request, item_id):
 def suggest_items(request):
     query = request.GET.get('query', '')
     selected_laboratory_id = request.session.get('selected_lab')
-    suggestions = item_description.objects.filter(item_name__icontains=query, laboratory_id=selected_laboratory_id, is_disabled=0)[:5]
+    
+    # Fetch suggestions from the database
+    suggestions = item_description.objects.filter(
+        item_name__icontains=query, 
+        laboratory_id=selected_laboratory_id, 
+        is_disabled=0
+    )[:5]
 
     data = []
     for item in suggestions:
-        data.append({
+        # Parse the add_cols JSON string into a dictionary
+        try:
+            add_cols = json.loads(item.add_cols) if item.add_cols else {}
+        except json.JSONDecodeError:
+            add_cols = {}
+
+        # Convert add_cols dictionary to a formatted string for display
+        add_cols_str = ', '.join([f"{key}: {value}" for key, value in add_cols.items()])
+        
+        # Prepare the response data
+        item_data = {
             'item_id': item.item_id,
             'item_name': item.item_name,
             'rec_expiration': item.rec_expiration,
-            'add_cols': item.add_cols
-        })
+            'add_cols': add_cols_str  # Send formatted string
+        }
+        
+        data.append(item_data)
     
     return JsonResponse(data, safe=False)
 
