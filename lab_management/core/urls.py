@@ -3,6 +3,9 @@ from django.urls import path, include
 from . import views
 from django.contrib.auth import views as auth_views
 
+from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
     path('login/', views.userlogin, name='userlogin'),
     path('register/', views.register, name='register'),
@@ -71,7 +74,9 @@ urlpatterns = [
     path('clearance/student/view_clearance_detailed/<int:borrow_id>/', views.clearance_student_viewClearanceDetailed, name='clearance_student_viewClearanceDetailed'), 
     path('clearance/labtech/view_clearance', views.clearance_labtech_viewclearance, name='clearance_labtech_viewclearance'), 
     path('clearance/labtech/view_clearance_detailed/<int:report_id>/', views.clearance_labtech_viewclearanceDetailed, name='clearance_labtech_viewclearanceDetailed'),
-    
+    path('suggest_report_users/', views.suggest_report_users, name='suggest_report_users'),
+
+
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),
     path('lab-reservation/student/reserveLabChooseRoom', views.lab_reservation_student_reserveLabChooseRoom, name='lab_reservation_student_reserveLabChooseRoom'),
     path('lab-reservation/student/reserveLabConfirm/', views.lab_reservation_student_reserveLabConfirm, name='lab_reservation_student_reserveLabConfirm'),
@@ -141,3 +146,6 @@ urlpatterns += [
     path('change-password/', auth_views.PasswordChangeView.as_view(template_name='change_password.html'), name='change_password'),
     path('change-password/done/', auth_views.PasswordChangeDoneView.as_view(template_name='change_password_done.html'), name='password_change_done'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -29,7 +29,7 @@
 
           <h5 class="card-title">Reservation Information</h5>
 
-          <table class="table">
+          <table class="table table-bordered table-striped">
             <tr>
               <th>Reservation Number</th>
               <td>{{ reservation.reservation_id}}</td>
@@ -71,6 +71,15 @@
               <td>{{ reservation.contact_email }}</td>
             </tr>
           </table>
+
+          {% if reservation.filled_approval_form %}
+            <div class="row mb-3">
+              <label class="col-sm-2 col-form-label">Approval Form:</label>
+              <div class="col-sm-10">
+                <a href="{{ reservation.filled_approval_form.url }}" target="_blank" class="btn btn-link">Download Approval Form</a>
+              </div>
+            </div>
+          {% endif %}
 
           <!-- Cancel button if not already cancelled -->
           {% if reservation.status != 'C' %}

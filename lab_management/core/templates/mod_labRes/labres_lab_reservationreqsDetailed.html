@@ -32,17 +32,61 @@
       <div class="card">
         <div class="card-body">
           <h5 class="card-title">Reservation ID: {{ reservation.reservation_id }}</h5>
-          <p><strong>Name: </strong>{{ reservation.contact_name }}</p>
-          <p><strong>E-Mail: </strong>{{ reservation.contact_email }}</p>
-          <p><strong>Contact Number: </strong>{{ reservation.contact_number }}</p>
-          <p><strong>Room Requested: </strong>{{ room.name }}</p>
-          <p><strong>Request Date: </strong>{{ reservation.request_date|date:"Y/m/d h:iA" }}</p>
-          <p><strong>Date: </strong>{{ reservation.start_date|date:"Y/m/d" }}</p>
-          <p><strong>Start Time: </strong>{{ reservation.start_time|time:"g:iA" }}</p>
-          <p><strong>End Time: </strong>{{ reservation.end_time|time:"g:iA" }}</p>
-          <p><strong>Purpose: </strong>{{ reservation.purpose }}</p>
-          <p><strong>Number of People: </strong>{{ reservation.num_people }}</p>
-          <p><strong>Status: </strong>{{ reservation.get_status_display }}</p>
+          <table class="table table-bordered table-striped">
+            <tr>
+              <th>Name</th>
+              <td>{{ reservation.contact_name }}</td>
+            </tr>
+            <tr>
+              <th>E-Mail</th>
+              <td>{{ reservation.contact_email }}</td>
+            </tr>
+            <tr>
+              <th>Contact Number</th>
+              <td>{{ reservation.contact_number }}</td>
+            </tr>
+            <tr>
+              <th>Room Requested</th>
+              <td>{{ room.name }}</td>
+            </tr>
+            <tr>
+              <th>Request Date</th>
+              <td>{{ reservation.request_date|date:"Y/m/d h:iA" }}</td>
+            </tr>
+            <tr>
+              <th>Date</th>
+              <td>{{ reservation.start_date|date:"Y/m/d" }}</td>
+            </tr>
+            <tr>
+              <th>Start Time</th>
+              <td>{{ reservation.start_time|time:"g:iA" }}</td>
+            </tr>
+            <tr>
+              <th>End Time</th>
+              <td>{{ reservation.end_time|time:"g:iA" }}</td>
+            </tr>
+            <tr>
+              <th>Purpose</th>
+              <td>{{ reservation.purpose }}</td>
+            </tr>
+            <tr>
+              <th>Number of People</th>
+              <td>{{ reservation.num_people }}</td>
+            </tr>
+            <tr>
+              <th>Status</th>
+              <td>{{ reservation.get_status_display }}</td>
+            </tr>
+          </table>          
+
+          {% if reservation.filled_approval_form %}
+            <div class="row mb-3">
+              <label class="col-sm-2 col-form-label">Approval Form:</label>
+              <div class="col-sm-10">
+                <a href="{{ reservation.filled_approval_form.url }}" target="_blank" class="btn btn-link">Download Approval Form</a>
+              </div>
+            </div>
+          {% endif %}
 
           <form method="POST">
             {% csrf_token %}

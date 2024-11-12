@@ -146,7 +146,6 @@ def suggest_items(request):
         }
         
         data.append(item_data)
-    
     return JsonResponse(data, safe=False)
 
 def suggest_suppliers(request):
@@ -172,12 +171,31 @@ def suggest_users(request):
     lab_id = request.GET.get('lab_id', None)
 
     # Filter to get users not already assigned to the lab
-    assigned_user_ids = laboratory_users.objects.filter(laboratory_id=lab_id).values_list('user_id', flat=True)
+    assigned_user_ids = laboratory_users.objects.filter(laboratory_id=lab_id, status='A', is_active=1).values_list('user_id', flat=True)
     users = user.objects.exclude(Q(user_id__in=assigned_user_ids) | Q(is_superuser=1)).filter(
         Q(username__icontains=query) | Q(firstname__icontains=query) | Q(lastname__icontains=query)
     ).annotate(fullname=Concat(F('email'), Value(' | '), F('firstname'), Value(' '), F('lastname'), output_field=CharField()))
 
     results = [{'user_id': u.user_id, 'fullname': u.fullname} for u in users]
+    
+    return JsonResponse(results, safe=False)
+
+def suggest_report_users(request):
+    print("users:")
+    query = request.GET.get('query', '')
+    lab_id = request.session.get('selected_lab')
+    
+    users = laboratory_users.objects.filter(
+        Q(user__username__icontains=query) | Q(user__firstname__icontains=query) | Q(user__lastname__icontains=query),
+        laboratory_id=lab_id, 
+        status='A', 
+        is_active=True  # Ensure this matches the field type
+    ).annotate(
+        fullname=Concat(F('user__email'), Value(' | '), F('user__firstname'), Value(' '), F('user__lastname'), 
+        output_field=CharField())
+    )
+
+    results = [{'user_id': u.user.user_id, 'fullname': u.fullname} for u in users]
     
     return JsonResponse(results, safe=False)
 
@@ -2014,7 +2032,6 @@ def clearance_student_viewClearanceDetailed(request, borrow_id):
 
 @login_required
 @lab_permission_required('view_student_clearance')
-
 def clearance_labtech_viewclearance(request):
     selected_laboratory_id = request.session.get('selected_lab')
     users = user.objects.filter(is_deactivated=False)
@@ -2023,13 +2040,13 @@ def clearance_labtech_viewclearance(request):
     if request.method == 'POST':
         try:
             selected_user_id = request.POST.get('user')
-            item_name = request.POST.get('item')
+            item_id = request.POST.get('item_name')
             reason = request.POST.get('reason')
             amount = request.POST.get('amount')
             quantity = request.POST.get('quantity')
 
             selected_user = user.objects.get(user_id=selected_user_id)
-            item_obj = get_object_or_404(item_description, item_name__iexact=item_name)
+            item_obj = get_object_or_404(item_description, item_id=item_id)
 
             # Save the manual entry with the selected user
             reported_items.objects.create(
@@ -2080,9 +2097,6 @@ def clearance_labtech_viewclearance(request):
         'items': items,
     }
     return render(request, 'mod_clearance/labtech_viewclearance.html', context)
-
-
-
 
 @login_required
 @lab_permission_required('view_student_clearance')
@@ -2302,34 +2316,39 @@ def lab_reservation_student_reserveLabConfirm(request):
 @lab_permission_required('reserve_laboratory')
 def lab_reservation_student_reserveLabConfirmDetails(request):
     reservation_data = request.session.get('reservation_data')
-    print(reservation_data)
     current_user = request.user
     selected_laboratory_id = request.session.get('selected_lab')
-    reservation_config_obj = get_object_or_404(reservation_config,laboratory_id=selected_laboratory_id)
-    
+    reservation_config_obj = get_object_or_404(reservation_config, laboratory_id=selected_laboratory_id)
+
     if not reservation_data:
         return redirect('lab_reservation_student_reserveLabChooseRoom')
 
     if request.method == 'POST':
-        # Get user details (if logged in) or allow input from non-logged-in users
-        # user = request.user if request.user.is_authenticated else None
+        # Get user details from the form
         contact_name = request.POST.get('contact_name')
         contact_email = request.POST.get('contact_email')
         num_people = request.POST.get('num_people')
         purpose = request.POST.get('purpose')
 
-        # Save the reservation to the database
+        # Set reservation status
         if reservation_config_obj.require_approval: 
-            stat='P' 
+            status = 'P'
             message = 'Reservation forwarded for Review'
-        else: 
-            stat='R'
+        else:
+            status = 'R'
             message = 'Reservation in Pending Status'
 
-         # Use the room_id from the session data instead of the room name
-        room_id = reservation_data.get('room_id')  # Adjusted to use room_id
+        # Use room_id from session data
+        room_id = reservation_data.get('room_id')
         room = get_object_or_404(rooms, room_id=room_id)
 
+        # Handle the uploaded PDF file if required
+        uploaded_form = request.FILES.get('approval_form')
+        if reservation_config_obj.approval_form and not uploaded_form:
+            messages.error(request, "Please upload the required approval form.")
+            return redirect('lab_reservation_student_reserveLabConfirmDetails')
+
+        # Save the reservation to the database
         reservation = laboratory_reservations.objects.create(
             user=current_user or None,
             room=room,
@@ -2340,18 +2359,23 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
             contact_email=contact_email,
             num_people=num_people,
             purpose=purpose,
-            status=stat
+            status=status,
+            filled_approval_form=uploaded_form  # Save the uploaded file if provided
         )
 
-        # Clear session data and redirect to the booking list page
+        # Clear session data and redirect
         del request.session['reservation_data']
-        messages.success(request,message)
+        messages.success(request, message)
         return redirect('lab_reservation_detail', reservation.reservation_id)
+
+    # Check if approval form exists for download link
+    approval_form_exists = bool(reservation_config_obj.approval_form)
 
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabConfirm.html', {
         'reservation_data': reservation_data,
-        'user': request.user if request.user.is_authenticated else None,
-        'reserv_config': reservation_config_obj
+        'user': current_user if request.user.is_authenticated else None,
+        'reserv_config': reservation_config_obj,
+        'approval_form_exists': approval_form_exists,
     })
 
 # not used for now

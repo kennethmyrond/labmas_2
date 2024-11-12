@@ -12,6 +12,11 @@
   </nav>
 </div>
 <!-- End Page Title -->
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+{% endif %}
 
 <section class="section">
   <div class="row">
@@ -43,7 +48,7 @@
           <h5 class="card-title mt-4">User Details</h5>
 
           <!-- User Details Form -->
-          <form method="POST" onsubmit="return validateForm()">
+          <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
             {% csrf_token %}
 
               <!-- If the user is logged in, show pre-filled details -->
@@ -75,10 +80,21 @@
               </div>
             </div>
 
+            {% if approval_form_exists %}
+              <div class="row mb-3">
+                <label class="col-sm-2 col-form-label">Approval Form:</label>
+                <div class="col-sm-10">
+                  <a href="{{ reserv_config.approval_form.url }}" target="_blank" class="btn btn-link">Download Approval Form</a>
+                  <input type="file" name="approval_form" class="form-control mt-2" accept="application/pdf" {% if approval_form_exists %} required {% endif %}>
+                  <small class="form-text text-muted">Upload the signed approval form PDF.</small>
+                </div>
+              </div>
+            {% endif %}
+
             <!-- Terms and Conditions -->
             {% if reserv_config.tc_description %}
             <div class="row mb-3">
-              <div class="col-sm-10 offset-sm-2">
+              <div class="col-sm-10">
                 <div class="form-check">
                   <input class="form-check-input" type="checkbox" id="accept_tc" required>
                   <label class="form-check-label" for="accept_tc">

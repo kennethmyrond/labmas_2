@@ -425,6 +425,7 @@ class laboratory_reservations(models.Model):
     num_people = models.IntegerField(null=True, blank=True)
     contact_email = models.EmailField(null=True, blank=True)
     contact_name = models.CharField(max_length=255, null=True, blank=True)
+    filled_approval_form = models.FileField(upload_to='filled_approval_forms/', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.reservation_id:
@@ -448,6 +449,7 @@ class laboratory_reservations(models.Model):
             'C': 'Cancelled',
         }
         return status_mapping.get(self.status, 'Unknown')
+
     
 class reservation_config(models.Model):
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
@@ -457,5 +459,5 @@ class reservation_config(models.Model):
     require_approval = models.BooleanField(default=False)
     require_payment = models.BooleanField(default=False)
     approval_form = models.FileField(upload_to='approval_forms/', null=True, blank=True)  # Optional PDF upload
-    tc_description = models.CharField(max_length=45, null=True, blank=True)
+    tc_description = models.TextField(null=True, blank=True)  # Description for terms and conditions
     leadtime = models.PositiveIntegerField(default=0)

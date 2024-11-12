@@ -116,28 +116,20 @@
                     <!-- User Dropdown -->
                     <div class="mb-3">
                       <label for="user" class="form-label">Select User</label>
-                      <select class="form-select" id="user" name="user" required onchange="updateIdNumber()">
-                        <option value="" selected disabled>Select a user</option>
-                        {% for user in users %}
-                          <option value="{{ user.user_id }}" data-id="{{ user.personal_id }}">{{ user.firstname }} {{ user.lastname }}</option>
-                        {% endfor %}
+                      <select class="js-example-basic-single form-control" id="user" name="user" required onchange="updateIdNumber()">
                       </select>
                     </div>
                     
                     <!-- ID Number (will be populated by JavaScript based on selected user) -->
                     <div class="mb-3">
                       <label for="id_number" class="form-label">ID Number</label>
-                      <input type="text" class="form-control" id="id_number" name="id_number" readonly required>
+                      <input type="text" class="form-control" id="id_number" name="id_number" readonly>
                     </div>
 
                     <!-- Item Dropdown -->
                     <div class="mb-3">
-                      <label for="item">Select Item:</label>
-                    <select name="item" id="item">
-                        {% for item in items %}
-                            <option value="{{ item.item_name }}">{{ item.item_name }}</option>  <!-- Ensure item_name is used here -->
-                        {% endfor %}
-                    </select>
+                      <label for="itemName" class="form-label">Item Name:</label>
+                      <select class="js-example-basic-single form-control" id="item_name" name="item_name" required></select>
                     </div>
 
                     <div class="mb-3">
@@ -181,6 +173,64 @@
     // Update the ID number field with the selected user's personal_id
     idNumberField.value = selectedOption.getAttribute('data-id');
   }
+
+  $(document).ready(function() {
+    $('#manualClearanceModal').on('shown.bs.modal', function () {
+      $('#user').select2({
+        dropdownParent: $('#manualClearanceModal'),
+        ajax: {
+            url: '/suggest_report_users/',
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+                return {
+                    query: params.term
+                };
+            },
+            processResults: function(data) {
+                console.log("Data received from suggest_users:", data);
+                return {
+                    results: data.map(function(user) {
+                        return {
+                          id: user.user_id,
+                          text: user.fullname
+                        };
+                    })
+                };
+            },
+            placeholder: 'Search for an item',
+            minimumInputLength: 2,
+            width: '100%' 
+        }
+      });
+
+      $('#item_name').select2({
+        dropdownParent: $('#manualClearanceModal'),
+        ajax: {
+            url: '/suggest_items/',
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+                return {
+                    query: params.term // Search term
+                };
+            },
+            processResults: function(data) {
+                return {
+                    results: data.map(function(item) {
+                        return {
+                            id: item.item_id,
+                            text: `${item.item_name} | ${item.add_cols}`
+                        };
+                    })
+                };
+            },
+            placeholder: 'Search for an item',
+            minimumInputLength: 2
+        }
+      });
+    });
+  });
 </script>
 
 <script>

@@ -65,16 +65,20 @@
                     <table class="table datatable">
                         <thead>
                             <tr>
-                                <th>RF#</th>
+                                <th>Report ID</th>
+                                <th>Borrow ID</th>
                                 <th>Item</th>
+                                <th>Reason</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for report in reports %}
                             <tr>
-                                <td>{{ report.borrow.borrow_id }}</td>
-                                <td><a href="{% url 'clearance_student_viewClearanceDetailed' report.borrow.borrow_id %}">{{ report.item.item_name }}</a></td>
+                                <td>{{ report.report_id }}</td>
+                                <td><a href="{% url 'clearance_student_viewClearanceDetailed' report.borrow.borrow_id %}">{{ report.borrow.borrow_id }}</a></td>
+                                <td>{{ report.item.item_name }}</td>
+                                <th>{{ report.report_reason }}</th>
                                 <td>
                                     {% if report.status == 1 %}  {# If status is 1 (Pending) #}
                                         <span class="status-pending">Pending</span>
