@@ -60,14 +60,23 @@
         <div class="card border-0 shadow rounded-3 my-5 mx-auto">
           <div class="card-body p-4 p-sm-5 ">
             <img src="{% static 'assets/img/dlsu_logo.jpg' %}" alt="">
-            <h5 class="card-title text-center mb-4 fw-light fs-5">LabMaS Sign-in</h5>
+            <h5 class="card-title text-center mb-4 fw-light fs-5">LabMaS Login</h5>
             
             {% if messages %}
               {% for message in messages %}
-                <div class="alert alert-danger">{{ message }}</div>
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
               {% endfor %}
             {% endif %}
-            
+            <!-- Google Login Button -->
+            <div class="d-grid mb-2">
+              <form action="{% provider_login_url 'google' %}?prompt=select_account" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-google btn-login text-uppercase fw-bold" >
+                  <i class="fab fa-google me-2"></i> Continue With Google
+                </button>
+              </form>         
+            </div>
+            <hr class="my-4">
             <form method="post">
               {% csrf_token %}
               <div class="form-floating mb-3">
@@ -77,24 +86,21 @@
                 <input type="password" class="form-control" name="password" placeholder="Password" required>
               </div>
 
-              <div class="form-check mb-3">
+              <!-- <div class="form-check mb-3">
                 <input class="form-check-input" type="checkbox" value="" id="rememberPasswordCheck">
                 <label class="form-check-label" for="rememberPasswordCheck">
                   Remember password
                 </label>
-              </div>
-              <div class="d-grid">
+              </div> -->
+              <div class="d-grid  mb-2">
                 <button class="btn btn-primary btn-login text-uppercase fw-bold" type="submit">Sign in</button>
               </div>
             </form>
             
-            <hr class="my-4">
+            <!-- link to registration page -->
             
-            <!-- Google Login Button -->
-            <div class="d-grid mb-2">
-              <button class="btn btn-google btn-login text-uppercase fw-bold" onclick="window.location.href='{% provider_login_url 'google' %}'" type="button">
-                <i class="fab fa-google me-2"></i> Sign In With Google
-              </button>                
+            <div class="text-center">
+                <p>Dont have an account? <a href="{% url 'register' %}" style="color: blue">Sign up</a></p>
             </div>
           </div>
         </div>

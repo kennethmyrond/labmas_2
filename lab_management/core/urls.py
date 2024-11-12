@@ -5,7 +5,11 @@ from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('login/', views.userlogin, name='userlogin'),
+    path('register/', views.register, name='register'),
+    
     path('', views.home, name='home'),
+    path('request_laboratory/', views.request_laboratory, name='request_laboratory'),
+
     path('set_lab/<int:laboratory_id>/', views.set_lab, name='set_lab'),
     path('logout/', views.logout_view, name='logout'),  # Added trailing slash
     path('error/', views.error_page, name='error_page'),
@@ -13,6 +17,7 @@ urlpatterns = [
     path('my-profile/', views.my_profile, name='my_profile'),
     path('deactivate-account/', views.deactivate_account, name='deactivate_account'),
     path('social/signup/', views.signup_redirect, name='signup_redirect'),
+
     # setup
 
     # inventory

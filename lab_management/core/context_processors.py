@@ -1,5 +1,9 @@
 # context_processors.py
 from .models import laboratory, user, laboratory_users, Module, permissions as Permissions, borrowing_config
+
+from django.db.models import Subquery, OuterRef, Q, F, Value, CharField
+from django.db.models.functions import Concat
+
 from .utils import has_lab_permission
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
@@ -19,7 +23,23 @@ def labs_context(request):
         except user.DoesNotExist:
             pass
         
-        user_labs = laboratory.objects.filter(is_available=True, laboratory_users__user=request.user)
+        coordinator_name = user.objects.filter(
+            laboratory_users__laboratory=OuterRef('pk'),
+            laboratory_users__role__roles_id=2,
+            laboratory_users__is_active=True,
+            laboratory_users__status='A'
+        ).annotate(
+            full_name=Concat(F('firstname'), Value(' '), F('lastname'), output_field=CharField())
+        ).values('full_name')[:1]
+
+        user_labs = laboratory.objects.filter(
+            is_available=True, 
+            laboratory_users__user=request.user, 
+            laboratory_users__is_active=True,
+            laboratory_users__status='A'
+        ).annotate(
+            coordinator_name=Subquery(coordinator_name)
+        )
 
         if selected_lab_id:
             lab = laboratory.objects.filter(laboratory_id=selected_lab_id).first()

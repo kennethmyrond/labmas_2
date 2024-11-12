@@ -9,13 +9,13 @@ def has_lab_permission(user, lab_id, permission_codename):
     """
     try:
         # Check if user has a role in the lab
-        lab_user = laboratory_users.objects.get(user=user, laboratory_id=lab_id)
+        lab_user = laboratory_users.objects.get(user=user, laboratory_id=lab_id, status='A')
         
         # Retrieve permissions for the user’s role in this lab
         role_permissions = laboratory_permissions.objects.filter(
             role=lab_user.role,
             laboratory_id=lab_id,
-            permissions__codename=permission_codename
+            permissions__codename=permission_codename,
         )
         
         return role_permissions.exists()  # Return True if permission exists

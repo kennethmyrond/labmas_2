@@ -68,9 +68,30 @@ SOCIALACCOUNT_PROVIDERS = {
         # },
         'AUTH_PARAMS': {
             'access_type':'online',
+            'prompt': 'select_account'
         }
     }
 }
+
+# SOCIALACCOUNT_PROVIDERS = {
+#     'google': {
+#         'APP': {
+#             'client_id': 'YOUR_GOOGLE_CLIENT_ID',
+#             'secret': 'YOUR_GOOGLE_CLIENT_SECRET',
+#             'key': ''
+#         },
+#         'SCOPE': [
+#             'profile',
+#             'email',
+#         ],
+#         'AUTH_PARAMS': {
+#             'access_type': 'online',
+#         },
+#         'METHOD': 'oauth2',
+#         'VERIFIED_EMAIL': False,
+#     }
+# }
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -153,7 +174,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',  'OPTIONS': {'min_length': 8}
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -162,6 +183,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
 
 
 # Internationalization
@@ -190,24 +212,59 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend'
+    'allauth.account.auth_backends.AuthenticationBackend',
+
+    # 'social_core.backends.google.GoogleOAuth2',
 )
+
 
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/userlogin'
+LOGOUT_REDIRECT_URL = '/userlogin/'
+
+# allauth settings for custom user model and email-based authentication
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # No username field in custom user model
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # Set to 'mandatory' for production
+ACCOUNT_UNIQUE_EMAIL = True
+SOCIALACCOUNT_AUTO_SIGNUP = False  # Control Google signup behavior
+
+SOCIALACCOUNT_ADAPTER = 'core.adapters.CustomSocialAccountAdapter'
+
+
+from django.contrib.messages import constants as messages
+MESSAGE_TAGS = {
+    messages.DEBUG: 'secondary',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',  # Map error to Bootstrap's 'danger' class
+}
+
+
+
+# ACCOUNT_LOGOUT_REDIRECT_URL = '/userlogin/'
+# ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # Since you're using custom user model
+# ACCOUNT_EMAIL_REQUIRED = True
+# ACCOUNT_USERNAME_REQUIRED = False
+# ACCOUNT_AUTHENTICATION_METHOD = 'email'
+# ACCOUNT_EMAIL_VERIFICATION = 'none'
+# SOCIALACCOUNT_AUTO_SIGNUP = False
+
 
 AUTH_USER_MODEL = 'core.user'
-ACCOUNT_EMAIL_VERIFICATION = "none"
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_UNIQUE_EMAIL = True
-SOCIALACCOUNT_LOGIN_ON_GET=True
+# ACCOUNT_EMAIL_VERIFICATION = "none"
+# ACCOUNT_EMAIL_REQUIRED = True
+# ACCOUNT_UNIQUE_EMAIL = True
+# SOCIALACCOUNT_LOGIN_ON_GET=True
 
 
-ACCOUNT_AUTHENTICATION_METHOD = "email" # Defaults to username_email
-SOCIALACCOUNT_QUERY_EMAIL = ACCOUNT_EMAIL_REQUIRED
-SOCIALACCOUNT_AUTO_SIGNUP = True
-SOCIALACCOUNT_EMAIL_REQUIRED = False
+# ACCOUNT_AUTHENTICATION_METHOD = "email" # Defaults to username_email
+# SOCIALACCOUNT_QUERY_EMAIL = ACCOUNT_EMAIL_REQUIRED
+# SOCIALACCOUNT_AUTO_SIGNUP = True
+# SOCIALACCOUNT_EMAIL_REQUIRED = False
 # ACCOUNT_ADAPTER = "core.adapters.MyLoginAccountAdapter"
 # SOCIALACCOUNT_ADAPTER = 'core.adapters.MySocialAccountAdapter'
 

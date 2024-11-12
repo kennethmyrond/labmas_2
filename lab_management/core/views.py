@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.core.exceptions import PermissionDenied
-from django.contrib.auth import authenticate, login as auth_login, logout, update_session_auth_hash
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import authenticate, login as auth_login, logout, update_session_auth_hash, get_user_model
 from django.contrib.auth.hashers import check_password
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -12,11 +13,10 @@ from django.db import connection, models
 from django.utils import timezone
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from django.urls import reverse
+from django import forms
 from collections import defaultdict
 from functools import wraps
 
-
-from django import forms
 # from allauth.socialaccount.helpers import provider_login_url
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
@@ -233,6 +233,48 @@ class ItemEditForm(forms.ModelForm):
 # views
 
 # misc views
+User = get_user_model()
+
+def register(request):
+    if request.method == "POST":
+        firstname = request.POST.get('firstname')
+        lastname = request.POST.get('lastname')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        # Check if email exists
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Email already exists.")
+            return render(request, "register.html")
+        
+        # Validate password policy
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+        else:
+            try:
+                validate_password(password)
+            except ValidationError as e:
+                messages.error(request, e)
+            else:
+                # Create user
+                user = User.objects.create_user(
+                    email=email, 
+                    firstname=firstname, 
+                    lastname=lastname, 
+                    password=password
+                )
+                messages.success(request, "Account created successfully. Please log in.")
+                return redirect("userlogin")
+
+    return render(request, "register.html")
+
+def custom_login(request):
+    if 'error' in request.GET and request.GET['error'] == 'access_denied':
+        messages.error(request, "You cancelled the login process. Please try again.")
+        return redirect(reverse('userlogin'))
+    return redirect(reverse('userlogin'))
+
 def userlogin(request):
     if request.method == "POST":
         email = request.POST.get('email')
@@ -251,12 +293,58 @@ def userlogin(request):
 
 @login_required(login_url='/login')
 def home(request):
+    pending_labs = laboratory.objects.filter(
+            is_available=True, 
+            laboratory_users__user=request.user, 
+            laboratory_users__is_active=True,
+            laboratory_users__status='P'
+        )
+    
+    context = {
+        'user': request.user, 
+        'pending_labs':pending_labs
+    }
 
     if request.user.is_superuser:
         return redirect('setup_createlab')
     else:
-        return render(request, "home.html", {'user': request.user})
+        return render(request, "home.html", context)
 
+@login_required
+def request_laboratory(request):
+    if request.method == "POST":
+        lab_id = request.POST.get("laboratory_id")
+        role_id = request.POST.get("role_id")
+        
+        # Check if laboratory ID is valid
+        try:
+            lab = laboratory.objects.get(laboratory_id=lab_id)
+        except laboratory.DoesNotExist:
+            messages.error(request, "Invalid laboratory ID.")
+            return redirect("home")
+
+        # Check if role ID is valid
+        try:
+            role = laboratory_roles.objects.get(roles_id=role_id)
+        except laboratory_roles.DoesNotExist:
+            messages.error(request, "Invalid role ID.")
+            return redirect("home")
+
+        # Check if user is already added to this laboratory
+        if laboratory_users.objects.filter(user=request.user, laboratory=lab, status__in=['A', 'P', 'I']).exists():
+            messages.error(request, "You are already registered in this laboratory.")
+            return redirect("home")
+
+        # Create a new laboratory user with pending status
+        laboratory_users.objects.create(
+            user=request.user,
+            laboratory=lab,
+            role=role,
+            status='P'  # Set to Pending
+        )
+        messages.success(request, "Laboratory access request submitted successfully.")
+        return redirect("home")
+    return redirect("home")
 
 @login_required
 def set_lab(request, laboratory_id):
@@ -265,7 +353,7 @@ def set_lab(request, laboratory_id):
         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
         
         # Check if the laboratory is available
-        if lab.is_available == 1 and laboratory_users.objects.filter(user=request.user, laboratory=lab, is_active=True).exists():
+        if lab.is_available == 1 and laboratory_users.objects.filter(user=request.user, laboratory=lab, is_active=True, status='A').exists():
                 # Set the chosen laboratory in the session
                 request.session['selected_lab'] = lab.laboratory_id
                 request.session['selected_lab_name'] = lab.name
@@ -3466,6 +3554,26 @@ def superuser_lab_info(request, laboratory_id):
             role = get_object_or_404(laboratory_roles, roles_id=role_id)
             role.delete()
             messages.success(request,  'Successfully deleted a role')
+
+        elif 'accept_user' in request.POST:
+            user_id = request.POST.get("user_id")
+            lab_user = laboratory_users.objects.filter(user_id=user_id, laboratory_id=laboratory_id, status='P').first()
+            if lab_user:
+                lab_user.status = 'A'  # Accepted
+                lab_user.save()
+                messages.success(request, f"User {lab_user.user.get_fullname()} accepted successfully.")
+
+        elif 'decline_user' in request.POST:
+            user_id = request.POST.get("user_id")
+            lab_user = laboratory_users.objects.filter(user_id=user_id, laboratory_id=laboratory_id, status='P').first()
+            if lab_user:
+                lab_user.status = 'D'  # Declined
+                lab_user.save()
+                messages.success(request, f"User {lab_user.user.get_fullname()} declined.")
+
+        # Existing code for room and role operations goes here...
+
+   
     
     # Get modules active in the lab
     active_module_ids = lab.modules
@@ -3488,6 +3596,15 @@ def superuser_lab_info(request, laboratory_id):
     lab_roles = laboratory_roles.objects.filter(Q(laboratory_id=0) | Q(laboratory_id=lab.laboratory_id)).annotate(
         usercount=Count('users', filter=Q(users__laboratory_id=laboratory_id))
     )
+
+     # Retrieve pending users for display in the "Share" tab
+    pending_users = laboratory_users.objects.filter(
+        laboratory_id=laboratory_id, status='P'
+    ).select_related('user', 'role').annotate(
+        full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
+        user_email=F('user__email'),
+        personal_id=F('user__personal_id')
+    )
     
     # Current permissions for each role in the lab
     role_permissions = {(perm.role.roles_id, perm.permissions.codename): True 
@@ -3504,6 +3621,7 @@ def superuser_lab_info(request, laboratory_id):
         'lab_roles': lab_roles,
         'permissions_by_module': permissions_by_module,
         'role_permissions': role_permissions,
+        'pending_users': pending_users
     }
 
     return render(request, 'superuser/superuser_labInfo.html', context)

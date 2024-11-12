@@ -96,6 +96,9 @@
     <li class="nav-item">
       <a class="nav-link" id="rooms-tab" data-toggle="tab" href="#rooms" role="tab">Rooms</a>
     </li>
+    <li class="nav-item">
+      <a class="nav-link" id="share-tab" data-toggle="tab" href="#share" role="tab">Share Laboratory ID & Role</a>
+    </li>
   </ul>
 
   <div class="tab-pane fade show active" id="info" role="tabpanel">
@@ -361,40 +364,6 @@
   </section>
 </div>
 
-
-  <!-- Rooms Tab -->
-  <!-- <div class="tab-pane fade" id="rooms" role="tabpanel">
-    <section class="section">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Rooms</h5>
-          <table class="table datatable">
-            <thead>
-              <tr>
-                <th>Room ID</th>
-                <th>Room Name</th>
-                <th>Description</th>
-                <th>Capacity</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for room in lab_rooms %}
-                <tr>
-                  <td>{{ room.room_id }}</td>
-                  <td>{{ room.name }}</td>
-                  <td>{{ room.description }}</td>
-                  <td>{{ room.capacity }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addRoomModal" {% if not lab.is_available %} disabled {% endif %}>Add Rooms</button>
-        </div>
-      </div>
-    </section>
-  </div>
-</div> -->
-
 <!-- Room Configuration Section -->
 <div class="tab-pane fade" id="rooms" role="tabpanel">
 <section class="section">
@@ -525,6 +494,69 @@
     </div>
   </div>
 </section>
+</div>
+
+<div class="tab-pane fade" id="share" role="tabpanel">
+  <section class="section">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Share Laboratory</h5>
+        <p><strong>Laboratory ID:</strong> {{ laboratory_id }}</p>
+        
+        <!-- Display active roles for the lab -->
+        <div class="mb-4">
+          <h6>Active Roles:</h6>
+          <table class="table table-bordered table-striped table-responsive">
+            <tr>
+              <th>Role Name</th>
+              <th class="center">Role ID</th>
+            </tr>
+            {% for role in lab_roles %}
+              <tr>
+                <td>{{ role.name }}</td>
+                <td>{{ role.roles_id }}</td>
+              </tr>
+            {% endfor %}
+          </table>
+        </div>
+
+        <!-- Pending Users Table -->
+         <hr>
+        <h5 class="card-title">Review User Requests</h5>
+        <table class="table datatable table-striped" id="pendingUsersTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Personal ID</th>
+              <th>Role</th>
+              <th>Timestamp</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in pending_users %}
+              <tr>
+                <td>{{ user.full_name }}</td>
+                <td>{{ user.user_email }}</td>
+                <td>{{ user.personal_id }}</td>
+                <td>{{ user.role.name }}</td>
+                <td>{{ user.timestamp }}</td>
+                <td>
+                  <form method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" value="{{ user.user_id }}">
+                    <button type="submit" name="accept_user" class="btn btn-success btn-sm">Accept</button>
+                    <button type="submit" name="decline_user" class="btn btn-danger btn-sm">Decline</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 </div>
 
 <!-- Modals -->
