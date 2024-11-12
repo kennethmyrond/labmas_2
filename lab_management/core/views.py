@@ -2776,7 +2776,7 @@ def get_room_configuration(request, room_id):
 #  ================================================================= 
 
 
-# reports module
+#REPORTS module
 @login_required
 @lab_permission_required('view_reports')
 def reports_view(request):
@@ -3058,7 +3058,25 @@ def borrowing_reports(request):
     # New Query for borrow_info (borrowing requests)
     borrowreq_filter_type = request.GET.get('borrowreq_filter_type', 'today')
     borrowreq_start_date, borrowreq_end_date = calculate_date_range(borrowreq_filter_type)
-    borrowreq_date_range = [borrowreq_start_date, borrowreq_end_date]
+    if borrowreq_filter_type == 'today':
+        borrowreq_date_range = [current_date, current_date]
+    elif borrowreq_filter_type == 'this_week':
+        start_of_week = current_date - timedelta(days=current_date.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+        borrowreq_date_range = [start_of_week, end_of_week]
+    elif borrowreq_filter_type == 'this_month':
+        start_of_month = current_date.replace(day=1)
+        end_of_month = (start_of_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        borrowreq_date_range = [start_of_month, end_of_month]
+    elif borrowreq_filter_type == 'this_year':
+        start_of_year = current_date.replace(month=1, day=1)
+        end_of_year = current_date.replace(month=12, day=31)
+        borrowreq_date_range = [start_of_year, end_of_year]
+    elif borrowreq_filter_type == 'custom' and borrowreq_start_date and borrowreq_end_date:
+        borrowreq_date_range = [datetime.strptime(start_date, '%Y-%m-%d').date(), datetime.strptime(end_date, '%Y-%m-%d').date()]
+    else:
+        borrowreq_date_range = [current_date, current_date]
+
     borrow_requests_data = borrow_info.objects.filter(
         borrow_date__range=borrowreq_date_range,
         laboratory_id=selected_laboratory_id
@@ -3112,9 +3130,9 @@ def clearance_reports(request):
     # Calculate the on-hold user count within the laboratory and date range
     on_hold_users_count = reported_items.objects.filter(
         laboratory_id=selected_laboratory_id,
-        borrow__user__isnull=False,
-        reported_date__range=[start_date, end_date] if start_date and end_date else None
-    ).values('borrow__user').annotate(total_on_hold=Sum('status')).filter(total_on_hold__gt=0).count()
+        status=1,  # Only include pending reports
+        user_id__isnull=False
+    ).values('user_id').distinct().count()
 
     # Set incidents_start_date based on reports_filter
     if reports_filter == 'today':

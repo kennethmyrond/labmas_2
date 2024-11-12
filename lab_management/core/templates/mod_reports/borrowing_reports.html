@@ -213,7 +213,7 @@
             </form>
             <hr>
             <p>Date Range: <strong>{{ start_date }} to {{ end_date }}</strong></p>
-            <table class="table borrowing-requests-table table-striped">
+            <table class="table borrowing-requests-datatable table-striped">
                 <thead>
                     <tr>
                         <th>Borrow ID</th>
@@ -261,19 +261,19 @@
     document.addEventListener("DOMContentLoaded", function () {
         const today = new Date().toISOString().split('T')[0];
         const selectedLabName = "{{ selected_lab_name }}";
-        const borrowFilename = `${selectedLabName}_qtyborroweditem__{{start_date}}_to_{{end_date}}`;
-        
-        new DataTable('.borrowing-datatable', {
+
+        const borrowreqFilename = `${selectedLabName}_borrowReqs__{{start_date}}_to_{{end_date}}`;
+        new DataTable('.borrowing-requests-datatable', {
             layout: {
                 bottomStart: {
                     // buttons: ['copy', 'excel', 'pdf', 'colvis']
                     buttons: [{
                             extend: 'excelHtml5',
-                            title: borrowFilename
+                            title: borrowreqFilename
                         },
                         {
                             extend: 'pdfHtml5',
-                            title: borrowFilename
+                            title: borrowreqFilename
                         }, 'copy', 'colvis']
                 }
             }
