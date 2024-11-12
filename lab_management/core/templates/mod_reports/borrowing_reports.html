@@ -190,6 +190,98 @@
         });
     </script>
 
+<div class="col">
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title">Borrowing Information</h2>
+            <form method="get" action="" class="form-inline mb-3">
+                <label for="borrowreq_filter_type" class="mr-2">Filter:</label>
+                <select name="borrowreq_filter_type" id="borrowreq_filter_type" class="form-control mr-2 mt-4">
+                    <option value="today" {% if borrowreq_filter_type == 'today' %}selected{% endif %}>Today</option>
+                    <option value="this_week" {% if borrowreq_filter_type == 'this_week' %}selected{% endif %}>This Week</option>
+                    <option value="this_month" {% if borrowreq_filter_type == 'this_month' %}selected{% endif %}>This Month</option>
+                    <option value="this_year" {% if borrowreq_filter_type == 'this_year' %}selected{% endif %}>This Year</option>
+                    <option value="custom" {% if borrowreq_filter_type == 'custom' %}selected{% endif %}>Custom</option>
+                </select>
+                <div id="custom-date-range" class="form-inline mt-4" style="display: none;">
+                    <label for="borrowreq_start_date" class="mr-2 mt-4">Start Date:</label>
+                    <input type="date" name="borrowreq_start_date" id="borrowreq_start_date" class="form-control mr-2" value="{{ start_date }}">
+                    <label for="borrowreq_end_date" class="mr-2 mt-4">End Date:</label>
+                    <input type="date" name="borrowreq_end_date" id="borrowreq_end_date" class="form-control mr-2" value="{{ end_date }}">
+                </div>
+                <button type="submit" class="btn btn-primary mt-4">Apply Filter</button>
+            </form>
+            <hr>
+            <p>Date Range: <strong>{{ start_date }} to {{ end_date }}</strong></p>
+            <table class="table borrowing-requests-table table-striped">
+                <thead>
+                    <tr>
+                        <th>Borrow ID</th>
+                        <th>User</th>
+                        <th>Request Date</th>
+                        <th>Borrow Date</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in borrow_requests_data %}
+                    <tr>
+                        <td>{{ request.borrow_id }}</td>
+                        <td>{{ request.user }}</td>
+                        <td>{{ request.request_date|date:"Y-m-d" }}</td>
+                        <td>{{ request.borrow_date|date:"Y-m-d" }}</td>
+                        <td>{{ request.due_date|date:"Y-m-d" }}</td>
+                        <td>{{ request.get_status_display }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#borrowedItemsTable').DataTable();
+
+        // Show/hide custom date range inputs based on filter type
+        $('#filter_type').change(function() {
+            if ($(this).val() === 'custom') {
+                $('#custom-date-range').show();
+            } else {
+                $('#custom-date-range').hide();
+            }
+        });
+
+        // Trigger change event on page load to set initial state
+        $('#filter_type').trigger('change');
+    });
+    
+    document.addEventListener("DOMContentLoaded", function () {
+        const today = new Date().toISOString().split('T')[0];
+        const selectedLabName = "{{ selected_lab_name }}";
+        const borrowFilename = `${selectedLabName}_qtyborroweditem__{{start_date}}_to_{{end_date}}`;
+        
+        new DataTable('.borrowing-datatable', {
+            layout: {
+                bottomStart: {
+                    // buttons: ['copy', 'excel', 'pdf', 'colvis']
+                    buttons: [{
+                            extend: 'excelHtml5',
+                            title: borrowFilename
+                        },
+                        {
+                            extend: 'pdfHtml5',
+                            title: borrowFilename
+                        }, 'copy', 'colvis']
+                }
+            }
+            
+        });
+    });
+</script>
+
 </div>
 
 {% endblock %}

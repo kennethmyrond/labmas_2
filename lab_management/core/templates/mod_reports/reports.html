@@ -19,7 +19,7 @@
             <div class="col-sm">
                 <div class="row">
                     <!-- Total Users Card -->
-                    <div class="card info-card customers-card">
+                    <div class="card ">
                         <!-- <div class="filter">
                             <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
                             <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
@@ -45,28 +45,6 @@
                         </div>
                     </div>
                      <!-- end total users -->
-                </div>
-                <div class="row">
-                    <div class="card info-card">
-                        <div class="card-body" >
-                            <div class="filter">
-                                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                                    <li class="dropdown-header text-start"><h6>Filter</h6></li>
-                                    <li><a class="dropdown-item" href="#">This Week</a></li>
-                                    <li><a class="dropdown-item" href="#">This Month</a></li>
-                                    <li><a class="dropdown-item" href="#">This Year</a></li>
-                                </ul>
-                            </div>
-                            <div class="card-body">
-                                <h5 class="card-title">New Users Over Time <span>| {{ reports_filter_display }}</span></h5>
-                                <div id="newuser_chart"></div>
-                            </div>
-                            <script>
-                                
-                            </script>
-                        </div>
-                    </div>
                 </div>
                 
                 
@@ -114,4 +92,64 @@
             <!-- end total users -->  
         </div>
     </div>
+
+
+    <!-- Room Reservation Summary Table with Independent Filter -->
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">Active Laboratory Users</h2>
+                <table class="table user-datatable table-striped">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>School ID</th>
+                        <th>Role</th>
+                        <!-- <th>Status</th> -->
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for user in lab_users %}
+                      <tr>
+                        <td>{{ user.full_name }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.user_email }}</td>
+                        <td>{{ user.personal_id }}</td>
+                        <td>{{ user.role_name }}</td>
+                        <!-- <td class="status-{{ user.is_active|yesno:'active,terminated' }}" style="color: {%if user.is_active%}green{%else%}red{%endif%};">{{ user.is_active|yesno:"Active,Inactive" }}</td> -->
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const today = new Date().toISOString().split('T')[0];
+        const selectedLabName = "{{ selected_lab_name }}";
+        const inventoryFilename = `${selectedLabName}_Users_${today}`;
+        new DataTable('.user-datatable', {
+            layout: {
+                bottomStart: {
+                    buttons: [{
+                            extend: 'excelHtml5',
+                            title: inventoryFilename
+                        },
+                        {
+                            extend: 'pdfHtml5',
+                            title: inventoryFilename
+                        }, 'copy', 'colvis']
+                }
+            }
+        });
+    });
+    </script>
+
+
+
+    
+        
 {% endblock %}
