@@ -3949,11 +3949,29 @@ def add_user(request):
         username = request.POST.get('email')
         password = request.POST.get('password')
         is_superuser = request.POST.get('is_superuser') == 'on'
+        
         if email and firstname and lastname and password:
-            user.objects.create_user(email=email, firstname=firstname, lastname=lastname, password=password, personal_id=idnum, username=username, is_superuser=is_superuser)
-            messages.success(request, "User added successfully.")
+            if User.objects.filter(email=email).exists():
+                messages.error(request, "Email is already registered.")
+            elif User.objects.filter(username=username).exists():
+                messages.error(request, "Username is already taken.")
+            else:
+                try:
+                    User.objects.create_user(
+                        email=email, 
+                        firstname=firstname, 
+                        lastname=lastname, 
+                        password=password, 
+                        personal_id=idnum, 
+                        username=username, 
+                        is_superuser=is_superuser
+                    )
+                    messages.success(request, "User added successfully.")
+                except Exception as e:
+                    messages.error(request, f"Error creating user: {e}")
         else:
             messages.error(request, "Missing required fields.")
+    
     return redirect('superuser_manage_users')
 
 @login_required()
