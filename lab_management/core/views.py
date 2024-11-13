@@ -411,14 +411,26 @@ def deactivate_account(request):
 def edit_profile(request):
     user = request.user
     if request.method == 'POST':
-        user.firstname = request.POST.get('firstname')
-        user.lastname = request.POST.get('lastname')
-        user.username = request.POST.get('username')
-        user.email = request.POST.get('email')
-        user.personal_id = request.POST.get('personal_id')
-        user.save()
-        messages.success(request, "Profile updated successfully.")
-        return redirect('my_profile')
+        firstname = request.POST.get('firstname')
+        lastname = request.POST.get('lastname')
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        personal_id = request.POST.get('personal_id')
+        
+        # Check if the email or username is already taken by another user
+        if User.objects.filter(email=email).exclude(pk=user.pk).exists():
+            messages.error(request, "Email is already registered by another user.")
+        elif User.objects.filter(username=username).exclude(pk=user.pk).exists():
+            messages.error(request, "Username is already taken by another user.")
+        else:
+            user.firstname = firstname
+            user.lastname = lastname
+            user.username = username
+            user.email = email
+            user.personal_id = personal_id
+            user.save()
+            messages.success(request, "Profile updated successfully.")
+            return redirect('my_profile')
     
     return render(request, 'edit_profile.html', {'user': user})
 
