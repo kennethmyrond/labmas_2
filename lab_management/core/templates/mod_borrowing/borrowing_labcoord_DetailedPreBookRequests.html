@@ -28,6 +28,7 @@
         <div class="card">
           <div class="card-body">
             <h5 class="card-title">Request ID: {{ borrow_request.borrow_id }}</h5>
+            <p><strong>Name:</strong> {{ borrow_request.user.firstname}} {{ borrow_request.user.lastname}}</p>
             <p><strong>Date Requested:</strong> {{ borrow_request.request_date|date:"Y/m/d H:i:s" }}</p>
             <p><strong>Date Needed:</strong> {{ borrow_request.borrow_date|date:"Y/m/d" }}</p>
             <p><strong>Due Date:</strong> {{ borrow_request.due_date|date:"Y/m/d" }}</p>
