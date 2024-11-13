@@ -173,7 +173,7 @@
                                     <!-- Number of Fixed Values -->
                                     <label for="numFixedValues" class="col-sm-2 col-form-label">Number of Fixed Values:</label>
                                     <div class="col-sm-10">
-                                        <input type="number" class="form-control" name="numFixedValues" id="numFixedValues" min="0" oninput="generateFixedValueInputs()">
+                                        <input type="number" class="form-control" name="numFixedValues" id="numFixedValues" min="0" max="10" oninput="generateFixedValueInputs()">
                                     </div>
 
                                 </div>
@@ -371,12 +371,20 @@ function getCSRFToken() {
     // Clear any existing inputs
     fixedValuesInputs.innerHTML = '';
 
-    // Show or hide the fixedValuesContainer based on the input
+     // Check if the number of fixed values is greater than 10
+    if (numFixedValues > 10) {
+        alert("You can only add up to 10 fixed values.");
+        document.getElementById('numFixedValues').value = 10; // Reset the value to 10
+        fixedValuesContainer.style.display = 'none'; // Hide the fixed values section
+        return;
+    }
+
+    // Show or hide the fixedValuesContainer based on the valid input
     if (numFixedValues > 0) {
         fixedValuesContainer.style.display = 'flex';
     } else {
         fixedValuesContainer.style.display = 'none';
-        return;  // No need to generate inputs if there are none
+        return; // No need to generate inputs if none are specified
     }
 
     // Generate new inputs based on the number provided

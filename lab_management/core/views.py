@@ -242,10 +242,20 @@ def generate_qr_code(item_id):
     return qr_code_b64  # Return the base64 encoded string
 
 # forms
+# forms.py
 class ItemEditForm(forms.ModelForm):
+    itemType = forms.ModelChoiceField(
+        queryset=item_types.objects.all(),
+        empty_label="Select Item Type",
+        required=False,
+        label="Item Type",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
     class Meta:
         model = item_description
-        fields = ['item_name']
+        fields = ['item_name', 'itemType']
+
 
 
 # views
@@ -585,8 +595,10 @@ def inventory_addNewItem_view(request):
         if item_type.add_cols:
             add_cols = json.loads(item_type.add_cols)
             for col in add_cols:
-                field_value = request.POST.get(f'add_col_{col.lower()}')
-                add_cols_dict[col] = field_value
+                 # Extract field name and potential dropdown options
+                field_name = f'add_col_{col.split()[0].lower()}'  # Using only the prefix of the column name
+                field_value = request.POST.get(field_name)
+                add_cols_dict[col] = field_value if field_value else None  # Handle None values for empty inputs
 
         # Convert the additional columns to a JSON string
         add_cols_json = json.dumps(add_cols_dict)
@@ -764,7 +776,7 @@ def inventory_updateItem_view(request):
 def inventory_itemEdit_view(request, item_id):
     if not request.user.is_authenticated:
         return redirect('userlogin')
-    
+
     # Get the item_description instance
     item = get_object_or_404(item_description, item_id=item_id)
 
@@ -773,29 +785,37 @@ def inventory_itemEdit_view(request, item_id):
 
     if request.method == 'POST':
         form = ItemEditForm(request.POST, instance=item)
-        
+
         # Handle additional form fields (rec_expiration, alert_qty)
-        rec_expiration = request.POST.get('rec_expiration', 'off') == 'on'  # True if checked, False if not
-        alert_qty_disabled = request.POST.get('disable_alert_qty', 'off') == 'on'  # Is alert_qty disabled?
+        rec_expiration = request.POST.get('rec_expiration', 'off') == 'on'
+        alert_qty_disabled = request.POST.get('disable_alert_qty', 'off') == 'on'
 
         if form.is_valid():
-            # Save the main form fields
+            # Save the main form fields including itemType
             form.save()
 
-            # Update additional columns
-            for label in add_cols_data.keys():
-                add_cols_data[label] = request.POST.get(label, '')
-            
-            item.add_cols = json.dumps(add_cols_data)
-            
+            # Fetch new additional columns based on selected itemType
+            new_item_type = form.cleaned_data['itemType']
+            new_add_cols = json.loads(new_item_type.add_cols) if new_item_type.add_cols else {}
+
+            # Retain common values between old and new additional columns
+            updated_add_cols = {}
+            for label in new_add_cols:
+                if label in add_cols_data:
+                    updated_add_cols[label] = add_cols_data[label]
+                else:
+                    updated_add_cols[label] = request.POST.get(label, '')
+
+            item.add_cols = json.dumps(updated_add_cols)
+
             # Handle rec_expiration and alert_qty logic
             item.rec_expiration = rec_expiration
             if alert_qty_disabled:
-                item.alert_qty = 0  # If disabled, set alert_qty to 0
+                item.alert_qty = 0
             else:
-                item.alert_qty = request.POST.get('alert_qty', item.alert_qty)  # Update alert_qty if not disabled
-            
-            # Save the item
+                item.alert_qty = request.POST.get('alert_qty', item.alert_qty)
+
+            # Save the updated item
             item.save()
 
             return redirect('inventory_itemDetails_view', item_id=item_id)
@@ -806,8 +826,9 @@ def inventory_itemEdit_view(request, item_id):
         'form': form,
         'item': item,
         'add_cols_data': add_cols_data,
-        'is_alert_disabled': item.alert_qty == 0,  # Alert if disabled
+        'is_alert_disabled': item.alert_qty == 0,
     })
+
 
 @login_required
 @lab_permission_required('view_inventory')
@@ -836,6 +857,19 @@ def inventory_itemDelete_view(request, item_id):
 
     return render(request, 'mod_inventory/inventory_itemDelete.html', context)
 
+@login_required
+@lab_permission_required('view_inventory')
+def get_item_type_add_cols(request, itemType_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    
+    try:
+        item_type = item_types.objects.get(itemType_id=itemType_id)
+        add_cols = json.loads(item_type.add_cols) if item_type.add_cols else []
+        return JsonResponse({'add_cols': add_cols})
+    except item_types.DoesNotExist:
+        return JsonResponse({'error': 'Item type not found'}, status=404)
+    
 @login_required
 @lab_permission_required('physical_count')
 def inventory_physicalCount_view(request):
