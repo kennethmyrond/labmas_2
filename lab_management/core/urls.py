@@ -29,6 +29,7 @@ urlpatterns = [
     path('inventory/updateItem/', views.inventory_updateItem_view, name='inventory_updateItem'),  # Added trailing slash
     path('inventory/itemDetails/<int:item_id>/', views.inventory_itemDetails_view, name='inventory_itemDetails_view'),  # Consistent naming
     path('inventory/item/edit/<int:item_id>/', views.inventory_itemEdit_view, name='inventory_itemEdit_view'),
+    path('inventory/get_item_type_add_cols/<int:itemType_id>/', views.get_item_type_add_cols, name='get_item_type_add_cols'),
     path('inventory/item/delete/<int:item_id>/', views.inventory_itemDelete_view, name='inventory_itemDelete_view'),
     path('inventory/physicalCount/', views.inventory_physicalCount_view, name='inventory_physicalCount'),  # Added trailing slash
     path('inventory/config/', views.inventory_config_view, name='inventory_config'),

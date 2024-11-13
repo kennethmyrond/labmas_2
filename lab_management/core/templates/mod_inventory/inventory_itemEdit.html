@@ -22,40 +22,50 @@
                     <h5 class="card-title">Edit Item Details</h5>
                     <form method="POST">
                         {% csrf_token %}
-                        {{ form.as_p }} <!-- Main form fields -->
+                        
+                       <!-- Item Type Dropdown -->
+                        <div class="mb-3">
+                            <label for="itemType" class="form-label">Item Type:</label>
+                            {{ form.itemType }}
+                        </div>
 
+                        <!-- Item Name Field -->
+                        <div class="mb-3">
+                            {{ form.item_name.label_tag }}
+                            {{ form.item_name }}
+                        </div>
+                    
                         <h6>Additional Columns:</h6>
-                        <div class="additional-columns">
+                        <div class="additional-columns" id="additionalColumns">
                             {% for label, value in add_cols_data.items %}
-                                <div style="padding-left: 20px;">  <!-- Indent the additional columns -->
+                                <div style="padding-left: 20px;">
                                     <strong>{{ label }}:</strong>
                                     <input type="text" name="{{ label }}" value="{{ value }}" class="form-control">
                                 </div>
                             {% endfor %}
                         </div>
-
                         <h6>Item Settings:</h6>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="recExpiration" name="rec_expiration" {% if item.rec_expiration %}checked{% endif %}>
                             <label class="form-check-label" for="recExpiration">Requires Expiration Date</label>
                         </div>
-
+                    
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="disableAlertQty" name="disable_alert_qty" {% if is_alert_disabled %}checked{% endif %} onchange="toggleAlertQtyField()">
                             <label class="form-check-label" for="disableAlertQty">Disable Alert Quantity</label>
                         </div>
-
-                        <!-- Only show the alert quantity field if it's not disabled -->
+                    
                         <div class="row mb-3" id="alertQtyField" {% if is_alert_disabled %}style="display: none;"{% endif %}>
                             <label for="alertQty" class="col-sm-2 col-form-label">Alert Quantity:</label>
                             <div class="col-sm-10">
                                 <input type="number" class="form-control" id="alertQty" name="alert_qty" value="{{ item.alert_qty }}">
                             </div>
                         </div>
-
+                    
                         <button type="submit" class="btn btn-primary">Save Changes</button>
                         <a href="{% url 'inventory_itemDetails_view' item.item_id %}" class="btn btn-secondary">Cancel</a>
                     </form>
+                    
                 </div>
             </div>
         </div>
@@ -73,6 +83,42 @@
             alertQtyField.style.display = 'block';
         }
     }
+</script>
+
+<script>
+    // Handle itemType change
+    document.getElementById('id_itemType').addEventListener('change', function() {
+        const itemTypeId = this.value;
+        if (itemTypeId) {
+            fetch(`/inventory/get_item_type_add_cols/${itemTypeId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const additionalColumnsDiv = document.getElementById('additionalColumns');
+                    additionalColumnsDiv.innerHTML = ''; // Clear existing fields
+
+                    if (data.add_cols) {
+                        const existingValues = {};
+
+                        // Get current input values for common columns
+                        document.querySelectorAll('.additional-columns input').forEach(input => {
+                            existingValues[input.name] = input.value;
+                        });
+
+                        // Create new fields
+                        data.add_cols.forEach(col => {
+                            const div = document.createElement('div');
+                            div.style.paddingLeft = '20px';
+                            div.innerHTML = `
+                                <strong>${col}:</strong>
+                                <input type="text" name="${col}" value="${existingValues[col] || ''}" class="form-control">
+                            `;
+                            additionalColumnsDiv.appendChild(div);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    });
 </script>
 
 {% endblock %}
