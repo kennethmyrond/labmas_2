@@ -5,6 +5,9 @@ from django.contrib.auth import views as auth_views
 
 from django.conf import settings
 from django.conf.urls.static import static
+from django.conf.urls import handler404
+from core.views import custom_404_view
+handler404 = custom_404_view
 
 urlpatterns = [
     path('login/', views.userlogin, name='userlogin'),
@@ -20,8 +23,6 @@ urlpatterns = [
     path('my-profile/', views.my_profile, name='my_profile'),
     path('deactivate-account/', views.deactivate_account, name='deactivate_account'),
     path('social/signup/', views.signup_redirect, name='signup_redirect'),
-
-    # setup
 
     # inventory
     path('inventory/', views.inventory_view, name='inventory_view'),

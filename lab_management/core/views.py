@@ -404,6 +404,9 @@ def error_page(request, message=None):
     message = request.GET.get('message', 'An error occurred.')
     return render(request, 'error_page.html', {'message': message})
 
+def custom_404_view(request, exception):
+    return render(request, 'error_page.html', status=404)
+
 @login_required
 def my_profile(request):
     user = request.user
@@ -421,14 +424,26 @@ def deactivate_account(request):
 def edit_profile(request):
     user = request.user
     if request.method == 'POST':
-        user.firstname = request.POST.get('firstname')
-        user.lastname = request.POST.get('lastname')
-        user.username = request.POST.get('username')
-        user.email = request.POST.get('email')
-        user.personal_id = request.POST.get('personal_id')
-        user.save()
-        messages.success(request, "Profile updated successfully.")
-        return redirect('my_profile')
+        firstname = request.POST.get('firstname')
+        lastname = request.POST.get('lastname')
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        personal_id = request.POST.get('personal_id')
+        
+        # Check if the email or username is already taken by another user
+        if User.objects.filter(email=email).exclude(pk=user.pk).exists():
+            messages.error(request, "Email is already registered by another user.")
+        elif User.objects.filter(username=username).exclude(pk=user.pk).exists():
+            messages.error(request, "Username is already taken by another user.")
+        else:
+            user.firstname = firstname
+            user.lastname = lastname
+            user.username = username
+            user.email = email
+            user.personal_id = personal_id
+            user.save()
+            messages.success(request, "Profile updated successfully.")
+            return redirect('my_profile')
     
     return render(request, 'edit_profile.html', {'user': user})
 
@@ -1830,9 +1845,7 @@ def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
 @login_required
 @lab_permission_required('return_item')
 def return_borrowed_items(request):
-    borrow_id = request.POST.get('borrow_id', '')  # Fetch borrow_id from POST or use empty string
-
-    # Check if the borrow_id is provided and fetch the relevant data
+    borrow_id = request.GET.get('borrow_id', '')  # Fetch borrow_id from GET request
     borrow_entry = None
     borrowed_items_list = None
     consumed_items_list = None
@@ -1840,21 +1853,24 @@ def return_borrowed_items(request):
 
     if borrow_id:
         try:
-            
             borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id, laboratory_id=selected_laboratory_id)
             user_borrowed = borrow_entry.user
 
-            # Display error message if status is not 'B' (borrowed)
             if borrow_entry.status != 'B':
                 messages.error(request, 'Status of borrowing request is not applicable for returning')
-            
-            borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_entry, item__is_consumable=False).annotate(remaining_borrowed=F('qty') - F('returned_qty'))
-            consumed_items_list = borrowed_items.objects.filter(borrow=borrow_entry, item__is_consumable=True).annotate(remaining_borrowed=F('qty') - F('returned_qty'))
+
+            borrowed_items_list = borrowed_items.objects.filter(
+                borrow=borrow_entry, item__is_consumable=False
+            ).annotate(remaining_borrowed=F('qty') - F('returned_qty'))
+
+            consumed_items_list = borrowed_items.objects.filter(
+                borrow=borrow_entry, item__is_consumable=True
+            ).annotate(remaining_borrowed=F('qty') - F('returned_qty'))
+
         except borrow_info.DoesNotExist:
-            borrow_entry = None  # Show no data if the borrow ID is invalid
+            messages.error(request, "Invalid Borrow ID.")
 
     if request.method == 'POST' and 'return_items' in request.POST and borrow_entry and borrow_entry.status == 'B':
-        # Process return and report submission
         for item in borrowed_items_list:
             returned_all = request.POST.get(f'returned_all_{item.item.item_id}', False) == 'on'
             qty_returned = int(request.POST.get(f'return_qty_{item.item.item_id}', 0))
@@ -1862,37 +1878,32 @@ def return_borrowed_items(request):
             remarks = request.POST.get(f'remarks_{item.item.item_id}', '').strip()
             amount_to_pay = request.POST.get(f'amount_to_pay_{item.item.item_id}', 0)
 
-            # Handle item returns
             if returned_all:
-                item.returned_qty = item.qty  # Mark all items as returned
+                item.returned_qty = item.qty
             else:
-                item.returned_qty = qty_returned  # Only return the specified quantity
-
+                item.returned_qty = qty_returned
             item.save()
 
-            # Handle hold clearance and issue reporting
             if hold_clearance and remarks:
                 reported_items.objects.create(
                     borrow=borrow_entry,
                     item=item.item,
-                    qty_reported=item.qty - item.returned_qty,  # Remaining items not returned
+                    qty_reported=item.qty - item.returned_qty,
                     report_reason=remarks,
                     amount_to_pay=amount_to_pay or 0,
                     laboratory_id=selected_laboratory_id,
                     user=user_borrowed
                 )
 
-        # Automatically mark all consumed items as returned
         for consumed_item in consumed_items_list:
             consumed_item.returned_qty = consumed_item.qty
             consumed_item.save()
 
-        # Update the status if all items are returned
         if all(item.qty == item.returned_qty for item in borrowed_items_list) and \
            all(item.qty == item.returned_qty for item in consumed_items_list):
-            borrow_entry.status = 'X'  # Mark as completed
+            borrow_entry.status = 'X'
             borrow_entry.save()
-        
+
         messages.success(request, 'Successfully Returned an Item')
         return redirect('return_borrowed_items')
 
@@ -3983,11 +3994,29 @@ def add_user(request):
         username = request.POST.get('email')
         password = request.POST.get('password')
         is_superuser = request.POST.get('is_superuser') == 'on'
+        
         if email and firstname and lastname and password:
-            user.objects.create_user(email=email, firstname=firstname, lastname=lastname, password=password, personal_id=idnum, username=username, is_superuser=is_superuser)
-            messages.success(request, "User added successfully.")
+            if User.objects.filter(email=email).exists():
+                messages.error(request, "Email is already registered.")
+            elif User.objects.filter(username=username).exists():
+                messages.error(request, "Username is already taken.")
+            else:
+                try:
+                    User.objects.create_user(
+                        email=email, 
+                        firstname=firstname, 
+                        lastname=lastname, 
+                        password=password, 
+                        personal_id=idnum, 
+                        username=username, 
+                        is_superuser=is_superuser
+                    )
+                    messages.success(request, "User added successfully.")
+                except Exception as e:
+                    messages.error(request, f"Error creating user: {e}")
         else:
             messages.error(request, "Missing required fields.")
+    
     return redirect('superuser_manage_users')
 
 @login_required()

@@ -11,6 +11,12 @@
     </nav>
 </div>
 
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
 <section class="section">
     <div class="row">
         <div class="col-lg-12">
@@ -18,28 +24,24 @@
                 <div class="card-body">
                     <h5 class="card-title">Return Items</h5>
 
-                      <!-- Success message -->
-                        {% if messages %}
-                        <div class="alert alert-danger">
-                            {% for message in messages %}
-                            {{ message }}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
-                    <form method="POST" action="">
+                    <!-- Search Form for Borrow ID -->
+                    <form method="GET" action="{% url 'return_borrowed_items' %}">
                         {% csrf_token %}
-
-                        <!-- Editable Borrow ID field -->
                         <div class="row mb-3">
                             <label for="borrow_id" class="col-sm-2 col-form-label">Borrow ID:</label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" name="borrow_id" value="{{ borrow_id }}" required>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" name="borrow_id" placeholder="Enter Borrow ID" value="{{ borrow_id }}" required>
+                            </div>
+                            <div class="col-sm-2">
+                                <button type="submit" class="btn btn-primary">Search</button>
                             </div>
                         </div>
+                    </form>
 
-                        <!-- Display Borrow Information if available -->
-                        {% if borrow_entry %}
+                    <!-- Display Borrow Information if available -->
+                    {% if borrow_entry %}
+                    <form method="POST" action="">
+                        {% csrf_token %}
                         <ul>
                             <li><strong>Borrower Name:</strong> {{ borrow_entry.user.firstname }}  {{ borrow_entry.user.lastname }}</li>
                             <li><strong>Request Date:</strong> {{ borrow_entry.request_date }}</li>
@@ -118,8 +120,8 @@
                         {% else %}
                             <button type="submit" name="return_items" class="btn btn-primary">Submit Return</button>
                         {% endif %}
-                        {% endif %}
                     </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -163,14 +165,5 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-
-<!-- Optionally include DataTables library -->
-<!-- <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<script>
-$(document).ready(function() {
-    $('#borrowed-items-table').DataTable();  // Initialize DataTable
-    $('#consumed-items-table').DataTable();  // Initialize DataTable for consumed items
-});
-</script> -->
 
 {% endblock %}
