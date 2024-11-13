@@ -18,6 +18,7 @@
       <div class="card">
         <div class="card-body">
           <h5 class="card-title">Search for a Room</h5>
+          
 
           <!-- Display error message if any -->
           {% if error_message %}
@@ -117,7 +118,14 @@
                     <!-- Reservation Form -->
                     <form method="POST" action="{% url 'lab_reservation_student_reserveLabConfirm' %}">
                       {% csrf_token %}
-                      
+                      {%if res_id%}
+                      <div class="row mb-3">
+                        <label for="reservation_id" class="col-sm-2 col-form-label">Reservation ID:</label>
+                        <div class="col-sm-10">
+                          <input type="text" id="reservation_id" name="reservation_id" class="form-control" value="{{ res_id }}" readonly="true">
+                        </div>
+                      </div>
+                      {%endif%}
                       <div class="row mb-3">
                         <label for="selectedDate" class="col-sm-2 col-form-label">Selected Date:</label>
                         <div class="col-sm-10">

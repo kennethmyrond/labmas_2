@@ -28,6 +28,10 @@
           <!-- Display selected booking details -->
           <table class="table">
             <tr>
+              <th>Reservation ID</th>
+              <td>{{ reservation_data.res_id }}</td>
+            </tr>
+            <tr>
               <th>Room</th>
               <td>{{ reservation_data.room_name }}</td>
             </tr>
@@ -69,27 +73,20 @@
             <div class="row mb-3">
               <label for="num_people" class="col-sm-2 col-form-label">Number of People:</label>
               <div class="col-sm-10">
-                <input type="number" class="form-control" id="num_people" name="num_people" required>
+                <input type="number" class="form-control" id="num_people" name="num_people" {% if preapproval_details %} value="{{ preapproval_details.num_people }}" readonly {% else %} required {% endif %}>
               </div>
             </div>
 
             <div class="row mb-3">
               <label for="purpose" class="col-sm-2 col-form-label">Purpose:</label>
               <div class="col-sm-10">
-                <textarea class="form-control" id="purpose" name="purpose" rows="3" required></textarea>
+                <textarea class="form-control" id="purpose" name="purpose" rows="3" {% if preapproval_details %} readonly {% else %} required {% endif %}>
+                  {% if preapproval_details %}{{ preapproval_details.purpose }}{% endif %}
+                </textarea>
               </div>
             </div>
 
-            {% if approval_form_exists %}
-              <div class="row mb-3">
-                <label class="col-sm-2 col-form-label">Approval Form:</label>
-                <div class="col-sm-10">
-                  <a href="{{ reserv_config.approval_form.url }}" target="_blank" class="btn btn-link">Download Approval Form</a>
-                  <input type="file" name="approval_form" class="form-control mt-2" accept="application/pdf" {% if approval_form_exists %} required {% endif %}>
-                  <small class="form-text text-muted">Upload the signed approval form PDF.</small>
-                </div>
-              </div>
-            {% endif %}
+            
 
             <!-- Terms and Conditions -->
             {% if reserv_config.tc_description %}

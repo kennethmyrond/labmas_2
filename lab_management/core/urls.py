@@ -69,7 +69,7 @@ urlpatterns = [
     path('borrowing/labtech/detailedprebookrequests/<int:borrow_id>/', views.borrowing_labtech_detailedprebookrequests, name='borrowing_labtech_detailedprebookrequests'),
     path('borrowing/return-items/', views.return_borrowed_items, name='return_borrowed_items'),
 
-
+    # clearance
     path('clearance/', views.clearance_view, name='clearance'),
     path('clearance/student/view_clearance', views.clearance_student_viewClearance, name='clearance_student_viewClearance'),
     path('clearance/student/view_clearance_detailed/<int:borrow_id>/', views.clearance_student_viewClearanceDetailed, name='clearance_student_viewClearanceDetailed'), 
@@ -77,12 +77,12 @@ urlpatterns = [
     path('clearance/labtech/view_clearance_detailed/<int:report_id>/', views.clearance_labtech_viewclearanceDetailed, name='clearance_labtech_viewclearanceDetailed'),
     path('suggest_report_users/', views.suggest_report_users, name='suggest_report_users'),
 
-
+    # lab reservation
     path('lab-reservation/', views.lab_reservation_view, name='lab_reservation'),
+    path('lab-reservation/student/reserveLabPreApproval', views.lab_reservation_preapproval, name='lab_reservation_preapproval'),
     path('lab-reservation/student/reserveLabChooseRoom', views.lab_reservation_student_reserveLabChooseRoom, name='lab_reservation_student_reserveLabChooseRoom'),
     path('lab-reservation/student/reserveLabConfirm/', views.lab_reservation_student_reserveLabConfirm, name='lab_reservation_student_reserveLabConfirm'),
     path('lab-reservation/student/reserveLabConfirmDetails/', views.lab_reservation_student_reserveLabConfirmDetails, name='lab_reservation_student_reserveLabConfirmDetails'),
-    
     
     path('lab-reservation/student/reserveLabChooseTime', views.lab_reservation_student_reserveLabChooseTime, name='lab_reservation_student_reserveLabChooseTime'),
     path('lab-reservation/student/reserveLabSummary', views.lab_reservation_student_reserveLabSummary, name='lab_reservation_student_reserveLabSummary'),
@@ -91,12 +91,11 @@ urlpatterns = [
     path('lab-reservation/labcoord/configRoom', views.labres_labcoord_configroom, name='labres_labcoord_configroom'),
     path('get-room-configuration/<int:room_id>/', views.get_room_configuration, name='get_room_configuration'),
 
-
     path('lab-reservation/lab/schedule', views.labres_lab_schedule, name='labres_lab_schedule'),
     path('lab-reservation/lab/reservationRequests', views.labres_lab_reservationreqs, name='labres_lab_reservationreqs'),
     path('lab-reservation/lab/reservationRequests_detailed/<int:reservation_id>/', views.labres_lab_reservationreqsDetailed, name='labres_lab_reservationreqsDetailed'),
 
-
+    # reports
     path('user-reports/', views.reports_view, name='user_reports'),
     path('inventory-reports/', views.inventory_reports, name='inventory_reports'),
     path('borrowing-reports/', views.borrowing_reports, name='borrowing_reports'),

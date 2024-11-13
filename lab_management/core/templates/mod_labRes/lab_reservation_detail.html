@@ -31,7 +31,7 @@
 
           <table class="table table-bordered table-striped">
             <tr>
-              <th>Reservation Number</th>
+              <th>Reservation ID</th>
               <td>{{ reservation.reservation_id}}</td>
             </tr>
             <tr>
@@ -81,14 +81,19 @@
             </div>
           {% endif %}
 
-          <!-- Cancel button if not already cancelled -->
-          {% if reservation.status != 'C' %}
-          <a href="{% url 'cancel_reservation' reservation.reservation_id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this reservation?');">Cancel Reservation</a>
+          {% if reservation.status == 'A' %}
+            <form method="post" style="display: inline;">
+              {% csrf_token %}
+              <input type="hidden" name="reservation_id" value="{{ reservation.reservation_id }}">
+              <button type="submit" name="chooseroom" value="chooseroom" class="btn btn-primary btn-sm">Proceed with Choose Room and Time</button>
+            </form>
+            
           {% endif %}
 
-          <!-- Back button -->
-          <a href="{% url 'lab_reservation_student_reserveLabSummary' %}" class="btn btn-secondary">Back to Reservations</a>
-
+          <!-- Cancel button if not already cancelled -->
+          {% if reservation.status != 'C' %}
+            <a href="{% url 'cancel_reservation' reservation.reservation_id %}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to cancel this reservation?');">Cancel Reservation</a>
+          {% endif %}
         </div>
       </div>
     </div>

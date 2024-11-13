@@ -162,7 +162,6 @@ class laboratory_users(models.Model):
     status = models.CharField(max_length=1, default='A') # A - Active, I - inactive, R - request access pending
     timestamp = models.DateTimeField(null=True, blank=True, auto_now_add=True)
 
-
 class rooms(models.Model):
     room_id = models.CharField(max_length=20, unique=True, primary_key=True)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
@@ -256,7 +255,7 @@ class item_expirations(models.Model):
         return f"Expiration for Inventory Item {self.inventory_item_id}"
 
 class suppliers(models.Model):
-    suppliers_id = models.AutoField(primary_key=True)
+    suppliers_id = models.CharField(max_length=20, unique=True, primary_key=True)
     supplier_name = models.CharField(max_length=45)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
     contact_person = models.CharField(max_length=45, null=True, blank=True)
@@ -264,6 +263,16 @@ class suppliers(models.Model):
     # address = models.CharField(max_length=45, null=True, blank=True)
     description = models.CharField(max_length=45, null=True, blank=True)
     is_disabled = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if not self.suppliers_id:
+            current_year = datetime.now().year
+            while True:
+                random_number = get_random_string(length=4, allowed_chars='0123456789')
+                self.suppliers_id = f"102{current_year}{random_number}"
+                if not item_description.objects.filter(suppliers_id=self.suppliers_id).exists():
+                    break
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.suppliername
@@ -415,7 +424,8 @@ class reported_items(models.Model):
 class laboratory_reservations(models.Model):
     reservation_id = models.CharField(max_length=20, unique=True, primary_key=True)
     user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='user')
-    room = models.ForeignKey('rooms', on_delete=models.CASCADE, related_name='reservations')
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
+    room = models.ForeignKey('rooms', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
     request_date = models.DateTimeField(auto_now_add=True)
     start_date = models.DateField(null=True, blank=True)
     start_time = models.TimeField(null=True, blank=True)
@@ -438,7 +448,7 @@ class laboratory_reservations(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Reservation {self.reservation_id} - {self.room.name}"
+        return f"Reservation {self.reservation_id}"
     
     def get_status_display(self):
         status_mapping = {
@@ -450,7 +460,6 @@ class laboratory_reservations(models.Model):
         }
         return status_mapping.get(self.status, 'Unknown')
 
-    
 class reservation_config(models.Model):
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
     reservation_type = models.CharField(max_length=10, choices=[('class', 'Class Time'), ('hourly', 'Hourly')], default='class')
