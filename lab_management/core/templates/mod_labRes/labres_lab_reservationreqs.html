@@ -11,13 +11,72 @@
   </nav>
 </div>
 
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+{%if require_approval%}
+<section class="section">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+        <h5 class="card-title">Reservation Requests</h5>
+          
+        <!-- Reservation Table -->
+        <table class="table datatable">
+            <thead>
+                <tr>
+                    <th>Reservation ID</th>
+                    <th>Number of People</th>
+                    <th>Purpose</th>
+                    <th>Date Requested</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+              {% for requests in requests %}
+              <tr>
+                  <td>
+                      <a href="{% url 'labres_lab_reservationreqsDetailed' requests.reservation_id %}">
+                          {{ requests.reservation_id }}
+                      </a>
+                  </td>
+                  <td>{{ requests.num_people }}</td>
+                  <td>{{ requests.purpose }}</td>
+                  <td>{{ requests.request_date }}</td>
+                  <td>
+                    <form method="post" style="display: inline;">
+                      {% csrf_token %}
+                      <input type="hidden" name="reservation_id" value="{{ requests.reservation_id }}">
+                      <button type="submit" name="action" value="accept" class="btn btn-success btn-sm">Accept</button>
+                      <button type="submit" name="action" value="decline" class="btn btn-danger btn-sm">Decline</button>
+                    </form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                  <td colspan="6">No reservations found for the selected room and date.</td>
+              </tr>
+              {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{%endif%}
+
 <section class="section">
   <div class="row">
     <div class="col-lg-12">
       <div class="card">
         <div class="card-body">
 
-        <h5 class="card-title">Filter</h5>
+        <h5 class="card-title">All Requests</h5>
 
         <!-- Select Room -->
         <form id="roomSelector" method="GET">
@@ -54,12 +113,13 @@
                 <tr>
                     <th>Reservation ID</th>
                     <th>Room</th>
+                    <th>Reservation Date</th>
                     <th>Start Time</th>
                     <th>End Time</th>
                     <th>Duration</th>
                     <th>Purpose</th>
                     <th>Status</th> 
-                    <th>Actions</th>
+                    <!-- <th>Actions</th> -->
                 </tr>
             </thead>
             <tbody>
@@ -71,23 +131,24 @@
                       </a>
                   </td>
                   <td>{{ reservation.room_name }}</td>
+                  <td>{{ reservation.start_date }}</td>
                   <td>{{ reservation.formatted_start_time }}</td>
                   <td>{{ reservation.formatted_end_time }}</td>
                   <td>{{ reservation.time_interval }} minutes</td>
                   <td>{{ reservation.purpose }}</td>
                   <td>{{ reservation.get_status_display }}</td>
-                  <td>
+                  <!-- <td>
                     {% if reservation.status == 'P' %}
-                        <form method="POST">
-                            {% csrf_token %}
-                            <button type="submit" name="action" value="accept_{{ reservation.reservation_id }}" class="btn btn-success">✔</button>
-                            <button type="submit" name="action" value="delete_{{ reservation.reservation_id }}" class="btn btn-danger">✖</button>
-                        </form>
-                        
+                    <form method="post" style="display: inline;">
+                      {% csrf_token %}
+                      <input type="hidden" name="reservation_id" value="{{ reservation.reservation_id }}">
+                      <button type="submit" name="action" value="accept" class="btn btn-success btn-sm">Accept</button>
+                      <button type="submit" name="action" value="decline" class="btn btn-danger btn-sm">Decline</button>
+                    </form>
                     {% else %}
                         <span>Not Applicable</span>
                     {% endif %}
-                </td>
+                </td> -->
               </tr>
               {% empty %}
               <tr>

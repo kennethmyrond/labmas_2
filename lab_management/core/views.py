@@ -2152,9 +2152,64 @@ def lab_reservation_view(request):
 
 @login_required
 @lab_permission_required('reserve_laboratory')
+def lab_reservation_preapproval(request):
+    selected_laboratory_id = request.session.get('selected_lab')
+    reservation_config_obj = get_object_or_404(reservation_config, laboratory_id=selected_laboratory_id)
+    
+    if request.method == 'POST':
+        contact_name = request.POST.get('contact_name')
+        contact_email = request.POST.get('contact_email')
+        num_people = request.POST.get('num_people')
+        purpose = request.POST.get('purpose')
+
+        uploaded_form = request.FILES.get('approval_form')
+        if reservation_config_obj.approval_form and not uploaded_form:
+            messages.error(request, "Please upload the required approval form.")
+            return redirect('lab_reservation_preapproval')
+
+        # Save reservation as pending
+        reservation = laboratory_reservations.objects.create(
+            user=request.user,
+            room=None,  # Room selection will happen after approval
+            start_date=None,
+            start_time=None,
+            end_time=None,
+            contact_name=contact_name,
+            contact_email=contact_email,
+            num_people=num_people,
+            purpose=purpose,
+            status='P',  # Set to pending for approval
+            filled_approval_form=uploaded_form,
+            laboratory_id=selected_laboratory_id
+
+        )
+        
+        messages.success(request, "Your reservation is now pending approval. You’ll be notified once it’s approved.")
+        return redirect('lab_reservation_detail', reservation.reservation_id)  # Redirect to home or any page you want
+
+    return render(request, 'mod_labRes/lab_reservation_preapproval.html', {
+        'reserv_config': reservation_config_obj,
+    })
+
+
+@login_required
+@lab_permission_required('reserve_laboratory')
 def lab_reservation_student_reserveLabChooseRoom(request):
     selected_laboratory_id = request.session.get('selected_lab')
     reservation_config_obj = reservation_config.objects.get(laboratory_id=selected_laboratory_id)
+
+    res_id = None
+    # Check if the lab requires approval and if the user has an approved reservation
+    if reservation_config_obj.require_approval:
+        reservation_data = request.session.get('reservation_id')
+        if reservation_data:
+            res_id = reservation_data.get('res_id')
+        else:
+            res_id = None
+
+        if not res_id:
+            return redirect('lab_reservation_preapproval')  
+
     today = timezone.now().date()
     min_reservation_date = today + timedelta(days=reservation_config_obj.leadtime)
 
@@ -2168,12 +2223,16 @@ def lab_reservation_student_reserveLabChooseRoom(request):
     else:
         error_message = "Please select a reservation date."
 
+
     if error_message:
         context = {
+            'res_id': res_id,
             'error_message': error_message,
             'min_reservation_date': min_reservation_date,
         }
         return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html', context)
+
+    
 
     capacity_filter = request.GET.get('capacityFilter', '')
 
@@ -2239,7 +2298,8 @@ def lab_reservation_student_reserveLabChooseRoom(request):
                 room=room,
                 start_time__lt=end_time_obj,
                 end_time__gt=start_time_obj,
-                status__in=['R', 'A', 'P']
+                # status__in=['R', 'A', 'P']
+                status='R'
             ).exists()
 
             # Mark as 'red' if reserved or blocked
@@ -2258,7 +2318,8 @@ def lab_reservation_student_reserveLabChooseRoom(request):
         'min_reservation_date': min_reservation_date,
         'capacity_filter': capacity_filter,
         'error_message': error_message,
-        'reservation_config_obj': reservation_config_obj
+        'reservation_config_obj': reservation_config_obj,
+        'res_id': res_id
     }
 
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html', context)
@@ -2268,11 +2329,18 @@ def lab_reservation_student_reserveLabChooseRoom(request):
 def lab_reservation_student_reserveLabConfirm(request):
     selected_laboratory_id = request.session.get('selected_lab')
     reservation_config_obj = reservation_config.objects.get(laboratory_id=selected_laboratory_id)
+
+    if reservation_config_obj.require_approval:
+        del request.session['reservation_id']
+    res_id = None
     if request.method == 'POST':
         selected_room_id = request.POST.get('selectedRoom')
         selected_date = request.POST.get('selectedDate')
         selected_start_time = request.POST.get('selectedStartTime')
         selected_end_time = request.POST.get('selectedEndTime')
+
+        if reservation_config_obj.require_approval:
+            res_id = request.POST.get('reservation_id')
 
         # Fetch room information
         selected_room = get_object_or_404(rooms, room_id=selected_room_id)
@@ -2301,6 +2369,7 @@ def lab_reservation_student_reserveLabConfirm(request):
 
         # Save the reservation data in session temporarily for confirmation
         request.session['reservation_data'] = {
+            'res_id': res_id,
             'room_id': selected_room.room_id,
             'room_name': selected_room.name,
             'selected_date': selected_date,
@@ -2319,9 +2388,13 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
     current_user = request.user
     selected_laboratory_id = request.session.get('selected_lab')
     reservation_config_obj = get_object_or_404(reservation_config, laboratory_id=selected_laboratory_id)
+    preapproval_details = None
 
     if not reservation_data:
         return redirect('lab_reservation_student_reserveLabChooseRoom')
+
+    if reservation_config_obj.require_approval:
+        preapproval_details = get_object_or_404(laboratory_reservations, reservation_id=reservation_data.get('res_id'))
 
     if request.method == 'POST':
         # Get user details from the form
@@ -2331,37 +2404,36 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
         purpose = request.POST.get('purpose')
 
         # Set reservation status
-        if reservation_config_obj.require_approval: 
-            status = 'P'
-            message = 'Reservation forwarded for Review'
-        else:
-            status = 'R'
-            message = 'Reservation in Pending Status'
+        status = 'R'
+        message = 'Room Reserved Successfully'
 
         # Use room_id from session data
         room_id = reservation_data.get('room_id')
         room = get_object_or_404(rooms, room_id=room_id)
 
         # Handle the uploaded PDF file if required
-        uploaded_form = request.FILES.get('approval_form')
-        if reservation_config_obj.approval_form and not uploaded_form:
-            messages.error(request, "Please upload the required approval form.")
-            return redirect('lab_reservation_student_reserveLabConfirmDetails')
-
-        # Save the reservation to the database
-        reservation = laboratory_reservations.objects.create(
-            user=current_user or None,
-            room=room,
-            start_date=reservation_data['selected_date'],
-            start_time=reservation_data['start_time'],
-            end_time=reservation_data['end_time'],
-            contact_name=contact_name,
-            contact_email=contact_email,
-            num_people=num_people,
-            purpose=purpose,
-            status=status,
-            filled_approval_form=uploaded_form  # Save the uploaded file if provided
-        )
+        if reservation_config_obj.require_approval:
+            reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_data['res_id'])
+            reservation.room = room
+            reservation.start_date = reservation_data['selected_date']
+            reservation.start_time = reservation_data['start_time']
+            reservation.end_time = reservation_data['end_time']
+            reservation.status = 'R'
+            reservation.save()
+        else:
+            reservation = laboratory_reservations.objects.create(
+                user=current_user,
+                room=room,
+                start_date=reservation_data['selected_date'],
+                start_time=reservation_data['start_time'],
+                end_time=reservation_data['end_time'],
+                contact_name=contact_name,
+                contact_email=contact_email,
+                num_people=num_people,
+                purpose=purpose,
+                status=status,
+                laboratory_id = selected_laboratory_id
+            )
 
         # Clear session data and redirect
         del request.session['reservation_data']
@@ -2370,9 +2442,11 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
 
     # Check if approval form exists for download link
     approval_form_exists = bool(reservation_config_obj.approval_form)
-
+    print(preapproval_details)
+    
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabConfirm.html', {
         'reservation_data': reservation_data,
+        'preapproval_details': preapproval_details,
         'user': current_user if request.user.is_authenticated else None,
         'reserv_config': reservation_config_obj,
         'approval_form_exists': approval_form_exists,
@@ -2390,13 +2464,14 @@ def lab_reservation_student_reserveLabSummary(request):
     # Get the current user
     # current_user = request.user
     current_user = request.user
+    selected_laboratory_id = request.session.get('selected_lab')
     
     # Get today's date
     today = timezone.now().date()
 
     # Filter reservations by categories
     tab = request.GET.get('tab', 'all')  # Default to 'today' tab
-    reservations = laboratory_reservations.objects.filter(user=current_user)
+    reservations = laboratory_reservations.objects.filter(user=current_user, laboratory_id=selected_laboratory_id)
 
     if tab == 'today':
         reservations = reservations.filter(start_date=today)
@@ -2436,6 +2511,17 @@ def lab_reservation_detail(request, reservation_id):
     # Get the reservation object by its ID
     current_user = request.user
     reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id, user=current_user)
+
+    if request.method == "POST":
+        if 'chooseroom' in request.POST:
+            print('pass')
+            res_id = request.POST.get('reservation_id')
+            request.session['reservation_id'] = {
+                'res_id': res_id,
+            }
+            return redirect('lab_reservation_student_reserveLabChooseRoom')
+
+
 
     context = {
         'reservation': reservation,
@@ -2515,10 +2601,14 @@ def labres_lab_schedule(request):
 @lab_permission_required('approve_deny_reservations')
 def labres_lab_reservationreqs(request):
     selected_laboratory_id = request.session.get('selected_lab')
+    require_approval = reservation_config.objects.filter(laboratory_id=selected_laboratory_id).values('require_approval')
+
     reservations = []
     selected_room = None
     selected_date = None
     room_list = []
+
+    requests = laboratory_reservations.objects.filter(laboratory_id=selected_laboratory_id, status='P').annotate(room_name=F('room__name'))
 
     if selected_laboratory_id:
         room_list = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
@@ -2533,7 +2623,8 @@ def labres_lab_reservationreqs(request):
                 reservations = laboratory_reservations.objects.filter(
                     room=room,
                     start_date=selected_date,
-                )
+                    room__is_disabled=0
+                ).order_by('request_date')
 
                 # Format start_time, end_time and calculate interval
                 for reservation in reservations:
@@ -2553,7 +2644,9 @@ def labres_lab_reservationreqs(request):
             except rooms.DoesNotExist:
                 pass
         else:
-            reservations = laboratory_reservations.objects.filter(room__laboratory_id=selected_laboratory_id).annotate(room_name=F('room__name'))
+            reservations = laboratory_reservations.objects.filter(
+                laboratory_id=selected_laboratory_id
+            ).exclude(room__isnull=True).annotate(room_name=F('room__name')).order_by('-request_date')
             # Format start_time, end_time and calculate interval
             for reservation in reservations:
                 # Format time as 9:00AM
@@ -2571,33 +2664,53 @@ def labres_lab_reservationreqs(request):
     # Handle POST requests for Accept and Delete actions
     if request.method == "POST":
         action = request.POST.get('action')
+        reservation_id = request.POST.get('reservation_id')
 
-        if action:
-            # Check if the action is accept or delete for a specific reservation
-            if action.startswith("accept_"):
-                reservation_id = action.split("_")[1]
-                reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id)
-
-                if reservation.status == 'P':  # Only update if pending
-                    reservation.status = 'R'  # Change status to Approved
-                    reservation.save()
-
-            elif action.startswith("delete_"):
-                reservation_id = action.split("_")[1]
-                reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id)
-
-                if reservation.status == 'P':  # Only update if pending
-                    reservation.status = 'D'  # Change status to Cancelled by Lab Tech
-                    reservation.save()
-
-        # Redirect to avoid form resubmission on page reload
-        return HttpResponseRedirect(reverse('labres_lab_reservationreqs'))
+        if action == "accept":
+            reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id, status='P')
+            reservation.status = 'A'  # Set to approved
+            reservation.save()
+            messages.success(request, f"Reservation {reservation_id} has been approved.")
+        elif action == "decline":
+            reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id, status='P')
+            reservation.status = 'D'  # Set to declined
+            reservation.save()
+            messages.success(request, f"Reservation {reservation_id} has been declined.")
+        
+        return redirect('labres_lab_reservationreqs')  # Redirect to avoid resubmission
     
+    # if request.method == "POST":
+    #     action = request.POST.get('action')
+
+    #     if action:
+    #         # Check if the action is accept or delete for a specific reservation
+    #         if action.startswith("accept_"):
+    #             reservation_id = action.split("_")[1]
+    #             reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id)
+
+    #             if reservation.status == 'P':  # Only update if pending
+    #                 reservation.status = 'R'  # Change status to Approved
+    #                 reservation.save()
+
+    #         elif action.startswith("delete_"):
+    #             reservation_id = action.split("_")[1]
+    #             reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_id)
+
+    #             if reservation.status == 'P':  # Only update if pending
+    #                 reservation.status = 'D'  # Change status to Cancelled by Lab Tech
+    #                 reservation.save()
+
+    #     # Redirect to avoid form resubmission on page reload
+    #     return HttpResponseRedirect(reverse('labres_lab_reservationreqs'))
+    print('test:',require_approval)
     context = {
         'room_list': room_list,
         'reservations': reservations,
         'selected_room': selected_room,
         'selected_date': selected_date,
+
+        'requests': requests,
+        'require_approval': require_approval
     }
 
     return render(request, 'mod_labRes/labres_lab_reservationreqs.html', context)
@@ -2609,7 +2722,10 @@ def labres_lab_reservationreqsDetailed(request, reservation_id):
 
     try:
         reservation = laboratory_reservations.objects.get(reservation_id=reservation_id)
-        room = rooms.objects.get(room_id=reservation.room.room_id, laboratory_id=selected_laboratory_id)
+        if(reservation.room_id):
+            room = rooms.objects.get(room_id=reservation.room_id, laboratory_id=selected_laboratory_id)
+        else:
+            room=None
     except (laboratory_reservations.DoesNotExist, rooms.DoesNotExist):
         reservation = None
         room = None
@@ -3057,7 +3173,7 @@ def borrowing_reports(request):
     
     # New Query for borrow_info (borrowing requests)
     borrowreq_filter_type = request.GET.get('borrowreq_filter_type', 'today')
-    borrowreq_start_date, borrowreq_end_date = calculate_date_range(borrowreq_filter_type)
+    # borrowreq_start_date, borrowreq_end_date = calculate_date_range(request, borrowreq_filter_type)
     if borrowreq_filter_type == 'today':
         borrowreq_date_range = [current_date, current_date]
     elif borrowreq_filter_type == 'this_week':
@@ -3125,7 +3241,7 @@ def clearance_reports(request):
             end_date = timezone.make_aware(datetime.strptime(end_date, '%Y-%m-%d')).replace(hour=23, minute=59, second=59, microsecond=999999)
 
     date_range = [start_date, end_date]
-    print(start_date, ' - ', end_date)
+    # print(start_date, ' - ', end_date)
 
     # Calculate the on-hold user count within the laboratory and date range
     on_hold_users_count = reported_items.objects.filter(
@@ -3276,17 +3392,14 @@ def labres_reports(request):
     )
     if start_date:
         lab_reservations_qs = lab_reservations_qs.filter(start_date__gte=start_date)
-    
     total_reservations = lab_reservations_qs.count()
+
 
     reservation_filter_type = request.GET.get('reservation_filter_type', 'today')
     start_date = end_date = None
-
-    start_date, end_date
-
-    # Filter laboratory reservations with status 'R' for the selected lab
+    start_date, end_date = calculate_date_range(request, reservation_filter_type)
     lab_reservations_qs = laboratory_reservations.objects.filter(
-        room__laboratory_id=selected_laboratory_id,
+        laboratory_id=selected_laboratory_id,
         status='R'
     )
     if start_date and end_date:
@@ -3295,7 +3408,7 @@ def labres_reports(request):
 
     # Room Reservation Filter
     room_filter_type = request.GET.get('room_filter_type', 'today')
-    room_start_date, room_end_date = calculate_date_range(room_filter_type)
+    room_start_date, room_end_date = calculate_date_range(request, room_filter_type)
 
     # Query for room reservation summary with filter
     room_data = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False).annotate(
@@ -3373,7 +3486,7 @@ def inventory_data(request, item_type_id, laboratory_id):
         'add_cols': add_cols
     })
 
-def calculate_date_range(filter_type):
+def calculate_date_range(request, filter_type):
     """ Helper function to determine start and end dates based on the filter type """
     today = timezone.now().date()
     if filter_type == 'today':
