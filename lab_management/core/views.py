@@ -30,6 +30,8 @@ from pyzbar.pyzbar import decode
 from PIL import Image 
 from io import BytesIO
 
+# python image library pillow
+
 import json, qrcode, base64, threading, time, re
 
 
@@ -385,9 +387,9 @@ def set_lab(request, laboratory_id):
                 # Set the chosen laboratory in the session
                 request.session['selected_lab'] = lab.laboratory_id
                 request.session['selected_lab_name'] = lab.name
-        return redirect(request.META.get('HTTP_REFERER', '/'))  # Redirect back to the previous page
+        return redirect('home')  # Redirect back to the previous page
     except:
-        return redirect(request.META.get('HTTP_REFERER', '/'))
+        return redirect('home')
 
 
 @login_required
@@ -1929,7 +1931,7 @@ def borrowing_labtech_prebookrequests(request):
     borrowed_borrows = borrow_info.objects.filter(status='B', laboratory_id=selected_laboratory_id).select_related('user')
 
     # Fetch all accepted borrow requests sorted by request_date
-    accepted_borrows = borrow_info.objects.filter(status='A', laboratory_id=selected_laboratory_id).order_by('-request_date').select_related('user')
+    accepted_borrows = borrow_info.objects.filter(status__in=['A', 'B', 'L', 'X', 'Y'], laboratory_id=selected_laboratory_id).order_by('-request_date').select_related('user')
 
     if request.method == 'POST':
         borrow_id = request.POST.get('borrow_id')

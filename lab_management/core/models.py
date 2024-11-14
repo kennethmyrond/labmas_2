@@ -222,7 +222,7 @@ class item_types(models.Model):
         return self.itemType_name
 
 class item_inventory(models.Model):
-    inventory_item_id = models.AutoField(primary_key=True)
+    inventory_item_id = models.CharField(max_length=20, primary_key=True, editable=False)
     item = models.ForeignKey('item_description', on_delete=models.CASCADE)
     supplier = models.ForeignKey('suppliers', on_delete=models.SET_NULL, null=True, blank=True)
     date_purchased = models.DateTimeField(null=True, blank=True)
@@ -230,7 +230,20 @@ class item_inventory(models.Model):
     purchase_price = models.FloatField(null=True, blank=True)
     remarks = models.CharField(max_length=45, null=True, blank=True)
     qty = models.IntegerField()
-    
+
+    def save(self, *args, **kwargs):
+        if not self.inventory_item_id:
+            item_id = self.item.item_id  # Use the item_id from item_description
+            prefix = f"102{item_id}"
+            last_item = item_inventory.objects.filter(inventory_item_id__startswith=prefix).order_by('inventory_item_id').last()
+            if last_item:
+                last_id = int(last_item.inventory_item_id[len(prefix):])
+                new_id = f"{prefix}{last_id + 1:04d}"
+            else:
+                new_id = f"{prefix}0001"
+            self.inventory_item_id = new_id
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"Inventory Item {self.inventory_item_id}"
 

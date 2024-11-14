@@ -49,11 +49,11 @@
                 <tr>
                   <th style="text-align:center;">Status</th>
                   <th style="text-align:left;">Item Name</th>
-                  <th style="text-align:right;">Qty</th>
+                  <th style="text-align:right;">Current Quantity</th>
                   {% for col in add_cols %}
                     <th>{{ col }}</th>
                   {% endfor %}
-                  <th style="text-align:right;">Available Qty</th>
+                  <!-- <th style="text-align:right;">Available Qty</th> -->
                   <!-- <th hidden></th>
                   <th hidden></th>
                   <th hidden></th> -->
@@ -67,6 +67,9 @@
                     </td>
                     <td style="text-align:left;">
                       <a href="{% url 'inventory_itemDetails_view' item.item_id %}">{{ item.item_name }}</a>
+                      {% if item.expiration_warning %}
+                        <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
+                      {% endif %}
                     </td>
                     <td class="{% if item.total_qty > 0 %}qty-positive{% else %}qty-negative{% endif %}" style="text-align:right;">
                       {{ item.total_qty }}
@@ -74,15 +77,13 @@
                     {% for col in add_cols %}
                       <td>{{ item.add_cols|get_col_value:col }}</td>
                     {% endfor %}
-                    <td style="text-align:right;">
-                      {% if item.expiration_warning %}
-                        <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
-                      {% endif %}
+                    <!-- <td style="text-align:right;">
+                      
                       <span style="display:inline-block;">
                         {{ item.total_qty }}
                       </span>
                       
-                    </td>
+                    </td> -->
                     <!-- <td hidden></td>
                     <td hidden></td>
                     <td hidden></td> -->

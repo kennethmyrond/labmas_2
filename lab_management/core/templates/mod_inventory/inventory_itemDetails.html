@@ -106,9 +106,9 @@
               <th>Date Created</th>
               <th>Remarks</th>
               <th>Qty</th>
-              {% if item.rec_expiration %}
+              <!-- {% if item.rec_expiration %}
                 <th>Expirations</th>
-              {% endif %}
+              {% endif %} -->
               <th></th>
               <th style="display:none"></th>
             </tr>
@@ -132,7 +132,7 @@
                   <!-- style=" color:{% if  handling.changes == 'A' %}green{% else %}red{% endif %};"  -->             
                     {{ handling.qty }}
                 </td>
-                {% if item.rec_expiration %}
+                <!-- {% if item.rec_expiration %}
                 <td>
                   {% if inventory.expiration_date %}
                     {{ inventory.expiration_date|date:"Y-m-d" }}
@@ -143,9 +143,14 @@
                     Not Applicable
                   {% endif %}
                 </td>
-                {%endif%}
+                {%endif%} -->
                 
                 <td>
+                  {% if inventory.expiration_date %}
+                    {% if inventory.expiration_date <= date_today and inventory.qty > 0 %}
+                        <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
+                    {% endif %}
+                  {% endif %}
                   <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#inventoryDetailsModal{{ inventory.inventory_item_id }}">
                     View More
                   </button>
@@ -156,41 +161,39 @@
                       <div class="modal-content">
                         <div class="modal-header">
                           <h5 class="modal-title" id="inventoryDetailsModalLabel{{ inventory.inventory_item_id }}">Inventory Details</h5>
-                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
-                          </button>
+                          </button> -->
                         </div>
                         <div class="modal-body">
                           <h6>Item: {{ item.item_name }}</h6>
                           <ul>
+                            <li><strong>Inventory ID:</strong> {{ inventory.inventory_item_id }}</li>
                             <li><strong>Quantity:</strong> {{ inventory.qty }}</li>
-                            <li><strong>Purchase Price:</strong> {{ inventory.purchase_price }}</li>
-                            <li><strong>Date Purchased:</strong> {{ inventory.date_purchased|date:"Y-m-d" }}</li>
-                            <li><strong>Date Received:</strong> {{ inventory.date_received|date:"Y-m-d" }}</li>
+                            <hr>
                             <li><strong>Supplier:</strong> 
                               {% if inventory.supplier %}
                                   {{ inventory.supplier.supplier_name }}
                               {% else %}
                                   N/A
                               {% endif %}
-                          </li>
+                            </li>
+                            <li><strong>Date Purchased:</strong> {{ inventory.date_purchased|date:"Y-m-d" }}</li>
+                            <li><strong>Date Received:</strong> {{ inventory.date_received|date:"Y-m-d" }}</li>
+                            <li><strong>Purchase Price:</strong> {{ inventory.purchase_price }}</li>
                             <li><strong>Remarks:</strong> {{ inventory.remarks }}</li>
                           </ul>
-                          {% if inventory.transaction %}
                           <hr>
-                          <h6>Transaction Info</h6>
-                          <ul>
-                            <li><strong>User:</strong> 
-                              {% if inventory.transaction.user %}
-                                  {{ inventory.transaction.user.email }}
-                              {% else %}
-                                  N/A
+                          {% if item.rec_expiration %}
+                            {% if inventory.expiration_date %}
+                              {% if inventory.expiration_date <= date_today and inventory.qty > 0 %}
+                                  <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
                               {% endif %}
-                            </li>
-                            <li><strong>Transaction Date:</strong> {{ inventory.transaction.timestamp|date:"Y-m-d H:i" }}</li>
-                            <li><strong>Transaction Remarks:</strong> {{ inventory.transaction.remarks }}</li>
-                          </ul>
-                          {% endif %}
+                              <strong>Expiration Date:</strong> {{ inventory.expiration_date|date:"Y-m-d" }}
+                            {% else %}
+                              <strong>Expiration Date:</strong> Not Applicable
+                            {% endif %}
+                          {%endif%}
                         </div>
                         <div class="modal-footer">
                           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

@@ -6,6 +6,12 @@
   <h1>Borrowing Requests</h1>
 </div>
 
+<style>
+  .items_list{
+    text-align: left;
+  }
+</style>
+
 <!-- Tabs for Today, Future, Past, Cancelled, and Accepted borrows -->
 <ul class="nav nav-tabs" id="borrowRequestsTabs" role="tablist">
   <li class="nav-item">
@@ -86,7 +92,7 @@
           <div class="card">
             <div class="card-body">
               <h5 class="card-title">Future Borrows</h5>
-              <table class="table datatable table-striped ">
+              <table class="table table-striped datatable">
                 <thead>
                   <tr>
                     <th>Borrow ID</th>
@@ -108,7 +114,8 @@
                         {% endfor %}
                       </ul>
                     </td>
-
+                    <td hidden></td>
+                    <td hidden></td>
                     <!-- <td>
                       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" data-id="{{ request.borrow_id }}">Mark as Borrowed</button>
                     </td>
@@ -236,9 +243,9 @@
                       <td><a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
                       <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
                       <td>
-                        <ul>
+                        <ul class="items_list" >
                           {% for item in request.borrowed_items_set.all %}
-                          <li>{{ item.item.item_name }} (×{{ item.qty }})</li>
+                          <li >{{ item.item.item_name }} (×{{ item.qty }})</li>
                           {% endfor %}
                         </ul>
                       </td>
@@ -269,7 +276,7 @@
                     <th>Borrow ID</th>
                     <th>Borrower</th>
                     <th>Request Date</th>
-                    <th hidden></th>
+                    <th>Items Borrowed</th>
                     <th hidden></th>
                   </tr>
                 </thead>
@@ -279,12 +286,14 @@
                     <td><a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
                     <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
                     <td>{{ request.request_date|date:"Y/m/d" }}</td>
-                    <!-- <td>
-                      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" data-id="{{ request.borrow_id }}">Mark as Borrowed</button>
-                    </td>
                     <td>
-                      <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal" data-id="{{ request.borrow_id }}">Cancel</button>
-                    </td> -->
+                      <ul>
+                        {% for item in request.borrowed_items_set.all %}
+                        <li>{{ item.item.item_name }} (×{{ item.qty }})</li>
+                        {% endfor %}
+                      </ul>
+                    </td>
+                    <td hidden></td>
                   </tr>
                   {% endfor %}
                 </tbody>
