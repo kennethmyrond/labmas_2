@@ -492,13 +492,22 @@ def inventory_view(request):
         add_cols = []
 
      # Check for items nearing expiration and add a warning flag
+    # for item in inventory_items:
+    #     expirations = item_expirations.objects.filter(inventory_item__item=item)
+    #     expiration_warnings = []
+    #     for exp in expirations:
+    #         if exp.expired_date <= current_date + timedelta(days=7):  # Threshold of 7 days
+    #             expiration_warnings.append(exp)
+    #     item.expiration_warning = len(expiration_warnings) > 0  
+
     for item in inventory_items:
         expirations = item_expirations.objects.filter(inventory_item__item=item)
         expiration_warnings = []
         for exp in expirations:
             if exp.expired_date <= current_date + timedelta(days=7):  # Threshold of 7 days
-                expiration_warnings.append(exp)
-        item.expiration_warning = len(expiration_warnings) > 0    
+                if exp.inventory_item.qty > 0:  # Check if the item_inventory still has quantity
+                    expiration_warnings.append(exp)
+        item.expiration_warning = len(expiration_warnings) > 0  # Set expiration_warning  
 
     return render(request, 'mod_inventory/view_inventory.html', {
         'inventory_items': inventory_items,
@@ -640,41 +649,44 @@ def inventory_updateItem_view(request):
         return redirect('userlogin')
     
     if request.method == 'POST':
-        item_id = request.POST.get('item_name')
-        action_type = request.POST.get('action_type')
-        amount_add = request.POST.get('amount')
-        amount_remove = request.POST.get('quantity_removed')
-        amount_damaged = request.POST.get('quantity_damaged')
-        item_date_purchased = request.POST.get('item_date_purchased')
-        item_date_received = request.POST.get('item_date_received')
-        item_price = request.POST.get('item_price')
-        item_supplier_id = request.POST.get('item_supplier')
-        remarks = request.POST.get('remarks', '')  # Additional field for remarks in case of damage/loss
-
-        # Fetch item and supplier
-        item_description_instance = get_object_or_404(item_description, item_id=item_id)
+        selected_laboratory_id = request.session.get('selected_lab')
         current_user = request.user
 
-        expiration_date = None
-        if item_description_instance.rec_expiration and 'expiration_date' in request.POST:
-            expiration_date = request.POST.get('expiration_date')
+        action_type = request.POST.get('action_type')
+        item_id = request.POST.get('item_name') 
+        inventory_item_id = request.POST.get('inventory_item_id') 
+        remarks = request.POST.get('remarks', '')
 
+        remaining_qty=0
+        
+
+        # Fetch item and supplier
+        item_instance = get_object_or_404(item_description, item_id=item_id)
+        
         # Add or remove inventory logic
         if action_type == 'add':
-            supplier_instance = get_object_or_404(suppliers, suppliers_id=item_supplier_id)
+            qty_add = int(request.POST.get('amount', 0))
+
+            supplier_id = request.POST.get('item_supplier')
+            date_purchased = request.POST.get('item_date_purchased')
+            date_received = request.POST.get('item_date_received')
+            purchase_price = request.POST.get('item_price', 0.0)
+            expiration_date = request.POST.get('expiration_date') if item_instance.rec_expiration else None
+
             new_inventory_item = item_inventory.objects.create(
-                item=item_description_instance,
-                supplier=supplier_instance,
-                date_purchased=item_date_purchased,
-                date_received=item_date_received,
-                purchase_price=item_price,
-                qty=amount_add,
+                item=item_instance,
+                supplier_id=supplier_id,
+                date_purchased=date_purchased,
+                date_received=date_received,
+                purchase_price=purchase_price,
+                qty=qty_add
             )
+
             item_handling.objects.create(
                 inventory_item=new_inventory_item,
                 updated_by=current_user,
                 changes='A',
-                qty=amount_add,
+                qty=qty_add,
                 remarks='Add to Inventory'
             )
             # If expiration date is provided, save it
@@ -683,96 +695,71 @@ def inventory_updateItem_view(request):
                     inventory_item=new_inventory_item,
                     expired_date=expiration_date
                 )
-        elif action_type == 'remove':# Handle remove from inventory
             
-            # Filter item_inventory by item, join with item_expirations, filter by quantity, and order by expired_date
-            if item_description_instance.rec_expiration == 1:
-                item_inventory_queryset = item_inventory.objects.filter(
-                    item=item_description_instance,
-                    qty__gt=0
-                ).annotate(
-                    expired_date=F('item_expirations__expired_date')
-                ).order_by('expired_date')
+            messages.success(request, f"Added Inventory successfully.")
+        elif action_type in ['remove', 'report']:# Handle remove & report from inventory
+            if action_type=='remove':
+                qty_remove = int(request.POST.get('quantity_removed', 0))
             else:
-                item_inventory_queryset = item_inventory.objects.filter(
-                    item=item_description_instance,
-                    qty__gt=0
-                ).order_by('inventory_item_id')
+                qty_damaged = int(request.POST.get('quantity_damaged', 0))
 
-            # Initialize the amount to be removed
-            remaining_amount = int(amount_remove)
-
-            # Iterate through the queryset and deduct the quantity
-            for item_inventory_instance in item_inventory_queryset:
-                if remaining_amount <= 0:
-                    break
-                if item_inventory_instance.qty >= remaining_amount:
-                    try:                    
-                        remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'R', 'Remove from inventory')
-                        remaining_amount = 0
-                    except ValueError as e:
-                        print(e)
-                        break
+            quantity = qty_remove if action_type == 'remove' else qty_damaged
+            if item_instance.rec_expiration and inventory_item_id:
+                # Fetch specific inventory item for expiration-controlled items
+                inventory_item = get_object_or_404(item_inventory, inventory_item_id=inventory_item_id)
+                if quantity > inventory_item.qty:
+                    messages.error(request, "The quantity to remove/report exceeds the available stock.")
+                    return redirect('inventory_updateItem')
                 else:
-                    try:
-                        remaining_amount = remaining_amount - int(item_inventory_instance.qty)
-                        remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'R', 'Remove from inventory')
-                    except ValueError as e:
-                        print(e)
-                        break
-
-            if remaining_amount > 0:
-                print(f"Could not remove the full amount. {remaining_amount} items remaining.")
+                    # Deduct quantity and save the item handling action
+                    inventory_item.qty -= quantity
+                    inventory_item.save()
+                    item_handling.objects.create(
+                        inventory_item=inventory_item,
+                        timestamp=timezone.now(),
+                        updated_by=current_user,
+                        changes='R' if action_type == 'remove' else 'D',
+                        qty=0-quantity,
+                        remarks= 'Remove from inventory' if action_type == 'remove' else remarks
+                    )
             else:
-                print("Successfully removed the requested amount.")
-
-        elif action_type == 'damage':
-            # Handle reporting damaged/lost items
-            if item_description_instance.rec_expiration == 1:
-                item_inventory_queryset = item_inventory.objects.filter(
-                    item=item_description_instance,
-                    qty__gt=0
-                ).annotate(
-                    expired_date=F('item_expirations__expired_date')
-                ).order_by('expired_date')
-            else:
-                item_inventory_queryset = item_inventory.objects.filter(
-                    item=item_description_instance,
-                    qty__gt=0
-                ).order_by('inventory_item_id')
-
-            remaining_amount = int(amount_damaged)
-
-            # Iterate through the queryset and deduct the quantity
-            for item_inventory_instance in item_inventory_queryset:
-                if remaining_amount <= 0:
-                    break
-                if item_inventory_instance.qty >= remaining_amount:
-                    try:
-                        remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'D', remarks=remarks)
-                        remaining_amount = 0
-                    except ValueError as e:
-                        print(e)
+                remaining_qty = quantity
+                inventory_qs = item_inventory.objects.filter(item=item_instance, qty__gt=0).order_by('date_received')
+                for inventory_item in inventory_qs:
+                    if remaining_qty <= 0:
                         break
-                else:
-                    try:
-                        remaining_amount = remaining_amount - int(item_inventory_instance.qty)
-                        remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'D', remarks=remarks)
-                    except ValueError as e:
-                        print(e)
-                        break
+                    if inventory_item.qty >= remaining_qty:
+                        inventory_item.qty -= remaining_qty
+                        inventory_item.save()
+                        item_handling.objects.create(
+                            inventory_item=inventory_item,
+                            timestamp=timezone.now(),
+                            updated_by=current_user,
+                            changes='R' if action_type == 'remove' else 'D',
+                            qty=0-remaining_qty,
+                            remarks= 'Remove from inventory' if action_type == 'remove' else remarks
+                        )
+                        remaining_qty = 0
+                    else:
+                        handled_qty = inventory_item.qty
+                        remaining_qty -= handled_qty
+                        inventory_item.qty = 0
+                        inventory_item.save()
+                        item_handling.objects.create(
+                            inventory_item=inventory_item,
+                            timestamp=timezone.now(),
+                            updated_by=current_user,
+                            changes='R' if action_type == 'remove' else 'D',
+                            qty=0-handled_qty,
+                            remarks= 'Remove from inventory' if action_type == 'remove' else remarks
+                        )
 
-            if remaining_amount > 0:
-                print(f"Could not report the full damaged amount. {remaining_amount} items remaining.")
+            if remaining_qty > 0:
+                messages.error(request, f"Unable to fully remove requested quantity. Remaining: {remaining_qty}")
             else:
-                print("Successfully reported damaged/lost items.")
+                messages.success(request, f"{action_type.capitalize()} action completed successfully.")
 
-        # Success message
-        context = {
-            'success_message': f"Item {'added to' if action_type == 'add' else 'removed from'} inventory successfully!"
-        }
-
-        return render(request, 'mod_inventory/inventory_updateItem.html', context)
+        return render(request, 'mod_inventory/inventory_updateItem.html', {'success_message': "Operation successful."})
 
     return render(request, 'mod_inventory/inventory_updateItem.html')
 
@@ -1006,18 +993,20 @@ def inventory_manageSuppliers_view(request):
     if request.method == "POST":
         supplier_name = request.POST.get("supplier_name")
         contact_person = request.POST.get("contact_person")
-        contact_number = request.POST.get("contact_number")
+        contact_number = request.POST.get("contact_number") or None
         supplier_desc = request.POST.get("description")
+        email = request.POST.get("email")
 
         new_supplier = suppliers(
             laboratory_id=selected_laboratory_id,
             supplier_name=supplier_name,
             contact_person=contact_person,
             contact_number=contact_number,
-            description=supplier_desc
+            description=supplier_desc,
+            email=email
         )
         new_supplier.save()
-
+        messages.success(request, 'Supplier added successfully.')
         return redirect('inventory_manageSuppliers')
 
     return render(request, 'mod_inventory/inventory_manageSuppliers.html', {
@@ -1046,15 +1035,16 @@ def inventory_supplierDetails_view(request, supplier_id):
             supplier.contact_person = request.POST.get("contact_person") or None
             supplier.contact_number = request.POST.get("contact_number") or None
             supplier.description = request.POST.get("description") or None
+            supplier.email = request.POST.get("email") or None
             supplier.save()
-
+            messages.success(request, 'Supplier details edited successfully.')
             return redirect('inventory_supplierDetails', supplier_id=supplier.suppliers_id)
         
         elif 'disable_supplier' in request.POST:
             # Handle supplier disable
             supplier.is_disabled = True
             supplier.save()
-
+            messages.success(request, 'Supplier deleted successfully.')
             return redirect('inventory_manageSuppliers')
 
     return render(request, 'mod_inventory/inventory_supplierDetails.html', {

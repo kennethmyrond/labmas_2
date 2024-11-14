@@ -446,7 +446,7 @@
             </a>
           </li>
           {% endif %}
-          {% if not logged_user.is_superuser%}
+          {% if not logged_user.is_superuser and permissions.can_view_reports%}
             {% if 1 in selected_lab_modules%}
             <li>
               <a href="{% url 'inventory_reports' %}" class="{% if request.resolver_match.url_name in 'inventory_reports'%}active{% else %}collapsed{% endif %}">

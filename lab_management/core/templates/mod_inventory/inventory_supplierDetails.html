@@ -12,6 +12,11 @@
       </ol>
     </nav>
   </div><!-- End Page Title -->
+  {% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
 
   <section class="section">
     <div class="row">
@@ -23,12 +28,14 @@
             <!-- Supplier Information -->
             <p><strong>Contact Person:</strong> {{ supplier.contact_person }}</p>
             <p><strong>Contact Number:</strong> {{ supplier.contact_number }}</p>
+            <p><strong>Email:</strong> {{ supplier.email }}</p>
             <p><strong>Description:</strong> {{ supplier.description }}</p>
 
             <!-- Edit and Disable Buttons -->
-            <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#editSupplierModal">Edit</button>
+            
             {% if not supplier.is_disabled %}
-            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#disableSupplierModal">Disable</button>
+            <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#editSupplierModal">Edit</button>
+            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#disableSupplierModal">Delete</button>
             {% endif %}
           </div>
         </div>
@@ -148,6 +155,10 @@
             <div class="mb-3">
               <label for="contactNumber" class="form-label">Contact Number</label>
               <input type="number" class="form-control" id="contactNumber" name="contact_number" value="{{ supplier.contact_number }}">
+            </div>
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" class="form-control" id="email" name="email" value="{{ supplier.email }}">
             </div>
             <div class="mb-3">
               <label for="description" class="form-label">Description</label>

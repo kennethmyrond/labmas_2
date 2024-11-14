@@ -273,7 +273,7 @@ class suppliers(models.Model):
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
     contact_person = models.CharField(max_length=45, null=True, blank=True)
     contact_number = models.IntegerField(null=True, blank=True)
-    # address = models.CharField(max_length=45, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True, unique=True)
     description = models.CharField(max_length=45, null=True, blank=True)
     is_disabled = models.BooleanField(default=False)
 
@@ -283,7 +283,7 @@ class suppliers(models.Model):
             while True:
                 random_number = get_random_string(length=4, allowed_chars='0123456789')
                 self.suppliers_id = f"102{current_year}{random_number}"
-                if not item_description.objects.filter(suppliers_id=self.suppliers_id).exists():
+                if not suppliers.objects.filter(suppliers_id=self.suppliers_id).exists():
                     break
         super().save(*args, **kwargs)
 

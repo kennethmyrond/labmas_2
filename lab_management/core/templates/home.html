@@ -4,11 +4,9 @@
 
 {% block content %}
 {% if messages %}
-<div class="alert alert-success">
-  {% for message in messages %}
-    {{ message }}
-  {% endfor %}
-</div>
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
 {% endif %}
   
 <h1>Welcome to Labmas, {{ request.user }}</h1>

@@ -20,11 +20,12 @@
         </ol>
     </nav>
 </div><!-- End Page Title -->
-{% if success_message %}
-    <div class="alert alert-success">
-        {{ success_message }}
-    </div>
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
 {% endif %}
+
 <section class="section">
     <div class="row">
         <div class="col-lg-12">
@@ -45,19 +46,44 @@
                                         <select class="form-select" id="actionType" name="action_type" required onchange="toggleActionFields()">
                                             <option value="add">Add to Inventory</option>
                                             <option value="remove">Remove from Inventory</option>
-                                            <option value="damage">Report Damage/Loss</option>
+                                            <option value="report">Report Damage/Loss</option>
                                         </select>
                                     </div>
                                 </div>
 
-                                <!-- Item Name -->
+                                <!-- Toggle Selection: Item Name or Inventory Item ID -->
+                            <!-- <div id="selectionTypeRow" style="display: none;">
                                 <div class="row mb-3">
+                                    <label for="selectionType" class="col-sm-2 col-form-label">Select By:</label>
+                                    <div class="col-sm-10">
+                                        <select class="form-select" id="selectionType" onchange="toggleSelectionFields()">
+                                            <option value="item_name">Item Name</option>
+                                            <option value="inventory_item_id">Inventory Item ID</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div> -->
+
+                                <!-- Item Name Selection -->
+                            <div id="itemNameSection">
+                                <div class="row mb-3" >
                                     <label for="itemName" class="col-sm-2 col-form-label">Item Name:</label>
                                     <div class="col-sm-10">
                                         <select class="js-example-basic-single form-control" id="itemName" name="item_name" required></select>
                                     </div>
                                 </div>
-                                
+                            </div>
+
+                            
+                                <!-- Inventory Item ID Selection -->
+                            <div id="inventoryItemIDSection" style="display: none;">
+                                <div class="row mb-3">
+                                    <label for="inventoryItemID" class="col-sm-2 col-form-label">Inventory Item ID:</label>
+                                    <div class="col-sm-10">
+                                        <input type="text" class="form-control" name="inventory_item_id" id="inventoryItemID" placeholder="Enter Inventory Item ID">
+                                    </div>
+                                </div>
+                            </div>
                                 <!-- Add to Inventory Fields -->
                                 <div id="addFields">
                                     <div class="row mb-3">
@@ -225,7 +251,7 @@
             document.getElementById('confirmAddFields3').style.display = 'none';
             document.getElementById('confirmExpirationRow').style.display = 'none';
             document.getElementById('confirmDamageFields').style.display = 'none';
-        } else if (actionType === 'damage') {
+        } else if (actionType === 'report') {
             const damagedQty = document.getElementById('quantityDamaged').value;
             const damageRemarks = document.getElementById('damageRemarks').value;
 
@@ -251,8 +277,11 @@
 
     function checkItemExpiration() {
         const itemId = $('#itemName').val();  // Get the selected item ID
+        const actionType = document.getElementById('actionType').value;
+
         if (!itemId) {
             $('#expirationDateRow').hide();
+            $('#inventoryItemIDSection').hide();
             return;
         }
 
@@ -262,13 +291,20 @@
             method: 'GET',
             success: function(response) {
                 if (response.rec_expiration) {
-                    $('#expirationDateRow').show();  // Show expiration date field
+                    if(actionType === 'remove' || actionType === 'report'){
+                        $('#inventoryItemIDSection').show();
+                    }else{
+                        $('#expirationDateRow').show();  // Show expiration date field
+                    }
                 } else {
                     $('#expirationDateRow').hide();  // Hide expiration date field
+                    $('#inventoryItemIDSection').hide();
                 }
             }
         });
     }
+
+    $('#itemName').on('change', checkItemExpiration);
 
     $(document).ready(function() {
         // Initialize select2 for item and supplier fields
@@ -329,20 +365,19 @@
         const removeFields = document.getElementById('removeFields');
         const damageFields = document.getElementById('damageFields');
 
+        // Display relevant fields based on the selected action
         if (actionType === 'add') {
             addFields.style.display = 'block';
             removeFields.style.display = 'none';
             damageFields.style.display = 'none';
-        } else if (actionType === 'remove') {
+            document.getElementById('inventoryItemIDSection').style.display = 'none'; // Hide inventory item ID by default for add
+        } else {
             addFields.style.display = 'none';
-            removeFields.style.display = 'block';
-            damageFields.style.display = 'none';
-        } else if (actionType === 'damage') {
-            addFields.style.display = 'none';
-            removeFields.style.display = 'none';
-            damageFields.style.display = 'block';
+            removeFields.style.display = actionType === 'remove' ? 'block' : 'none';
+            damageFields.style.display = actionType === 'report' ? 'block' : 'none';
         }
     }
+
 </script>
 
 {% endblock %}
