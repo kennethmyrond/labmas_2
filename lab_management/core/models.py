@@ -394,6 +394,7 @@ class borrowed_items(models.Model):
     borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE)
     item = models.ForeignKey('item_description', on_delete=models.CASCADE)
     qty = models.IntegerField(null=True, blank=True)
+    unit = models.CharField(max_length=10, null=True, blank=True)
     returned_qty = models.IntegerField(default=0)
     remarks = models.CharField(max_length=1, null=True, blank=True)
 

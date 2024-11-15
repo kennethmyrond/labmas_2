@@ -12,6 +12,7 @@ from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, Tr
 from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField, Max
 from django.db import connection, models
 from django.utils import timezone
+from django.utils.dateformat import DateFormat
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from django.urls import reverse
 from django import forms
@@ -149,6 +150,25 @@ def suggest_items(request):
         }
         
         data.append(item_data)
+    return JsonResponse(data, safe=False)
+
+def suggest_inventory_items(request, item_id):
+    # Fetch inventory items associated with the given item_id that have quantity > 0
+    inventory_items = item_inventory.objects.filter(item__item_id=item_id).exclude(qty=0)
+
+    data = []
+    for inventory_item in inventory_items:
+        # Get expiration date if it exists, else set to None
+        expiration = item_expirations.objects.filter(inventory_item=inventory_item).first()
+        expiration_date = DateFormat(expiration.expired_date).format('Y-m-d') if expiration else "None"
+        
+        # Format item data for response
+        data.append({
+            'inventory_item_id': inventory_item.inventory_item_id,
+            'expiration_date': expiration_date,
+            'qty': inventory_item.qty
+        })
+
     return JsonResponse(data, safe=False)
 
 def suggest_suppliers(request):
@@ -771,6 +791,7 @@ def inventory_itemEdit_view(request, item_id):
         return redirect('userlogin')
 
     # Get the item_description instance
+    selected_lab = request.session.get('selected_lab')
     item = get_object_or_404(item_description, item_id=item_id)
 
     # Parse add_cols JSON
@@ -1518,7 +1539,6 @@ def borrowing_student_walkinview(request):
 
 @login_required
 @lab_permission_required('borrow_items')
-# booking requests
 def borrowing_student_viewPreBookRequestsview(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -1541,13 +1561,27 @@ def borrowing_student_viewPreBookRequestsview(request):
     ).order_by('-request_date')
 
     # Walk-in requests: where request_date == borrow_date
-    walkin_requests = borrow_info.objects.filter(
+    walkin_requests = borrow_info.objects.annotate(
+        request_date_only=TruncDate('request_date'),
+        borrow_date_only=TruncDate('borrow_date')
+    ).filter(
         user=current_user,
-        request_date=F('borrow_date'),  # Walk-ins: request_date equals borrow_date
+        request_date_only=F('borrow_date_only'),
         request_date__isnull=False,
         borrow_date__isnull=False
     ).order_by('-request_date')
 
+    walkin_requests = borrow_info.objects.extra(
+        select={
+            'request_date_only': "DATE(request_date)",
+            'borrow_date_only': "DATE(borrow_date)"
+        },
+        where=["DATE(request_date) = DATE(borrow_date)"]
+    ).filter(
+        user=current_user,
+        request_date__isnull=False,
+        borrow_date__isnull=False
+    ).order_by('-request_date')
 
     # Filter pre-book requests by status
     pending_requests = prebook_requests.filter(status='P')
@@ -1730,7 +1764,7 @@ def borrowing_labcoord_borrowconfig(request):
             is_consumable_list = request.POST.getlist('is_consumable')
             is_consumable_type_list = request.POST.getlist('is_consumable_type')
 
-            item_description.objects.filter(laboratory_id=selected_laboratory_id).update(allow_borrow=False, is_consumable=False)
+            items.update(allow_borrow=False, is_consumable=False)
 
             # Handle individual items: Set allow_borrow=True and is_consumable=True for explicitly checked items
             if allowed_items:
@@ -1953,10 +1987,9 @@ def borrowing_labtech_prebookrequests(request):
     today_borrows = borrow_info.objects.filter(borrow_date=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
     future_borrows = borrow_info.objects.filter(borrow_date__gt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
     past_borrows = borrow_info.objects.filter(borrow_date__lt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
+    
     cancelled_borrows = borrow_info.objects.filter(status='L', laboratory_id=selected_laboratory_id).select_related('user')
     borrowed_borrows = borrow_info.objects.filter(status='B', laboratory_id=selected_laboratory_id).select_related('user')
-
-    # Fetch all accepted borrow requests sorted by request_date
     accepted_borrows = borrow_info.objects.filter(status__in=['A', 'B', 'L', 'X', 'Y'], laboratory_id=selected_laboratory_id).order_by('-request_date').select_related('user')
 
     if request.method == 'POST':
@@ -1991,23 +2024,43 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
     borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id)
     borrowed_items1 = borrowed_items.objects.filter(borrow=borrow_entry)
     today = date.today()
-    
+
+    borrowed_items_json = json.dumps(
+        [{'id': item.id, 'qty': item.qty} for item in borrowed_items1],
+        cls=DjangoJSONEncoder
+    )
+
     if request.method == 'POST':
         action = request.POST.get('action')
-        remarks = request.POST.get('remarks', '')
+        edit_reason = request.POST.get('edit_reason', '')
+        edited = request.POST.get('edited')
 
         if action == 'borrowed':
-            borrow_entry.status = 'B'
+            if edited == '1':  # Check if any edits were made
+                for item in borrowed_items1:
+                    new_qty = request.POST.get(f'qty_{item.id}')
+                    if new_qty and int(new_qty) != item.qty:
+                        item.qty = int(new_qty)
+                        item.save()
+                borrow_entry.remarks = edit_reason
+
+            borrow_entry.status = 'B'  # Mark as borrowed
+            borrow_entry.save()
+            messages.success(request, 'The borrow request has been marked as borrowed with updated quantities.')
+
         elif action == 'cancel':
-            borrow_entry.status = 'L'
-            borrow_entry.remarks = remarks  # Save cancellation remarks
-        borrow_entry.save()
+            cancel_reason = request.POST.get('cancel_reason')
+            borrow_entry.status = 'L'  # Mark as cancelled
+            borrow_entry.remarks = cancel_reason
+            borrow_entry.save()
+            messages.success(request, 'The borrow request has been cancelled.')
 
         return redirect('borrowing_labtech_prebookrequests')
 
     return render(request, 'mod_borrowing/borrowing_labtech_detailedprebookrequests.html', {
         'borrow_entry': borrow_entry,
         'borrowed_items': borrowed_items1,
+        'borrowed_items_json': borrowed_items_json,
         'today': today
     })
 

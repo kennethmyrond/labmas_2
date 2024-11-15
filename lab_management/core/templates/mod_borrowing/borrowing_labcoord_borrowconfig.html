@@ -111,29 +111,34 @@
           
               <!-- Section to configure by specific items -->
               <section id="itemConfigSection">
-                  <h5 class="card-title">Borrowable Items Configurations</h5>
-                  <table class="table datatable">
+                  <h5 class="card-title">Borrowing Items Configurations</h5>
+                  <table class="table datatable table-striped">
                       <thead>
                           <tr>
                               <th>Item Name</th>
                               <th>Item Type</th>
                               <th>Allow Borrowing?</th>
                               <th>Is Consumable?</th>
+                              <th>Limit Borrow to inventory Qty</th>
                           </tr>
                       </thead>
                       <tbody>
                           {% for item in items %}
                           <tr>
-                              <td>{{ item.item_name }}</td>
-                              <td>{{ item.itemType.itemType_name }}</td> <!-- Item Type column -->
-                              <td>
-                                  <input type="checkbox" name="borrow_item" value="{{ item.item_id }}" 
-                                         {% if item.allow_borrow %}checked{% endif %}>
-                              </td>
-                              <td>
-                                  <input type="checkbox" name="is_consumable" value="{{ item.item_id }}" 
-                                         {% if item.is_consumable %}checked{% endif %}>
-                              </td>
+                            <td>{{ item.item_name }}</td>
+                            <td>{{ item.itemType.itemType_name }}</td> <!-- Item Type column -->
+                            <td>
+                                <input type="checkbox" name="borrow_item" value="{{ item.item_id }}" 
+                                        {% if item.allow_borrow %}checked{% endif %}>
+                            </td>
+                            <td>
+                                <input type="checkbox" name="is_consumable" value="{{ item.item_id }}" 
+                                        {% if item.is_consumable %}checked{% endif %}>
+                            </td>
+                            <td>
+                              <input type="checkbox" name="limit" value="{{ item.item_id }}" 
+                                      {% if item.is_consumable %}checked{% endif %}>
+                            </td>
                           </tr>
                           {% endfor %}
                       </tbody>
@@ -142,7 +147,7 @@
           
               <!-- Section to configure by item types -->
               <section id="itemTypeConfigSection" style="display:none;">
-                  <h5 class="card-title">Borrowable Item Types Configurations</h5>
+                  <h5 class="card-title">Borrowing Item Types Configurations</h5>
                   <table class="table datatable">
                       <thead>
                           <tr>

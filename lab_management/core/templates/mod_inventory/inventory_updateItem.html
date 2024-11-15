@@ -79,15 +79,29 @@
                             </div>
 
                             
+                                <!-- Inventory Item ID Selection
+                                <div id="inventoryItemIDSection" style="display: none;">
+                                    <div class="row mb-3">
+                                        <label for="inventoryItemID" class="col-sm-2 col-form-label">Inventory Item ID:</label>
+                                        <div class="col-sm-10">
+                                            <input type="text" class="form-control" name="inventory_item_id" id="inventoryItemID" placeholder="Enter Inventory Item ID">
+                                        </div>
+                                    </div>
+                                </div> -->
+
                                 <!-- Inventory Item ID Selection -->
-                            <div id="inventoryItemIDSection" style="display: none;">
-                                <div class="row mb-3">
-                                    <label for="inventoryItemID" class="col-sm-2 col-form-label">Inventory Item ID:</label>
-                                    <div class="col-sm-10">
-                                        <input type="text" class="form-control" name="inventory_item_id" id="inventoryItemID" placeholder="Enter Inventory Item ID">
+                                <div id="inventoryItemIDSection" style="display: none;">
+                                    <div class="row mb-3">
+                                        <label for="inventoryItemID" class="col-sm-2 col-form-label">Inventory Item ID:</label>
+                                        <div class="col-sm-10">
+                                            <select class="form-control js-example-basic-single" id="inventoryItemID" name="inventory_item_id">
+                                                <option value="">Select Inventory Item ID</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+
+
                                 <!-- Add to Inventory Fields -->
                                 <div id="addFields">
                                     <div class="row mb-3">
@@ -307,33 +321,56 @@
     }
 
     function checkItemExpiration() {
-        const itemId = $('#itemName').val();  // Get the selected item ID
-        const actionType = document.getElementById('actionType').value;
+    const itemId = $('#itemName').val();
+    const actionType = document.getElementById('actionType').value;
 
-        if (!itemId) {
-            $('#expirationDateRow').hide();
-            $('#inventoryItemIDSection').hide();
-            return;
-        }
-
-        // AJAX call to check if the selected item requires an expiration date
-        $.ajax({
-            url: `/check_item_expiration/${itemId}/`,
-            method: 'GET',
-            success: function(response) {
-                if (response.rec_expiration) {
-                    if(actionType === 'remove' || actionType === 'report'){
-                        $('#inventoryItemIDSection').show();
-                    }else{
-                        $('#expirationDateRow').show();  // Show expiration date field
-                    }
-                } else {
-                    $('#expirationDateRow').hide();  // Hide expiration date field
-                    $('#inventoryItemIDSection').hide();
-                }
-            }
-        });
+    if (!itemId) {
+        $('#expirationDateRow').hide();
+        $('#inventoryItemIDSection').hide();
+        return;
     }
+
+    // AJAX call to check if the item requires expiration and to populate inventory items
+    $.ajax({
+        url: `/check_item_expiration/${itemId}/`,
+        method: 'GET',
+        success: function(response) {
+            if (response.rec_expiration) {
+                if (actionType === 'remove' || actionType === 'report') {
+                    $('#inventoryItemIDSection').show();
+
+                    // Fetch inventory items for the selected item
+                    $.ajax({
+                        url: `/suggest_inventory_items/${itemId}/`,
+                        method: 'GET',
+                        success: function(data) {
+                            const inventoryDropdown = $('#inventoryItemID');
+                            inventoryDropdown.empty();  // Clear existing options
+
+                            data.forEach(item => {
+                                // Format: <inventory_item_id> \ exp:<expiration_date> , qty: <qty>
+                                const formattedText = `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`;
+                                inventoryDropdown.append(new Option(formattedText, item.inventory_item_id));
+                            });
+
+                            // Reinitialize Select2 with updated options
+                            inventoryDropdown.select2({
+                                placeholder: 'Select Inventory Item ID',
+                                allowClear: true,
+                            });
+                        }
+                    });
+                } else {
+                    $('#expirationDateRow').show();
+                }
+            } else {
+                $('#expirationDateRow').hide();
+                $('#inventoryItemIDSection').hide();
+            }
+        }
+    });
+
+}
 
     $('#itemName').on('change', checkItemExpiration);
 
@@ -363,6 +400,11 @@
                 minimumInputLength: 2
             }
         }).on('change', checkItemExpiration);
+
+        $('#inventoryItemID').select2({
+            placeholder: 'Select Inventory Item ID',
+            allowClear: true
+        });
 
         $('#itemSupplier').select2({
             ajax: {
