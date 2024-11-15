@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.serializers.json import DjangoJSONEncoder
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import authenticate, login as auth_login, logout, update_session_auth_hash, get_user_model
@@ -1419,11 +1420,11 @@ def borrowing_student_walkinview(request):
         # Insert into core_borrow_info
         borrow_entry = borrow_info.objects.create(
             laboratory_id=laboratory_id,
-            user_id=user_id,
+            user=user_id,
             request_date=request_date,
             borrow_date=borrow_date,
             due_date=due_date,
-            status='P',  # Set initial status to 'Pending'
+            status='A',  # Set initial status to 'Pending'
             questions_responses=custom_question_responses  # Save the user's responses to the questions
         )
 
@@ -1480,7 +1481,7 @@ def borrowing_student_walkinview(request):
                 qty=quantity
             )
 
-        return redirect('borrowing_studentviewWalkInRequests')
+        return redirect('borrowing_studentviewPreBookRequests')
 
     # Fetch the current date and all equipment items including chemicals
     current_date = timezone.now().date()
@@ -1796,43 +1797,78 @@ def borrowing_labcoord_borrowconfig(request):
         'questions': lab.get_questions()  # Get the questions to display them
     })
 
+
 @login_required
 @lab_permission_required('view_booking_requests')
 def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
-    borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id)
+    # Fetch the borrow request and associated borrowed items
+    selected_laboratory_id = request.session.get('selected_lab')
+    borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id, laboratory_id=selected_laboratory_id)
     borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_request)
+    
+    # Prepare original quantities in JSON format for JavaScript
+    borrowed_items_json = json.dumps(
+        [{'id': item.id, 'qty': item.qty} for item in borrowed_items_list],
+        cls=DjangoJSONEncoder
+    )
 
     if request.method == 'POST':
         action = request.POST.get('action')
-        
-        # Handle declining request
+        edited = int(request.POST.get('edited'))  # Check if any edits were made by checking 'edited' input
+
+        # Decline action
         if action == 'decline':
             decline_reason = request.POST.get('decline_reason')
             if decline_reason:
                 borrow_request.status = 'D'  # Declined
                 borrow_request.remarks = decline_reason
+                borrow_request.approved_by = request.user
                 borrow_request.save()
                 messages.success(request, 'The request has been declined.')
             else:
                 messages.error(request, 'Please provide a reason for declining.')
-        
-        # Handle accepting request
+
+        # Accept action
         elif action == 'accept':
-            borrow_request.status = 'A'  # Accepted
-            borrow_request.remarks = "Accepted"
+            # Check if any quantities were edited
+            if edited:
+                # Require an edit reason if quantities were modified
+                edit_reason = request.POST.get('edit_reason')
+                if not edit_reason:
+                    messages.error(request, 'Please provide a reason for the quantity update.')
+                    return redirect('borrowing_labcoord_detailedPrebookrequests', borrow_id=borrow_id)
+                
+                # Update each item's quantity if it was changed
+                for item in borrowed_items_list:
+                    new_qty = int(request.POST.get(f'qty_{item.id}', item.qty))  # Retrieve new quantity
+                    if new_qty != item.qty:  # Check if quantity was updated
+                        item.qty = new_qty  # Update quantity in the database
+                        item.save()
+                
+                borrow_request.remarks = edit_reason  # Save the edit reason
+                messages.success(request, 'The request was accepted with updated quantities.')
+
+            else:
+                borrow_request.remarks = "Accepted"
+                messages.success(request, 'The request has been accepted without quantity updates.')
+            
+            borrow_request.approved_by = request.user
+            borrow_request.status = 'A'  # Set status to Accepted
             borrow_request.save()
-            messages.success(request, 'The request has been accepted.')
 
         return redirect('borrowing_labcoord_detailedPrebookrequests', borrow_id=borrow_id)
 
-    # Only show action buttons if the request is still pending or if the status is accepted/declined (to allow modification)
+    # Only show action buttons if the request is pending, accepted, or declined (to allow modifications)
     show_action_buttons = borrow_request.status in ['P', 'A', 'D']
 
     return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html', {
         'borrow_request': borrow_request,
         'borrowed_items_list': borrowed_items_list,
+        'borrowed_items_json': borrowed_items_json,
         'show_action_buttons': show_action_buttons,
     })
+
+
 
 @login_required
 @lab_permission_required('return_item')
@@ -1954,6 +1990,7 @@ def borrowing_labtech_prebookrequests(request):
 def borrowing_labtech_detailedprebookrequests(request, borrow_id):
     borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id)
     borrowed_items1 = borrowed_items.objects.filter(borrow=borrow_entry)
+    today = date.today()
     
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -1971,6 +2008,7 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
     return render(request, 'mod_borrowing/borrowing_labtech_detailedprebookrequests.html', {
         'borrow_entry': borrow_entry,
         'borrowed_items': borrowed_items1,
+        'today': today
     })
 
 
@@ -3684,7 +3722,9 @@ def superuser_manage_labs(request):
 # lab info
 @superuser_or_lab_permission_required('configure_laboratory')
 def superuser_lab_info(request, laboratory_id):
+    print('test', laboratory_id)
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+    print('testlab', lab)
     lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id, is_disabled=False)
 
     if request.method == "POST":
@@ -3818,25 +3858,25 @@ def superuser_lab_info(request, laboratory_id):
 
     return render(request, 'superuser/superuser_labInfo.html', context)
 
-@login_required()
-@superuser_or_lab_permission_required('configure_laboratory')
-def add_module_to_lab(request, laboratory_id):
-    if request.method == 'POST':
-        module_id = request.POST.get('module_id')
-        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-        module = get_object_or_404(Module, id=module_id)
+# @login_required()
+# @superuser_or_lab_permission_required('configure_laboratory')
+# def add_module_to_lab(request, laboratory_id):
+#     if request.method == 'POST':
+#         module_id = request.POST.get('module_id')
+#         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+#         module = get_object_or_404(Module, id=module_id)
 
-        # Check if the module is already associated with the lab
-        if LaboratoryModule.objects.filter(laboratory=lab, module=module).exists():
-            messages.error(request, "The module is already added to this laboratory.")
-        else:
-            # Create a LaboratoryModule entry
-            LaboratoryModule.objects.get_or_create(laboratory=lab, module=module)
-            messages.success(request, "Module added successfully.")
+#         # Check if the module is already associated with the lab
+#         if LaboratoryModule.objects.filter(laboratory=lab, module=module).exists():
+#             messages.error(request, "The module is already added to this laboratory.")
+#         else:
+#             # Create a LaboratoryModule entry
+#             LaboratoryModule.objects.get_or_create(laboratory=lab, module=module)
+#             messages.success(request, "Module added successfully.")
 
-        return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+#         return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
-    return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+#     return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 @login_required()
 @superuser_or_lab_permission_required('configure_laboratory')

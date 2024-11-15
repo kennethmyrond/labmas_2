@@ -18,10 +18,10 @@
     <a class="nav-link active" id="today-tab" data-bs-toggle="tab" href="#today-borrows" role="tab">Today Borrow</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="future-tab" data-bs-toggle="tab" href="#future-borrows" role="tab">Future Borrows</a>
+    <a class="nav-link" id="past-tab" data-bs-toggle="tab" href="#past-borrows" role="tab">Past Borrows</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="past-tab" data-bs-toggle="tab" href="#past-borrows" role="tab">Past Borrows</a>
+    <a class="nav-link" id="future-tab" data-bs-toggle="tab" href="#future-borrows" role="tab">Future Borrows</a>
   </li>
   <li class="nav-item">
     <a class="nav-link" id="cancelled-tab" data-bs-toggle="tab" href="#borrowed" role="tab">Marked As Borrowed</a>
@@ -277,7 +277,7 @@
                     <th>Borrower</th>
                     <th>Request Date</th>
                     <th>Items Borrowed</th>
-                    <th hidden></th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -293,7 +293,7 @@
                         {% endfor %}
                       </ul>
                     </td>
-                    <td hidden></td>
+                    <td>{{ request.get_status_display }}</td>
                   </tr>
                   {% endfor %}
                 </tbody>

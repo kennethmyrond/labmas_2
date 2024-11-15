@@ -24,6 +24,7 @@ def dict_key(value, key):
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
+    
 
 @register.filter
 def get_item_report(dictionary, key):
@@ -31,6 +32,10 @@ def get_item_report(dictionary, key):
         return json.loads(dictionary).get(key, '')
     except (ValueError, TypeError):
         return ''
+    
+@register.filter
+def get_value(dictionary, key):
+    return dictionary.get(key, '')
 
 @register.filter
 def range_filter(value):

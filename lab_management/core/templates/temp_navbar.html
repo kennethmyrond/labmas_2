@@ -302,10 +302,10 @@
  
 {% if 2 in selected_lab_modules %}
 <li class="nav-item">
-  <a class="nav-link {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_labcoord_prebookrequests  borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items' %}active{% else %}collapsed{% endif %}" data-bs-target="#borrow-nav" data-bs-toggle="collapse" href="#">
+  <a class="nav-link {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_labcoord_prebookrequests  borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items borrowing_labtech_detailedprebookrequests' %}active{% else %}collapsed{% endif %}" data-bs-target="#borrow-nav" data-bs-toggle="collapse" href="#">
       <i class="bi bi-journal-text"></i><span>Borrowing</span><i class="bi bi-chevron-down ms-auto"></i>
   </a>
-  <ul id="borrow-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_studentviewWalkInRequests borrowing_studentDetailedPreBookRequests borrowing_studentDetailedWalkInRequests borrowing_labcoord_prebookrequests borrowing_labcoord_borrowconfig borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+  <ul id="borrow-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_studentviewWalkInRequests borrowing_studentDetailedPreBookRequests borrowing_studentDetailedWalkInRequests borrowing_labcoord_prebookrequests borrowing_labcoord_borrowconfig borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items borrowing_labtech_detailedprebookrequests' %}show{% endif %}" data-bs-parent="#sidebar-nav">
       {% if permissions.can_borrow_items %}
       {% if borrow_config.allow_prebook %}
       <li>
@@ -338,20 +338,20 @@
       {% if permissions.can_view_booking_requests %}
       <li>
         <a href="{% url 'borrowing_labcoord_prebookrequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_labcoord_prebookrequests borrowing_labcoord_detailedPrebookrequests' %}active{% endif %}">
-            <i class="bi bi-circle"></i><span>View Item Borrow Requests </span>
+            <i class="bi bi-circle"></i><span>View Borrowing Requests </span>
         </a>
       </li>
       {%endif%}
       {% if permissions.can_view_borrowed_items %}
     <li>
-      <a href="{% url 'borrowing_labtech_prebookrequests' %}" class="{% if request.resolver_match.url_name == 'borrowing_labtech_prebookrequests' %}active{% endif %}">
-          <i class="bi bi-circle"></i><span>View Item Borrowed</span>
+      <a href="{% url 'borrowing_labtech_prebookrequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_labtech_prebookrequests borrowing_labtech_detailedprebookrequests' %}active{% endif %}">
+          <i class="bi bi-circle"></i><span>Prepare Items Borrowed</span>
       </a>
     </li>
     {%endif%}
     {% if permissions.can_return_item %}
     <li>
-      <a href="{% url 'return_borrowed_items' %}" class="{% if request.resolver_match.url_name == 'return_borrowed_items' %}active{% endif %}">
+      <a href="{% url 'return_borrowed_items' %}" class="{% if request.resolver_match.url_name in 'return_borrowed_items' %}active{% endif %}">
           <i class="bi bi-circle"></i><span>Return Items Borrowed</span>
       </a>
     </li>

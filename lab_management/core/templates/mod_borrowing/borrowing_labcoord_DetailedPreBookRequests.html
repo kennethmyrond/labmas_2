@@ -1,128 +1,180 @@
 {% extends 'temp_navbar.html' %}
 {% load socialaccount %}
+{% load custom_filters %}
 {% block title %}Detailed Pre-Book Request{% endblock %}
 
 {% block content %}
-  <div class="pagetitle">
+<div class="pagetitle">
     <h1>Borrowing Request Details</h1>
     <nav>
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'borrowing_labcoord_prebookrequests' %}">Pre-Book Requests</a></li>
-        <li class="breadcrumb-item active">Request Details</li>
-      </ol>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'borrowing_labcoord_prebookrequests' %}">View Borrowing Requests</a></li>
+            <li class="breadcrumb-item active">Request Details</li>
+        </ol>
     </nav>
-  </div><!-- End Page Title -->
+</div>
 
-    <!-- Success message -->
-    {% if messages %}
-    <div class="alert alert-success mt-3">
-      {% for message in messages %}
-        {{ message }}
-      {% endfor %}
-    </div>
-    {% endif %}
+{% if messages %}
+<div class="alert alert-success mt-3">
+    {% for message in messages %}
+    {{ message }}
+    {% endfor %}
+</div>
+{% endif %}
 
-  <section class="section">
-    <div class="row">
+
+<section class="section">
+  <div class="row">
       <div class="col-lg-12">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Request ID: {{ borrow_request.borrow_id }}</h5>
-            <p><strong>Name:</strong> {{ borrow_request.user.firstname}} {{ borrow_request.user.lastname}}</p>
-            <p><strong>Date Requested:</strong> {{ borrow_request.request_date|date:"Y/m/d H:i:s" }}</p>
-            <p><strong>Date Needed:</strong> {{ borrow_request.borrow_date|date:"Y/m/d" }}</p>
-            <p><strong>Due Date:</strong> {{ borrow_request.due_date|date:"Y/m/d" }}</p>
-            <p><strong>Status:</strong> {{ borrow_request.get_status_display }}</p>
-            {% if borrow_request.questions_responses %}
-            <p><strong>Additional Responses:</strong></p>
-            <ul>
-              {% for question, answer in borrow_request.questions_responses.items %}
-              <li><strong>{{ question }}:</strong> {{ answer }}</li>
-              {% endfor %}
-            </ul>
-            {% endif %}
+          <div class="card">
+              <div class="card-body">
+                  <h5 class="card-title">Borrow ID: {{ borrow_request.borrow_id }}</h5>
+                  <p><strong>Name:</strong> {{ borrow_request.user.firstname }} {{ borrow_request.user.lastname }}</p>
+                  <p><strong>Date Requested:</strong> {{ borrow_request.request_date|date:"Y/m/d H:i:s" }}</p>
+                  <p><strong>Date Needed:</strong> {{ borrow_request.borrow_date|date:"Y/m/d" }}</p>
+                  <p><strong>Due Date:</strong> {{ borrow_request.due_date|date:"Y/m/d" }}</p>
+                  <p><strong>Status:</strong> {{ borrow_request.get_status_display }}</p>
+                  <p><strong>Remarks:</strong> {{ borrow_request.remarks }}</p>
+                  {% if borrow_request.questions_responses %}
+                  <p><strong>Additional Responses:</strong></p>
+                  <ul>
+                      {% for question, answer in borrow_request.questions_responses.items %}
+                      <li><strong>{{ question }}:</strong> {{ answer }}</li>
+                      {% endfor %}
+                  </ul>
+                  {% endif %}
 
-            <!-- Borrowed Items List -->
-            <h5 class="card-title">Borrowed Items</h5>
-            <table class="table datatable">
-              <thead>
-                <tr>
-                  <th>Item Name</th>
-                  <th>Quantity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for item in borrowed_items_list %}
-                <tr>
-                  <td>{{ item.item.item_name }}</td>
-                  <td>{{ item.qty }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-
-            <!-- Action Buttons -->
-            {% if show_action_buttons %}
-              <div class="mt-4">
-                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#acceptModal" {% if borrow_request.status == 'A' %} disabled {% endif %}>Approve</button>
-                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#declineModal" {% if borrow_request.status == 'D' %} disabled {% endif %}>Decline</button>
-              </div>
-            {% else %}
-              <div class="alert alert-info">This request has already been processed.</div>
-            {% endif %}
-
-            <!-- Accept Modal -->
-            <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="acceptModalLabel">Confirm Acceptance</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  <hr>
+                  <!-- Borrowed Items List -->
+                  <h5 class="card-title">Borrowed Items</h5>
+                  <!-- Edit and Action Buttons -->
+                  {% if show_action_buttons %}
+                  <div class="mt-4">
+                      <button class="btn btn-primary" id="editBtn" onclick="enableEdit()" {%if borrow_request.status == 'D' or borrow_request.status == 'A'%} disabled {%endif%}>Edit Quantity</button>
+                      <button class="btn btn-secondary d-none" id="revertBtn" onclick="revertEdit()">Revert Edit</button>
                   </div>
-                  <div class="modal-body">
-                    Are you sure you want to accept this request?
-                  </div>
-                  <div class="modal-footer">
-                    <form method="POST" action="">
+                  {% endif %}
+
+                  <!-- Hidden field to track if edit button was clicked -->
+                  <form method="POST">
                       {% csrf_token %}
-                      <button type="submit" name="action" value="accept" class="btn btn-success">Yes, Accept</button>
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
+                      <input type="hidden" id="edited" name="edited" value="0">
+                      <table class="table datatable">
+                          <thead>
+                              <tr>
+                                  <th>Item Name</th>
+                                  <th>Quantity</th>
+                                  <th>Unit</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {% for item in borrowed_items_list %}
+                              <tr>
+                                  <td>{{ item.item.item_name }}</td>
+                                  <td>
+                                      <input type="number" class="form-control qty-input" name="qty_{{ item.id }}" value="{{ item.qty }}" readonly min="1">
+                                  </td>
+                                  <td>(insert unit)</td>
+                              </tr>
+                              {% endfor %}
+                          </tbody>
+                      </table>
 
-            <!-- Decline Modal -->
-            <form method="POST" action="">
-              {% csrf_token %}
-            <div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="declineModalLabel">Confirm Decline</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                  <div class="modal-body">
-                    <label for="decline_reason">Reason for declining:</label>
-                    <textarea class="form-control" id="decline_reason" name="decline_reason" required></textarea>
-                  </div>
-                  <div class="modal-footer">
-                    
-                      
-                      <button type="submit" name="action" value="decline" class="btn btn-danger">Decline</button>
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    
-                  </div>
-                </div>
-              </div>
-            </div>
-            </form>
+                      {% if show_action_buttons %}
+                      <div class="mt-4">
+                          <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#acceptModal" {%if borrow_request.status == 'A' %} disabled {%endif%}>Approve</button>
+                          <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#declineModal" {%if borrow_request.status == 'D' %} disabled {%endif%} >Decline</button>
+                      </div>
+                      {% else %}
+                      <div class="alert alert-info">This request has already been processed.</div>
+                      {% endif %}
 
+                      <!-- Accept Modal -->
+                      <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
+                          <div class="modal-dialog">
+                              <div class="modal-content">
+                                  <div class="modal-header">
+                                      <h5 class="modal-title" id="acceptModalLabel">Confirm Approval</h5>
+                                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                  </div>
+                                  <div class="modal-body">
+                                      <!-- Show edit reason field if quantities were changed -->
+                                      <div id="cofirm message">
+                                        <p>Confirm approval of borrow request</p>
+                                      </div>
+                                      <div id="editReasonContainer" class="d-none">
+                                          <label for="edit_reason">Reason for Quantity Update:</label>
+                                          <textarea name="edit_reason" id="edit_reason" class="form-control" placeholder="Enter reason for quantity edits" required></textarea>
+                                      </div>
+                                  </div>
+                                  <div class="modal-footer">
+                                      <button type="submit" name="action" value="accept" class="btn btn-success">Accept Request</button>
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </form>
+
+                  <!-- Decline Modal -->
+                  <div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
+                      <div class="modal-dialog">
+                          <div class="modal-content">
+                              <div class="modal-header">
+                                  <h5 class="modal-title" id="declineModalLabel">Confirm Decline</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <form method="POST">
+                                  {% csrf_token %}
+                                  <div class="modal-body">
+                                      <label for="decline_reason">Reason for Declining:</label>
+                                      <textarea name="decline_reason" id="decline_reason" class="form-control" required></textarea>
+                                  </div>
+                                  <div class="modal-footer">
+                                      <button type="submit" name="action" value="decline" class="btn btn-danger">Decline</button>
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                  </div>
+                              </form>
+                          </div>
+                      </div>
+                  </div>
+
+              </div>
           </div>
-        </div>
       </div>
-    </div>
-  </section>
-  
+  </div>
+</section>
+
+<script>
+  const originalQuantities = {{ borrowed_items_json|safe }};
+    
+    function enableEdit() {
+        document.querySelectorAll('.qty-input').forEach(input => {
+            input.readOnly = false;
+        });
+        document.getElementById('editBtn').classList.add('d-none');
+        document.getElementById('revertBtn').classList.remove('d-none');
+        document.getElementById('edited').value = '1';  // Mark edit as active
+    }
+
+    function revertEdit() {
+        document.querySelectorAll('.qty-input').forEach((input, index) => {
+            input.value = originalQuantities[index].qty;  // Use JSON data to revert quantity
+            input.readOnly = true;
+        });
+        document.getElementById('editBtn').classList.remove('d-none');
+        document.getElementById('revertBtn').classList.add('d-none');
+        document.getElementById('edited').value = '0';  // Reset edit flag
+    }
+
+    // Display edit reason field only if quantities were edited
+    document.getElementById('acceptModal').addEventListener('show.bs.modal', function () {
+        const editReasonContainer = document.getElementById('editReasonContainer');
+        if (document.getElementById('edited').value === '1') {
+            editReasonContainer.classList.remove('d-none');
+        } else {
+            editReasonContainer.classList.add('d-none');
+        }
+    });
+</script>
 {% endblock %}

@@ -3,11 +3,11 @@
 
 {% block content %}
   <div class="pagetitle">
-    <h1>Borrowing Request Details</h1>
+    <h1>Borrowing Details</h1>
     <nav>
       <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'borrowing_labtech_prebookrequests' %}">Pre-Book Requests</a></li>
-        <li class="breadcrumb-item active">Request Details</li>
+        <li class="breadcrumb-item"><a href="{% url 'borrowing_labtech_prebookrequests' %}">Items Borrowed</a></li>
+        <li class="breadcrumb-item active">Borrowing Details</li>
       </ol>
     </nav>
   </div><!-- End Page Title -->
@@ -21,7 +21,7 @@
             <div class="mt-3">
               {%if borrow_entry.status == 'A' or borrow_entry.status == 'B' or borrow_entry.status == 'L'%}
                 {%if borrow_entry.status == 'A' or borrow_entry.status == 'L'%}
-                  <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" data-id="{{ borrow_entry.borrow_id }}">Mark as Borrowed</button>
+                  <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" data-id="{{ borrow_entry.borrow_id }}" {% if today < borrow_entry.borrow_date %}disabled{% endif %} %}>Mark as Borrowed</button>
                 {%elif borrow_entry.status == 'A' or borrow_entry.status == 'B'%}
                   <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal" data-id="{{ borrow_entry.borrow_id }}">Cancel</button>
                 {%endif%}
@@ -34,7 +34,8 @@
             <p><strong>Date Needed:</strong> {{ borrow_entry.borrow_date|date:"Y/m/d" }}</p>
             <p><strong>Due Date:</strong> {{ borrow_entry.due_date|date:"Y/m/d" }}</p>
             <p><strong>Status:</strong> {{ borrow_entry.get_status_display }}</p>
-
+            <p><strong>Remarks:</strong> {{ borrow_entry.remarks }}</p>
+            <hr>
             <!-- Borrowed Items List -->
             <h5 class="card-title">Borrowed Items</h5>
             <table class="table datatable">

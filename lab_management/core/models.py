@@ -68,7 +68,7 @@ class laboratory(models.Model):
             current_year = datetime.now().year
             while True:
                 random_number = get_random_string(length=4, allowed_chars='0123456789')
-                self.laboratory_id = f"001{current_year}{random_number}"
+                self.laboratory_id = f"901{current_year}{random_number}"
                 if not laboratory.objects.filter(laboratory_id=self.laboratory_id).exists():
                     break
         super().save(*args, **kwargs)
