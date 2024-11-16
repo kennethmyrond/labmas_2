@@ -4,23 +4,15 @@
 
 {% block content %}
 <div class="col">
-    <div class="row">
+    <div class="row d-flex">
         <!-- Total Users Card -->
-        <div class="col-xxl-4 col-xl-12">
-            <div class="card info-card customers-card">
-                <!-- <div class="filter">
-                    <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                        <li class="dropdown-header text-start"><h6>Filter</h6></li>
-                        <li><a class="dropdown-item" href="?total_users_filter=today">Today</a></li>
-                        <li><a class="dropdown-item" href="?total_users_filter=this_week">This Week</a></li>
-                        <li><a class="dropdown-item" href="?total_users_filter=this_month">This Month</a></li>
-                        <li><a class="dropdown-item" href="?total_users_filter=this_year">This Year</a></li>
-                    </ul>
-                </div> -->
-                <div class="card-body" id="total-users-content">
-                    <h5 class="card-title">Total Users </h5>
-                    <!-- <span>| {{ filter_type.total_users|title }}</span> -->
+        <div class="col-xxl-4 col-xl-12 d-flex">
+            <div class="card info-card customers-card flex-fill">
+                <div class="card-body p-3" id="total-users-content"> <!-- Reduced padding -->
+                    <h5 class="card-title">
+                    
+                        Total Users
+                    </h5>
                     <div class="d-flex align-items-center">
                         <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                             <i class="bi bi-people"></i>
@@ -36,27 +28,36 @@
         <!-- End Total Users Card -->
 
         <!-- New Users Card -->
-        <div class="col-xxl-4 col-xl-12">
-            <div class="card info-card customers-card">
-                <div class="filter">
-                    <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                        <li class="dropdown-header text-start"><h6>Filter</h6></li>
-                        <li><a class="dropdown-item" href="?new_users_filter=today">Today</a></li>
-                        <li><a class="dropdown-item" href="?new_users_filter=this_week">This Week</a></li>
-                        <li><a class="dropdown-item" href="?new_users_filter=this_month">This Month</a></li>
-                        <li><a class="dropdown-item" href="?new_users_filter=this_year">This Year</a></li>
-                    </ul>
-                </div>
-                <div class="card-body" id="new-users-content">
-                    <h5 class="card-title">New Users <span>| {{ filter_type.new_users|title }}</span></h5>
-                    <div class="d-flex align-items-center">
-                        <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                            <i class="bi bi-people"></i>
+        <div class="col-xxl-4 col-xl-12 d-flex">
+            <div class="card info-card customers-card flex-fill">                
+                <div class="card-body p-3" id="new-users-content"> <!-- Reduced padding -->
+                    <div class="row">
+                        <div class="col-11">
+                            <h5 class="card-title">
+                                 <!-- Icon for New Users -->
+                                New Users <span>| {{ filter_type.new_users|title }}</span>
+                            </h5>
+                            <div class="d-flex align-items-center">
+                                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-people"></i>
+                                </div>
+                                <div class="ps-3">
+                                    <h6>{{ new_users }}</h6>
+                                    <span class="text-muted small pt-2 ps-1">new users</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="ps-3">
-                            <h6>{{ new_users }}</h6>
-                            <span class="text-muted small pt-2 ps-1">new users</span>
+                        <div class="col-1">
+                            <div class="filter">
+                                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                                    <li class="dropdown-header text-start"><h6>Filter</h6></li>
+                                    <li><a class="dropdown-item" href="?new_users_filter=today">Today</a></li>
+                                    <li><a class="dropdown-item" href="?new_users_filter=this_week">This Week</a></li>
+                                    <li><a class="dropdown-item" href="?new_users_filter=this_month">This Month</a></li>
+                                    <li><a class="dropdown-item" href="?new_users_filter=this_year">This Year</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -64,22 +65,14 @@
         </div>
         <!-- End New Users Card -->
 
-        <!-- Total Users Card -->
-        <div class="col-xxl-4 col-xl-12">
-            <div class="card info-card customers-card">
-                <!-- <div class="filter">
-                    <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                        <li class="dropdown-header text-start"><h6>Filter</h6></li>
-                        <li><a class="dropdown-item" href="?total_users_filter=today">Today</a></li>
-                        <li><a class="dropdown-item" href="?total_users_filter=this_week">This Week</a></li>
-                        <li><a class="dropdown-item" href="?total_users_filter=this_month">This Month</a></li>
-                        <li><a class="dropdown-item" href="?total_users_filter=this_year">This Year</a></li>
-                    </ul>
-                </div> -->
-                <div class="card-body" id="total-users-content">
-                    <h5 class="card-title">Total Laboratories </h5>
-                    <!-- <span>| {{ filter_type.total_users|title }}</span> -->
+        <!-- Total Laboratories Card -->
+        <div class="col-xxl-4 col-xl-12 d-flex">
+            <div class="card info-card customers-card flex-fill">
+                <div class="card-body p-3" id="total-labs-content"> <!-- Reduced padding -->
+                    <h5 class="card-title">
+
+                        Total Laboratories
+                    </h5>
                     <div class="d-flex align-items-center">
                         <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                             <i class="bi bi-people"></i>
@@ -92,7 +85,7 @@
                 </div>
             </div>
         </div>
-        <!-- End Total Users Card -->
+        <!-- End Total Laboratories Card -->
     </div>
 </div>
 

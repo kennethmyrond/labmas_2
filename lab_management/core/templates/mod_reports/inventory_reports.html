@@ -14,77 +14,88 @@
 <div class="container">
     <!-- Filter Section -->
     <div class="col">
-        <div class="row">
-            <div class="col">
-                <div class="card">
+        <div class="row d-flex">
+            <!-- Total Items Purchased Card -->
+            <div class="col d-flex">
+                <div class="card flex-fill">
                     <div class="card-body">
-                        <div class="filter">
-                            <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                                <li class="dropdown-header text-start"><h6>Filter</h6></li>
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="today">Today</a></li>
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="this_week">This Week</a></li>
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="this_month">This Month</a></li>
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="this_year">This Year</a></li>
-                            </ul>
+                        <div class="row">
+                            <div class="col-11">
+                                <h5 class="card-title">Total Items Purchased <span>| <span id="filter-display">{{ reports_filter_display }}</span></span></h5>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="bi bi-cart"></i>
+                            </div>
+                            <div class="ps-3">
+                                <h6 id="total-purchased">{{ total_purchased }}</h6>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Total Items Purchased <span>| <span id="filter-display">{{ reports_filter_display }}</span></span></h5>
-                            <div class="d-flex align-items-center">
-                                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                    <i class="bi bi-cart"></i>
-                                </div>
-                                <div class="ps-3">
-                                    <h6 id="total-purchased">{{ total_purchased }}</h6>
-                                    <!-- <span class="text-success small pt-1 fw-bold">12%</span> <span class="text-muted small pt-2 ps-1">increase</span> -->
+                            </div>
+                            <div class="col-1">
+                                <div class="filter">
+                                    <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                                        <li class="dropdown-header text-start"><h6>Filter</h6></li>
+                                        <li><a class="dropdown-item filter-option" href="#" data-filter="today">Today</a></li>
+                                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_week">This Week</a></li>
+                                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_month">This Month</a></li>
+                                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_year">This Year</a></li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
+                        
+                        
                     </div>
                 </div>
             </div>
-            <div class="col">
-                <div class="card">
+    
+            <!-- Total Items Used Card -->
+            <div class="col d-flex">
+                <div class="card flex-fill">
                     <div class="card-body">
-                        <div class="filter">
-                            <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                                <li class="dropdown-header text-start"><h6>Filter</h6></li>
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="today">Today</a></li>
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="this_week">This Week</a></li>
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="this_month">This Month</a></li>
-                                <li><a class="dropdown-item filter-option" href="#" data-filter="this_year">This Year</a></li>
-                            </ul>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Total Items Used <span>| <span id="filter-display">{{ reports_filter_display }}</span></span></h5>
-                            <div class="d-flex align-items-center">
-                                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                    <i class="bi bi-cart"></i>
+                        <div class="row">
+                            <div class="col-11">
+                                <h5 class="card-title">Total Items Used <span>| <span id="filter-display">{{ reports_filter_display }}</span></span></h5>
+                                <div class="d-flex align-items-center">
+                                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-file-x"></i>
+                                    </div>
+                                    <div class="ps-3">
+                                        <h6 id="total-used">{{ total_used }}</h6>
+                                    </div>
                                 </div>
-                                <div class="ps-3">
-                                    <h6 id="total-used">{{ total_used }}</h6>
-                                    <!-- <span class="text-success small pt-1 fw-bold">12%</span> <span class="text-muted small pt-2 ps-1">increase</span> -->
+                            </div>
+                            <div class="col-1">
+                                <div class="filter">
+                                    <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
+                                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                                        <li class="dropdown-header text-start"><h6>Filter</h6></li>
+                                        <li><a class="dropdown-item filter-option" href="#" data-filter="today">Today</a></li>
+                                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_week">This Week</a></li>
+                                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_month">This Month</a></li>
+                                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_year">This Year</a></li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
+                        
+                        
                     </div>
                 </div>
             </div>
-            <div class="col">
-                <div class="card">
+    
+            <!-- Current Expired Items Card -->
+            <div class="col d-flex">
+                <div class="card flex-fill">
                     <div class="card-body">
-                        <div class="card-body">
-                            <h5 class="card-title">Current Expired Items </h5>
-                            <!-- <span>| <span id="filter-display">{{ reports_filter_display }}</span></span> -->
-                            <div class="d-flex align-items-center">
-                                <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                    <i class="bi bi-cart"></i>
-                                </div>
-                                <div class="ps-3">
-                                    <h6 id="total-used">{{ expired_items_qty }}</h6>
-                                    <!-- <span class="text-success small pt-1 fw-bold">12%</span> <span class="text-muted small pt-2 ps-1">increase</span> -->
-                                </div>
+                        <h5 class="card-title">Current Expired Items</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <div class="ps-3">
+                                <h6 id="total-expired">{{ expired_items_qty }}</h6>
                             </div>
                         </div>
                     </div>
@@ -92,8 +103,144 @@
             </div>
         </div>
     </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Inventory Trend Over Time </h5> 
+                <!-- <span id="filter-display">| {{ reports_filter_display }}</span> -->
+                <form method="get" action="">
+                    <div class="row mb-3">
+                        <label for="itemSelect" class="col-sm-2 col-form-label">Select Item:</label>
+                        <div class="col-sm-10">
+                            <select class="form-control" id="itemSelect" name="item_id" onchange="this.form.submit()">
+                                <option value="">--Select Item--</option>
+                                {% for item in items %}
+                                    <option value="{{ item.item_id }}" {% if item.item_id == selected_item_id %}selected{% endif %}>{{ item.item_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                <div id="inventory_chart-line2"></div>
+                <div id="inventory_chart-line"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const today = new Date().toISOString().split('T')[0];
+            const selectedLabName = "{{ selected_lab_name }}";  // Replace with the actual lab name
+            const inventoryFilename = `InventoryTrend_${today}`;
+
+            const trendDataAdded = {{ trend_data_added|safe }};
+            const trendDataRemoved = {{ trend_data_removed|safe }};
+            const categories = trendDataAdded.map(entry => new Date(entry.date).getTime());
+            const seriesDataAdded = trendDataAdded.map(entry => entry.total_qty);
+            const seriesDataRemoved = trendDataRemoved.map(entry => entry.total_qty);
+
+            // Primary Chart Options
+            var options = {
+                series: [
+                    { name: 'Added Quantity', data: seriesDataAdded },
+                    { name: 'Removed Quantity', data: seriesDataRemoved }
+                ],
+                chart: {
+                    id: 'chart2',
+                    type: 'line',
+                    height: 230,
+                    toolbar: { show: false }
+                },
+                colors: ['#008FFB', '#FF4560'],
+                stroke: { width: 3 },
+                markers: { size: 2 },
+                xaxis: { type: 'datetime', categories: categories },
+                yaxis: { title: { text: 'Quantity' }, min: 0 }
+            };
+            var inventory_chart = new ApexCharts(document.querySelector("#inventory_chart-line2"), options);
+            inventory_chart.render();
+
+            var optionsLine = {
+                series: [
+                    { name: 'Added Quantity', data: seriesDataAdded },
+                    { name: 'Removed Quantity', data: seriesDataRemoved }
+                ],
+                chart: {
+                    id: 'chart1',
+                    height: 130,
+                    type: 'area',
+                    brush: { target: 'chart2', enabled: true },
+                    selection: {
+                        enabled: true,
+                        xaxis: {
+                            min: new Date(categories[0]).getTime(),
+                            max: new Date(categories[categories.length - 1]).getTime()
+                        }
+                    }
+                },
+                colors: ['#008FFB', '#FF4560'],
+                stroke: { width: 1, curve: 'smooth' },
+                fill: {
+                    type: 'gradient',
+                    gradient: { opacityFrom: 0.91, opacityTo: 0.1 },
+                },
+                xaxis: { type: 'datetime', categories: categories, tooltip: { enabled: false } },
+                yaxis: { min: 0 }
+            };
+            var inventory_chartLine = new ApexCharts(document.querySelector("#inventory_chart-line"), optionsLine);
+            inventory_chartLine.render();
+
+            function updateTotals(filter) {
+                $.ajax({
+                    url: window.location.pathname,
+                    data: { reports_filter: filter },
+                    success: function (data) {
+                        $('#total-purchased').text(data.total_purchased);
+                        $('#total-used').text(data.total_used);
+                        $('#filter-display').text(filter.replace('_', ' ').title());
+                    }
+                });
+            }
+
+            $('.filter-option').on('click', function (e) {
+                e.preventDefault();
+                const filter = $(this).data('filter');
+                updateTotals(filter);
+            });
+        });
+
+
+        $(document).ready(function() {
+            // Initialize select2 for item and supplier fields
+            $('#itemSelect').select2({
+                ajax: {
+                    url: '/suggest_items/',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            query: params.term // Search term
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.map(function(item) {
+                                return {
+                                    id: item.item_id,
+                                    text: `${item.item_name} | ${item.add_cols}`
+                                };
+                            })
+                        };
+                    },
+                    placeholder: 'Search for an item',
+                    minimumInputLength: 2
+                }
+            });
+        });
+    </script>
     
-    <div class="card mb-3">
+    <div class="card">
         <div class="card-body">
             <h5 class="card-title">Current Items Inventory </h5>
 
@@ -236,155 +383,11 @@
 
     
 
-    <div class="col-12">
-        <div class="card">
-            <!-- <div class="filter">
-                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                    <li class="dropdown-header text-start"><h6>Filter</h6></li>
-                    <li><a class="dropdown-item filter-option" href="#" data-filter="today">Today</a></li>
-                    <li><a class="dropdown-item filter-option" href="#" data-filter="this_week">This Week</a></li>
-                    <li><a class="dropdown-item filter-option" href="#" data-filter="this_month">This Month</a></li>
-                    <li><a class="dropdown-item filter-option" href="#" data-filter="this_year">This Year</a></li>
-                </ul>
-            </div> -->
-            <div class="card-body">
-                <h5 class="card-title">Inventory Trend Over Time </h5> 
-                <!-- <span id="filter-display">| {{ reports_filter_display }}</span> -->
-                <form method="get" action="">
-                    <div class="row mb-3">
-                        <label for="itemSelect" class="col-sm-2 col-form-label">Select Item:</label>
-                        <div class="col-sm-10">
-                            <select class="form-control" id="itemSelect" name="item_id" onchange="this.form.submit()">
-                                <option value="">--Select Item--</option>
-                                {% for item in items %}
-                                    <option value="{{ item.item_id }}" {% if item.item_id == selected_item_id %}selected{% endif %}>{{ item.item_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                </form>
-                <div id="inventory_chart-line2"></div>
-                <div id="inventory_chart-line"></div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const today = new Date().toISOString().split('T')[0];
-            const selectedLabName = "{{ selected_lab_name }}";  // Replace with the actual lab name
-            const inventoryFilename = `InventoryTrend_${today}`;
-
-            const trendDataAdded = {{ trend_data_added|safe }};
-            const trendDataRemoved = {{ trend_data_removed|safe }};
-            const categories = trendDataAdded.map(entry => new Date(entry.date).getTime());
-            const seriesDataAdded = trendDataAdded.map(entry => entry.total_qty);
-            const seriesDataRemoved = trendDataRemoved.map(entry => entry.total_qty);
-
-            // Primary Chart Options
-            var options = {
-                series: [
-                    { name: 'Added Quantity', data: seriesDataAdded },
-                    { name: 'Removed Quantity', data: seriesDataRemoved }
-                ],
-                chart: {
-                    id: 'chart2',
-                    type: 'line',
-                    height: 230,
-                    toolbar: { show: false }
-                },
-                colors: ['#008FFB', '#FF4560'],
-                stroke: { width: 3 },
-                markers: { size: 2 },
-                xaxis: { type: 'datetime', categories: categories },
-                yaxis: { title: { text: 'Quantity' }, min: 0 }
-            };
-            var inventory_chart = new ApexCharts(document.querySelector("#inventory_chart-line2"), options);
-            inventory_chart.render();
-
-            var optionsLine = {
-                series: [
-                    { name: 'Added Quantity', data: seriesDataAdded },
-                    { name: 'Removed Quantity', data: seriesDataRemoved }
-                ],
-                chart: {
-                    id: 'chart1',
-                    height: 130,
-                    type: 'area',
-                    brush: { target: 'chart2', enabled: true },
-                    selection: {
-                        enabled: true,
-                        xaxis: {
-                            min: new Date(categories[0]).getTime(),
-                            max: new Date(categories[categories.length - 1]).getTime()
-                        }
-                    }
-                },
-                colors: ['#008FFB', '#FF4560'],
-                stroke: { width: 1, curve: 'smooth' },
-                fill: {
-                    type: 'gradient',
-                    gradient: { opacityFrom: 0.91, opacityTo: 0.1 },
-                },
-                xaxis: { type: 'datetime', categories: categories, tooltip: { enabled: false } },
-                yaxis: { min: 0 }
-            };
-            var inventory_chartLine = new ApexCharts(document.querySelector("#inventory_chart-line"), optionsLine);
-            inventory_chartLine.render();
-
-            function updateTotals(filter) {
-                $.ajax({
-                    url: window.location.pathname,
-                    data: { reports_filter: filter },
-                    success: function (data) {
-                        $('#total-purchased').text(data.total_purchased);
-                        $('#total-used').text(data.total_used);
-                        $('#filter-display').text(filter.replace('_', ' ').title());
-                    }
-                });
-            }
-
-            $('.filter-option').on('click', function (e) {
-                e.preventDefault();
-                const filter = $(this).data('filter');
-                updateTotals(filter);
-            });
-        });
-
-
-        $(document).ready(function() {
-            // Initialize select2 for item and supplier fields
-            $('#itemSelect').select2({
-                ajax: {
-                    url: '/suggest_items/',
-                    dataType: 'json',
-                    delay: 250,
-                    data: function(params) {
-                        return {
-                            query: params.term // Search term
-                        };
-                    },
-                    processResults: function(data) {
-                        return {
-                            results: data.map(function(item) {
-                                return {
-                                    id: item.item_id,
-                                    text: `${item.item_name} | ${item.add_cols}`
-                                };
-                            })
-                        };
-                    },
-                    placeholder: 'Search for an item',
-                    minimumInputLength: 2
-                }
-            });
-        });
-    </script>
+   
     
 
-    <div class="row">
-        <div class="card">
+    <!-- <div class="row"> -->
+        <div class="card ">
             <div class="card-body">
                 <h2 class="card-title">Item's Supplier Reports</h2>
     
@@ -422,7 +425,7 @@
                 
                 <button type="submit" class="btn btn-primary mt-4">Apply Filter</button>
                 </form>
-    
+                <hr>
                 <table class="table supplier-datatable table-striped">
                     <thead>
                         <tr>
@@ -455,7 +458,7 @@
                 </table>
             </div>
         </div>
-    </div>
+    <!-- </div> -->
 
     <script>
         $(document).ready(function() {
