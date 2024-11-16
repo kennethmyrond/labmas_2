@@ -76,7 +76,7 @@ urlpatterns = [
     # clearance
     path('clearance/', views.clearance_view, name='clearance'),
     path('clearance/student/view_clearance', views.clearance_student_viewClearance, name='clearance_student_viewClearance'),
-    path('clearance/student/view_clearance_detailed/<int:borrow_id>/', views.clearance_student_viewClearanceDetailed, name='clearance_student_viewClearanceDetailed'), 
+    path('clearance/student/view_clearance_detailed/<int:report_id>/', views.clearance_student_viewClearanceDetailed, name='clearance_student_viewClearanceDetailed'), 
     path('clearance/labtech/view_clearance', views.clearance_labtech_viewclearance, name='clearance_labtech_viewclearance'), 
     path('clearance/labtech/view_clearance_detailed/<int:report_id>/', views.clearance_labtech_viewclearanceDetailed, name='clearance_labtech_viewclearanceDetailed'),
     path('suggest_report_users/', views.suggest_report_users, name='suggest_report_users'),

@@ -2,85 +2,75 @@
 {% block title %}View Clearance{% endblock %}
 
 {% block content %}
-  
-<style>
-  .red-text {
-    color: red !important; /* Forcefully apply the red color */
-}
-</style>
-
-  <div class="pagetitle">
+<div class="pagetitle">
     <h1>Clearance</h1>
     <nav>
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'clearance_student_viewClearance' %}">View Clearance</a></li>
-        <li class="breadcrumb-item active">Clearance Details</li>
-      </ol>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'clearance_student_viewClearance' %}">View Clearance</a></li>
+            <li class="breadcrumb-item active">Clearance Details</li>
+        </ol>
     </nav>
-  </div><!-- End Page Title -->
+</div>
 
-  <!-- Success message -->
-  {% if messages %}
-    <div class="alert alert-success">
-      {% for message in messages %}
-        {{ message }}
-      {% endfor %}
-    </div>
-  {% endif %}
+{% if messages %}
+<div class="alert alert-success">
+    {% for message in messages %}
+    {{ message }}
+    {% endfor %}
+</div>
+{% endif %}
 
-  <section class="section">
+<section class="section">
     <div class="row">
-      <div class="col-lg-12">
-        <div class="card">
-          <div class="card-body">
-            <div>
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Report ID: {{ report.report_id }}</h5>
+                    <p><strong>Borrow ID:</strong> {{ borrow_details.borrow_id }}</p>
+                    <p><strong>Date Requested:</strong> {{ borrow_details.request_date|date:"Y/m/d" }}</p>
+                    <p><strong>Date Needed:</strong> {{ borrow_details.borrow_date|date:"Y/m/d" }}</p>
+                    <p><strong>Due Date:</strong> {{ borrow_details.due_date|date:"Y/m/d" }}</p>
 
-            <h5 class="card-title">Borrow ID: {{ borrow_details.borrow_id }}</h5>
-            <p><strong>Date Requested:</strong> {{ borrow_details.request_date }}</p>
-            <p><strong>Date Needed:</strong> {{ borrow_details.borrow_date }}</p>
-            <p><strong>Due Date:</strong> {{ borrow_details.due_date }}</p>
-            
-            {% if borrow_details.questions_responses %}
-                {% for question, response in borrow_details.questions_responses.items %}
-                    <p><strong>{{ question }}:</strong> {{ response }}</p>
-                {% endfor %}
-            {% endif %}
-            
+                    {% if borrow_details.questions_responses %}
+                    <p><strong>Additional Questions:</strong></p>
+                    <ul>
+                        {% for question, response in borrow_details.questions_responses.items %}
+                        <li><strong>{{ question }}:</strong> {{ response }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+
+                    <h5 class="card-title">Clearance Details</h5>
+
+                    <!-- Reported Items Table -->
+                    <table class="table datatable">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Reason</th>
+                                <th>Quantity</th>
+                                <th>Amount to Pay</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in report_details %}
+                            <tr>
+                                <td>{{ report.item.item_name }}</td>
+                                <td class="red-text">{{ report.report_reason }}</td> <!-- Reason text will be red -->
+                                <td>{{ report.qty_reported }}</td>
+                                <td>{{ report.amount_to_pay }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4">No reports available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-
-            <h5 class="card-title">Clearance Details</h5>
-
-            <!-- Table with stripped rows -->
-            <table class="table datatable">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Reason</th>
-                  <th>Quantity</th>
-                  <th>Amount to Pay</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for report in reports %}
-                <tr>
-                  <td>{{ report.item.item_name }}</td>
-                  <td class="red-text">{{ report.report_reason }}</td> <!-- Reason text will be red -->
-                  <td>{{ report.qty_reported }}</td>
-                  <td>{{ report.amount_to_pay }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                  <td colspan="4">No reports available.</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-            <!-- End Table with stripped rows -->
-
-          </div>
         </div>
-      </div>
     </div>
     <p>Kindly proceed to the lab to settle payment.</p>
-  </section>
+</section>
 {% endblock %}

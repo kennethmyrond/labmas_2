@@ -75,7 +75,7 @@
                         <tbody>
                             {% for report in reports %}
                             <tr>
-                                <td><a href="{% url 'clearance_student_viewClearanceDetailed' report.borrow.borrow_id %}">{{ report.report_id }}</a></td>
+                                <td><a href="{% url 'clearance_student_viewClearanceDetailed' report.report_id %}">{{ report.report_id }}</a></td>
                                 <td>{{ report.borrow.borrow_id }}</td>
                                 <td>{{ report.item.item_name }}</td>
                                 <th>{{ report.report_reason }}</th>

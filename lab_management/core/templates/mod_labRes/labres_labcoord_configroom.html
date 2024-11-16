@@ -218,8 +218,15 @@
             <!-- Show PDF Upload only when require approval is checked -->
             <div class="mb-3" id="pdfUploadSection" style="display: {% if reservation_config.require_approval %}block{% else %}none{% endif %};">
               <label for="approvalForm" class="form-label">Upload PDF Form (optional)</label>
-              <input class="form-control" type="file" id="approvalForm" name="approval_form">
+              <input class="form-control" type="file" id="approvalForm" name="approval_form" value="{{ reserv_config.approval_form.url }}">
             </div>
+
+            {% if reservation_config.approval_form %}
+                <p class="mt-2">
+                    <strong>Current Approval Form:</strong> 
+                    <a href="{{ reservation_config.approval_form.url }}" target="_blank">{{ reservation_config.approval_form.name }}</a>
+                </p>
+            {% endif %}
 
             <button type="submit" name="save_approval" class="btn btn-primary">Save Approval Configuration</button>
           </form>
