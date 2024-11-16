@@ -1,5 +1,5 @@
 {% extends 'temp_navbar.html' %}
-{% block title %}SUPERUSER - Manage Laboratories{% endblock %}
+{% block title %}Manage Laboratories{% endblock %}
 {% block content %}
 <style>
   .status-active {
@@ -22,6 +22,14 @@
   </nav>
 </div>
 <!-- End Page Title -->
+
+{% if messages %}
+<div class="alert alert-success">
+  {% for message in messages %}
+    {{ message }}
+  {% endfor %}
+</div>
+{% endif %}
 
 <section class="section">
   <div class="row">
