@@ -6,6 +6,21 @@
     .btncontainer {
       text-align: right;
     }
+
+    .input-group {
+    display: flex;
+    align-items: center;
+    }
+
+    .input-group .form-control {
+        margin-right: 5px; /* Space between the input and button */
+    }
+
+    .input-group .btn {
+        margin-left: 5px; /* Optional space between the input and the button */
+    }
+
+
   </style>
 
   <div class="pagetitle">
@@ -119,25 +134,30 @@
                               <th>Item Type</th>
                               <th>Allow Borrowing?</th>
                               <th>Is Consumable?</th>
-                              <th>Limit Borrow to inventory Qty</th>
+                              <th>Current Quantity</th>
+                              <th>Quantity Limit</th>
                           </tr>
                       </thead>
                       <tbody>
                           {% for item in items %}
                           <tr>
-                            <td>{{ item.item_name }}</td>
-                            <td>{{ item.itemType.itemType_name }}</td> <!-- Item Type column -->
-                            <td>
-                                <input type="checkbox" name="borrow_item" value="{{ item.item_id }}" 
-                                        {% if item.allow_borrow %}checked{% endif %}>
-                            </td>
-                            <td>
-                                <input type="checkbox" name="is_consumable" value="{{ item.item_id }}" 
-                                        {% if item.is_consumable %}checked{% endif %}>
-                            </td>
-                            <td>
-                              <input type="checkbox" name="limit" value="{{ item.item_id }}" 
-                                      {% if item.is_consumable %}checked{% endif %}>
+                              <td>{{ item.item_name }}</td>
+                              <td>{{ item.itemType.itemType_name }}</td> <!-- Item Type column -->
+                              <td>
+                                  <input type="checkbox" name="borrow_item" value="{{ item.item_id }}" 
+                                         {% if item.allow_borrow %}checked{% endif %}>
+                              </td>
+                              <td>
+                                  <input type="checkbox" name="is_consumable" value="{{ item.item_id }}" 
+                                         {% if item.is_consumable %}checked{% endif %}>
+                              </td>
+                              <td>{{ item.current_quantity }}</td>
+                              <td>
+                                <div class="input-group">
+                                    <input type="number" name="qty_limit_{{ item.item_id }}" value="{{ item.qty_limit }}" 
+                                           min="0" placeholder="Qty Limit" class="form-control">
+                                    <button type="button" class="btn btn-danger reset-qty-limit" data-item-id="{{ item.item_id }}">Reset</button>
+                                </div>
                             </td>
                           </tr>
                           {% endfor %}
@@ -327,6 +347,27 @@
   
   <!-- Bootstrap JS (for tooltip functionality) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Wait for the DOM to be fully loaded before running the script
+  document.addEventListener("DOMContentLoaded", function() {
+      // Select all reset buttons
+      const resetButtons = document.querySelectorAll('.reset-qty-limit');
+
+      // Add click event listener for each reset button
+      resetButtons.forEach(function(button) {
+          button.addEventListener('click', function() {
+              // Get the item ID from the data attribute of the button
+              const itemId = button.getAttribute('data-item-id');
+              // Find the corresponding quantity limit input field
+              const qtyInput = document.querySelector(`input[name="qty_limit_${itemId}"]`);
+              
+              // Reset the input value to empty string (simulating 'null' in form submission)
+              qtyInput.value = '';
+          });
+      });
+  });
+</script>
+
 <script>
   // Enable Bootstrap tooltips
   var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

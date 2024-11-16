@@ -127,6 +127,38 @@
 
                 </div>
             </div>
+
+            <h5 class="card-title">Borrow ID: {{ borrow_entry.borrow_id }}</h5>
+            <p><strong>Borrow Name:</strong> {{ borrow_entry.user.firstname }} {{ borrow_entry.user.lastname }}</p>
+            <p><strong>Date Requested:</strong> {{ borrow_entry.request_date|date:"Y/m/d" }}</p>
+            <p><strong>Date Needed:</strong> {{ borrow_entry.borrow_date|date:"Y/m/d" }}</p>
+            <p><strong>Due Date:</strong> {{ borrow_entry.due_date|date:"Y/m/d" }}</p>
+            <p><strong>Status:</strong> {{ borrow_entry.get_status_display }}</p>
+            <p><strong>Remarks:</strong> {{ borrow_entry.remarks }}</p>
+            <hr>
+            <!-- Borrowed Items List -->
+            <h5 class="card-title">Borrowed Items</h5>
+            <table class="table datatable">
+              <thead>
+                <tr>
+                  <th>Item Name</th>
+                  <th>Quantity</th>
+                  <th>Unit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in borrowed_items %}
+                <tr>
+                  <td>{{ item.item.item_name }}</td>
+                  <td>{{ item.qty }}</td>
+                  <td>{{ item.unit }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+
+            
+          </div>
         </div>
     </div>
 </section>
