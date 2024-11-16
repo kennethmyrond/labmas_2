@@ -113,43 +113,7 @@
     </div>
   </div>
 
-  <div class="row">
-    <div class="col-lg-12">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Inventory Details</h5>
-            <table id="inventoryDataTable" class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Inventory Item ID</th>
-                        <th>Current Quantity</th>
-                        {% if item.rec_expiration %}
-                        <th>Expiration Date</th>
-                        {% endif %}
-                        <th>Last Updated Date</th>
-                        <th>Last Updated By</th>
-                        <th>Date Created</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for data in inventory_data %}
-                    <tr>
-                        <td>{{ data.inventory_item_id }}</td>
-                        <td>{{ data.current_qty }}</td>
-                        {% if item.rec_expiration %}
-                        <td>{{ data.expiration_date }}</td>
-                        {% endif %}
-                        <td>{{ data.last_updated_date }}</td>
-                        <td>{{ data.last_updated_by }}</td>
-                        <td>{{ data.date_created }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-      </div>
-    </div>
-  </div>
+  
 
   <div class="row">
     <div class="col-lg-12">
@@ -203,14 +167,15 @@
                 {%endif%} -->
                 
                 <td>
-                  {% if inventory.expiration_date %}
-                    {% if inventory.expiration_date <= date_today and inventory.qty > 0 %}
-                        <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
-                    {% endif %}
-                  {% endif %}
+                 
                   <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#inventoryDetailsModal{{ inventory.inventory_item_id }}">
                     View More
                   </button>
+                  {% if inventory.expiration_date %}
+                  {% if inventory.expiration_date <= date_today and inventory.qty > 0 %}
+                      <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
+                  {% endif %}
+                {% endif %}
                 </td>
                 <td style="display:none"></td>
               </tr>
@@ -253,7 +218,7 @@
                         {% endif %}
                       {%endif%}
                       <hr>
-                      <p class="small"><strong>Inventoried by:</strong> {{ handling.updated_by }}</p>
+                      <p class="small"><strong>Handled by:</strong> {{ handling.updated_by }}</p>
                     </div>
                     <div class="modal-footer">
                       <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -272,6 +237,47 @@
           </tbody>
         </table>
         <!-- End Table with stripped rows -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Item Inventory Details</h5>
+            <table id="inventoryDataTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Inventory Item ID</th>
+                        <th>Inventoried On</th>
+                        <th>Current Quantity</th>
+                        {% if item.rec_expiration %}
+                        <th>Expiration Date</th>
+                        {% endif %}
+                        <th>Last Updated By</th>
+                        <th>Last Updated Date</th>
+                        
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in inventory_data %}
+                    <tr>
+                        <td>{{ data.inventory_item_id }}</td>
+                        <td>{{ data.date_created|date:"Y-m-d H:i" }}</td>
+                        <td>{{ data.current_qty }}</td>
+                        {% if item.rec_expiration %}
+                        <td>{{ data.expiration_date|date:"Y-m-d" }}</td>
+                        {% endif %}
+                        
+                        <td>{{ data.last_updated_by }}</td>
+                        <td>{{ data.last_updated_date|date:"Y-m-d H:i" }}</td>
+                        
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
       </div>
     </div>
@@ -302,13 +308,13 @@
               <tr>
                   <td>{{ data.supplier_name }}</td>
                   <!-- <td>{{ data.inventory_id }}</td> -->
-                  <td>{{ data.date_purchased|date:"Y/m/d" }}</td>
-                  <td>{{ data.date_received|date:"Y/m/d" }}</td>
+                  <td>{{ data.date_purchased|date:"Y-m-d" }}</td>
+                  <td>{{ data.date_received|date:"Y-m-d" }}</td>
                   <td>{{ data.duration }}</td>
                   <td>{{ data.qty }}</td>
                   <td>₱{{ data.purchase_price }}</td>
                   {% if item.rec_expiration %}
-                  <td>{{ data.expiration|date:"Y/m/d" }}</td>
+                  <td>{{ data.expiration|date:"Y-m-d" }}</td>
                   {% endif %}
               </tr>
               {% endfor %}
@@ -396,6 +402,7 @@
 
     handling_filename = '{{selected_lab_name}}_{{item.item_name}}_inventoryhandling_' + today;
     new DataTable('.handling-datatable', {
+      order: [[0, 'desc']],
       layout: {
         bottomStart: {
             // buttons: ['copy', 'excel', 'pdf', 'colvis']
@@ -414,6 +421,7 @@
 
     iteminventory_filename = '{{selected_lab_name}}_{{item.item_name}}_iteminventory_' + today;
     new DataTable('#inventoryDataTable', {
+      order: [[1, 'desc']],
       layout: {
         bottomStart: {
             // buttons: ['copy', 'excel', 'pdf', 'colvis']
