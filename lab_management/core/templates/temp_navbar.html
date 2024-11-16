@@ -217,28 +217,28 @@
         <ul id="setup-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'superuser_lab_info setup_createlab superuser_manage_labs superuser_manage_users setup_editLab' %}show{% endif %}" data-bs-parent="#sidebar-nav">
           
 
-          {% if permissions.can_view_inventory %}
-          <li>
-            <a href="{% url 'superuser_lab_info' selected_lab_id%}" class="{% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info setup_editLab' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>Manage Laboratory</span>
-            </a>
-          </li> 
+          {% if logged_user.is_superuser%}
+            <li>
+              <a href="{% url 'setup_createlab' %}" class="{% if request.resolver_match.url_name in 'setup_createlab' %}active{% endif %}">
+                <i class="bi bi-circle"></i><span>Create New Laboratory</span>
+              </a>
+            </li> 
+            <li>
+              <a href="{% url 'superuser_manage_labs' %}" class="{% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info setup_editLab' %}active{% endif %}">
+                <i class="bi bi-circle"></i><span>Manage Laboratories</span>
+              </a>
+            </li> 
+            <li>
+              <a href="{% url 'superuser_manage_users' %}" class="{% if request.resolver_match.url_name in 'superuser_manage_users superuser_user_info setup_edituser' %}active{% endif %}">
+                <i class="bi bi-circle"></i><span>Manage Users</span>
+              </a>
+            </li>
           {%else%}
-          <li>
-            <a href="{% url 'setup_createlab' %}" class="{% if request.resolver_match.url_name in 'setup_createlab' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>Create New Laboratory</span>
-            </a>
-          </li> 
-          <li>
-            <a href="{% url 'superuser_manage_labs' %}" class="{% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info setup_editLab' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>Manage Laboratories</span>
-            </a>
-          </li> 
-          <li>
-            <a href="{% url 'superuser_manage_users' %}" class="{% if request.resolver_match.url_name in 'superuser_manage_users superuser_user_info setup_edituser' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>Manage Users</span>
-            </a>
-          </li>
+            <li>
+              <a href="{% url 'superuser_lab_info' selected_lab_id%}" class="{% if request.resolver_match.url_name in 'superuser_manage_labs superuser_lab_info setup_editLab' %}active{% endif %}">
+                <i class="bi bi-circle"></i><span>Manage Laboratory</span>
+              </a>
+            </li> 
           {%endif%}
 
           
@@ -299,8 +299,7 @@
     </li><!-- End inventory Nav -->
 {% endif %}
 
- 
-{% if 2 in selected_lab_modules %}
+{% if permissions.can_borrow_items or permissions.can_view_borrowed_items or permissions.can_view_booking_requests or permissions.can_return_item or permissions.can_configure_borrowing %}
 <li class="nav-item">
   <a class="nav-link {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_labcoord_prebookrequests  borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items borrowing_labtech_detailedprebookrequests' %}active{% else %}collapsed{% endif %}" data-bs-target="#borrow-nav" data-bs-toggle="collapse" href="#">
       <i class="bi bi-journal-text"></i><span>Borrowing</span><i class="bi bi-chevron-down ms-auto"></i>
@@ -368,7 +367,7 @@
     {% endif %}
     
     
-    {% if 3 in selected_lab_modules %}
+    {% if permissions.can_view_own_clearance or permissions.can_view_student_clearance %}
     <li class="nav-item">
       <a class="nav-link {% if request.resolver_match.url_name in 'clearance_student_viewClearance clearance_student_viewClearanceDetailed clearance_labtech_viewclearance clearance_labtech_viewclearanceDetailed' %}active{% else %}collapsed{% endif %}" data-bs-target="#tables-nav" data-bs-toggle="collapse" href="#">
         <i class="bi bi-layout-text-window-reverse"></i><span>Clearance</span><i class="bi bi-chevron-down ms-auto"></i>
@@ -392,7 +391,7 @@
     </li><!-- End Tables Nav -->
       {% endif %}
 
-      {% if 4 in selected_lab_modules %}
+      {% if permissions.can_reserve_laboratory or permissions.can_view_reservations or permissions.can_approve_deny_reservations or permissions.can_configure_lab_reservation %}
       <li class="nav-item">
         <a class="nav-link {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule labres_lab_reservationreqs labres_lab_reservationreqsDetailed lab_reservation_student_reserveLabConfirmDetails lab_reservation_preapproval'%}active{% else %}collapsed{% endif %}" data-bs-target="#reserve-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-journal-bookmark"></i><span>Lab Reservation</span><i class="bi bi-chevron-down ms-auto"></i>
@@ -433,7 +432,8 @@
       </li><!--  Nav -->
       {% endif %}
 
-      {% if 5 in selected_lab_modules or logged_user.is_superuser %}
+
+      {% if permissions.can_view_reports or logged_user.is_superuser %}
       <li class="nav-item">
         <a class="nav-link {% if request.resolver_match.url_name in 'user_reports admin_reports inventory_reports borrowing_reports clearance_reports labres_reports'%}active{% else %}collapsed{% endif %}" data-bs-target="#reports-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-bar-chart"></i><span>Reports</span><i class="bi bi-chevron-down ms-auto"></i>

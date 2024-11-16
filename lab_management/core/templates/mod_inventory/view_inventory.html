@@ -113,6 +113,7 @@
     const today = new Date().toISOString().split('T')[0];
     inventory_filename = '{{selected_lab_name}}_inventory_' + today;
     new DataTable('.inventory-datatable', {
+      order: [[1, 'asc']],
       layout: {
         bottomStart: {
             // buttons: ['copy', 'excel', 'pdf', 'colvis']

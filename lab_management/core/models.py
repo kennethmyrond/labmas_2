@@ -197,6 +197,7 @@ class item_description(models.Model):
     is_disabled = models.BooleanField(default=False)
     allow_borrow = models.BooleanField(default=False)
     is_consumable = models.BooleanField(default=False)
+    is_limited = models.BooleanField(default=False)
     
     def save(self, *args, **kwargs):
         if not self.item_id:

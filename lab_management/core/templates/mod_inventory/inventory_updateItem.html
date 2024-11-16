@@ -234,6 +234,28 @@
     </div>
 </div>
 
+<!-- Success Modal for Added Inventory -->
+<div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="successModalLabel">Item Added to Inventory</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success">The item has been successfully added to inventory with Inventory Item ID</div>
+                <h2 style="text-align: center;"><strong id="newInventoryItemId"></strong></h2>
+                <p style="text-align: center;">Please save this Inventory Item ID and attach it to the items stored.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // check date purchased and received
     document.addEventListener('DOMContentLoaded', function() {
@@ -353,10 +375,34 @@
     }
 
     // Function to submit the form after confirmation
+    // function submitForm() {
+    //     $('#confirmationModal').modal('hide');
+    //     $('#updateForm').submit();  // Submit the form
+    // }
     function submitForm() {
-        $('#confirmationModal').modal('hide');
-        $('#updateForm').submit();  // Submit the form
-    }
+    $('#confirmationModal').modal('hide');
+
+    // Submit the form data via AJAX to get the new inventory_item_id
+    $.ajax({
+        type: 'POST',
+        url: '', // Keep this as the current view URL
+        data: $('#updateForm').serialize(),
+        success: function(response) {
+            if (response.success && response.new_inventory_item_id) {
+                // Set the new inventory item ID in the success modal
+                $('#newInventoryItemId').text(response.new_inventory_item_id);
+                // Show the success modal
+                $('#successModal').modal('show');
+            } else {
+                alert('Error adding item to inventory. Please try again.');
+            }
+        },
+        error: function() {
+            alert('There was an error with the request.');
+        }
+    });
+}
+
 
     function checkItemExpiration() {
     const itemId = $('#itemName').val();

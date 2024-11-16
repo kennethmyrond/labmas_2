@@ -772,7 +772,10 @@ def inventory_updateItem_view(request):
                     expired_date=expiration_date
                 )
             
-            messages.success(request, f"Added Inventory successfully.")
+            # messages.success(request, f"Added Inventory successfully.")
+
+            return JsonResponse({'success': True, 'new_inventory_item_id': new_inventory_item.inventory_item_id})
+        
         elif action_type in ['remove', 'report']:# Handle remove & report from inventory
             if action_type=='remove':
                 qty_remove = int(request.POST.get('quantity_removed', 0))
@@ -1324,7 +1327,8 @@ def borrowing_student_prebookview(request):
         # Group items by their itemType
         items_by_type = {}
         for item in inventory_items:
-            item_type = item.itemType.itemType_name
+            print('test',item.itemType)
+            item_type = item.itemType
             if item_type not in items_by_type:
                 items_by_type[item_type] = []
             items_by_type[item_type].append(item)
@@ -1477,7 +1481,7 @@ def borrowing_student_walkinview(request):
     # Group items by their itemType
     items_by_type = {}
     for item in inventory_items:
-        item_type = item.itemType.itemType_name
+        item_type = item.itemType
         if item_type not in items_by_type:
             items_by_type[item_type] = []
         items_by_type[item_type].append(item)
@@ -1903,7 +1907,7 @@ def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
 
     if request.method == 'POST':
         action = request.POST.get('action')
-        edited = int(request.POST.get('edited'))  # Check if any edits were made by checking 'edited' input
+        edited = request.POST.get('edited')  # Check if any edits were made by checking 'edited' input
 
         # Decline action
         if action == 'decline':
@@ -1920,7 +1924,8 @@ def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
         # Accept action
         elif action == 'accept':
             # Check if any quantities were edited
-            if edited:
+            print('pass')
+            if edited == '1':
                 # Require an edit reason if quantities were modified
                 edit_reason = request.POST.get('edit_reason')
                 if not edit_reason:
@@ -2087,22 +2092,29 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
 
     if request.method == 'POST':
         action = request.POST.get('action')
-        edit_reason = request.POST.get('edit_reason', '')
         edited = request.POST.get('edited')
+        print('pass', )
 
         if action == 'borrowed':
             if edited == '1':  # Check if any edits were made
+                edit_reason = request.POST.get('edit_reason')
+                if not edit_reason:
+                    messages.error(request, 'Please provide a reason for the quantity update.')
+                    return redirect('borrowing_labtech_detailedprebookrequests', borrow_id=borrow_id)
+                
                 for item in borrowed_items1:
                     new_qty = request.POST.get(f'qty_{item.id}')
                     if new_qty and int(new_qty) != item.qty:
                         item.qty = int(new_qty)
                         item.save()
                 borrow_entry.remarks = edit_reason
-
+                messages.success(request, 'The borrow request has been marked as borrowed with updated quantities.')
+            else:
+                messages.success(request, 'The borrow request has been marked as borrowed.')
+            
             borrow_entry.status = 'B'  # Mark as borrowed
             borrow_entry.save()
-            messages.success(request, 'The borrow request has been marked as borrowed with updated quantities.')
-
+            
         elif action == 'cancel':
             cancel_reason = request.POST.get('cancel_reason')
             borrow_entry.status = 'L'  # Mark as cancelled

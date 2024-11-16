@@ -384,6 +384,7 @@
     inventory_filename = '{{selected_lab_name}}_{{item.item_name}}_suppliers_' + today;
     
     new DataTable('.suppliers-datatable', {
+      order: [[0, 'asc']],
       layout: {
         bottomStart: {
             // buttons: ['copy', 'excel', 'pdf', 'colvis']

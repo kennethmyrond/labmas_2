@@ -44,7 +44,7 @@
                     </div>
                     
 
-                    <form method="POST">
+                    <form method="POST" id="borrowRequestForm">
                         {% csrf_token %}
                         <input type="hidden" id="edited" name="edited" value="0">
                         <table class="table datatable">
@@ -92,7 +92,8 @@
                                         </div>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="submit" name="action" value="borrowed" class="btn btn-success">Confirm Borrowed</button>
+                                        <input type="hidden" name ="action" value="borrowed">
+                                        <button type="button" class="btn btn-success" onclick="submitAcceptForm()">Confirm</button>
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                     </div>
                                 <!-- </form> -->
@@ -150,6 +151,11 @@
         document.getElementById('editBtn').classList.remove('d-none');
         document.getElementById('revertBtn').classList.add('d-none');
         document.getElementById('edited').value = '0';
+    }
+
+    function submitAcceptForm() {
+      const form = document.getElementById('borrowRequestForm');
+      form.submit(); 
     }
 
     document.getElementById('confirmBorrowModal').addEventListener('show.bs.modal', function () {
