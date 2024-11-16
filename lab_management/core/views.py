@@ -1890,71 +1890,62 @@ def borrowing_labcoord_borrowconfig(request):
             return redirect('borrowing_labcoord_borrowconfig')
 
         elif 'borrow_config_form' in request.POST:
-            # allowed_items = request.POST.getlist('borrow_item')  # Items explicitly checked
-            # is_consumable_list = request.POST.getlist('is_consumable')
-            
-            # Update logic
-            selected_laboratory_id = request.session.get('selected_lab')
-            items_to_update = item_description.objects.filter(laboratory_id=selected_laboratory_id)
-            updated_count = items_to_update.update(allow_borrow=1, is_consumable=0)
+            borrowMode = request.POST.get('borrowMode')
+            if borrowMode == 'item':
+                allowed_items = request.POST.getlist('borrow_item')  # Items explicitly checked
+                is_consumable_list = request.POST.getlist('is_consumable')
+                
+                # Update logic
+                items.update(allow_borrow=0, is_consumable=0)
 
-            # Re-fetch the items from the database
-            items_to_update = item_description.objects.filter(laboratory_id=selected_laboratory_id)
+                # Handle individual items: Set allow_borrow=True and is_consumable=True for explicitly checked items
+                if allowed_items:
+                    item_description.objects.filter(item_id__in=allowed_items).update(allow_borrow=True)
+                if is_consumable_list:
+                    item_description.objects.filter(item_id__in=is_consumable_list).update(is_consumable=True)
 
-            for item in items_to_update:
-                print(f"Item ID: {item.item_id}, Allow Borrow: {item.allow_borrow}, Is Consumable: {item.is_consumable}")
+                # Validate and update qty_limit for each item
+                for item in items_with_qty:
+                    qty_limit = request.POST.get(f'qty_limit_{item.item_id}')
+                    if qty_limit is not None:
+                        qty_limit = int(qty_limit) if qty_limit else None
+                        
+                        # Check if qty_limit exceeds the current quantity
+                        if qty_limit and qty_limit > item.current_quantity:
+                            messages.error(request, f"Quantity limit for item '{item.item_name}' exceeds the available quantity of {item.current_quantity}.")
+                            return redirect('borrowing_labcoord_borrowconfig')  # Redirect with error
+                        # Save the qty_limit
+                        # item.qty_limit = qty_limit
+                        # item.save()
 
-            # Check if the update was successful
-            if updated_count > 0:
-                messages.success(request, "Borrowing configuration updated successfully!")
+                        item_description.objects.filter(item_id=item.item_id).update(qty_limit=qty_limit)
+
             else:
-                messages.warning(request, "No items were updated. Please check the laboratory ID or item conditions.")
+                allowed_item_types = request.POST.getlist('borrow_item_type')  # Item types explicitly checked
+                is_consumable_type_list = request.POST.getlist('is_consumable_type')
 
-
-            # allowed_item_types = request.POST.getlist('borrow_item_type')  # Item types explicitly checked
-            # is_consumable_type_list = request.POST.getlist('is_consumable_type')
-
-            # Handle individual items: Set allow_borrow=True and is_consumable=True for explicitly checked items
-            # if allowed_items:
-            #     item_description.objects.filter(item_id__in=allowed_items).update(allow_borrow=True)
-            
-            # if is_consumable_list:
-            #     item_description.objects.filter(item_id__in=is_consumable_list).update(is_consumable=True)
-
-            # # Handle item types: Set allow_borrow=True for all items under the checked item types
-            # if allowed_item_types:
-            #     item_description.objects.filter(itemType_id__in=allowed_item_types).update(allow_borrow=True)
-            #     for type in item_types_list:
-            #         # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
-            #         if str(type.itemType_id) in allowed_item_types:
-            #             item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=True)
-            #         else:
-            #             # If unchecked, ensure items under this type are set to allow_borrow=False and is_consumable=False
-            #             item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=False)
-            
-            # if is_consumable_type_list:
-            #     item_description.objects.filter(itemType_id__in=is_consumable_type_list).update(is_consumable=False)
-            #     for type in item_types_list:
-            #         # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
-            #         if str(type.itemType_id) in is_consumable_type_list:
-            #             item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=True)
-            #         else:
-            #             item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=False)
-
-           # Validate and update qty_limit for each item
-            for item in items:
-                qty_limit = request.POST.get(f'qty_limit_{item.item_id}')
-                if qty_limit is not None:
-                    qty_limit = int(qty_limit) if qty_limit else None
-                    
-                    # Check if qty_limit exceeds the current quantity
-                    if qty_limit and qty_limit > item.current_quantity:
-                        messages.error(request, f"Quantity limit for item '{item.item_name}' exceeds the available quantity of {item.current_quantity}.")
-                        return redirect('borrowing_labcoord_borrowconfig')  # Redirect with error
-
-                    # Save the qty_limit
-                    item.qty_limit = qty_limit
-                    item.save()
+                print(allowed_item_types)
+                print(is_consumable_type_list)
+                
+                # Handle item types: Set allow_borrow=True for all items under the checked item types
+                if allowed_item_types:
+                    item_description.objects.filter(itemType_id__in=allowed_item_types).update(allow_borrow=True)
+                    for type in item_types_list:
+                        # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
+                        if str(type.itemType_id) in allowed_item_types:
+                            item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=True)
+                        else:
+                            # If unchecked, ensure items under this type are set to allow_borrow=False and is_consumable=False
+                            item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=False)
+                
+                if is_consumable_type_list:
+                    item_description.objects.filter(itemType_id__in=is_consumable_type_list).update(is_consumable=True)
+                    for type in item_types_list:
+                        # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
+                        if str(type.itemType_id) in is_consumable_type_list:
+                            item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=True)
+                        else:
+                            item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=False)
                     
             messages.success(request, "Borrowing configuration updated successfully!")
             return redirect('borrowing_labcoord_borrowconfig')
