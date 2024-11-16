@@ -124,7 +124,7 @@
                               <tr>
                                   <th>Item Name</th>
                                   <th>Add Equipment</th>
-                                  <th>Available Qty</th>
+                                  <!-- <th>Available Qty</th> -->
                                   {% for item in items %}
                                       {% if forloop.first and item.add_cols %}
                                           {% for key, value in item.add_cols.items %}
@@ -145,7 +145,7 @@
                                                   data-item-id="{{ item.item_id }}" 
                                                   data-available-qty="{{ item.total_qty }}">Add</button>
                                       </td>
-                                      <td>{{ item.total_qty }}</td> <!-- Display Available Quantity -->
+                                      <!-- <td>{{ item.total_qty }}</td> Display Available Quantity -->
                                       {% if item.add_cols %}
                                           {% for key, value in item.add_cols.items %}
                                               <td>{{ value }}</td>  <!-- Display the value for each key in add_cols -->

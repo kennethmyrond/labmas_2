@@ -11,4 +11,4 @@ while True:
     print(sl)
     
     # Sleep for 1 hour (3600 seconds)
-    time.sleep(10)
+    time.sleep(3600)

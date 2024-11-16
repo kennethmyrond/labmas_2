@@ -77,7 +77,7 @@
                     <td>
                       <ul>
                         {% for item in request.borrowed_items_set.all %}
-                        <li>{{ item.item.item_name }} (×{{ item.qty }})</li>
+                        <li>{{ item.item.item_name }} - {{ item.qty }}{{item.unit}}</li>
                         {% endfor %}
                       </ul>
                     </td>
@@ -121,10 +121,10 @@
                   <tr>
                     <td><a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
                     <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
-                    <td>
+                    <td style="text-align: left;">
                       <ul>
                         {% for item in request.borrowed_items_set.all %}
-                        <li>{{ item.item.item_name }} (×{{ item.qty }})</li>
+                        <li>{{ item.item.item_name }} - {{ item.qty }}{{item.unit}}</li>
                         {% endfor %}
                       </ul>
                     </td>
@@ -170,10 +170,10 @@
                   <tr>
                     <td><a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
                     <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
-                    <td>
+                    <td style="text-align: left;">
                       <ul>
                         {% for item in request.borrowed_items_set.all %}
-                        <li>{{ item.item.item_name }} (×{{ item.qty }})</li>
+                        <li>{{ item.item.item_name }} - {{ item.qty }}{{item.unit}}</li>
                         {% endfor %}
                       </ul>
                     </td>
@@ -218,7 +218,7 @@
                     <td>
                       <ul>
                         {% for item in request.borrowed_items_set.all %}
-                        <li>{{ item.item.item_name }} (×{{ item.qty }})</li>
+                        <li>{{ item.item.item_name }} - {{ item.qty }}{{item.unit}}</li>
                         {% endfor %}
                       </ul>
                     </td>
@@ -233,7 +233,7 @@
     </section>
   </div>
 
-    <!-- Cancelled Borrows Tab -->
+    <!-- Borrowed Borrows Tab -->
     <div class="tab-pane fade" id="borrowed" role="tabpanel">
       <section class="section">
         <div class="row">
@@ -259,7 +259,7 @@
                       <td>
                         <ul class="items_list" >
                           {% for item in request.borrowed_items_set.all %}
-                          <li >{{ item.item.item_name }} (×{{ item.qty }})</li>
+                          <li >{{ item.item.item_name }} - {{ item.qty }}{{item.unit}}</li>
                           {% endfor %}
                         </ul>
                       </td>
@@ -303,7 +303,7 @@
                     <td>
                       <ul>
                         {% for item in request.borrowed_items_set.all %}
-                        <li>{{ item.item.item_name }} (×{{ item.qty }})</li>
+                        <li>{{ item.item.item_name }} - {{ item.qty }}{{item.unit}}</li>
                         {% endfor %}
                       </ul>
                     </td>

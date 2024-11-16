@@ -1874,9 +1874,9 @@ def borrowing_labcoord_borrowconfig(request):
     lab, created = borrowing_config.objects.get_or_create(laboratory_id=selected_laboratory_id)
 
     # Annotate each item type to check if all items under it are borrowable
-    for type in item_types_list:
-        type.all_items_borrowable = item_description.objects.filter(itemType_id=type.itemType_id, allow_borrow=False).count() == 0
-        type.all_items_consumable = item_description.objects.filter(itemType_id=type.itemType_id, is_consumable=False).count() == 0
+    # for type in item_types_list:
+    #     type.all_items_borrowable = item_description.objects.filter(itemType_id=type.itemType_id, allow_borrow=False).count() == 0
+    #     type.all_items_consumable = item_description.objects.filter(itemType_id=type.itemType_id, is_consumable=False).count() == 0
 
     if request.method == 'POST':
         if 'lab_config_form' in request.POST:
@@ -1934,9 +1934,9 @@ def borrowing_labcoord_borrowconfig(request):
                         # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
                         if str(type.itemType_id) in allowed_item_types:
                             item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=True)
-                        else:
-                            # If unchecked, ensure items under this type are set to allow_borrow=False and is_consumable=False
-                            item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=False)
+                        # else:
+                        #     # If unchecked, ensure items under this type are set to allow_borrow=False and is_consumable=False
+                        #     item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=False)
                 
                 if is_consumable_type_list:
                     item_description.objects.filter(itemType_id__in=is_consumable_type_list).update(is_consumable=True)
@@ -1944,8 +1944,8 @@ def borrowing_labcoord_borrowconfig(request):
                         # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
                         if str(type.itemType_id) in is_consumable_type_list:
                             item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=True)
-                        else:
-                            item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=False)
+                        # else:
+                        #     item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=False)
                     
             messages.success(request, "Borrowing configuration updated successfully!")
             return redirect('borrowing_labcoord_borrowconfig')
@@ -3335,6 +3335,56 @@ def inventory_reports(request):
     
     items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
 
+    selected_laboratory_id = request.session.get('selected_lab')
+    current_date = date.today()
+    supplier_filter_type = request.GET.get('supplier_reports_filter', 'this_week')
+    supplier_item_id = request.GET.get('item_id')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # Define the date range based on the filter selected
+    # if supplier_filter_type == 'today':
+    #     start_date = end_date = current_date
+    # elif supplier_filter_type == 'this_week':
+    #     start_date = current_date - timedelta(days=current_date.weekday())  # Start of the week
+    #     end_date = current_date
+    # elif supplier_filter_type == 'this_month':
+    #     start_date = current_date.replace(day=1)  # Start of the month
+    #     end_date = current_date
+    # elif supplier_filter_type == 'this_year':
+    #     start_date = current_date.replace(month=1, day=1)  # Start of the year
+    #     end_date = current_date
+    # elif supplier_filter_type == 'custom' and start_date and end_date:
+    #     start_date = timezone.datetime.strptime(start_date, "%Y-%m-%d").date()
+    #     end_date = timezone.datetime.strptime(end_date, "%Y-%m-%d").date()
+    # else:
+    #     # Default to last 7 days if no filter selected
+    #     start_date = current_date - timedelta(days=7)
+    #     end_date = current_date
+
+    # Filter supplier data based on the selected item and date range
+    supplier_data = []
+    if supplier_item_id:
+        inventory_items = item_inventory.objects.filter(item_id=supplier_item_id)
+        for inventory in inventory_items:
+            # Filter based on date range
+            first_handling = item_handling.objects.filter(inventory_item=inventory, timestamp__date__range=calculate_date_range(request, supplier_filter_type)).order_by('timestamp').first()
+            expiration_date = item_expirations.objects.filter(inventory_item=inventory).first()
+            duration = (inventory.date_received - inventory.date_purchased).days if inventory.date_purchased and inventory.date_received else 'N/A'
+            
+            if first_handling:
+                supplier_data.append({
+                    'supplier_name': inventory.supplier.supplier_name if inventory.supplier else 'N/A',
+                    'inventory_item_id': inventory.inventory_item_id,
+                    'timestamp': first_handling.timestamp,
+                    'date_purchased': inventory.date_purchased,
+                    'date_received': inventory.date_received,
+                    'duration': duration,
+                    'qty': first_handling.qty,
+                    'purchase_price': inventory.purchase_price,
+                    'expiration': expiration_date.expired_date if expiration_date else 'None'
+                })
+
     context = {
         'inventory_qty_data': inventory_qty_data,
         'item_types_list': item_types_list,
@@ -3351,7 +3401,11 @@ def inventory_reports(request):
         'reports_filter_display': filter_type.replace('_', ' ').title(),
         'expired_items_qty': expired_items_qty,
 
-        
+        'supplier_data': supplier_data,
+        'supplier_item_id': supplier_item_id,
+        'start_date': start_date,
+        'end_date': end_date,
+        'filter_type': supplier_filter_type,
     }
 
     return render(request, 'mod_reports/inventory_reports.html', context)
@@ -3711,8 +3765,8 @@ def labres_reports(request):
 
         'room_data': room_data,
         'filter_type': room_filter_type,
-        'start_date': room_start_date,
-        'end_date': room_end_date,
+        'room_start_date': room_start_date,
+        'room_end_date': room_end_date,
     }
 
     # If AJAX request, return JSON response for dynamic filter update

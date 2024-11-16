@@ -97,7 +97,7 @@
         <div class="card-body">
             <h5 class="card-title">Current Items Inventory </h5>
 
-            <div id="inventory_chart"></div>
+            <!-- <div id="inventory_chart"></div> -->
             <script>
                 document.addEventListener("DOMContentLoaded", function () {
                     const today = new Date().toISOString().split('T')[0];
@@ -220,7 +220,7 @@
                 <label for="item_type" class="col-sm-2 col-form-label">Select Item Type:</label>
                 <div class="col-sm-10">
                   <select class="form-select" id="itemTypeSelect">
-                    <option value="">--Select Item Type--</option>
+                    <option value="">--Select Item Type to generate report--</option>
                     {% for item_type in item_types_list %}
                         <option value="{{ item_type.itemType_id }}">{{ item_type.itemType_name }}</option>
                     {% endfor %}
@@ -228,7 +228,9 @@
                 </div>
             </div>
 
-            <div id="inventoryTableContainer"></div>
+            <div id="inventoryTableContainer">
+               
+            </div>
         </div>
     </div>
 
@@ -379,7 +381,141 @@
             });
         });
     </script>
-        
+    
+
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">Item's Supplier Reports</h2>
+    
+                <form method="get" action="" class="form-inline mb-3">
+                    <label for="item_id" class="mr-2">Select Item:</label>
+                    <!-- <select name="item_id" id="item_id" class="form-control mr-2 mt-4">
+                        <option value="">Select Item</option>
+                        {% for item in items %}
+                        <option value="{{ item.item_id }}" {% if selected_item_id == item.item_id %}selected{% endif %}>{{ item.item_name }}</option>
+                        {% endfor %}
+                    </select> -->
+
+                    <select class="form-control" id="item_id" name="item_id">
+                        <option value="">--Select Item--</option>
+                        {% for item in items %}
+                            <option value="{{ item.item_id }}" {% if item.item_id == supplier_item_id %}selected{% endif %}>{{ item.item_name }}</option>
+                        {% endfor %}
+                    </select>
+    
+                    <label for="supplier_reports_filter" class="mr-2">Date Filter:</label>
+                <select name="supplier_reports_filter" id="supplier_reports_filter" class="form-control mr-2">
+                    <option value="today" {% if filter_type == 'today' %}selected{% endif %}>Today</option>
+                    <option value="this_week" {% if filter_type == 'this_week' %}selected{% endif %}>This Week</option>
+                    <option value="this_month" {% if filter_type == 'this_month' %}selected{% endif %}>This Month</option>
+                    <option value="this_year" {% if filter_type == 'this_year' %}selected{% endif %}>This Year</option>
+                    <option value="custom" {% if filter_type == 'custom' %}selected{% endif %}>Custom</option>
+                </select>
+
+                <div id="custom-date-range" style="display: none;">
+                    <label for="start_date" class="mr-2">Start Date:</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control mr-2" value="{{ start_date }}">
+                    <label for="end_date" class="mr-2">End Date:</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control mr-2" value="{{ end_date }}">
+                </div>
+                
+                <button type="submit" class="btn btn-primary mt-4">Apply Filter</button>
+                </form>
+    
+                <table class="table supplier-datatable table-striped">
+                    <thead>
+                        <tr>
+                            <th>Supplier Name</th>
+                            <th>Inventory Item ID</th>
+                            <th>Timestamp</th>
+                            <th>Date Purchased</th>
+                            <th>Date Received</th>
+                            <th>Duration (days)</th>
+                            <th>Quantity</th>
+                            <th>Purchase Price</th>
+                            <th>Expiration Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in supplier_data %}
+                        <tr>
+                            <td>{{ record.supplier_name }}</td>
+                            <td>{{ record.inventory_item_id }}</td>
+                            <td>{{ record.timestamp|date:"Y/m/d H:i:s" }}</td>
+                            <td>{{ record.date_purchased|date:"Y/m/d" }}</td>
+                            <td>{{ record.date_received|date:"Y/m/d" }}</td>
+                            <td>{{ record.duration }}</td>
+                            <td>{{ record.qty }}</td>
+                            <td>₱{{ record.purchase_price|floatformat:2 }}</td>
+                            <td>{{ record.expiration|date:"Y/m/d" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize select2 for item and supplier fields
+            $('#item_id').select2({
+                ajax: {
+                    url: '/suggest_items/',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            query: params.term // Search term
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.map(function(item) {
+                                return {
+                                    id: item.item_id,
+                                    text: `${item.item_name} | ${item.add_cols}`
+                                };
+                            })
+                        };
+                    },
+                    placeholder: 'Search for an item',
+                    minimumInputLength: 2
+                }
+            });
+
+            // Show/hide custom date range inputs based on filter type
+            $('#filter_type').change(function() {
+                if ($(this).val() === 'custom') {
+                    $('#custom-date-range').show();
+                } else {
+                    $('#custom-date-range').hide();
+                }
+            });
+            $('#filter_type').trigger('change');  // Trigger change event on page load to set initial state
+    
+            // Initialize DataTable with custom export filename
+            new DataTable('.supplier-datatable', {
+                layout: {
+                    bottomStart: {
+                        buttons: [
+                            {
+                                extend: 'excelHtml5',
+                                title: '{{ selected_lab_name }}_{{ item.item_name }}_SupplierReport_{{ start_date }}_to_{{ end_date }}'
+                            },
+                            {
+                                extend: 'pdfHtml5',
+                                title: '{{ selected_lab_name }}_{{ item.item_name}}_SupplierReport_{{ start_date }}_to_{{ end_date }}'
+                            },
+                            'copy', 'colvis'
+                        ]
+                    }
+                }
+            });
+        });
+    </script>
+    
         
 
 {% endblock %}

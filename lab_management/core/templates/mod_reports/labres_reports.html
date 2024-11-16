@@ -12,10 +12,10 @@
 
 <div class="container">
     
-    <div class="row">
+    <div class="row d-flex">
         <!-- Total Number of Rooms Card -->
-        <div class="col">
-            <div class="card">
+        <div class="col d-flex">
+            <div class="card flex-fill">
                 <div class="card-body">
                     <h5 class="card-title">Total Number of Rooms</h5>
                     <div class="d-flex align-items-center">
@@ -31,9 +31,9 @@
             </div>
         </div>
         
-        <!-- Total Number of Rooms Card -->
-        <div class="col">
-            <div class="card">
+        <!-- Reservable Rooms Card -->
+        <div class="col d-flex">
+            <div class="card flex-fill">
                 <div class="card-body">
                     <h5 class="card-title">Reservable Rooms</h5>
                     <div class="d-flex align-items-center">
@@ -50,8 +50,8 @@
         </div>
     
         <!-- Total Laboratory Reservations with Filter -->
-        <div class="col">
-            <div class="card">
+        <div class="col d-flex">
+            <div class="card flex-fill">
                 <div class="card-body">
                     <div class="filter">
                         <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
@@ -115,14 +115,14 @@
     <div class="row">
         <div class="card">
             <div class="card-body">
-                <div class="filter">
+                <!-- <div class="filter">
                     <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                         <li class="dropdown-header text-start"><h6>Show in </h6></li>
                         <li><a class="dropdown-item filter-option" href="#" data-filter="today">Table</a></li>
                         <li><a class="dropdown-item filter-option" href="#" data-filter="this_week">Graph</a></li>
                     </ul>
-                </div>
+                </div> -->
                 <h2 class="card-title">Room Reservation Summary</h2>
                 
                 <form method="get" action="" class="form-inline mb-3">
@@ -136,14 +136,14 @@
                     </select>
                     <div id="room-custom-date-range" class="form-inline mt-3" style="display: none;">
                         <label for="start_date" class="mr-2">Start Date:</label>
-                        <input type="date" name="start_date" id="start_date" class="form-control mr-2" value="{{ start_date }}">
+                        <input type="date" name="start_date" id="start_date" class="form-control mr-2" value="{{ room_start_date }}">
                         <label for="end_date" class="mr-2">End Date:</label>
-                        <input type="date" name="end_date" id="end_date" class="form-control mr-2" value="{{ end_date }}">
+                        <input type="date" name="end_date" id="end_date" class="form-control mr-2" value="{{ room_end_date }}">
                     </div>
                     <button type="submit" class="btn btn-primary mt-2">Apply Filter</button>
                 </form>
                 <hr>
-                <p><strong>Date Range: {{ start_date }} to {{ end_date }}</strong></p>
+                <p><strong>Date Range: {{ room_start_date }} to {{ room_end_date }}</strong></p>
                 <table class="table room-datatable table-striped">
                     <thead>
                         <tr>
