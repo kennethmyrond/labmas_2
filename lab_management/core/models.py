@@ -197,6 +197,7 @@ class item_description(models.Model):
     is_disabled = models.BooleanField(default=False)
     allow_borrow = models.BooleanField(default=False)
     is_consumable = models.BooleanField(default=False)
+    rec_per_inv = models.BooleanField(default=False)
     qty_limit = models.IntegerField(null=True, blank=True) #for the borrowing_config, to set qty limit to each item.
     
     def save(self, *args, **kwargs):

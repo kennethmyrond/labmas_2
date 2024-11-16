@@ -134,8 +134,8 @@
                               <th>Item Type</th>
                               <th>Allow Borrowing?</th>
                               <th>Is Consumable?</th>
-                              <th>Current Quantity</th>
                               <th>Quantity Limit</th>
+                              <th>Current Quantity</th>
                           </tr>
                       </thead>
                       <tbody>
@@ -151,7 +151,6 @@
                                   <input type="checkbox" name="is_consumable" value="{{ item.item_id }}" 
                                          {% if item.is_consumable %}checked{% endif %}>
                               </td>
-                              <td>{{ item.current_quantity }}</td>
                               <td>
                                 <div class="input-group">
                                     <input type="number" name="qty_limit_{{ item.item_id }}" value="{{ item.qty_limit }}" 
@@ -159,6 +158,7 @@
                                     <button type="button" class="btn btn-danger reset-qty-limit" data-item-id="{{ item.item_id }}">Reset</button>
                                 </div>
                             </td>
+                            <td>{{ item.current_quantity }}</td>
                           </tr>
                           {% endfor %}
                       </tbody>
