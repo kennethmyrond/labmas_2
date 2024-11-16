@@ -1892,29 +1892,17 @@ def borrowing_labcoord_borrowconfig(request):
         elif 'borrow_config_form' in request.POST:
             # allowed_items = request.POST.getlist('borrow_item')  # Items explicitly checked
             # is_consumable_list = request.POST.getlist('is_consumable')
-
-
-            # selected_laboratory_id = request.session.get('selected_lab')
-            # items_to_update = item_description.objects.all()
-            # updated_count = items_to_update.update(allow_borrow=False, is_consumable=False)
-
-            # Debugging output
-            print("Borrow config form submitted")
             
             # Update logic
             selected_laboratory_id = request.session.get('selected_lab')
             items_to_update = item_description.objects.filter(laboratory_id=selected_laboratory_id)
+            updated_count = items_to_update.update(allow_borrow=1, is_consumable=0)
 
-            # Print the items that will be updated
-            for item in items_to_update:
-                print(f"Item ID: {item.item_id}, Allow Borrow: {item.allow_borrow}, Is Consumable: {item.is_consumable}")
-
-            # Now perform the update
-            updated_count = items_to_update.update(allow_borrow=0, is_consumable=1)
+            # Re-fetch the items from the database
+            items_to_update = item_description.objects.filter(laboratory_id=selected_laboratory_id)
 
             for item in items_to_update:
                 print(f"Item ID: {item.item_id}, Allow Borrow: {item.allow_borrow}, Is Consumable: {item.is_consumable}")
-            print('Updated count:', updated_count)
 
             # Check if the update was successful
             if updated_count > 0:
