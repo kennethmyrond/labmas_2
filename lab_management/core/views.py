@@ -1577,7 +1577,7 @@ def borrowing_student_walkinview(request):
                     error_message = f'Item with ID {item_id} is not available for borrowing.'
                     break
             # Check if requested quantity exceeds the qty_limit of the item
-                if quantity > item.qty_limit:
+                if item.qty_limit is not None and quantity > item.qty_limit:
                     error_message = f'Quantity requested for {item.item_name} exceeds the available limit ({item.qty_limit}).'
                     break
             except (ValueError, IndexError) as e:
