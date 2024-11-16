@@ -33,12 +33,10 @@
   </div><!-- End Page Title -->
 
   {% if messages %}
-  <div class="alert alert-success">
-    {% for message in messages %}
-      {{ message }}
-    {% endfor %}
-  </div>
-  {% endif %}
+  {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+{% endif %}
 
   <section class="section">
     <div class="row">
@@ -134,7 +132,7 @@
                               <th>Item Type</th>
                               <th>Allow Borrowing?</th>
                               <th>Is Consumable?</th>
-                              <th>Quantity Limit</th>
+                              <th>Quantity Limit (Per Borrow)</th>
                               <th>Current Quantity</th>
                           </tr>
                       </thead>

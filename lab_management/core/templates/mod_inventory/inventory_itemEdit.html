@@ -49,6 +49,11 @@
                             <input class="form-check-input" type="checkbox" id="recExpiration" name="rec_expiration" {% if item.rec_expiration %}checked{% endif %}>
                             <label class="form-check-label" for="recExpiration">Requires Expiration Date</label>
                         </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="rec_per_inv" name="rec_per_inv" {% if item.rec_per_inv %}checked{% endif %}>
+                            <label class="form-check-label" for="rec_per_inv">Record Per Batch/Inventory</label>
+                        </div>
                     
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="disableAlertQty" name="disable_alert_qty" {% if is_alert_disabled %}checked{% endif %} onchange="toggleAlertQtyField()">

@@ -98,8 +98,6 @@ class laboratory_permissions(models.Model):
     def __str__(self):
         return f"{self.role} - {self.laboratory}"
 
-
-
 class UserManager(BaseUserManager):
     def create_user(self, email, firstname, lastname, password=None, **extra_fields):
         if not email:
@@ -119,7 +117,7 @@ class user(AbstractBaseUser):
     user_id = models.CharField(max_length=20, unique=True, primary_key=True)
     firstname = models.CharField(max_length=45)
     lastname = models.CharField(max_length=45)
-    username = models.CharField(max_length=45, unique=True)
+    username = models.CharField(max_length=45, null=True, blank=True)
     email = models.EmailField(unique=True)
     personal_id = models.CharField(max_length=45, null=True, blank=True)
     date_joined = models.DateTimeField(auto_now_add=True)

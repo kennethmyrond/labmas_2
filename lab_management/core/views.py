@@ -112,11 +112,12 @@ def get_inventory_history(item_description_instance):
 
 def check_item_expiration(request, item_id):
     # Get the item_description instance by item_id
+    print(item_id)
     item = get_object_or_404(item_description, item_id=item_id)
-    
     # Return JSON response with rec_expiration value
     return JsonResponse({
-        'rec_expiration': item.rec_expiration
+        'rec_expiration': item.rec_expiration,
+        'rec_per_inv': item.rec_per_inv
     })
 
 def suggest_items(request):
@@ -685,6 +686,7 @@ def inventory_addNewItem_view(request):
         item_type_id = request.POST.get('item_type')
         rec_expiration = request.POST.get('rec_expiration') == 'on'
         alert_qty = request.POST.get('alert_qty')
+        rec_per_inv = request.POST.get('rec_per_inv') == 'on'
 
         # Dynamic fields from additional columns (based on the selected item_type)
         item_type = item_types.objects.get(itemType_id=item_type_id)
@@ -708,6 +710,7 @@ def inventory_addNewItem_view(request):
             add_cols=add_cols_json,
             alert_qty=alert_qty,
             rec_expiration = rec_expiration,
+            rec_per_inv=rec_per_inv
         )
         new_item.save()
 
@@ -790,7 +793,7 @@ def inventory_updateItem_view(request):
                 qty_damaged = int(request.POST.get('quantity_damaged', 0))
 
             quantity = qty_remove if action_type == 'remove' else qty_damaged
-            if item_instance.rec_expiration and inventory_item_id:
+            if inventory_item_id:
                 # Fetch specific inventory item for expiration-controlled items
                 inventory_item = get_object_or_404(item_inventory, inventory_item_id=inventory_item_id)
                 if quantity > inventory_item.qty:
@@ -874,6 +877,7 @@ def inventory_itemEdit_view(request, item_id):
         # Handle additional form fields (rec_expiration, alert_qty)
         rec_expiration = request.POST.get('rec_expiration', 'off') == 'on'
         alert_qty_disabled = request.POST.get('disable_alert_qty', 'off') == 'on'
+        rec_per_inv = request.POST.get('rec_per_inv', 'off') == 'on'
 
         if form.is_valid():
             # Save the main form fields including itemType
@@ -894,12 +898,13 @@ def inventory_itemEdit_view(request, item_id):
             item.add_cols = json.dumps(updated_add_cols)
 
             # Handle rec_expiration and alert_qty logic
+            item.rec_per_inv = rec_per_inv
             item.rec_expiration = rec_expiration
             if alert_qty_disabled:
                 item.alert_qty = 0
             else:
                 item.alert_qty = request.POST.get('alert_qty', item.alert_qty)
-
+            
             # Save the updated item
             item.save()
 
@@ -1865,7 +1870,8 @@ def borrowing_labcoord_borrowconfig(request):
         items_with_qty.append(item)
 
     item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
-    lab = get_object_or_404(borrowing_config, laboratory_id=selected_laboratory_id)
+    
+    lab, created = borrowing_config.objects.get_or_create(laboratory_id=selected_laboratory_id)
 
     # Annotate each item type to check if all items under it are borrowable
     for type in item_types_list:
@@ -1884,40 +1890,68 @@ def borrowing_labcoord_borrowconfig(request):
             return redirect('borrowing_labcoord_borrowconfig')
 
         elif 'borrow_config_form' in request.POST:
-            allowed_items = request.POST.getlist('borrow_item')  # Items explicitly checked
-            allowed_item_types = request.POST.getlist('borrow_item_type')  # Item types explicitly checked
+            # allowed_items = request.POST.getlist('borrow_item')  # Items explicitly checked
+            # is_consumable_list = request.POST.getlist('is_consumable')
 
-            is_consumable_list = request.POST.getlist('is_consumable')
-            is_consumable_type_list = request.POST.getlist('is_consumable_type')
 
-            item_description.objects.filter(laboratory_id=selected_laboratory_id).update(allow_borrow=False, is_consumable=False)
+            # selected_laboratory_id = request.session.get('selected_lab')
+            # items_to_update = item_description.objects.all()
+            # updated_count = items_to_update.update(allow_borrow=False, is_consumable=False)
+
+            # Debugging output
+            print("Borrow config form submitted")
+            
+            # Update logic
+            selected_laboratory_id = request.session.get('selected_lab')
+            items_to_update = item_description.objects.filter(laboratory_id=selected_laboratory_id)
+
+            # Print the items that will be updated
+            for item in items_to_update:
+                print(f"Item ID: {item.item_id}, Allow Borrow: {item.allow_borrow}, Is Consumable: {item.is_consumable}")
+
+            # Now perform the update
+            updated_count = items_to_update.update(allow_borrow=0, is_consumable=1)
+
+            for item in items_to_update:
+                print(f"Item ID: {item.item_id}, Allow Borrow: {item.allow_borrow}, Is Consumable: {item.is_consumable}")
+            print('Updated count:', updated_count)
+
+            # Check if the update was successful
+            if updated_count > 0:
+                messages.success(request, "Borrowing configuration updated successfully!")
+            else:
+                messages.warning(request, "No items were updated. Please check the laboratory ID or item conditions.")
+
+
+            # allowed_item_types = request.POST.getlist('borrow_item_type')  # Item types explicitly checked
+            # is_consumable_type_list = request.POST.getlist('is_consumable_type')
 
             # Handle individual items: Set allow_borrow=True and is_consumable=True for explicitly checked items
-            if allowed_items:
-                item_description.objects.filter(item_id__in=allowed_items).update(allow_borrow=True)
+            # if allowed_items:
+            #     item_description.objects.filter(item_id__in=allowed_items).update(allow_borrow=True)
             
-            if is_consumable_list:
-                item_description.objects.filter(item_id__in=is_consumable_list).update(is_consumable=True)
+            # if is_consumable_list:
+            #     item_description.objects.filter(item_id__in=is_consumable_list).update(is_consumable=True)
 
-            # Handle item types: Set allow_borrow=True for all items under the checked item types
-            if allowed_item_types:
-                item_description.objects.filter(itemType_id__in=allowed_item_types).update(allow_borrow=True)
-                for type in item_types_list:
-                    # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
-                    if str(type.itemType_id) in allowed_item_types:
-                        item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=True)
-                    else:
-                        # If unchecked, ensure items under this type are set to allow_borrow=False and is_consumable=False
-                        item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=False)
+            # # Handle item types: Set allow_borrow=True for all items under the checked item types
+            # if allowed_item_types:
+            #     item_description.objects.filter(itemType_id__in=allowed_item_types).update(allow_borrow=True)
+            #     for type in item_types_list:
+            #         # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
+            #         if str(type.itemType_id) in allowed_item_types:
+            #             item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=True)
+            #         else:
+            #             # If unchecked, ensure items under this type are set to allow_borrow=False and is_consumable=False
+            #             item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=False)
             
-            if is_consumable_type_list:
-                item_description.objects.filter(itemType_id__in=is_consumable_type_list).update(is_consumable=False)
-                for type in item_types_list:
-                    # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
-                    if str(type.itemType_id) in is_consumable_type_list:
-                        item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=True)
-                    else:
-                        item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=False)
+            # if is_consumable_type_list:
+            #     item_description.objects.filter(itemType_id__in=is_consumable_type_list).update(is_consumable=False)
+            #     for type in item_types_list:
+            #         # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
+            #         if str(type.itemType_id) in is_consumable_type_list:
+            #             item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=True)
+            #         else:
+            #             item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=False)
 
            # Validate and update qty_limit for each item
             for item in items:

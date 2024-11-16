@@ -419,7 +419,7 @@
         url: `/check_item_expiration/${itemId}/`,
         method: 'GET',
         success: function(response) {
-            if (response.rec_expiration) {
+            if (response.rec_expiration || response.rec_per_inv) {
                 if (actionType === 'remove' || actionType === 'report') {
                     $('#inventoryItemIDSection').show();
 
@@ -430,10 +430,14 @@
                         success: function(data) {
                             const inventoryDropdown = $('#inventoryItemID');
                             inventoryDropdown.empty();  // Clear existing options
-
+                            let formattedText;
                             data.forEach(item => {
                                 // Format: <inventory_item_id> \ exp:<expiration_date> , qty: <qty>
-                                const formattedText = `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`;
+                                if(item.expiration_date !== 'None'){
+                                    formattedText = `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`;
+                                }else{
+                                    formattedText = `${item.inventory_item_id} | qty: ${item.qty}`;
+                                }
                                 inventoryDropdown.append(new Option(formattedText, item.inventory_item_id));
                             });
 
