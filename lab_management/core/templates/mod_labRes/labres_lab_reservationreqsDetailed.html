@@ -86,8 +86,9 @@
 
           <form method="POST">
             {% csrf_token %}
-            <button type="submit" name="action" value="accept" class="btn btn-success">Accept</button>
-            <button type="submit" name="action" value="delete" class="btn btn-danger">Decline</button>
+            
+            <button type="submit" name="action" value="accept" class="btn btn-success" {% if reservation.status == 'R' %}disabled{% endif %}>Accept</button>
+            <button type="submit" name="action" value="delete" class="btn btn-danger" {% if reservation.status == 'R' %}disabled{% endif %}>Decline</button>
           </form>
 
         </div>

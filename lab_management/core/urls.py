@@ -35,8 +35,6 @@ urlpatterns = [
     path('inventory/physicalCount/', views.inventory_physicalCount_view, name='inventory_physicalCount'),  # Added trailing slash
     path('inventory/config/', views.inventory_config_view, name='inventory_config'),
     path('check_item_expiration/<int:item_id>/', views.check_item_expiration, name='check_item_expiration'),
-    path('suggest_items/', views.suggest_items, name='suggest_items'),
-    path('suggest_suppliers/', views.suggest_suppliers, name='suggest_suppliers'),
     path('inventory/manageSuppliers/', views.inventory_manageSuppliers_view, name='inventory_manageSuppliers'),
     path('inventory/supplierDetails/<int:supplier_id>/', views.inventory_supplierDetails_view, name='inventory_supplierDetails'),
     path('inventory_config/', views.inventory_config_view, name='inventory_config'),
@@ -45,6 +43,11 @@ urlpatterns = [
     path('delete_category/<int:category_id>/', views.delete_category, name='delete_category'),
     path('delete_attribute/<int:category_id>/<str:attribute_name>/', views.delete_attribute, name='delete_attribute'),
     path('get_fixed_choices/<int:category_id>/', views.get_fixed_choices, name='get_fixed_choices'),
+
+    # ajax select2
+    path('suggest_items/', views.suggest_items, name='suggest_items'),
+    path('suggest_suppliers/', views.suggest_suppliers, name='suggest_suppliers'),
+    path('suggest_inventory_items/<str:item_id>/', views.suggest_inventory_items, name='suggest_inventory_items'),
 
     # New URL for fetching add_cols
     path('get_add_cols/<int:category_id>/', views.get_add_cols, name='get_add_cols'),
@@ -73,7 +76,7 @@ urlpatterns = [
     # clearance
     path('clearance/', views.clearance_view, name='clearance'),
     path('clearance/student/view_clearance', views.clearance_student_viewClearance, name='clearance_student_viewClearance'),
-    path('clearance/student/view_clearance_detailed/<int:borrow_id>/', views.clearance_student_viewClearanceDetailed, name='clearance_student_viewClearanceDetailed'), 
+    path('clearance/student/view_clearance_detailed/<int:report_id>/', views.clearance_student_viewClearanceDetailed, name='clearance_student_viewClearanceDetailed'), 
     path('clearance/labtech/view_clearance', views.clearance_labtech_viewclearance, name='clearance_labtech_viewclearance'), 
     path('clearance/labtech/view_clearance_detailed/<int:report_id>/', views.clearance_labtech_viewclearanceDetailed, name='clearance_labtech_viewclearanceDetailed'),
     path('suggest_report_users/', views.suggest_report_users, name='suggest_report_users'),

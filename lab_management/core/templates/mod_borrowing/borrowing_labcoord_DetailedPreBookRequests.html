@@ -1,7 +1,7 @@
 {% extends 'temp_navbar.html' %}
 {% load socialaccount %}
 {% load custom_filters %}
-{% block title %}Detailed Pre-Book Request{% endblock %}
+{% block title %}Borrowing Request Details{% endblock %}
 
 {% block content %}
 <div class="pagetitle">
@@ -56,7 +56,7 @@
                   {% endif %}
 
                   <!-- Hidden field to track if edit button was clicked -->
-                  <form method="POST">
+                  <form method="POST" id="borrowRequestForm">
                       {% csrf_token %}
                       <input type="hidden" id="edited" name="edited" value="0">
                       <table class="table datatable">
@@ -90,31 +90,36 @@
                       {% endif %}
 
                       <!-- Accept Modal -->
-                      <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
-                          <div class="modal-dialog">
-                              <div class="modal-content">
-                                  <div class="modal-header">
-                                      <h5 class="modal-title" id="acceptModalLabel">Confirm Approval</h5>
-                                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                  </div>
-                                  <div class="modal-body">
-                                      <!-- Show edit reason field if quantities were changed -->
-                                      <div id="cofirm message">
-                                        <p>Confirm approval of borrow request</p>
-                                      </div>
-                                      <div id="editReasonContainer" class="d-none">
-                                          <label for="edit_reason">Reason for Quantity Update:</label>
-                                          <textarea name="edit_reason" id="edit_reason" class="form-control" placeholder="Enter reason for quantity edits" required></textarea>
-                                      </div>
-                                  </div>
-                                  <div class="modal-footer">
-                                      <button type="submit" name="action" value="accept" class="btn btn-success">Accept Request</button>
-                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
+                    <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="acceptModalLabel">Confirm Approval</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <!-- Show edit reason field if quantities were changed -->
+                                    <div id="confirm-message">
+                                    <p>Confirm approval of borrow request</p>
+                                    </div>
+                                    <div id="editReasonContainer" class="d-none">
+                                        <label for="edit_reason">Reason for Quantity Update:</label>
+                                        <textarea name="edit_reason" id="edit_reason" class="form-control" placeholder="Enter reason for quantity edits" required></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <input type="hidden" name ="action" value="accept">
+                                    <button type="button" class="btn btn-success" onclick="submitAcceptForm()">Confirm</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                      
                   </form>
+
+                  
 
                   <!-- Decline Modal -->
                   <div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
@@ -167,6 +172,12 @@
         document.getElementById('edited').value = '0';  // Reset edit flag
     }
 
+    
+    function submitAcceptForm() {
+      const form = document.getElementById('borrowRequestForm');
+      form.submit(); 
+    }
+
     // Display edit reason field only if quantities were edited
     document.getElementById('acceptModal').addEventListener('show.bs.modal', function () {
         const editReasonContainer = document.getElementById('editReasonContainer');
@@ -176,5 +187,6 @@
             editReasonContainer.classList.add('d-none');
         }
     });
+
 </script>
 {% endblock %}

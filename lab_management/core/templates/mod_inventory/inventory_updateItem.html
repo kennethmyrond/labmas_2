@@ -79,15 +79,29 @@
                             </div>
 
                             
+                                <!-- Inventory Item ID Selection
+                                <div id="inventoryItemIDSection" style="display: none;">
+                                    <div class="row mb-3">
+                                        <label for="inventoryItemID" class="col-sm-2 col-form-label">Inventory Item ID:</label>
+                                        <div class="col-sm-10">
+                                            <input type="text" class="form-control" name="inventory_item_id" id="inventoryItemID" placeholder="Enter Inventory Item ID">
+                                        </div>
+                                    </div>
+                                </div> -->
+
                                 <!-- Inventory Item ID Selection -->
-                            <div id="inventoryItemIDSection" style="display: none;">
-                                <div class="row mb-3">
-                                    <label for="inventoryItemID" class="col-sm-2 col-form-label">Inventory Item ID:</label>
-                                    <div class="col-sm-10">
-                                        <input type="text" class="form-control" name="inventory_item_id" id="inventoryItemID" placeholder="Enter Inventory Item ID">
+                                <div id="inventoryItemIDSection" style="display: none;">
+                                    <div class="row mb-3">
+                                        <label for="inventoryItemID" class="col-sm-2 col-form-label">Inventory Item ID:</label>
+                                        <div class="col-sm-10">
+                                            <select class="form-control js-example-basic-single" id="inventoryItemID" name="inventory_item_id">
+                                                <option value="">Select Inventory Item ID</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+
+
                                 <!-- Add to Inventory Fields -->
                                 <div id="addFields">
                                     <div class="row mb-3">
@@ -109,15 +123,17 @@
                                         <label for="inputDatePurchased" class="col-sm-2 col-form-label">Date Purchased:</label>
                                         <div class="col-sm-10">
                                             <input type="date" class="form-control" name="item_date_purchased" required>
+                                            <div id="date_purchased_error" class="error-message"></div>
                                         </div>
-                                        <div id="date_purchased_error" class="error-message"></div>
+                                        
                                     </div>
                                     <div class="row mb-3">
                                         <label for="inputDateReceived" class="col-sm-2 col-form-label">Date Received:</label>
                                         <div class="col-sm-10">
                                             <input type="date" class="form-control" name="item_date_received" required>
+                                            <div id="date_received_error" class="error-message"></div>
                                         </div>
-                                        <div id="date_received_error" class="error-message"></div>
+                                        
                                     </div>
                                     <div class="row mb-3">
                                         <label for="inputText" class="col-sm-2 col-form-label">Unit Price (Peso):</label>
@@ -218,7 +234,65 @@
     </div>
 </div>
 
+<!-- Success Modal for Added Inventory -->
+<div class="modal fade" id="successModal" tabindex="-1" role="dialog" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="successModalLabel">Item Added to Inventory</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success">The item has been successfully added to inventory with Inventory Item ID</div>
+                <h2 style="text-align: center;"><strong id="newInventoryItemId"></strong></h2>
+                <p style="text-align: center;">Please save this Inventory Item ID and attach it to the items stored.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    // check date purchased and received
+    document.addEventListener('DOMContentLoaded', function() {
+        const datePurchasedInput = document.querySelector('input[name="item_date_purchased"]');
+        const dateReceivedInput = document.querySelector('input[name="item_date_received"]');
+        const datePurchasedError = document.getElementById('date_purchased_error');
+        const dateReceivedError = document.getElementById('date_received_error');
+
+        function validateDates() {
+            const datePurchased = new Date(datePurchasedInput.value);
+            const dateReceived = new Date(dateReceivedInput.value);
+            let valid = true;
+
+            // Clear previous error messages
+            datePurchasedError.textContent = '';
+            dateReceivedError.textContent = '';
+
+            // Validate date_purchased
+            if (datePurchasedInput.value && dateReceivedInput.value) {
+                if (datePurchased >= dateReceived) {
+                    datePurchasedError.textContent = 'Date Purchased must be before Date Received.';
+                    valid = false;
+                }
+                if (dateReceived <= datePurchased) {
+                    dateReceivedError.textContent = 'Date Received must be after Date Purchased.';
+                    valid = false;
+                }
+            }
+
+            return valid;
+        }
+
+        // Add event listeners to validate on input change
+        datePurchasedInput.addEventListener('change', validateDates);
+        dateReceivedInput.addEventListener('change', validateDates);
+    });
+
     function validateForm() {
         const datePurchased = document.getElementById('item_date_purchased').value;
         const dateReceived = document.getElementById('item_date_received').value;
@@ -301,39 +375,86 @@
     }
 
     // Function to submit the form after confirmation
+    // function submitForm() {
+    //     $('#confirmationModal').modal('hide');
+    //     $('#updateForm').submit();  // Submit the form
+    // }
     function submitForm() {
-        $('#confirmationModal').modal('hide');
-        $('#updateForm').submit();  // Submit the form
-    }
+    $('#confirmationModal').modal('hide');
+
+    // Submit the form data via AJAX to get the new inventory_item_id
+    $.ajax({
+        type: 'POST',
+        url: '', // Keep this as the current view URL
+        data: $('#updateForm').serialize(),
+        success: function(response) {
+            if (response.success && response.new_inventory_item_id) {
+                // Set the new inventory item ID in the success modal
+                $('#newInventoryItemId').text(response.new_inventory_item_id);
+                // Show the success modal
+                $('#successModal').modal('show');
+            } else {
+                alert('Error adding item to inventory. Please try again.');
+            }
+        },
+        error: function() {
+            alert('There was an error with the request.');
+        }
+    });
+}
+
 
     function checkItemExpiration() {
-        const itemId = $('#itemName').val();  // Get the selected item ID
-        const actionType = document.getElementById('actionType').value;
+    const itemId = $('#itemName').val();
+    const actionType = document.getElementById('actionType').value;
 
-        if (!itemId) {
-            $('#expirationDateRow').hide();
-            $('#inventoryItemIDSection').hide();
-            return;
-        }
-
-        // AJAX call to check if the selected item requires an expiration date
-        $.ajax({
-            url: `/check_item_expiration/${itemId}/`,
-            method: 'GET',
-            success: function(response) {
-                if (response.rec_expiration) {
-                    if(actionType === 'remove' || actionType === 'report'){
-                        $('#inventoryItemIDSection').show();
-                    }else{
-                        $('#expirationDateRow').show();  // Show expiration date field
-                    }
-                } else {
-                    $('#expirationDateRow').hide();  // Hide expiration date field
-                    $('#inventoryItemIDSection').hide();
-                }
-            }
-        });
+    if (!itemId) {
+        $('#expirationDateRow').hide();
+        $('#inventoryItemIDSection').hide();
+        return;
     }
+
+    // AJAX call to check if the item requires expiration and to populate inventory items
+    $.ajax({
+        url: `/check_item_expiration/${itemId}/`,
+        method: 'GET',
+        success: function(response) {
+            if (response.rec_expiration) {
+                if (actionType === 'remove' || actionType === 'report') {
+                    $('#inventoryItemIDSection').show();
+
+                    // Fetch inventory items for the selected item
+                    $.ajax({
+                        url: `/suggest_inventory_items/${itemId}/`,
+                        method: 'GET',
+                        success: function(data) {
+                            const inventoryDropdown = $('#inventoryItemID');
+                            inventoryDropdown.empty();  // Clear existing options
+
+                            data.forEach(item => {
+                                // Format: <inventory_item_id> \ exp:<expiration_date> , qty: <qty>
+                                const formattedText = `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`;
+                                inventoryDropdown.append(new Option(formattedText, item.inventory_item_id));
+                            });
+
+                            // Reinitialize Select2 with updated options
+                            inventoryDropdown.select2({
+                                placeholder: 'Select Inventory Item ID',
+                                allowClear: true,
+                            });
+                        }
+                    });
+                } else {
+                    $('#expirationDateRow').show();
+                }
+            } else {
+                $('#expirationDateRow').hide();
+                $('#inventoryItemIDSection').hide();
+            }
+        }
+    });
+
+}
 
     $('#itemName').on('change', checkItemExpiration);
 
@@ -363,6 +484,11 @@
                 minimumInputLength: 2
             }
         }).on('change', checkItemExpiration);
+
+        $('#inventoryItemID').select2({
+            placeholder: 'Select Inventory Item ID',
+            allowClear: true
+        });
 
         $('#itemSupplier').select2({
             ajax: {

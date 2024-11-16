@@ -52,6 +52,7 @@
 <div class="container card">
     <div class="card-body">
         <h3 class="text-center">LabMas Sign Up</h3>
+        
     <form method="post" novalidate>
         {% csrf_token %}
         {% if messages %}
@@ -90,6 +91,12 @@
             <button type="submit" class="btn btn-primary btn-block">Register</button>
         </div>
     </form>
+        <button onclick="goBack()" type="button" class="btn btn-secondary btn-block">Go Back</button>
+        <script>
+        function goBack() {
+            window.history.back();
+        }
+        </script>
     </div>
 </div>
 

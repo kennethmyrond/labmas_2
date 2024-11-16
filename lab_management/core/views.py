@@ -9,9 +9,10 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear, Abs
-from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField, Max
+from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField, Max, Min
 from django.db import connection, models
 from django.utils import timezone
+from django.utils.dateformat import DateFormat
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from django.urls import reverse
 from django import forms
@@ -149,6 +150,25 @@ def suggest_items(request):
         }
         
         data.append(item_data)
+    return JsonResponse(data, safe=False)
+
+def suggest_inventory_items(request, item_id):
+    # Fetch inventory items associated with the given item_id that have quantity > 0
+    inventory_items = item_inventory.objects.filter(item__item_id=item_id).exclude(qty=0)
+
+    data = []
+    for inventory_item in inventory_items:
+        # Get expiration date if it exists, else set to None
+        expiration = item_expirations.objects.filter(inventory_item=inventory_item).first()
+        expiration_date = DateFormat(expiration.expired_date).format('Y-m-d') if expiration else "None"
+        
+        # Format item data for response
+        data.append({
+            'inventory_item_id': inventory_item.inventory_item_id,
+            'expiration_date': expiration_date,
+            'qty': inventory_item.qty
+        })
+
     return JsonResponse(data, safe=False)
 
 def suggest_suppliers(request):
@@ -527,26 +547,52 @@ def inventory_view(request):
 @login_required
 @lab_permission_required('view_inventory')
 def inventory_itemDetails_view(request, item_id):
-    if not request.user.is_authenticated:
-        return redirect('userlogin')
+    selected_laboratory_id = request.session.get('selected_lab')
+    item = get_object_or_404(item_description, item_id=item_id) # Get the item_description instance
+    add_cols_data = json.loads(item.add_cols) if item.add_cols else {} # Parse add_cols JSON
+    item_inventories = item_inventory.objects.filter(item=item).select_related('supplier')
     
-    # Get the item_description instance
-    item = get_object_or_404(item_description, item_id=item_id)
-
-    # Parse add_cols JSON
-    add_cols_data = json.loads(item.add_cols) if item.add_cols else {}
-
-    # Get the related itemType instance
-    item_type = item.itemType
+    item_type = item.itemType# Get the related itemType instance
     date_today = date.today()
+    lab = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id)
 
-    # Get the related laboratory instance
-    lab = get_object_or_404(laboratory, laboratory_id=item.laboratory_id)
+
+    # Gather expiration data for each inventory item if item records expiration
+    expiration_data = {}
+    if item.rec_expiration:
+        expirations = item_expirations.objects.filter(inventory_item__in=item_inventories)
+        expiration_data = {exp.inventory_item.inventory_item_id: exp.expired_date for exp in expirations}
+
+
+    # inventory items
+    # Initialize the inventory data list
+    inventory_data = []
+
+    # Gather data for each inventory item
+    for inventory in item_inventories:
+        # Get the latest handling record for each inventory item
+        last_handling = inventory.item_handling_set.order_by('-timestamp').first()
+        first_handling = inventory.item_handling_set.order_by('timestamp').first()
+        
+        expiration_date = expiration_data.get(inventory.inventory_item_id, 'None') if item.rec_expiration else 'N/A'
+        last_updated_date = last_handling.timestamp if last_handling else 'N/A'
+        last_updated_by = last_handling.updated_by if last_handling and last_handling.updated_by else 'N/A'
+        date_created = first_handling.timestamp if first_handling else 'N/A'
+
+        # Append data to the inventory_data list
+        inventory_data.append({
+            'inventory_item_id': inventory.inventory_item_id,
+            'current_qty': inventory.qty,
+            'expiration_date': expiration_date,
+            'last_updated_date': last_updated_date,
+            'last_updated_by': last_updated_by,
+            'date_created': date_created
+        })
+
 
     # Prefetch item_handling related to item_inventory, ordered by timestamp in descending order
     item_handling_prefetch = Prefetch('item_handling_set', queryset=item_handling.objects.all().order_by('-timestamp'))
 
-    # Annotate the latest handling timestamp for each inventory item
     item_inventories = item_inventory.objects.filter(item=item)\
         .select_related('supplier')\
         .prefetch_related(item_handling_prefetch)\
@@ -575,7 +621,31 @@ def inventory_itemDetails_view(request, item_id):
             latest_handling = inventory.item_handling_set.first()  # Access related item_handling
             inventory.expiration_date = None
 
-    # Prepare context for rendering
+    # suppliers table
+    supplier_data = []
+    for inventory in item_inventories:
+        first_handling = (
+            item_handling.objects.filter(inventory_item=inventory)
+            .order_by('timestamp')
+            .first()
+        )
+        
+        date_purchased = inventory.date_purchased
+        date_received = inventory.date_received
+        duration = (date_received - date_purchased).days if date_purchased and date_received else None
+        expiration_date = expiration_data.get(inventory.inventory_item_id, 'None')
+
+        supplier_data.append({
+            'inventory_id': inventory.inventory_item_id,
+            'supplier_name': inventory.supplier.supplier_name if inventory.supplier else 'N/A',
+            'date_purchased': date_purchased,
+            'date_received': date_received,
+            'duration': f"{duration} days" if duration else '0',
+            'qty': first_handling.qty if first_handling else 'Invalid',
+            'purchase_price': inventory.purchase_price,
+            'expiration': expiration_date
+        })
+    
     context = {
         'item': item,
         'itemType_name': item_type.itemType_name if item_type else None,
@@ -585,7 +655,12 @@ def inventory_itemDetails_view(request, item_id):
         'add_cols_data': add_cols_data,
         'is_edit_mode': False,  # Not in edit mode
         'qr_code_data': qr_code_data,
-        'date_today': date_today
+        'date_today': date_today,
+
+        'lab_name': lab.name,
+        'supplier_data': supplier_data,
+
+        'inventory_data': inventory_data,
     }
 
     return render(request, 'mod_inventory/inventory_itemDetails.html', context)
@@ -704,7 +779,10 @@ def inventory_updateItem_view(request):
                     expired_date=expiration_date
                 )
             
-            messages.success(request, f"Added Inventory successfully.")
+            # messages.success(request, f"Added Inventory successfully.")
+
+            return JsonResponse({'success': True, 'new_inventory_item_id': new_inventory_item.inventory_item_id})
+        
         elif action_type in ['remove', 'report']:# Handle remove & report from inventory
             if action_type=='remove':
                 qty_remove = int(request.POST.get('quantity_removed', 0))
@@ -1576,7 +1654,6 @@ def borrowing_student_walkinview(request):
 
 @login_required
 @lab_permission_required('borrow_items')
-# booking requests
 def borrowing_student_viewPreBookRequestsview(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -1599,13 +1676,27 @@ def borrowing_student_viewPreBookRequestsview(request):
     ).order_by('-request_date')
 
     # Walk-in requests: where request_date == borrow_date
-    walkin_requests = borrow_info.objects.filter(
+    walkin_requests = borrow_info.objects.annotate(
+        request_date_only=TruncDate('request_date'),
+        borrow_date_only=TruncDate('borrow_date')
+    ).filter(
         user=current_user,
-        request_date=F('borrow_date'),  # Walk-ins: request_date equals borrow_date
+        request_date_only=F('borrow_date_only'),
         request_date__isnull=False,
         borrow_date__isnull=False
     ).order_by('-request_date')
 
+    walkin_requests = borrow_info.objects.extra(
+        select={
+            'request_date_only': "DATE(request_date)",
+            'borrow_date_only': "DATE(borrow_date)"
+        },
+        where=["DATE(request_date) = DATE(borrow_date)"]
+    ).filter(
+        user=current_user,
+        request_date__isnull=False,
+        borrow_date__isnull=False
+    ).order_by('-request_date')
 
     # Filter pre-book requests by status
     pending_requests = prebook_requests.filter(status='P')
@@ -1797,7 +1888,7 @@ def borrowing_labcoord_borrowconfig(request):
             is_consumable_list = request.POST.getlist('is_consumable')
             is_consumable_type_list = request.POST.getlist('is_consumable_type')
 
-            item_description.objects.filter(laboratory_id=selected_laboratory_id).update(allow_borrow=False, is_consumable=False)
+            items.update(allow_borrow=False, is_consumable=False)
 
             # Handle individual items: Set allow_borrow=True and is_consumable=True for explicitly checked items
             if allowed_items:
@@ -1897,7 +1988,7 @@ def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
 
     if request.method == 'POST':
         action = request.POST.get('action')
-        edited = int(request.POST.get('edited'))  # Check if any edits were made by checking 'edited' input
+        edited = request.POST.get('edited')  # Check if any edits were made by checking 'edited' input
 
         # Decline action
         if action == 'decline':
@@ -1914,7 +2005,8 @@ def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
         # Accept action
         elif action == 'accept':
             # Check if any quantities were edited
-            if edited:
+            print('pass')
+            if edited == '1':
                 # Require an edit reason if quantities were modified
                 edit_reason = request.POST.get('edit_reason')
                 if not edit_reason:
@@ -2036,10 +2128,9 @@ def borrowing_labtech_prebookrequests(request):
     today_borrows = borrow_info.objects.filter(borrow_date=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
     future_borrows = borrow_info.objects.filter(borrow_date__gt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
     past_borrows = borrow_info.objects.filter(borrow_date__lt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
+    
     cancelled_borrows = borrow_info.objects.filter(status='L', laboratory_id=selected_laboratory_id).select_related('user')
     borrowed_borrows = borrow_info.objects.filter(status='B', laboratory_id=selected_laboratory_id).select_related('user')
-
-    # Fetch all accepted borrow requests sorted by request_date
     accepted_borrows = borrow_info.objects.filter(status__in=['A', 'B', 'L', 'X', 'Y'], laboratory_id=selected_laboratory_id).order_by('-request_date').select_related('user')
 
     if request.method == 'POST':
@@ -2074,23 +2165,50 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
     borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id)
     borrowed_items1 = borrowed_items.objects.filter(borrow=borrow_entry)
     today = date.today()
-    
+
+    borrowed_items_json = json.dumps(
+        [{'id': item.id, 'qty': item.qty} for item in borrowed_items1],
+        cls=DjangoJSONEncoder
+    )
+
     if request.method == 'POST':
         action = request.POST.get('action')
-        remarks = request.POST.get('remarks', '')
+        edited = request.POST.get('edited')
+        print('pass', )
 
         if action == 'borrowed':
-            borrow_entry.status = 'B'
+            if edited == '1':  # Check if any edits were made
+                edit_reason = request.POST.get('edit_reason')
+                if not edit_reason:
+                    messages.error(request, 'Please provide a reason for the quantity update.')
+                    return redirect('borrowing_labtech_detailedprebookrequests', borrow_id=borrow_id)
+                
+                for item in borrowed_items1:
+                    new_qty = request.POST.get(f'qty_{item.id}')
+                    if new_qty and int(new_qty) != item.qty:
+                        item.qty = int(new_qty)
+                        item.save()
+                borrow_entry.remarks = edit_reason
+                messages.success(request, 'The borrow request has been marked as borrowed with updated quantities.')
+            else:
+                messages.success(request, 'The borrow request has been marked as borrowed.')
+            
+            borrow_entry.status = 'B'  # Mark as borrowed
+            borrow_entry.save()
+            
         elif action == 'cancel':
-            borrow_entry.status = 'L'
-            borrow_entry.remarks = remarks  # Save cancellation remarks
-        borrow_entry.save()
+            cancel_reason = request.POST.get('cancel_reason')
+            borrow_entry.status = 'L'  # Mark as cancelled
+            borrow_entry.remarks = cancel_reason
+            borrow_entry.save()
+            messages.success(request, 'The borrow request has been cancelled.')
 
         return redirect('borrowing_labtech_prebookrequests')
 
     return render(request, 'mod_borrowing/borrowing_labtech_detailedprebookrequests.html', {
         'borrow_entry': borrow_entry,
         'borrowed_items': borrowed_items1,
+        'borrowed_items_json': borrowed_items_json,
         'today': today
     })
 
@@ -2145,48 +2263,23 @@ def clearance_student_viewClearance(request):
 
 @login_required
 @lab_permission_required('view_own_clearance')
-def clearance_student_viewClearanceDetailed(request, borrow_id):
+def clearance_student_viewClearanceDetailed(request, report_id):
     # Get the currently logged-in user
     user = request.user
+    report = get_object_or_404(reported_items, report_id=report_id, user=user)
+    borrow = report.borrow  # Access related borrow_info directly from report
 
-    # Debugging output to verify the user instance
-    if not user.is_authenticated:
-        return render(request, 'mod_clearance/student_viewClearanceDetailed.html', {'error': 'User is not authenticated.'})
+    # Retrieve all reported items for the specific borrow entry
+    report_details = reported_items.objects.filter(borrow=borrow, user=user)
 
-    # Use the user instance's ID for querying
-    user_id = request.user
-
-    try:
-        # Retrieve the borrow_info entries for the current user
-        user_borrow = borrow_info.objects.filter(user=user_id, borrow_id=borrow_id).first()
-
-        if user_borrow:
-            # Retrieve reported items associated with the borrow_info entry
-            reports = reported_items.objects.filter(borrow=user_borrow)
-        else:
-            reports = reported_items.objects.none()  # No reports if no borrows
-
-    except Exception as e:
-        reports = reported_items.objects.none()  # If there's an error, return no reports
-        print(f"Error fetching reports: {e}")  # Debugging output for error tracking
-
-    # Include borrow details in the context
-    borrow_details = {
-        'borrow_id': user_borrow.borrow_id if user_borrow else None,
-        'request_date': user_borrow.request_date if user_borrow else None,
-        'borrow_date': user_borrow.borrow_date if user_borrow else None,
-        'due_date': user_borrow.due_date if user_borrow else None,
-        'questions_responses': user_borrow.questions_responses if user_borrow else {},
-    }
-
-     
-    
+    # Context for rendering details of borrow and reports
     context = {
-        'reports': reports,
-        'borrow_details': borrow_details,
-    
+        'report': report,                  # Main report entry
+        'borrow_details': borrow,          # Borrow details
+        'report_details': report_details   # All reported items for this borrow
     }
     return render(request, 'mod_clearance/student_viewClearanceDetailed.html', context)
+
 
 @login_required
 @lab_permission_required('view_student_clearance')
@@ -3018,6 +3111,7 @@ def labres_labcoord_configroom(request):
         'require_approval': reservation_config_obj.require_approval,
         'tc_description': reservation_config_obj.tc_description,
         'leadtime': reservation_config_obj.leadtime,
+        'approval_form': reservation_config_obj.approval_form,
     }
 
     context = {
@@ -3290,7 +3384,7 @@ def borrowing_reports(request):
             'counts': []
         }
     
-    print(day_borrowing_data)
+    # print(day_borrowing_data)
 
     # borrow table ============================
     # Get filter parameters from request
@@ -3331,7 +3425,7 @@ def borrowing_reports(request):
     
     # New Query for borrow_info (borrowing requests)
     borrowreq_filter_type = request.GET.get('borrowreq_filter_type', 'today')
-    # borrowreq_start_date, borrowreq_end_date = calculate_date_range(request, borrowreq_filter_type)
+    borrowreq_start_date, borrowreq_end_date = calculate_date_range(request, borrowreq_filter_type)
     if borrowreq_filter_type == 'today':
         borrowreq_date_range = [current_date, current_date]
     elif borrowreq_filter_type == 'this_week':
@@ -4314,8 +4408,8 @@ def setup_createlab(request):
 
     # Default permissions per role
     default_permissions = {
-        1: [7, 8, 9, 10, 11, 1, 2, 3, 4, 5, 6, 12, 13, 14, 15, 16, 17, 18],
-        2: [9, 11, 1, 5, 6, 13, 16, 17, 18, 19],
+        1: [7, 8, 9, 10, 11, 1, 2, 3, 4, 5, 6, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        2: [9, 11, 1, 5, 6, 13, 16, 17, 18, 19, 20, 21],
         3: [8, 10, 1, 2, 3, 4, 13, 15],
         4: [1, 18],
         5: [7, 12, 14]
