@@ -1577,7 +1577,7 @@ def borrowing_student_walkinview(request):
                     error_message = f'Item with ID {item_id} is not available for borrowing.'
                     break
             # Check if requested quantity exceeds the qty_limit of the item
-                if quantity > item.qty_limit:
+                if item.qty_limit is not None and quantity > item.qty_limit:
                     error_message = f'Quantity requested for {item.item_name} exceeds the available limit ({item.qty_limit}).'
                     break
             except (ValueError, IndexError) as e:
@@ -1853,7 +1853,8 @@ def borrowing_labcoord_prebookrequests(request):
 def borrowing_labcoord_borrowconfig(request):
     selected_laboratory_id = request.session.get('selected_lab')
     items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
-     # Fetch the current total quantity from item_inventory for each item
+
+    # Fetch the current total quantity from item_inventory for each item
     items_with_qty = []
     for item in items:
         # Retrieve and sum all qty values for each item from item_inventory
@@ -1862,6 +1863,7 @@ def borrowing_labcoord_borrowconfig(request):
 
         item.current_quantity = current_quantity  # Attach current quantity to item
         items_with_qty.append(item)
+
     item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
     lab = get_object_or_404(borrowing_config, laboratory_id=selected_laboratory_id)
 
@@ -1888,7 +1890,7 @@ def borrowing_labcoord_borrowconfig(request):
             is_consumable_list = request.POST.getlist('is_consumable')
             is_consumable_type_list = request.POST.getlist('is_consumable_type')
 
-            items.update(allow_borrow=False, is_consumable=False)
+            item_description.objects.filter(laboratory_id=selected_laboratory_id).update(allow_borrow=False, is_consumable=False)
 
             # Handle individual items: Set allow_borrow=True and is_consumable=True for explicitly checked items
             if allowed_items:
@@ -1917,7 +1919,7 @@ def borrowing_labcoord_borrowconfig(request):
                     else:
                         item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=False)
 
-            # Validate and update qty_limit for each item
+           # Validate and update qty_limit for each item
             for item in items:
                 qty_limit = request.POST.get(f'qty_limit_{item.item_id}')
                 if qty_limit is not None:
@@ -1931,7 +1933,7 @@ def borrowing_labcoord_borrowconfig(request):
                     # Save the qty_limit
                     item.qty_limit = qty_limit
                     item.save()
-
+                    
             messages.success(request, "Borrowing configuration updated successfully!")
             return redirect('borrowing_labcoord_borrowconfig')
         
@@ -1964,12 +1966,12 @@ def borrowing_labcoord_borrowconfig(request):
             return redirect('borrowing_labcoord_borrowconfig')
 
     return render(request, 'mod_borrowing/borrowing_labcoord_borrowconfig.html', {
-        'items': items,
         'items': items_with_qty,
         'item_types_list': item_types_list,
         'lab': lab,
         'questions': lab.get_questions()  # Get the questions to display them
     })
+
 
 
 @login_required
