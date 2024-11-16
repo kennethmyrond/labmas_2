@@ -245,10 +245,9 @@ def generate_qr_code(item_id):
     return qr_code_b64  # Return the base64 encoded string
 
 # forms
-# forms.py
 class ItemEditForm(forms.ModelForm):
     itemType = forms.ModelChoiceField(
-        queryset=item_types.objects.all(),
+        queryset=item_types.objects.none(),  # Initialize with an empty queryset
         empty_label="Select Item Type",
         required=False,
         label="Item Type",
@@ -259,6 +258,14 @@ class ItemEditForm(forms.ModelForm):
         model = item_description
         fields = ['item_name', 'itemType']
 
+    def __init__(self, *args, **kwargs):
+        # Capture selected laboratory ID passed via kwargs
+        selected_laboratory_id = kwargs.pop('selected_laboratory_id', None)
+        super(ItemEditForm, self).__init__(*args, **kwargs)
+        
+        # Filter itemType based on the selected laboratory
+        if selected_laboratory_id:
+            self.fields['itemType'].queryset = item_types.objects.filter(laboratory_id=selected_laboratory_id)
 
 
 # views
@@ -770,14 +777,21 @@ def inventory_itemEdit_view(request, item_id):
     if not request.user.is_authenticated:
         return redirect('userlogin')
 
-    # Get the item_description instance
-    item = get_object_or_404(item_description, item_id=item_id)
+    # Get the selected laboratory from the session
+    selected_laboratory_id = request.session.get('selected_lab')
+
+    # Get the item_description instance for the selected lab
+    item = get_object_or_404(
+        item_description,
+        item_id=item_id,
+        laboratory_id=selected_laboratory_id  # Ensure the filter is correct
+    )
 
     # Parse add_cols JSON
     add_cols_data = json.loads(item.add_cols) if item.add_cols else {}
 
     if request.method == 'POST':
-        form = ItemEditForm(request.POST, instance=item)
+        form = ItemEditForm(request.POST, instance=item, selected_laboratory_id=selected_laboratory_id)
 
         # Handle additional form fields (rec_expiration, alert_qty)
         rec_expiration = request.POST.get('rec_expiration', 'off') == 'on'
@@ -789,7 +803,7 @@ def inventory_itemEdit_view(request, item_id):
 
             # Fetch new additional columns based on selected itemType
             new_item_type = form.cleaned_data['itemType']
-            new_add_cols = json.loads(new_item_type.add_cols) if new_item_type.add_cols else {}
+            new_add_cols = json.loads(new_item_type.add_cols) if new_item_type and new_item_type.add_cols else {}
 
             # Retain common values between old and new additional columns
             updated_add_cols = {}
@@ -813,7 +827,7 @@ def inventory_itemEdit_view(request, item_id):
 
             return redirect('inventory_itemDetails_view', item_id=item_id)
     else:
-        form = ItemEditForm(instance=item)
+        form = ItemEditForm(instance=item, selected_laboratory_id=selected_laboratory_id)
 
     return render(request, 'mod_inventory/inventory_itemEdit.html', {
         'form': form,
@@ -821,6 +835,7 @@ def inventory_itemEdit_view(request, item_id):
         'add_cols_data': add_cols_data,
         'is_alert_disabled': item.alert_qty == 0,
     })
+
 
 
 @login_required
@@ -1245,10 +1260,19 @@ def borrowing_student_prebookview(request):
             allow_borrow=1  # Only get items that can be borrowed
         ).select_related('itemType').annotate(total_qty=Sum('item_inventory__qty'))
 
-        # Group items by their itemType
+       # Group items by their itemType
         items_by_type = {}
         for item in inventory_items:
             item_type = item.itemType.itemType_name
+            # Parse add_cols if it exists and is a JSON string
+            add_cols = {}
+            if item.add_cols:
+                try:
+                    add_cols = json.loads(item.add_cols)  # Parse JSON string into a dictionary
+                except ValueError:
+                    add_cols = {}
+            item.add_cols = add_cols  # Attach parsed add_cols to the item object
+
             if item_type not in items_by_type:
                 items_by_type[item_type] = []
             items_by_type[item_type].append(item)
@@ -1293,10 +1317,24 @@ def borrowing_student_prebookview(request):
                 if to_date < from_date:
                     error_message = '"To" date cannot be earlier than the "From" date.'
 
-            # If there is an error, re-render the form with the error message
-            if error_message:
+            # Validate quantity limits for equipment
+            equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
+            quantities = request.POST.getlist('quantities[]')       # Corresponding quantities
+            error_message_qty = None
+
+            for i, item_id in enumerate(equipment_rows):
+                quantity = int(quantities[i])
+                item = item_description.objects.get(item_id=item_id)
+
+                # If qty_limit is not null and quantity exceeds the limit, show error
+                if item.qty_limit is not None and quantity > item.qty_limit:
+                    error_message_qty = f"Quantity for '{item.item_name}' exceeds the quantity limit of {item.qty_limit}."
+                    break  # Stop checking after the first error
+
+            # If there was any error related to quantity, re-render the form with the error
+            if error_message or error_message_qty:
                 return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
-                    'error_message': error_message,
+                    'error_message': error_message or error_message_qty,
                     'current_date': request_date,
                     'items_by_type': items_by_type,  # Include grouped items here
                 })
@@ -1315,9 +1353,11 @@ def borrowing_student_prebookview(request):
             # Process equipment details
             equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
             quantities = request.POST.getlist('quantities[]')       # Corresponding quantities
+            units = request.POST.getlist('units[]')
 
             for i, item_id in enumerate(equipment_rows):
                 quantity = int(quantities[i])
+                unit = units[i]
                 # Fetch the item from core_item_description
                 item = item_description.objects.get(item_id=item_id)
                 
@@ -1325,7 +1365,8 @@ def borrowing_student_prebookview(request):
                 borrowed_items.objects.create(
                     borrow=borrow_entry,
                     item=item,
-                    qty=quantity
+                    qty=quantity,
+                    unit=unit
                 )
             return redirect('borrowing_studentviewPreBookRequests')
 
@@ -1337,7 +1378,8 @@ def borrowing_student_prebookview(request):
     return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
         'current_date': current_date,
         'items_by_type': items_by_type,  # Pass grouped items to the template
-        'prebook_questions': prebook_questions  # Pass the prebook questions to the template
+        'prebook_questions': prebook_questions,  # Pass the prebook questions to the template
+        
     })
 
 @login_required
@@ -1401,10 +1443,19 @@ def borrowing_student_walkinview(request):
     # Group items by their itemType
     items_by_type = {}
     for item in inventory_items:
-        item_type = item.itemType.itemType_name
-        if item_type not in items_by_type:
-            items_by_type[item_type] = []
-        items_by_type[item_type].append(item)
+            item_type = item.itemType.itemType_name
+            # Parse add_cols if it exists and is a JSON string
+            add_cols = {}
+            if item.add_cols:
+                try:
+                    add_cols = json.loads(item.add_cols)  # Parse JSON string into a dictionary
+                except ValueError:
+                    add_cols = {}
+            item.add_cols = add_cols  # Attach parsed add_cols to the item object
+
+            if item_type not in items_by_type:
+                items_by_type[item_type] = []
+            items_by_type[item_type].append(item)
 
     if request.method == 'POST':
         request_date = timezone.now()
@@ -1431,6 +1482,7 @@ def borrowing_student_walkinview(request):
         # Process equipment details
         equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
         quantities = request.POST.getlist('quantities[]')       # Corresponding quantities
+        units = request.POST.getlist('units[]')
 
         # Validate equipment quantities and items
         error_message = None
@@ -1445,6 +1497,10 @@ def borrowing_student_walkinview(request):
                 item = item_description.objects.filter(item_id=item_id, is_disabled=0, allow_borrow=1).first()
                 if not item:
                     error_message = f'Item with ID {item_id} is not available for borrowing.'
+                    break
+            # Check if requested quantity exceeds the qty_limit of the item
+                if quantity > item.qty_limit:
+                    error_message = f'Quantity requested for {item.item_name} exceeds the available limit ({item.qty_limit}).'
                     break
             except (ValueError, IndexError) as e:
                 error_message = 'Invalid quantity or item ID.'
@@ -1464,6 +1520,7 @@ def borrowing_student_walkinview(request):
         # If validation passes, insert items into borrowed_items
         for i, item_id in enumerate(equipment_rows):
             quantity = int(quantities[i])
+            unit = units[i]
             if quantity <= 0:
                 continue  # Skip if quantity is invalid
 
@@ -1478,7 +1535,8 @@ def borrowing_student_walkinview(request):
             borrowed_item = borrowed_items.objects.create(
                 borrow=borrow_entry,
                 item=item,
-                qty=quantity
+                qty=quantity,
+                unit=unit
             )
 
         return redirect('borrowing_studentviewPreBookRequests')
@@ -1704,6 +1762,15 @@ def borrowing_labcoord_prebookrequests(request):
 def borrowing_labcoord_borrowconfig(request):
     selected_laboratory_id = request.session.get('selected_lab')
     items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
+     # Fetch the current total quantity from item_inventory for each item
+    items_with_qty = []
+    for item in items:
+        # Retrieve and sum all qty values for each item from item_inventory
+        total_qty = item_inventory.objects.filter(item_id=item.item_id).aggregate(total_qty=models.Sum('qty'))['total_qty']
+        current_quantity = total_qty if total_qty else 0  # Default to 0 if no inventory entry exists
+
+        item.current_quantity = current_quantity  # Attach current quantity to item
+        items_with_qty.append(item)
     item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
     lab = get_object_or_404(borrowing_config, laboratory_id=selected_laboratory_id)
 
@@ -1759,6 +1826,21 @@ def borrowing_labcoord_borrowconfig(request):
                     else:
                         item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=False)
 
+            # Validate and update qty_limit for each item
+            for item in items:
+                qty_limit = request.POST.get(f'qty_limit_{item.item_id}')
+                if qty_limit is not None:
+                    qty_limit = int(qty_limit) if qty_limit else None
+                    
+                    # Check if qty_limit exceeds the current quantity
+                    if qty_limit and qty_limit > item.current_quantity:
+                        messages.error(request, f"Quantity limit for item '{item.item_name}' exceeds the available quantity of {item.current_quantity}.")
+                        return redirect('borrowing_labcoord_borrowconfig')  # Redirect with error
+
+                    # Save the qty_limit
+                    item.qty_limit = qty_limit
+                    item.save()
+
             messages.success(request, "Borrowing configuration updated successfully!")
             return redirect('borrowing_labcoord_borrowconfig')
         
@@ -1792,6 +1874,7 @@ def borrowing_labcoord_borrowconfig(request):
 
     return render(request, 'mod_borrowing/borrowing_labcoord_borrowconfig.html', {
         'items': items,
+        'items': items_with_qty,
         'item_types_list': item_types_list,
         'lab': lab,
         'questions': lab.get_questions()  # Get the questions to display them

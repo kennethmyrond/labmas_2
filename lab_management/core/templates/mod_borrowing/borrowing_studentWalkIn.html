@@ -71,9 +71,13 @@
                         </div>
                       {% endfor %}
                       <hr>
+                    
 
+                       <!-- Validation Message -->
+                       <div id="validation-message" class="alert alert-danger" style="display: none;"></div>
+                       
                      <!-- Added Equipment Section -->
-                    <div id="equipment-rows" class="mb-3">
+                    <div id="equipment-rows" class="container-fluid mb-3">
                       <div class="row mb-3">
                           <label class="col-sm-2 col-form-label">Added Equipment:</label>
                           <div class="col-sm-10">
@@ -81,7 +85,7 @@
                           </div>
                       </div>
                     </div>
-
+                    
                     {% for item_type, items in items_by_type.items %}
                     <strong>{{ item_type }}</strong> <!-- Display the Item Type as a heading -->
                     <table class="table datatable">
@@ -90,6 +94,13 @@
                                 <th>Item Name</th>
                                 <th>Add Equipment</th>
                                 <th>Available Qty</th>
+                                {% for item in items %}
+                                    {% if forloop.first and item.add_cols %}
+                                        {% for key, value in item.add_cols.items %}
+                                            <th>{{ key }}</th>  <!-- Create a column for each unique key in add_cols -->
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
                             </tr>
                         </thead>
                         <tbody>
@@ -104,19 +115,21 @@
                                                 data-available-qty="{{ item.total_qty }}">Add</button>
                                     </td>
                                     <td>{{ item.total_qty }}</td> <!-- Display Available Quantity -->
+                                    {% if item.add_cols %}
+                                        {% for key, value in item.add_cols.items %}
+                                            <td>{{ value }}</td>  <!-- Display the value for each key in add_cols -->
+                                        {% endfor %}
+                                    {% endif %}
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="3">No items found.</td>
+                                    <td colspan="100%">No items found.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 {% endfor %}
-                
-                      
-                      <!-- Validation Message -->
-                      <div id="validation-message" class="alert alert-danger" style="display: none;"></div>
+
 
                       <div class="row mb-3">
                         <button type="submit" class="btn btn-success">Submit</button>
@@ -135,22 +148,26 @@
   
       // Function to add a new equipment row
       function addEquipmentRow(itemName, itemId, availableQty) {
-          const newRow = document.createElement('div');
-          newRow.classList.add('row', 'mb-3', 'equipment-row');
-          newRow.innerHTML = `
-              <label class="col-sm-2 col-form-label">Equipment:</label>
-              <div class="col-sm-5">
-                  <input type="text" class="form-control" value="${itemName}" readonly>
-                  <input type="hidden" name="equipment_ids[]" value="${itemId}">
-              </div>
-              <label for="inputNumber" class="col-sm-1 col-form-label text-end">Qty:</label>
-              <div class="col-sm-2">
-                  <input type="number" name="quantities[]" class="form-control" min="0" value="0" data-available-qty="${availableQty}">
-              </div>
-              <div class="col-sm-2">
-                  <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
-              </div>
-          `;
+        const newRow = document.createElement('div');
+        newRow.classList.add('row', 'align-items-center', 'mb-3', 'equipment-row');
+        newRow.innerHTML = `
+            <div class="col-sm-3">
+                <label class="form-label">Equipment:</label>
+                <input type="text" class="form-control" value="${itemName}" readonly>
+                <input type="hidden" name="equipment_ids[]" value="${itemId}">
+            </div>
+            <div class="col-sm-2">
+                <label class="form-label">Qty:</label>
+                <input type="number" name="quantities[]" class="form-control" min="1" value="1" max="${availableQty}" data-available-qty="${availableQty}" required>
+            </div>
+            <div class="col-sm-2">
+                <label class="form-label">Unit:</label>
+                <input type="text" name="units[]" class="form-control" placeholder="e.g., pcs, sets" required>
+            </div>
+            <div class="col-sm-2 mt-4">
+                <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>
+            </div>
+        `;
           equipmentRowsContainer.appendChild(newRow);
           updateNoEquipmentMessage(); // Update message visibility after adding a row
   

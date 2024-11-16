@@ -74,7 +74,7 @@
                                   <td>
                                       <input type="number" class="form-control qty-input" name="qty_{{ item.id }}" value="{{ item.qty }}" readonly min="1">
                                   </td>
-                                  <td>(insert unit)</td>
+                                  <td>{{ item.unit }}</td>
                               </tr>
                               {% endfor %}
                           </tbody>

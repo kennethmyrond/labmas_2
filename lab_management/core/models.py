@@ -197,6 +197,7 @@ class item_description(models.Model):
     is_disabled = models.BooleanField(default=False)
     allow_borrow = models.BooleanField(default=False)
     is_consumable = models.BooleanField(default=False)
+    qty_limit = models.IntegerField(null=True, blank=True) #for the borrowing_config, to set qty limit to each item.
     
     def save(self, *args, **kwargs):
         if not self.item_id:
@@ -300,7 +301,7 @@ class borrowing_config(models.Model):
     prebook_lead_time = models.IntegerField(default=0)
     allow_shortterm = models.BooleanField(default=True)
     allow_longterm = models.BooleanField(default=True)
-
+    
     # Questions config as JSON
     questions_config = models.JSONField(default=list)  # Should always be a list
 
@@ -394,6 +395,7 @@ class borrowed_items(models.Model):
     borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE)
     item = models.ForeignKey('item_description', on_delete=models.CASCADE)
     qty = models.IntegerField(null=True, blank=True)
+    unit = models.CharField(max_length=20, null=True, blank=True)
     returned_qty = models.IntegerField(default=0)
     remarks = models.CharField(max_length=1, null=True, blank=True)
 
