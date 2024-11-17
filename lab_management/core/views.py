@@ -4111,7 +4111,7 @@ def superuser_lab_info(request, laboratory_id):
 
 
     # Retrieve all lab users and roles
-    lab_users = laboratory_users.objects.filter(laboratory_id=lab.laboratory_id, is_active=1, status='P').select_related('user', 'role').annotate(
+    lab_users = laboratory_users.objects.filter(laboratory_id=lab.laboratory_id, is_active=1, status__in=['A', 'I']).select_related('user', 'role').annotate(
         username=F('user__username'),
         user_email=F('user__email'),
         full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
