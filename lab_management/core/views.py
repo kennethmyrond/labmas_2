@@ -2115,7 +2115,7 @@ def return_borrowed_items(request):
 
     if borrow_id:
         try:
-            borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id, laboratory_id=selected_laboratory_id)
+            borrow_entry = borrow_info.objects.get(borrow_id=borrow_id, laboratory_id=selected_laboratory_id)
             user_borrowed = borrow_entry.user
 
             if borrow_entry.status != 'B':
@@ -2131,6 +2131,7 @@ def return_borrowed_items(request):
 
         except borrow_info.DoesNotExist:
             messages.error(request, "Invalid Borrow ID.")
+            return redirect('return_borrowed_items')
 
     if request.method == 'POST' and 'return_items' in request.POST and borrow_entry and borrow_entry.status == 'B':
         for item in borrowed_items_list:
