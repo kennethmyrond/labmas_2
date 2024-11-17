@@ -1,5 +1,5 @@
 {% extends 'temp_navbar.html' %}
-{% load socialaccount %}
+{% load socialaccount inventory_extras%}
 {% load qr_code %}
 {% load custom_filters %}
 
@@ -118,48 +118,42 @@
                       </div>
                       
                       {% for item_type, items in items_by_type.items %}
-                      <strong>{{ item_type }}</strong> <!-- Display the Item Type as a heading -->
-                      <table class="table datatable table-striped">
-                          <thead>
-                              <tr>
-                                  <th>Item Name</th>
-                                  <th>Add Equipment</th>
-                                  <!-- <th>Available Qty</th> -->
-                                  {% for item in items %}
-                                      {% if forloop.first and item.add_cols %}
-                                          {% for key, value in item.add_cols.items %}
-                                              <th>{{ key }}</th>  <!-- Create a column for each unique key in add_cols -->
-                                          {% endfor %}
-                                      {% endif %}
-                                  {% endfor %}
-                              </tr>
-                          </thead>
-                          <tbody>
-                              {% for item in items %}
-                                  <tr>
-                                      <td>{{ item.item_name }}</td> <!-- Display the Item Name -->
-                                      <td>
-                                          <!-- Add Equipment Button -->
-                                          <button type="button" class="add-equipment-btn btn btn-primary" 
-                                                  data-item-name="{{ item.item_name }}" 
-                                                  data-item-id="{{ item.item_id }}" 
-                                                  data-available-qty="{{ item.total_qty }}">Add</button>
-                                      </td>
-                                      <!-- <td>{{ item.total_qty }}</td> Display Available Quantity -->
-                                      {% if item.add_cols %}
-                                          {% for key, value in item.add_cols.items %}
-                                              <td>{{ value }}</td>  <!-- Display the value for each key in add_cols -->
-                                          {% endfor %}
-                                      {% endif %}
-                                  </tr>
-                              {% empty %}
-                                  <tr>
-                                      <td colspan="100%">No items found.</td>
-                                  </tr>
-                              {% endfor %}
-                          </tbody>
-                      </table>
-                  {% endfor %}
+    <strong>{{ item_type }}</strong> <!-- Display the Item Type as a heading -->
+    <table class="table datatable table-striped">
+        <thead>
+            <tr>
+                <th>Item Name</th>
+                <th>Add Equipment</th>
+                {% if forloop.first and items|length > 0 %}
+                    {% for key, value in items.0.add_cols.items %}
+                        <th>{{ key }}</th>  
+                    {% endfor %}
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+                <tr>
+                    <td>{{ item.item_name }}</td> <!-- Display the Item Name -->
+                    <td>
+                        <!-- Add Equipment Button -->
+                        <button type="button" class="add-equipment-btn btn btn-primary" 
+                                data-item-name="{{ item.item_name }}" 
+                                data-item-id="{{ item.item_id }}" 
+                                data-available-qty="{{ item.total_qty }}">Add</button>
+                    </td>
+                    {% if item.add_cols %}
+                        {% for key, value in item.add_cols.items %}
+                            <td>{{ value }}</td>  <!-- Display value or '--' if empty -->
+                        {% endfor %}
+                    {% else %}
+                        <td>--</td>  <!-- Display '--' if add_cols is empty -->
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endfor %}
                   
                     
                     <!-- <div class="row mb-3">

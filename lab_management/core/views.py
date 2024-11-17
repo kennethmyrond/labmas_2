@@ -890,10 +890,14 @@ def inventory_itemEdit_view(request, item_id):
             # Retain common values between old and new additional columns
             updated_add_cols = {}
             for label in new_add_cols:
+                print('test2', add_cols_data)
+                print('test3', label)
                 if label in add_cols_data:
                     updated_add_cols[label] = add_cols_data[label]
                 else:
                     updated_add_cols[label] = request.POST.get(label, '')
+            
+            print('test:', updated_add_cols)
 
             item.add_cols = json.dumps(updated_add_cols)
 
