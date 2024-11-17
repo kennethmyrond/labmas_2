@@ -4004,9 +4004,7 @@ def superuser_manage_labs(request):
 # lab info
 @superuser_or_lab_permission_required('configure_laboratory')
 def superuser_lab_info(request, laboratory_id):
-    print('test', laboratory_id)
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-    print('testlab', lab)
     lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id, is_disabled=False)
 
     if request.method == "POST":
@@ -4084,6 +4082,16 @@ def superuser_lab_info(request, laboratory_id):
                 lab_user.status = 'D'  # Declined
                 lab_user.save()
                 messages.success(request, f"User {lab_user.user.get_fullname()} declined.")
+        
+        elif 'toggle_user_status' in request.POST:
+            user_id = request.POST.get('user_id')
+            lab_user = get_object_or_404(laboratory_users, user_id=user_id, laboratory_id=laboratory_id, is_active=1)
+            lab_user.is_active = not lab_user.is_active
+            lab_user.save()
+            
+            # Add feedback message based on new status
+            status_message = "activated" if lab_user.is_active else "deactivated"
+            messages.success(request, f"User {lab_user.user.get_fullname()} successfully {status_message}.")
 
         # Existing code for room and role operations goes here...
 
@@ -4100,8 +4108,10 @@ def superuser_lab_info(request, laboratory_id):
 
     all_modules = Module.objects.all()  # All available modules
 
+
+
     # Retrieve all lab users and roles
-    lab_users = laboratory_users.objects.filter(laboratory_id=lab.laboratory_id, status='A').select_related('user', 'role').annotate(
+    lab_users = laboratory_users.objects.filter(laboratory_id=lab.laboratory_id, is_active=1).select_related('user', 'role').annotate(
         username=F('user__username'),
         user_email=F('user__email'),
         full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
@@ -4273,19 +4283,31 @@ def add_user_laboratory(request, laboratory_id):
     if request.method == "POST":
         user_id = request.POST['user']
         role_id = request.POST['role']
-        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+        status = request.POST['Status']
+
+        # lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+        # user_instance = get_object_or_404(user, user_id=user_id)
+        # role_instance = get_object_or_404(laboratory_roles, roles_id=role_id)
         
-        user_instance = get_object_or_404(user, user_id=user_id)
-        role_instance = get_object_or_404(laboratory_roles, roles_id=role_id)
-        
-        # Add user to laboratory if not already assigned
-        laboratory_users.objects.get_or_create(
-            user=user_instance,
-            laboratory=lab,
-            role=role_instance,
-            defaults={'is_active': request.POST['Status'] == 'Active'}
-        )
-    messages.success(request, 'User added successfully')
+        user_assigned = laboratory_users.objects.filter(
+            user_id=user_id,
+            laboratory_id=laboratory_id,
+            is_active=1
+        ).exists()
+
+        if not user_assigned:
+            # Add user to laboratory if not already assigned
+            laboratory_users.objects.create(
+                user_id=user_id,
+                laboratory_id=laboratory_id,
+                role_id=role_id,
+                is_active=1,
+                status=status,
+            )
+            messages.success(request, 'User  added successfully')
+        else:
+            messages.error(request, 'User  is already assigned to this laboratory and is active.')
+
     return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 @login_required()
