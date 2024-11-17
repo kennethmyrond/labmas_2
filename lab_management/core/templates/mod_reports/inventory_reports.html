@@ -489,14 +489,14 @@
             });
 
             // Show/hide custom date range inputs based on filter type
-            $('#filter_type').change(function() {
+            $('#supplier_reports_filter').change(function() {
                 if ($(this).val() === 'custom') {
                     $('#custom-date-range').show();
                 } else {
                     $('#custom-date-range').hide();
                 }
             });
-            $('#filter_type').trigger('change');  // Trigger change event on page load to set initial state
+            $('#supplier_reports_filter').trigger('change');  // Trigger change event on page load to set initial state
     
             // Initialize DataTable with custom export filename
             new DataTable('.supplier-datatable', {

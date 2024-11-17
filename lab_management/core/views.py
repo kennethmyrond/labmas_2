@@ -748,6 +748,10 @@ def inventory_updateItem_view(request):
 
         action_type = request.POST.get('action_type')
         item_id = request.POST.get('item_name') 
+        if not item_id:
+            messages.error(request, 'Invalid Item Input')
+            return redirect('inventory_updateItem')
+        
         inventory_item_id = request.POST.get('inventory_item_id') 
         remarks = request.POST.get('remarks', '')
 
@@ -759,12 +763,16 @@ def inventory_updateItem_view(request):
         
         # Add or remove inventory logic
         if action_type == 'add':
+            qty_add = request.POST.get('amount')
+            if not qty_add:
+                messages.error(request, 'Invalid Quantity Input')
+                return redirect('inventory_updateItem')
             qty_add = int(request.POST.get('amount', 0))
 
-            supplier_id = request.POST.get('item_supplier')
-            date_purchased = request.POST.get('item_date_purchased')
-            date_received = request.POST.get('item_date_received')
-            purchase_price = request.POST.get('item_price', 0.0)
+            supplier_id = request.POST.get('item_supplier') or None
+            date_purchased = request.POST.get('item_date_purchased', None) or None
+            date_received = request.POST.get('item_date_received', None) or None
+            purchase_price = request.POST.get('item_price', 0.0) or 0.0
             expiration_date = request.POST.get('expiration_date') if item_instance.rec_expiration else None
 
             new_inventory_item = item_inventory.objects.create(
