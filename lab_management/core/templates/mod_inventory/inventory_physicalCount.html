@@ -56,49 +56,79 @@
                     <th style="text-align:left;">Item Name</th>
                     <th>System Quantity</th> <!-- Current qty column added -->
                     <th>Physical Count Quantity</th>
-                    <!-- <th style="display:none;"></th> Hidden column -->
+                    <th hidden></th>
+                    <th hidden></th>
                   </tr>
                 </thead>
                 <tbody>
                   {% for item in inventory_items %}
-                    <tr>
+                    <!-- <tr>
                       <td style="text-align:left;"><button type="button" class="btn btn-secondary btn-sm" data-toggle="modal" data-target="#detailsModal-{{ item.item_id }}">
                         <i class="bi bi-info-square"></i>
-                      </button>&emsp;{{ item.item_name }}</td> <!-- Item Name -->
-                      <td >{{ item.total_qty|default:0 }}</td> <!-- Current Quantity -->
+                      </button>&emsp;{{ item.item_name }}</td> 
+                      <td >{{ item.total_qty|default:0 }}</td> <
                       <td>
-                        <!-- Count Qty input field with name based on item_id -->
                         <input type="number" name="count_qty_{{ item.item_id }}" class="form-control" placeholder="Enter count" min="0" oninput="validity.valid||(value='');" required>
                       </td>
-                    </tr>
+                    </tr> -->
 
-                    <!-- Modal for Add_Cols -->
-                    <div class="modal fade" id="detailsModal-{{ item.item_id }}" tabindex="-1" role="dialog" aria-labelledby="detailsModalLabel-{{ item.item_id }}" aria-hidden="true">
-                      <div class="modal-dialog">
-                          <div class="modal-content">
-                              <div class="modal-header">
-                                  <h5 class="modal-title" id="detailsModalLabel-{{ item.item_id }}">Item Details: {{ item.item_name }}</h5>
-                                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                      <span aria-hidden="true">&times;</span>
-                                  </button>
-                              </div>
-                              <div class="modal-body">
-                                  {% if item.parsed_add_cols %}
-                                      <ul class="list-group">
-                                          {% for key, value in item.parsed_add_cols.items %}
-                                              <li class="list-group-item"><strong>{{ key }}:</strong> {{ value }}</li>
-                                          {% endfor %}
-                                      </ul>
-                                  {% else %}
-                                      <p>No additional details available.</p>
-                                  {% endif %}
-                              </div>
-                              <div class="modal-footer">
-                                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
+                    {% if item.rec_expiration or item.rec_per_inv %}
+                        <!-- Display individual inventory items if per-inventory tracking is enabled -->
+                        {% for inventory in item.individual_inventories %}
+                            <tr>
+                              <td style="text-align:left;"><button type="button" class="btn btn-secondary btn-sm" data-toggle="modal" data-target="#detailsModal-{{ item.item_id }}">
+                                <i class="bi bi-info-square"></i>
+                              </button>&emsp;{{ item.item_name }} - {{inventory.inventory_item_id}}</td> 
+                                <td>{{ inventory.qty|default:0 }}</td>
+                                <td>
+                                    <input type="number" name="count_qty_{{ inventory.inventory_item_id }}" class="form-control" min="0" oninput="validity.valid||(value='');">
+                                </td>
+                                <td hidden></td>
+                                <td hidden></td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Display item-level physical count entry -->
+                        <tr>
+                          <td style="text-align:left;"><button type="button" class="btn btn-secondary btn-sm" data-toggle="modal" data-target="#detailsModal-{{ item.item_id }}">
+                            <i class="bi bi-info-square"></i>
+                          </button>&emsp;{{ item.item_name }}</td> 
+                            <td>{{ item.total_qty|default:0 }}</td>
+                            <td>
+                                <input type="number" name="count_qty_{{ item.item_id }}" class="form-control" min="0" oninput="validity.valid||(value='');">
+                            </td>
+                            <td hidden></td>
+                            <td hidden></td>
+                        </tr>
+                    {% endif %}
+                     <!-- Modal for Add_Cols -->
+  <div class="modal fade" id="detailsModal-{{ item.item_id }}" tabindex="-1" role="dialog" aria-labelledby="detailsModalLabel-{{ item.item_id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalLabel-{{ item.item_id }}">Item Details: {{ item.item_name }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {% if item.parsed_add_cols %}
+                    <ul class="list-group">
+                        {% for key, value in item.parsed_add_cols.items %}
+                            <li class="list-group-item"><strong>{{ key }}:</strong> {{ value }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No additional details available.</p>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
                   {% empty %}
                     <tr>
                       <td colspan="6" class="text-center">No items found.</td>
@@ -120,6 +150,7 @@
     </div>
   </section>
 
+ 
   <!-- Confirmation Modal -->
   <div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="confirmationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">

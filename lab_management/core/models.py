@@ -484,3 +484,9 @@ class reservation_config(models.Model):
     approval_form = models.FileField(upload_to='approval_forms/', null=True, blank=True)  # Optional PDF upload
     tc_description = models.TextField(null=True, blank=True)  # Description for terms and conditions
     leadtime = models.PositiveIntegerField(default=0)
+
+
+
+
+
+
