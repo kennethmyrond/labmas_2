@@ -160,6 +160,14 @@ class laboratory_users(models.Model):
     status = models.CharField(max_length=1, default='A') # A - Active, I - inactive, R - request access pending
     timestamp = models.DateTimeField(null=True, blank=True, auto_now_add=True)
 
+    def get_status_display(self):
+        status_mapping = {
+            'A': 'Active',
+            'I': 'Inactive',
+            'R': 'Request Access Pending',
+        }
+        return status_mapping.get(self.status, 'Unknown')
+
 class rooms(models.Model):
     room_id = models.CharField(max_length=20, unique=True, primary_key=True)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)

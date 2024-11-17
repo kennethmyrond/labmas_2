@@ -4260,8 +4260,10 @@ def update_permissions(request, laboratory_id):
 def edit_user_role(request, laboratory_id):
     user_id = request.POST.get('user_id')
     new_role_id = request.POST.get('role_id')
-    lab_user = get_object_or_404(laboratory_users, user_id=user_id, laboratory_id=laboratory_id)
+    new_status = request.POST.get('Status')
+    lab_user = get_object_or_404(laboratory_users, user_id=user_id, laboratory_id=laboratory_id, is_active=1)
     lab_user.role_id = new_role_id
+    lab_user.status = new_status
     lab_user.save()
     messages.success(request, "User role updated successfully.")
     return redirect ('superuser_lab_info', laboratory_id)
