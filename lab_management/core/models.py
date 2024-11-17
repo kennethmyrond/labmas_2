@@ -164,7 +164,8 @@ class laboratory_users(models.Model):
         status_mapping = {
             'A': 'Active',
             'I': 'Inactive',
-            'R': 'Request Access Pending',
+            'P': 'Request Access Pending',
+            'D': 'Declined Access',
         }
         return status_mapping.get(self.status, 'Unknown')
 
