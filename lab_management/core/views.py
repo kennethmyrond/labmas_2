@@ -968,14 +968,12 @@ def get_item_type_add_cols(request, itemType_id):
 @login_required
 @lab_permission_required('physical_count')
 def inventory_physicalCount_view(request):
-    if not request.user.is_authenticated:
-        return redirect('userlogin')
-    
     # Get the selected laboratory from the session
     selected_laboratory_id = request.session.get('selected_lab')
     item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
     selected_item_type = request.GET.get('item_type')
     current_user = request.user
+
     # Filter items by laboratory and selected item type
     if selected_item_type:
         inventory_items = item_description.objects.filter(
@@ -988,6 +986,16 @@ def inventory_physicalCount_view(request):
             laboratory_id=selected_laboratory_id, 
             is_disabled=0
         ).annotate(total_qty=Sum('item_inventory__qty'))
+
+    # Parse `add_cols` JSON for each item
+    for item in inventory_items:
+        if item.add_cols:
+            try:
+                item.parsed_add_cols = json.loads(item.add_cols)
+            except json.JSONDecodeError:
+                item.parsed_add_cols = {}  # Use empty dict if JSON is invalid
+        else:
+            item.parsed_add_cols = {}
     
     # Check if the form is submitted
     if request.method == "POST":
