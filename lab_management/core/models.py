@@ -199,7 +199,7 @@ class item_description(models.Model):
     item_name = models.CharField(max_length=45, null=True, blank=True)
     itemType = models.ForeignKey('item_types', on_delete=models.SET_NULL, null=True, blank=True)
     alert_qty = models.IntegerField(null=True, blank=True)
-    add_cols = models.CharField(max_length=45, null=True, blank=True)
+    add_cols = models.CharField(max_length=255, null=True, blank=True)
     rec_expiration = models.BooleanField(default=False)
     is_disabled = models.BooleanField(default=False)
     allow_borrow = models.BooleanField(default=False)

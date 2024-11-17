@@ -873,10 +873,10 @@ def inventory_itemEdit_view(request, item_id):
     item = get_object_or_404(
         item_description,
         item_id=item_id,
-        laboratory_id=selected_laboratory_id  # Ensure the filter is correct
+        laboratory_id=selected_laboratory_id
     )
 
-    # Parse add_cols JSON
+    # Parse existing add_cols JSON
     add_cols_data = json.loads(item.add_cols) if item.add_cols else {}
 
     if request.method == 'POST':
@@ -888,39 +888,40 @@ def inventory_itemEdit_view(request, item_id):
         rec_per_inv = request.POST.get('rec_per_inv', 'off') == 'on'
 
         if form.is_valid():
-            # Save the main form fields including itemType
+            print("Form is valid. Saving data...")
+            
+            # Save form fields
             form.save()
 
-            # Fetch new additional columns based on selected itemType
-            new_item_type = form.cleaned_data['itemType']
-            new_add_cols = json.loads(new_item_type.add_cols) if new_item_type and new_item_type.add_cols else {}
+            # Fetch additional columns based on the selected (or unchanged) itemType
+            selected_item_type = form.cleaned_data.get('itemType') or item.itemType
+            new_add_cols = json.loads(selected_item_type.add_cols) if selected_item_type and selected_item_type.add_cols else {}
 
             # Retain common values between old and new additional columns
             updated_add_cols = {}
             for label in new_add_cols:
-                print('test2', add_cols_data)
-                print('test3', label)
-                if label in add_cols_data:
-                    updated_add_cols[label] = add_cols_data[label]
-                else:
-                    updated_add_cols[label] = request.POST.get(label, '')
-            
-            print('test:', updated_add_cols)
+                updated_add_cols[label] = request.POST.get(label, add_cols_data.get(label, ''))
 
+            print('Updated additional columns before saving:', updated_add_cols)
+
+            # Update the item attributes
             item.add_cols = json.dumps(updated_add_cols)
-
-            # Handle rec_expiration and alert_qty logic
             item.rec_per_inv = rec_per_inv
             item.rec_expiration = rec_expiration
-            if alert_qty_disabled:
-                item.alert_qty = 0
-            else:
-                item.alert_qty = request.POST.get('alert_qty', item.alert_qty)
-            
-            # Save the updated item
-            item.save()
+            item.alert_qty = 0 if alert_qty_disabled else request.POST.get('alert_qty', item.alert_qty)
 
+            # Force save with update_fields to ensure data is saved
+            print("Saving item instance with forced update...")
+            item.save(update_fields=['add_cols', 'rec_per_inv', 'rec_expiration', 'alert_qty'])
+
+            # Verify save by reloading the item
+            item.refresh_from_db()
+            print("Reloaded item from DB:", item.add_cols)
+
+            # Redirect after saving
             return redirect('inventory_itemDetails_view', item_id=item_id)
+        else:
+            print("Form is not valid. Errors:", form.errors)
     else:
         form = ItemEditForm(instance=item, selected_laboratory_id=selected_laboratory_id)
 
@@ -930,7 +931,6 @@ def inventory_itemEdit_view(request, item_id):
         'add_cols_data': add_cols_data,
         'is_alert_disabled': item.alert_qty == 0,
     })
-
 
 
 @login_required
