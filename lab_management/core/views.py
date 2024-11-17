@@ -2385,7 +2385,7 @@ def clearance_labtech_viewclearance(request):
             messages.error(request, f"Error adding clearance: {e}")
     
     reports = reported_items.objects.filter(
-        Q(borrow__laboratory_id=selected_laboratory_id) | Q(borrow=None)
+       laboratory_id=selected_laboratory_id
     )
     status_filter = request.GET.get('status', 'All')
     if status_filter == 'Cleared':
