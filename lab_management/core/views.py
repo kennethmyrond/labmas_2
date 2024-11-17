@@ -506,13 +506,21 @@ def inventory_view(request):
     # Filter inventory items by both the selected item_type and the selected laboratory,
     # and ensure the item is not disabled
     if selected_item_type:
-        inventory_items = item_description.objects.filter(
-            itemType_id=selected_item_type,
-            laboratory_id=selected_laboratory_id,
-            is_disabled=0  # Only get items that are enabled
-        ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0)) # Calculate total quantity
-        selected_item_type_instance = item_types.objects.get(pk=selected_item_type)
-        add_cols = json.loads(selected_item_type_instance.add_cols)
+        if selected_item_type == '0':
+            inventory_items = item_description.objects.filter(
+                laboratory_id=selected_laboratory_id,
+                is_disabled=0,
+                itemType_id = None    # Only get items that are enabled
+            ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
+            add_cols = []
+        else:
+            inventory_items = item_description.objects.filter(
+                itemType_id=selected_item_type,
+                laboratory_id=selected_laboratory_id,
+                is_disabled=0  # Only get items that are enabled
+            ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0)) # Calculate total quantity
+            selected_item_type_instance = item_types.objects.get(pk=selected_item_type)
+            add_cols = json.loads(selected_item_type_instance.add_cols)
     else:
         inventory_items = item_description.objects.filter(
             laboratory_id=selected_laboratory_id,

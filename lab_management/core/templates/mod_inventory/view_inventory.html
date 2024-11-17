@@ -37,6 +37,7 @@
                         {{ type.itemType_name }}
                       </option>
                     {% endfor %}
+                      <option value="0" {% if selected_item_type == 0 %}selected{% endif %}>None</option>
                   </select>
                 </div>
               </div>
