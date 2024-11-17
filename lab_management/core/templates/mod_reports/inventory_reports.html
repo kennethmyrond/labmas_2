@@ -318,7 +318,7 @@
                                         <table class="table inventory-datatable table-striped" border="1">
                                             <thead>
                                                 <tr>
-                                                    <th>Item ID</th>
+                                                    
                                                     <th>Item Name</th>
                                                     <th>Reorder Point</th>
                                                     ${data.add_cols.map(col => `<th>${col}</th>`).join('')}
@@ -328,7 +328,7 @@
                                             <tbody>
                                                 ${data.items.map(item => `
                                                     <tr>
-                                                        <td>${item.item_id}</td>
+                                                        
                                                         <td>${item.item_name}</td>
                                                         <td>${item.alert_qty}</td>
                                                         ${data.add_cols.map(col => `<td>${item.add_cols[col] || ''}</td>`).join('')}

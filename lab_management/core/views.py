@@ -633,27 +633,28 @@ def inventory_itemDetails_view(request, item_id):
     # suppliers table
     supplier_data = []
     for inventory in item_inventories:
-        first_handling = (
-            item_handling.objects.filter(inventory_item=inventory)
-            .order_by('timestamp')
-            .first()
-        )
-        
-        date_purchased = inventory.date_purchased
-        date_received = inventory.date_received
-        duration = (date_received - date_purchased).days if date_purchased and date_received else None
-        expiration_date = expiration_data.get(inventory.inventory_item_id, 'None')
+        if inventory.supplier_id != None:
+            first_handling = (
+                item_handling.objects.filter(inventory_item=inventory)
+                .order_by('timestamp')
+                .first()
+            )
+            
+            date_purchased = inventory.date_purchased
+            date_received = inventory.date_received
+            duration = (date_received - date_purchased).days if date_purchased and date_received else None
+            expiration_date = expiration_data.get(inventory.inventory_item_id, 'None')
 
-        supplier_data.append({
-            'inventory_id': inventory.inventory_item_id,
-            'supplier_name': inventory.supplier.supplier_name if inventory.supplier else 'N/A',
-            'date_purchased': date_purchased,
-            'date_received': date_received,
-            'duration': f"{duration} days" if duration else '0',
-            'qty': first_handling.qty if first_handling else 'Invalid',
-            'purchase_price': inventory.purchase_price,
-            'expiration': expiration_date
-        })
+            supplier_data.append({
+                'inventory_id': inventory.inventory_item_id,
+                'supplier_name': inventory.supplier.supplier_name if inventory.supplier else 'N/A',
+                'date_purchased': date_purchased,
+                'date_received': date_received,
+                'duration': f"{duration} days" if duration else '0',
+                'qty': first_handling.qty if first_handling else 'Invalid',
+                'purchase_price': inventory.purchase_price,
+                'expiration': expiration_date
+            })
     
     context = {
         'item': item,
@@ -3418,7 +3419,7 @@ def inventory_reports(request):
     # Filter supplier data based on the selected item and date range
     supplier_data = []
     if supplier_item_id:
-        inventory_items = item_inventory.objects.filter(item_id=supplier_item_id)
+        inventory_items = item_inventory.objects.filter(item_id=supplier_item_id).exclude(supplier_id=None)
         for inventory in inventory_items:
             # Filter based on date range
             first_handling = item_handling.objects.filter(inventory_item=inventory, timestamp__date__range=calculate_date_range(request, supplier_filter_type)).order_by('timestamp').first()

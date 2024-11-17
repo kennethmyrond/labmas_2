@@ -107,6 +107,7 @@
                         <th>Email</th>
                         <th>School ID</th>
                         <th>Role</th>
+                        <th>Status</th>
                         <!-- <th>Status</th> -->
                       </tr>
                     </thead>
@@ -118,6 +119,7 @@
                         <td>{{ user.user_email }}</td>
                         <td>{{ user.personal_id }}</td>
                         <td>{{ user.role_name }}</td>
+                        <td>{{ user.get_status_display }}</td>
                         <!-- <td class="status-{{ user.is_active|yesno:'active,terminated' }}" style="color: {%if user.is_active%}green{%else%}red{%endif%};">{{ user.is_active|yesno:"Active,Inactive" }}</td> -->
                       </tr>
                       {% endfor %}
