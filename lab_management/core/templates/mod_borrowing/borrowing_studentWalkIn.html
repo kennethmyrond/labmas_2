@@ -66,6 +66,13 @@
                                     </select>
                                 {% elif question.input_type == 'checkbox' %}
                                     <input type="checkbox" class="form-check-input" id="{{ question.question_text }}" name="{{ question.question_text }}">
+                                    
+                                {% elif question.input_type == 'true_false' %}
+                                    <!-- Using a dropdown for True/False -->
+                                    <select class="form-select" id="{{ question.question_text }}" name="{{ question.question_text }}">
+                                        <option value="True">True</option>
+                                        <option value="False">False</option>
+                                    </select>
                                 {% endif %}
                             </div>
                         </div>
