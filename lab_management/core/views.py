@@ -2627,13 +2627,19 @@ def lab_reservation_student_reserveLabChooseRoom(request):
 
     # Fetch existing reservations for the selected date
     existing_reservations = laboratory_reservations.objects.filter(
-        room__laboratory_id=selected_laboratory_id, start_date=reservation_date, room__is_disabled=0)
+    room__laboratory_id=selected_laboratory_id, start_date=reservation_date, room__is_disabled=0)
 
     room_reservation_times = {room.room_id: [] for room in rooms_query}
 
     # Populate the room_reservation_times dictionary
     for reservation in existing_reservations:
-        room_reservation_times[reservation.room.room_id].append(f"{reservation.start_time}-{reservation.end_time}")
+        start_time_str = reservation.start_time.strftime('%H:%M')
+        end_time_str = reservation.end_time.strftime('%H:%M')
+        room_reservation_times[reservation.room.room_id].append(f"{start_time_str}-{end_time_str}")
+
+    # Sort the reservation times for each room by start time
+    for room_id, times in room_reservation_times.items():
+        room_reservation_times[room_id] = sorted(times, key=lambda x: datetime.strptime(x.split('-')[0], '%H:%M'))
 
     print('room res: ', room_reservation_times)
 
@@ -2672,12 +2678,14 @@ def lab_reservation_student_reserveLabChooseRoom(request):
                 ss_start_time_str, ss_end_time_str = time.split('-')
 
                 # Convert the reservation times to time objects for comparison
-                ss_start_time_obj = datetime.strptime(ss_start_time_str, '%H:%M:%S').time()
-                ss_end_time_obj = datetime.strptime(ss_end_time_str, '%H:%M:%S').time()
+                ss_start_time_obj = datetime.strptime(ss_start_time_str, '%H:%M').time()
+                ss_end_time_obj = datetime.strptime(ss_end_time_str, '%H:%M').time()
 
                 # Check if the reservation overlaps with the requested time slot
                 if (ss_start_time_obj < end_time_obj and ss_end_time_obj > start_time_obj):
                     reservation_info.append(time)
+            
+            print(reservation_info)
 
             # Mark as 'red' if reserved or blocked
             if reserved or is_blocked:

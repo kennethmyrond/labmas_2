@@ -72,7 +72,7 @@
                       {% with availability=room_availability|dict_key:room.room_id|dict_key:start %}
                         <td style="background-color: {{ availability.color }}; color:white;">
                           {% if availability.reservation_info %}
-                              <p class="small">{{ availability.reservation_info|join:", " }}</p>
+                              <p class="small">{{ availability.reservation_info|join:"<br> " }}</p>
                           {% endif %}
                       </td>
                       {% endwith %}
