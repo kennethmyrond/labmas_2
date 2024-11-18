@@ -44,10 +44,10 @@ prev_day = ''
 # thread every midnight query items to check due date if today (for on holding past due date )
 def late_borrow(request):
     global prev_day
-    prev_day = timezone.now().day  # Start with the current day
+    prev_day = timezone.localtime().day  # Start with the current day
     output = 'None'
     # Get current date and time
-    current_datetime = timezone.now()
+    current_datetime = timezone.localtime()
     current_day = current_datetime.day
 
     # Check if the day has changed (execute once every new day)
@@ -501,7 +501,7 @@ def inventory_view(request):
     selected_item_type = request.GET.get('item_type')
 
     # Fetch current date for expiration comparison
-    current_date = timezone.now().date()
+    current_date = timezone.localtime().date()
 
     # Filter inventory items by both the selected item_type and the selected laboratory,
     # and ensure the item is not disabled
@@ -823,7 +823,7 @@ def inventory_updateItem_view(request):
                     inventory_item.save()
                     item_handling.objects.create(
                         inventory_item=inventory_item,
-                        timestamp=timezone.now(),
+                        timestamp=timezone.localtime(),
                         updated_by=current_user,
                         changes='R' if action_type == 'remove' else 'D',
                         qty=0-quantity,
@@ -847,7 +847,7 @@ def inventory_updateItem_view(request):
                         inventory_item.save()
                         item_handling.objects.create(
                             inventory_item=inventory_item,
-                            timestamp=timezone.now(),
+                            timestamp=timezone.localtime(),
                             updated_by=current_user,
                             changes='R' if action_type == 'remove' else 'D',
                             qty=0-remaining_qty,
@@ -861,7 +861,7 @@ def inventory_updateItem_view(request):
                         inventory_item.save()
                         item_handling.objects.create(
                             inventory_item=inventory_item,
-                            timestamp=timezone.now(),
+                            timestamp=timezone.localtime(),
                             updated_by=current_user,
                             changes='R' if action_type == 'remove' else 'D',
                             qty=0-handled_qty,
@@ -1081,8 +1081,8 @@ def adjust_inventory_item(status, inventory, discrepancy_qty, user, change_type,
             item_inventory_instance = item_inventory.objects.create(
                 item=inventory,
                 qty=discrepancy_qty,
-                date_purchased=timezone.now(),
-                date_received=timezone.now(),
+                date_purchased=timezone.localtime(),
+                date_received=timezone.localtime(),
                 supplier=None  # Supplier can be left as None for physical adjustments
             )
             item_handling.objects.create(
@@ -1452,7 +1452,7 @@ def borrowing_student_prebookview(request):
             # Format the date as "Month DD, YYYY"
             request_date = current_time.date()
 
-            # request_date = timezone.now().date()
+            # request_date = timezone.localtime().date()
 
             # Determine borrow and due dates based on borrowing type
             error_message = None
@@ -1506,7 +1506,7 @@ def borrowing_student_prebookview(request):
             borrow_entry = borrow_info.objects.create(
                 laboratory_id=laboratory_id,
                 user=user,
-                request_date=timezone.now(),  # Use current timestamp
+                request_date=timezone.localtime(),  # Use current timestamp
                 borrow_date=borrow_date,
                 due_date=due_date,
                 status='P',  # Set initial status to 'Pending'
@@ -1629,7 +1629,7 @@ def borrowing_student_walkinview(request):
             items_by_type[item_type].append(item)
 
     if request.method == 'POST':
-        # request_date = timezone.now()
+        # request_date = timezone.localtime()
         # Format the date as "Month DD, YYYY"
         request_date = current_time.strftime('%Y-%m-%d')
 
@@ -2569,7 +2569,7 @@ def lab_reservation_student_reserveLabChooseRoom(request):
         if not res_id:
             return redirect('lab_reservation_preapproval')  
 
-    today = timezone.now().date()
+    today = timezone.localtime().date()
     min_reservation_date = today + timedelta(days=reservation_config_obj.leadtime)
 
     reservation_date = request.GET.get('reservationDate')
@@ -2844,7 +2844,7 @@ def lab_reservation_student_reserveLabSummary(request):
     selected_laboratory_id = request.session.get('selected_lab')
     
     # Get today's date
-    today = timezone.now().date()
+    today = timezone.localtime().date()
 
     # Filter reservations by categories
     tab = request.GET.get('tab', 'all')  # Default to 'today' tab
@@ -2917,7 +2917,7 @@ def labres_lab_schedule(request):
     reservations_by_day = {}
     days_range = None
     # Get the current month
-    current_month = timezone.now().strftime('%Y-%m')
+    current_month = timezone.localtime().strftime('%Y-%m')
 
     if selected_laboratory_id:
         room_list = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
@@ -3359,7 +3359,7 @@ def inventory_reports(request):
     item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
     item_id = request.GET.get('item_id')
 
-    end_date = timezone.now().date()
+    end_date = timezone.localtime().date()
     start_date = end_date - timedelta(days=365)
 
     daily_data = {}
@@ -3595,20 +3595,20 @@ def clearance_reports(request):
     filter_type = request.GET.get('filter_type', 'today')
     reports_filter = request.GET.get('reports_filter', 'today')
     start_date = end_date = None
-    today = timezone.now().date()
+    today = timezone.localtime().date()
     
     if filter_type == 'today':
-        start_date = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+        start_date = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
     elif filter_type == 'this_week':
         start_date = today - timedelta(days=today.weekday())  # Start of the week
-        end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+        end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
     elif filter_type == 'this_month':
         start_date = today.replace(day=1)
-        end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+        end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
     elif filter_type == 'this_year':
         start_date = today.replace(month=1, day=1)
-        end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+        end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
     elif filter_type == 'custom':
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
@@ -3678,20 +3678,20 @@ def clearance_reports(request):
     # Filters for Reported Items Count
     item_filter_type = request.GET.get('item_filter_type', 'today')
     item_start_date = item_end_date = None
-    today = timezone.now().date()
+    today = timezone.localtime().date()
     
     if item_filter_type == 'today':
-        item_start_date = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        item_end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+        item_start_date = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+        item_end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
     elif item_filter_type == 'this_week':
         item_start_date = today - timedelta(days=today.weekday())
-        item_end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+        item_end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
     elif item_filter_type == 'this_month':
         item_start_date = today.replace(day=1)
-        item_end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+        item_end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
     elif item_filter_type == 'this_year':
         item_start_date = today.replace(month=1, day=1)
-        item_end_date = timezone.now().replace(hour=23, minute=59, second=59, microsecond=999999)
+        item_end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
     elif item_filter_type == 'custom':
         item_start_date = request.GET.get('item_start_date')
         item_end_date = request.GET.get('item_end_date')
@@ -3746,7 +3746,7 @@ def clearance_reports(request):
 def labres_reports(request):
     selected_laboratory_id = request.session.get('selected_lab')
     reservations_filter = request.GET.get('reservations_filter', 'today')
-    today = timezone.now().date()
+    today = timezone.localtime().date()
 
     # Get total rooms for the selected laboratory
     total_rooms = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=0).count()
@@ -3866,7 +3866,7 @@ def inventory_data(request, item_type_id, laboratory_id):
 
 def calculate_date_range(request, filter_type):
     """ Helper function to determine start and end dates based on the filter type """
-    today = timezone.now().date()
+    today = timezone.localtime().date()
     if filter_type == 'today':
         return today, today
     elif filter_type == 'this_week':
@@ -3896,7 +3896,7 @@ def admin_reports_view(request):
     new_users_filter = request.GET.get('new_users_filter', 'today')
     reports_filter = request.GET.get('reports_filter', 'this_week')
 
-    today = timezone.now().date()
+    today = timezone.localtime().date()
     # # Total Users Filter Setup
     # if total_users_filter == 'today':
     #     total_start_date = today
@@ -4479,7 +4479,7 @@ def setup_createlab(request):
             description=description,
             department=department,
             is_available=True,
-            date_created=timezone.now()
+            date_created=timezone.localtime()
         )
 
         # Convert selected module IDs to integers
