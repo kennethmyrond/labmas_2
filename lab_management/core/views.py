@@ -1459,7 +1459,7 @@ def borrowing_student_prebookview(request):
 
                 # Validate the one-day borrowing: must be at least 3 days from the request date
                 min_borrow_date = request_date + timedelta(days=int(lab.prebook_lead_time))
-                if one_day_date < min_borrow_date.strftime('%Y-%m-%d'):
+                if one_day_date <= min_borrow_date.strftime('%Y-%m-%d'):
                     error_message = f'For one-day borrowing, the requested date must be at least {lab.prebook_lead_time} days from today.'
             else:
                 borrow_date = from_date
