@@ -3,6 +3,9 @@
 {% block title %}Edit Item{% endblock %}
 
 {% block content %}
+{% load custom_filters %}
+
+
 <div class="pagetitle">
     <h1>Inventory</h1>
     <nav>
@@ -42,10 +45,22 @@
                             {% for label, value in add_cols_data.items %}
                                 <div style="padding-left: 20px;">
                                     <strong>{{ label }}:</strong>
-                                    <input type="text" name="{{ label }}" value="{{ value }}" class="form-control">
+                                    
+                                    {% if label in dropdown_fields %}
+                                        <!-- Render as dropdown if options are available -->
+                                        <select name="{{ label|clean_label }}" class="form-control">
+                                            {% for option in dropdown_fields|dict_lookup:label %}
+                                                <option value="{{ option }}" {% if option == value %}selected{% endif %}>{{ option }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    {% else %}
+                                        <!-- Default to text input -->
+                                        <input type="text" name="{{ label }}" value="{{ value }}" class="form-control">
+                                    {% endif %}
                                 </div>
                             {% endfor %}
                         </div>
+                        
                         <h6 class="mt-3">Item Settings:</h6>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="recExpiration" name="rec_expiration" {% if item.rec_expiration %}checked{% endif %}>
@@ -95,37 +110,54 @@
 <script>
     // Handle itemType change
     document.getElementById('id_itemType').addEventListener('change', function() {
-        const itemTypeId = this.value;
-        if (itemTypeId) {
-            fetch(`/inventory/get_item_type_add_cols/${itemTypeId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    const additionalColumnsDiv = document.getElementById('additionalColumns');
-                    additionalColumnsDiv.innerHTML = ''; // Clear existing fields
+    const itemTypeId = this.value;
+    if (itemTypeId) {
+        fetch(`/inventory/get_item_type_add_cols/${itemTypeId}/`)
+            .then(response => response.json())
+            .then(data => {
+                const additionalColumnsDiv = document.getElementById('additionalColumns');
+                additionalColumnsDiv.innerHTML = ''; // Clear existing fields
 
-                    if (data.add_cols) {
-                        const existingValues = {};
+                if (data.add_cols) {
+                    const existingValues = {};
 
-                        // Get current input values for common columns
-                        document.querySelectorAll('.additional-columns input').forEach(input => {
-                            existingValues[input.name] = input.value;
-                        });
+                    // Get current input values for common columns
+                    document.querySelectorAll('.additional-columns input, .additional-columns select').forEach(input => {
+                        existingValues[input.name] = input.value;
+                    });
 
-                        // Create new fields
-                        data.add_cols.forEach(col => {
-                            const div = document.createElement('div');
-                            div.style.paddingLeft = '20px';
+                    // Create new fields
+                    data.add_cols.forEach(col => {
+                        const div = document.createElement('div');
+                        div.style.paddingLeft = '20px';
+
+                        // Check if the column has specific options
+                        const labelMatch = col.match(/(.+?)\s*\((.+?)\)/);
+                        if (labelMatch) {
+                            const [_, label, options] = labelMatch;
+                            const optionList = options.split(',').map(option => option.trim());
+
+                            let selectHTML = `<strong>${label}:</strong><select name="${label}" class="form-control">`;
+                            optionList.forEach(option => {
+                                const selected = option === (existingValues[label] || '') ? 'selected' : '';
+                                selectHTML += `<option value="${option}" ${selected}>${option}</option>`;
+                            });
+                            selectHTML += '</select>';
+                            div.innerHTML = selectHTML;
+                        } else {
                             div.innerHTML = `
                                 <strong>${col}:</strong>
                                 <input type="text" name="${col}" value="${existingValues[col] || ''}" class="form-control">
                             `;
-                            additionalColumnsDiv.appendChild(div);
-                        });
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-        }
-    });
+                        }
+                        additionalColumnsDiv.appendChild(div);
+                    });
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+});
+
 </script>
 
 {% endblock %}

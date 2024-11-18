@@ -10,6 +10,15 @@ def b64encode(value):
     return base64.b64encode(value).decode('utf-8')
 
 @register.filter
+def dict_lookup(dictionary, key):
+    return dictionary.get(key, [])
+
+@register.filter
+def clean_label(label):
+    """Split by '(' and return the stripped first part."""
+    return label.split('(')[0].strip()
+
+@register.filter
 def add(value, arg):
     # Ensure both value and arg are treated as integers
     try:

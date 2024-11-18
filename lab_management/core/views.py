@@ -909,9 +909,10 @@ def inventory_itemEdit_view(request, item_id):
             # Retain common values between old and new additional columns
             updated_add_cols = {}
             for label in new_add_cols:
-                updated_add_cols[label] = request.POST.get(label, add_cols_data.get(label, ''))
-
-            print('Updated additional columns before saving:', updated_add_cols)
+                # Use the exact label name as it appears in the form
+                field_name = label.split('(')[0].strip() if '(' in label else label
+                updated_add_cols[label] = request.POST.get(field_name, add_cols_data.get(label, ''))
+                print(f"Saving field '{field_name}': {updated_add_cols[label]}")
 
             # Update the item attributes
             item.add_cols = json.dumps(updated_add_cols)
@@ -934,10 +935,19 @@ def inventory_itemEdit_view(request, item_id):
     else:
         form = ItemEditForm(instance=item, selected_laboratory_id=selected_laboratory_id)
 
+    # Pass the additional columns with options to the template
+    dropdown_fields = {}
+    for label, value in add_cols_data.items():
+        # Check if the field has specific options, e.g., "Grade (A, B, C)"
+        if '(' in label and ')' in label:
+            options = label[label.find('(') + 1:label.find(')')].split(',')
+            dropdown_fields[label] = [option.strip() for option in options]
+
     return render(request, 'mod_inventory/inventory_itemEdit.html', {
         'form': form,
         'item': item,
         'add_cols_data': add_cols_data,
+        'dropdown_fields': dropdown_fields,  # New context variable
         'is_alert_disabled': item.alert_qty == 0,
     })
 
