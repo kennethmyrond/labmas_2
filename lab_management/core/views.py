@@ -2635,7 +2635,7 @@ def lab_reservation_student_reserveLabChooseRoom(request):
     for reservation in existing_reservations:
         room_reservation_times[reservation.room.room_id].append(f"{reservation.start_time}-{reservation.end_time}")
 
-    # print('room res: ', room_reservation_times)
+    print('room res: ', room_reservation_times)
 
     # Get the day of the week for the selected date
     day_of_week = reservation_date.strftime('%A')  # E.g., 'Monday', 'Tuesday', etc.
@@ -2667,12 +2667,17 @@ def lab_reservation_student_reserveLabChooseRoom(request):
             ).exists()
 
             # Get the reservation info for the current time slot
-            reservation_info = [
-                time for time in room_reservation_times[room.room_id]
-                if (time >= start_time_str and time <= end_time_str)
-            ]
+            reservation_info = []
+            for time in room_reservation_times[room.room_id]:
+                ss_start_time_str, ss_end_time_str = time.split('-')
 
-            print(reservation_info)
+                # Convert the reservation times to time objects for comparison
+                ss_start_time_obj = datetime.strptime(ss_start_time_str, '%H:%M:%S').time()
+                ss_end_time_obj = datetime.strptime(ss_end_time_str, '%H:%M:%S').time()
+
+                # Check if the reservation overlaps with the requested time slot
+                if (ss_start_time_obj < end_time_obj and ss_end_time_obj > start_time_obj):
+                    reservation_info.append(time)
 
             # Mark as 'red' if reserved or blocked
             if reserved or is_blocked:
