@@ -390,7 +390,7 @@ def request_laboratory(request):
             return redirect("home")
 
         # Check if user is already added to this laboratory
-        if laboratory_users.objects.filter(user=request.user, laboratory=lab, status__in=['A', 'P', 'I']).exists():
+        if laboratory_users.objects.filter(user=request.user, laboratory=lab, status__in=['A', 'P', 'I'], is_active=True).exists():
             messages.error(request, "You are already registered in this laboratory.")
             return redirect("home")
 
@@ -801,8 +801,7 @@ def inventory_updateItem_view(request):
                 )
             
             # messages.success(request, f"Added Inventory successfully.")
-
-            return JsonResponse({'success': True, 'new_inventory_item_id': new_inventory_item.inventory_item_id})
+            return JsonResponse({'success': True, 'new_inventory_item_id': new_inventory_item.inventory_item_id, 'action_type': action_type})
         
         elif action_type in ['remove', 'report']:# Handle remove & report from inventory
             if action_type=='remove':
@@ -863,10 +862,13 @@ def inventory_updateItem_view(request):
 
             if remaining_qty > 0:
                 messages.error(request, f"Unable to fully remove requested quantity. Remaining: {remaining_qty}")
+                return JsonResponse({'success': True})
+                
             else:
                 messages.success(request, f"{action_type.capitalize()} action completed successfully.")
+                return JsonResponse({'success': True})
 
-        return render(request, 'mod_inventory/inventory_updateItem.html', {'success_message': "Operation successful."})
+        return render(request, 'mod_inventory/inventory_updateItem.html')
 
     return render(request, 'mod_inventory/inventory_updateItem.html')
 

@@ -249,7 +249,7 @@
                 <p style="text-align: center;">Please save this Inventory Item ID and attach it to the items stored.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="$('#successModal').modal('hide');" >Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="$('#successModal').modal('hide'); location.reload();" >Close</button>
             </div>
         </div>
     </div>
@@ -378,6 +378,7 @@
     //     $('#confirmationModal').modal('hide');
     //     $('#updateForm').submit();  // Submit the form
     // }
+
     function submitForm() {
     $('#confirmationModal').modal('hide');
 
@@ -387,10 +388,10 @@
         url: '', // Keep this as the current view URL
         data: $('#updateForm').serialize(),
         success: function(response) {
-            if (response.success && response.new_inventory_item_id) {
-                // Set the new inventory item ID in the success modal
+            if (response.success && !response.new_inventory_item_id) {
+                location.reload();
+            } else if(response.success && response.new_inventory_item_id) {
                 $('#newInventoryItemId').text(response.new_inventory_item_id);
-                // Show the success modal
                 $('#successModal').modal('show');
             } else {
                 alert('Error adding item to inventory. Please try again.');
