@@ -26,10 +26,11 @@
 </div>
 
 {% if messages %}
-  <div class="alert alert-success">
-    {{ messages }}
-  </div>
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
 {% endif %}
+  
 
 <!-- Room Configuration Section -->
 <section class="section">

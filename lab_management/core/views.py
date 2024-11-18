@@ -3127,7 +3127,7 @@ def labres_labcoord_configroom(request):
                     description=room_description
                 )
                 new_room.save()
-            message = f'Successfully added {room_name}'
+            message = f'Successfully added Room {room_name}'
 
         elif 'save_time' in request.POST:
             # Save the general reservation configuration for the lab (applies to all rooms)
@@ -3173,7 +3173,6 @@ def labres_labcoord_configroom(request):
             room_configured.blocked_time = json.dumps(blocked_times)
             room_configured.save()
             message = f'Time configuration saved for {room_configured.name}'
-            messages.success(request, message)
         
         elif 'save_approval' in request.POST:
             # Save approval settings and optional PDF form
@@ -3191,6 +3190,7 @@ def labres_labcoord_configroom(request):
             reservation_config_obj.save()
             message = 'Terms and conditions saved'
 
+        messages.success(request, message)
     # Fetch rooms and reservation config
     rooms_query = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
     reservation_config_data = {
@@ -3205,7 +3205,6 @@ def labres_labcoord_configroom(request):
 
     context = {
         'rooms': rooms_query,
-        'messages': message,
         'room_configured': room_configured,
         'reservation_config': reservation_config_data,
     }
