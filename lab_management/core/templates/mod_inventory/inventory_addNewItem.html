@@ -183,27 +183,26 @@
             inputDiv.className = 'col-sm-10';
 
             if (isDropdown) {
-                // Create a dropdown (select) element if the field has fixed options
-                const selectElement = document.createElement('select');
-                selectElement.className = 'form-select';
-                selectElement.name = `add_col_${fieldName.toLowerCase()}`;
+            // Create a dropdown (select) element if the field has fixed options
+            const selectElement = document.createElement('select');
+            selectElement.className = 'form-select';
+            selectElement.name = `add_col_${fieldName.replace(/\s+/g, '_').toLowerCase()}`; // Replace spaces with underscores
+            options.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = option;
+                selectElement.appendChild(optionElement);
+            });
+            inputDiv.appendChild(selectElement);
+        } else {
+            // Create a text input for fields without fixed options
+            const inputElement = document.createElement('input');
+            inputElement.type = 'text';
+            inputElement.className = 'form-control';
+            inputElement.name = `add_col_${col.replace(/\s+/g, '_').toLowerCase()}`; // Replace spaces with underscores
+            inputDiv.appendChild(inputElement);
+        }
 
-                options.forEach(option => {
-                    const optionElement = document.createElement('option');
-                    optionElement.value = option;
-                    optionElement.textContent = option;
-                    selectElement.appendChild(optionElement);
-                });
-
-                inputDiv.appendChild(selectElement);
-            } else {
-                // Create a text input for fields without fixed options
-                const inputElement = document.createElement('input');
-                inputElement.type = 'text';
-                inputElement.className = 'form-control';
-                inputElement.name = `add_col_${col.toLowerCase()}`;
-                inputDiv.appendChild(inputElement);
-            }
 
             rowDiv.appendChild(inputDiv);
             additionalFieldsContainer.appendChild(rowDiv);
