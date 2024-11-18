@@ -1575,6 +1575,9 @@ def get_quantity_for_item(request, item_id):
 @login_required
 @lab_permission_required('borrow_items')
 def borrowing_student_walkinview(request):
+         
+    current_time = timezone.localtime()  
+
     # Get session details
     laboratory_id = request.session.get('selected_lab')
     user_id = request.user
@@ -1614,7 +1617,10 @@ def borrowing_student_walkinview(request):
             items_by_type[item_type].append(item)
 
     if request.method == 'POST':
-        request_date = timezone.now()
+        # request_date = timezone.now()
+        # Format the date as "Month DD, YYYY"
+        request_date = current_time.strftime('%B %d, %Y')
+
         borrow_date = request_date
         due_date = request_date
 
@@ -1664,7 +1670,7 @@ def borrowing_student_walkinview(request):
 
         if error_message:
             return render(request, 'mod_borrowing/borrowing_studentWalkIn.html', {
-                'current_date': request_date.date(),
+                'current_date': request_date,
                 'equipment_list': item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1),
                 'error_message': error_message,
                 'inventory_items': inventory_items,
@@ -1698,7 +1704,8 @@ def borrowing_student_walkinview(request):
         return redirect('borrowing_studentviewPreBookRequests')
 
     # Fetch the current date and all equipment items including chemicals
-    current_date = timezone.now().date()
+    # current_date = current_time.strftime('%B %d, %Y')
+    current_date = current_time.strftime('%B %d, %Y')
 
     # Get unique item types for dropdown filtering
     item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
