@@ -1906,6 +1906,7 @@ def borrowing_student_detailedWalkInRequestsview(request):
 @login_required
 @lab_permission_required('view_booking_requests')
 def borrowing_labcoord_prebookrequests(request):
+    selected_laboratory_id = request.session.get('selected_lab')
     if not request.user.is_authenticated:
         return redirect('userlogin')
     
@@ -1914,9 +1915,9 @@ def borrowing_labcoord_prebookrequests(request):
 
     # Filter borrowing requests based on the selected status
     if selected_status == 'all':
-        borrowing_requests = borrow_info.objects.all().order_by('request_date')
+        borrowing_requests = borrow_info.objects.filter(laboratory_id=selected_laboratory_id).order_by('request_date')
     else:
-        borrowing_requests = borrow_info.objects.filter(status=selected_status).order_by('request_date')
+        borrowing_requests = borrow_info.objects.filter(laboratory_id=selected_laboratory_id, status=selected_status).order_by('request_date')
 
     if request.method == 'POST':
         # Get borrow_id and action from form submission
