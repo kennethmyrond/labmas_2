@@ -3,6 +3,14 @@ from django import template
 
 register = template.Library()
 
+@register.filter
+def has_inventory_permissions(permissions):
+    return (permissions.can_view_inventory or
+            permissions.can_add_new_item or
+            permissions.can_update_item_inventory or
+            permissions.can_physical_count or
+            permissions.can_manage_suppliers or
+            permissions.can_configure_inventory)
 
 @register.filter(name='b64encode')
 def b64encode(value):
