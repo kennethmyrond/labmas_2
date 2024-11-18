@@ -151,7 +151,7 @@
                               </td>
                               <td>
                                 <div class="input-group">
-                                    <input type="number" name="qty_limit_{{ item.item_id }}" value="{{ item.qty_limit }}" 
+                                    <input type="number" name="qty_limit_{{ item.item_id }}" value="{{ item.qty_limit|default:'' }}" 
                                            min="0" placeholder="Qty Limit" class="form-control">
                                     <button type="button" class="btn btn-danger reset-qty-limit" data-item-id="{{ item.item_id }}">Reset</button>
                                 </div>

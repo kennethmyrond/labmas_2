@@ -121,62 +121,69 @@
                     <!-- Reservation Form -->
                     <form method="POST" action="{% url 'lab_reservation_student_reserveLabConfirm' %}">
                       {% csrf_token %}
-                      {%if res_id%}
+                      {% if res_id %}
                       <div class="row mb-3">
-                        <label for="reservation_id" class="col-sm-2 col-form-label">Reservation ID:</label>
-                        <div class="col-sm-10">
-                          <input type="text" id="reservation_id" name="reservation_id" class="form-control" value="{{ res_id }}" readonly="true">
-                        </div>
+                          <label for="reservation_id" class="col-sm-2 col-form-label">Reservation ID:</label>
+                          <div class="col-sm-10">
+                              <input type="text" id="reservation_id" name="reservation_id" class="form-control" value="{{ res_id }}" readonly="true">
+                          </div>
                       </div>
-                      {%endif%}
+                      {% endif %}
                       <div class="row mb-3">
-                        <label for="selectedDate" class="col-sm-2 col-form-label">Selected Date:</label>
-                        <div class="col-sm-10">
-                          <input type="date" id="selectedDate" name="selectedDate" class="form-control" value="{{ reservation_date|date:'Y-m-d' }}" readonly="true">
-                        </div>
+                          <label for="selectedDate" class="col-sm-2 col-form-label">Selected Date:</label>
+                          <div class="col-sm-10">
+                              <input type="date" id="selectedDate" name="selectedDate" class="form-control" value="{{ reservation_date|date:'Y-m-d' }}" readonly="true">
+                          </div>
                       </div>
-
+                  
                       <div class="row mb-3">
-                        <label for="selectedRoom" class="col-sm-2 col-form-label">Select Room:</label>
-                        <div class="col-sm-10">
-                          <select id="selectedRoom" name="selectedRoom" class="form-select" required>
-                            {% for room in rooms %}
-                              <option value="{{ room.room_id }}">{{ room.name }} (Capacity: {{ room.capacity }})</option>
-                            {% endfor %}
-                          </select>
-                        </div>
+                          <label for="selectedRoom" class="col-sm-2 col-form-label">Select Room:</label>
+                          <div class="col-sm-10">
+                              <select id="selectedRoom" name="selectedRoom" class="form-select" required>
+                                  {% for room in rooms %}
+                                  <option value="{{ room.room_id }}">{{ room.name }} (Capacity: {{ room.capacity }})</option>
+                                  {% endfor %}
+                              </select>
+                          </div>
                       </div>
-
+                  
                       <div class="row mb-3">
-                        <label for="selectedStartTime" class="col-sm-2 col-form-label">Reserve Time:</label>
-                        <div class="col-sm-4">
-                            <input type="time" id="selectedStartTime" name="selectedStartTime" class="form-control" min="{{ reservation_config_obj.start_time }}" max="{{ reservation_config_obj.end_time }}" required>
-                        </div>
-                    
-                        <label for="selectedEndTime" class="col-sm-2 col-form-label">Until</label>
-                        <div class="col-sm-4">
-                            <input type="time" id="selectedEndTime" name="selectedEndTime" class="form-control" min="{{ reservation_config_obj.start_time }}" max="{{ reservation_config_obj.end_time }}" required>
-                        </div>
-                        <div id="timeErrorMessage" class="text-danger" style="display: none;">
-                          *Invalid start and end time.
+                          <label for="selectedStartTime" class="col-sm-2 col-form-label">Reserve Time:</label>
+                          <div class="col-sm-4">
+                              <input type="time" id="selectedStartTime" name="selectedStartTime" class="form-control" min="{{ reservation_config_obj.start_time }}" max="{{ reservation_config_obj.end_time }}" required>
+                          </div>
+                  
+                          <label for="selectedEndTime" class="col-sm-2 col-form-label">Until</label>
+                          <div class="col-sm-4">
+                              <input type="time" id="selectedEndTime" name="selectedEndTime" class="form-control" min="{{ reservation_config_obj.start_time }}" max="{{ reservation_config_obj.end_time }}" required>
+                          </div>
+                          <div id="timeErrorMessage" class="text-danger" style="display: none;">
+                              *Invalid start and end time.
+                          </div>
+                          <div id="rangeErrorMessage" class="text-danger" style="display: none;">
+                              *Time must be between {{ reservation_config_obj.start_time }} and {{ reservation_config_obj.end_time }}.
+                          </div>
                       </div>
-                      <div id="rangeErrorMessage" class="text-danger" style="display: none;">
-                          *Time must be between {{ reservation_config_obj.start_time }} and {{ reservation_config_obj.end_time }}.
-                      </div>
-                      </div>
-
+                  
                       <script>
                         const startTimeInput = document.getElementById('selectedStartTime');
                         const endTimeInput = document.getElementById('selectedEndTime');
                         const timeErrorMessage = document.getElementById('timeErrorMessage');
                         const rangeErrorMessage = document.getElementById('rangeErrorMessage');
+                        const form = document.querySelector('form'); // Select the form element
                     
                         function validateTime() {
-                            const startTime = startTimeInput.value;
-                            const endTime = endTimeInput.value;
-                            const minTime = startTimeInput.min; // Get minimum time
-                            const maxTime = endTimeInput.max;   // Get maximum time
+                            const startTime = startTimeInput.value.trim();
+                            const endTime = endTimeInput.value.trim();
+                            const minTime = '{{ reservation_config_obj.start_time|date:"H:i" }}'.trim(); // Get minimum time
+                            const maxTime = '{{ reservation_config_obj.end_time|date:"H:i" }}'.trim();   // Get maximum time
                             let isValid = true;
+                    
+                            console.log('Start Time:', startTime);
+                            console.log('End Time:', endTime);
+                            console.log('Min Time:', minTime);
+                            console.log('Max Time:', maxTime);
+                    
                             // Reset error messages
                             timeErrorMessage.style.display = 'none';
                             rangeErrorMessage.style.display = 'none';
@@ -184,35 +191,38 @@
                             // Check if start and end times are within range
                             if (startTime < minTime || endTime < minTime || startTime > maxTime || endTime > maxTime) {
                                 rangeErrorMessage.style.display = 'block'; // Show range error message
+                                endTimeInput.value = '';
                                 isValid = false;
                             }
                     
                             // Check if start time is less than end time
                             if (startTime && endTime && startTime >= endTime) {
                                 timeErrorMessage.style.display = 'block'; // Show time error message
+                                endTimeInput.value = '';
                                 isValid = false;
                             }
                     
-                            // If both checks pass, hide error messages
-                            if (isValid) {
-                                timeErrorMessage.style.display = 'none';
-                                rangeErrorMessage.style.display = 'none';
-                            }
+                            return isValid; // Return validation result
                         }
                     
                         // Attach event listeners
                         startTimeInput.addEventListener('change', validateTime);
                         endTimeInput.addEventListener('change', validateTime);
-                    </script>
                     
-                      
-
+                        // Prevent form submission if validation fails
+                        form.addEventListener('submit', function(event) {
+                            if (!validateTime()) {
+                                event.preventDefault(); // Prevent form submission
+                                console.log('Form submission prevented due to validation errors.');
+                            }
+                        });
+                    </script>
                       <div class="row mb-3">
-                        <div class="col-sm-10">
-                          <button type="submit" class="btn btn-primary">Confirm Booking</button>
-                        </div>
+                          <div class="col-sm-10">
+                              <button type="submit" class="btn btn-primary">Confirm Booking</button>
+                          </div>
                       </div>
-                    </form>
+                  </form>
 
                   </div>
                 </div>
