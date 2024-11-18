@@ -322,8 +322,6 @@
             const timeKey = `${day}_${timeSlot}`;
             if (blockedTimes[day] && blockedTimes[day].includes(timeSlot)) {
               checkbox.checked = true;
-              const reservationText = blockedTimes[day].find(reservation => reservation.includes(timeSlot));
-          cell.textContent = reservationText;
               cell.style.backgroundColor = 'red';
             } else {
               cell.style.backgroundColor = 'green';

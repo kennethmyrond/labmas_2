@@ -2717,25 +2717,36 @@ def lab_reservation_student_reserveLabConfirm(request):
             end_time__gt=selected_start_time     # Existing reservation ends after new reservation starts
         ).exists()
 
-
-        # # Fetch blocked times for the room
-        # blocked_times = json.loads(selected_room.blocked_time) if selected_room.blocked_time else {}
-        # day_of_week = datetime.strptime(selected_date, '%Y-%m-%d').strftime('%A')  # Get the day of the week
-
-        # time_key = f"{selected_start_time}-{selected_end_time}"
-
         # Fetch blocked times for the room
         blocked_times = json.loads(selected_room.blocked_time) if selected_room.blocked_time else {}
         day_of_week = datetime.strptime(selected_date, '%Y-%m-%d').strftime('%A')  # Get the day of the week
 
+        # Convert selected times to datetime.time if they are strings
+        if isinstance(selected_start_time, str):
+            selected_start_time = datetime.strptime(selected_start_time, '%H:%M').time()
+        if isinstance(selected_end_time, str):
+            selected_end_time = datetime.strptime(selected_end_time, '%H:%M').time()
+
         # Check for overlaps with blocked times
         is_blocked = False
         if day_of_week in blocked_times:
-            for blocked_time in blocked_times[day_of_week]:
+            for blocked_time in blocked_times[day_of_week]:              
                 blocked_start, blocked_end = blocked_time.split('-')
-                if (selected_start_time < blocked_end) and (selected_end_time > blocked_start):
+
+                 # Convert the times to datetime objects for comparison
+                blocked_start_time = datetime.strptime(blocked_start, '%H:%M').time()
+                blocked_end_time = datetime.strptime(blocked_end, '%H:%M').time()
+
+                print(selected_start_time,'-',selected_end_time)
+                print(blocked_start_time,'-',blocked_end_time)
+                print('------')
+                
+                if (selected_start_time < blocked_end_time) and (selected_end_time > blocked_start_time):
+                    print('pass')
                     is_blocked = True
                     break
+        
+        print(existing_reservation, is_blocked)
 
         # Check if the selected time is blocked or reserved
         # or time_key in blocked_times.get(day_of_week, [])
