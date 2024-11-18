@@ -2627,7 +2627,15 @@ def lab_reservation_student_reserveLabChooseRoom(request):
 
     # Fetch existing reservations for the selected date
     existing_reservations = laboratory_reservations.objects.filter(
-        room__laboratory_id=selected_laboratory_id, start_date=reservation_date)
+        room__laboratory_id=selected_laboratory_id, start_date=reservation_date, room__is_disabled=0)
+
+    room_reservation_times = {room.room_id: [] for room in rooms_query}
+
+    # Populate the room_reservation_times dictionary
+    for reservation in existing_reservations:
+        room_reservation_times[reservation.room.room_id].append(f"{reservation.start_time}-{reservation.end_time}")
+
+    # print('room res: ', room_reservation_times)
 
     # Get the day of the week for the selected date
     day_of_week = reservation_date.strftime('%A')  # E.g., 'Monday', 'Tuesday', etc.
@@ -2638,8 +2646,6 @@ def lab_reservation_student_reserveLabChooseRoom(request):
         
         # Load and parse the blocked times (assuming it's stored as a JSON string)
         blocked_times = json.loads(room.blocked_time) if room.blocked_time else {}
-
-        
 
         for start in time_slots:
             time_key = f"{start}"
@@ -2657,17 +2663,31 @@ def lab_reservation_student_reserveLabChooseRoom(request):
                 room=room,
                 start_time__lt=end_time_obj,
                 end_time__gt=start_time_obj,
-                # status__in=['R', 'A', 'P']
                 status='R'
             ).exists()
 
+            # Get the reservation info for the current time slot
+            reservation_info = [
+                time for time in room_reservation_times[room.room_id]
+                if (time >= start_time_str and time <= end_time_str)
+            ]
+
+            print(reservation_info)
+
             # Mark as 'red' if reserved or blocked
             if reserved or is_blocked:
-                availability[time_key] = 'red'  # Unavailable
+                availability[time_key] = {
+                    'color': 'red',
+                    'reservation_info': reservation_info  # Store specific reservation times
+                }  # Unavailable
             else:
-                availability[time_key] = 'green'  # Available
+                availability[time_key] = {
+                    'color': 'green',
+                    'reservation_info': None  # No reservation info
+                }
 
         room_availability[room.room_id] = availability
+        # print(room_availability)
 
     context = {
         'rooms': rooms_query,
