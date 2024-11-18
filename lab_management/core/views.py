@@ -3820,7 +3820,7 @@ def labres_reports(request):
         'end_date': end_date,
 
         'room_data': room_data,
-        'filter_type': room_filter_type,
+        'room_filter_type': room_filter_type,
         'room_start_date': room_start_date,
         'room_end_date': room_end_date,
     }
