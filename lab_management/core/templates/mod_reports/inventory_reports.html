@@ -409,7 +409,7 @@
 
    
     
-
+    <!-- item supplier reports -->
     <!-- <div class="row"> -->
         <div class="card ">
             <div class="card-body">
@@ -430,8 +430,8 @@
                             <option value="{{ item.item_id }}" {% if item.item_id == supplier_item_id %}selected{% endif %}>{{ item.item_name }}</option>
                         {% endfor %}
                     </select>
-    
-                    <label for="supplier_reports_filter" class="mr-2">Date Filter:</label>
+                    <br>
+                    <label for="supplier_reports_filter" class="mr-2 mt-2">Date Filter:</label>
                 <select name="supplier_reports_filter" id="supplier_reports_filter" class="form-control mr-2">
                     <option value="today" {% if filter_type == 'today' %}selected{% endif %}>Today</option>
                     <option value="this_week" {% if filter_type == 'this_week' %}selected{% endif %}>This Week</option>
@@ -450,6 +450,7 @@
                 <button type="submit" class="btn btn-primary mt-4">Apply Filter</button>
                 </form>
                 <hr>
+                <p>Date Range: <strong>{{ start_date }} to {{ end_date }}</strong></p>
                 <table class="table supplier-datatable table-striped">
                     <thead>
                         <tr>
@@ -534,6 +535,97 @@
                             {
                                 extend: 'pdfHtml5',
                                 title: '{{ selected_lab_name }}_{{ item.item_name}}_SupplierReport_{{ start_date }}_to_{{ end_date }}'
+                            },
+                            'copy', 'colvis'
+                        ]
+                    }
+                }
+            });
+        });
+    </script>
+    
+
+
+    <div class="card ">
+        <div class="card-body">
+            <h2 class="card-title">Damaged/Lost Items Report</h2>
+    
+            <!-- Date Filter Form -->
+            <form method="get" action="" class="form-inline mb-3">
+                <label for="loss_reports_filter" class="mr-2">Date Filter:</label>
+                <select name="loss_reports_filter" id="loss_reports_filter" class="form-control mr-2">
+                    <option value="today" {% if loss_filter_type == 'today' %}selected{% endif %}>Today</option>
+                    <option value="this_week" {% if loss_filter_type == 'this_week' %}selected{% endif %}>This Week</option>
+                    <option value="this_month" {% if loss_filter_type == 'this_month' %}selected{% endif %}>This Month</option>
+                    <option value="this_year" {% if loss_filter_type == 'this_year' %}selected{% endif %}>This Year</option>
+                    <option value="custom" {% if loss_filter_type == 'custom' %}selected{% endif %}>Custom</option>
+                </select>
+    
+                <div id="loss_custom-date-range" style="display: none;">
+                    <label for="start_date" class="mr-2">Start Date:</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control mr-2" value="{{ loss_start_date }}">
+                    <label for="end_date" class="mr-2">End Date:</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control mr-2" value="{{ loss_end_date }}">
+                </div>
+                
+                <button type="submit" class="btn btn-primary mt-4">Apply Filter</button>
+            </form>
+            <hr>
+            <p>Date Range: <strong>{{ loss_start_date }} to {{ loss_end_date }}</strong></p>
+            <!-- Table for Damaged/Lost Items -->
+            <table class="table damage-datatable table-striped">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Item Type</th>
+                        <th>Inventory Item ID</th>
+                        <th>Qty Reported</th>
+                        <th>Timestamp</th>
+                        <th>Remarks</th>
+                        <th>Updated By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in loss_data %}
+                    <tr>
+                        <td>{{ record.item_name }}</td>
+                        <td>{{ record.item_type }}</td>
+                        <td>{{ record.inventory_item_id }}</td>
+                        <td>{{ record.qty }}</td>
+                        <td>{{ record.timestamp|date:"Y/m/d H:i:s" }}</td>
+                        <td>{{ record.remarks }}</td>
+                        <td>{{ record.updated_by }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            // Show/hide custom date range inputs based on filter type
+            $('#loss_reports_filter').change(function() {
+                if ($(this).val() === 'custom') {
+                    $('#loss_custom-date-range').show();
+                } else {
+                    $('#loss_custom-date-range').hide();
+                }
+            });
+            $('#loss_reports_filter').trigger('change');  // Trigger change event on page load
+    
+            // Initialize DataTable with custom export filename
+            new DataTable('.damage-datatable', {
+                layout: {
+                    bottomStart: {
+                        buttons: [
+                            {
+                                extend: 'excelHtml5',
+                                title: '{{ selected_lab_name }}_DamageLossReport_{{ start_date }}_to_{{ end_date }}'
+                            },
+                            {
+                                extend: 'pdfHtml5',
+                                title: '{{ selected_lab_name }}_DamageLossReport_{{ start_date }}_to_{{ end_date }}'
                             },
                             'copy', 'colvis'
                         ]

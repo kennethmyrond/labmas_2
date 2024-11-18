@@ -3369,8 +3369,7 @@ def inventory_reports(request):
     current_date = date.today()
     supplier_filter_type = request.GET.get('supplier_reports_filter', 'this_week')
     supplier_item_id = request.GET.get('item_id')
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
+    start_date, end_date = calculate_date_range(request, supplier_filter_type)
 
     # Filter supplier data based on the selected item and date range
     supplier_data = []
@@ -3395,6 +3394,40 @@ def inventory_reports(request):
                     'expiration': expiration_date.expired_date if expiration_date else 'None'
                 })
 
+
+    loss_filter_type = request.GET.get('loss_reports_filter', 'this_week')
+    loss_start_date, loss_end_date= calculate_date_range(request, loss_filter_type)
+
+    # Query the loss data
+    loss_data_query = item_handling.objects.filter(
+        changes='D',
+        inventory_item__item__laboratory_id=selected_laboratory_id,
+        inventory_item__item__is_disabled=0
+    ).select_related(
+        'inventory_item__item', 'inventory_item__item__itemType', 'updated_by'
+    )
+
+    # Apply date filtering
+    if loss_start_date and loss_end_date:
+        loss_data_query = loss_data_query.filter(
+            timestamp__date__range=(loss_start_date, loss_end_date)
+        )
+
+    # Prepare data for the template
+    loss_data = [
+        {
+            'item_name': record.inventory_item.item.item_name,
+            'item_type': record.inventory_item.item.itemType.itemType_name,
+            'inventory_item_id': record.inventory_item.inventory_item_id,
+            'qty': record.qty,
+            'timestamp': record.timestamp,
+            'remarks': record.remarks,
+            'updated_by': record.updated_by if record.updated_by else 'Unknown'
+        }
+        for record in loss_data_query
+    ]
+
+
     context = {
         'inventory_qty_data': inventory_qty_data,
         'item_types_list': item_types_list,
@@ -3417,6 +3450,11 @@ def inventory_reports(request):
         'start_date': start_date,
         'end_date': end_date,
         'filter_type': supplier_filter_type,
+
+        'loss_data': loss_data,
+        'loss_filter_type': loss_filter_type,
+        'loss_start_date': loss_start_date,
+        'loss_end_date': loss_end_date,
     }
 
     return render(request, 'mod_reports/inventory_reports.html', context)
