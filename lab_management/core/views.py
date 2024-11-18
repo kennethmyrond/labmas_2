@@ -2723,33 +2723,27 @@ def lab_reservation_student_reserveLabConfirm(request):
 
         # Convert selected times to datetime.time if they are strings
         if isinstance(selected_start_time, str):
-            selected_start_time = datetime.strptime(selected_start_time, '%H:%M').time()
+            check_selected_start_time = datetime.strptime(selected_start_time, '%H:%M').time()
         if isinstance(selected_end_time, str):
-            selected_end_time = datetime.strptime(selected_end_time, '%H:%M').time()
+            check_selected_end_time = datetime.strptime(selected_end_time, '%H:%M').time()
+
+        print(selected_start_time, selected_end_time)
 
         # Check for overlaps with blocked times
         is_blocked = False
         if day_of_week in blocked_times:
-            for blocked_time in blocked_times[day_of_week]:              
+            for blocked_time in blocked_times[day_of_week]: 
+                print('pass')             
                 blocked_start, blocked_end = blocked_time.split('-')
-
-                 # Convert the times to datetime objects for comparison
-                blocked_start_time = datetime.strptime(blocked_start, '%H:%M').time()
-                blocked_end_time = datetime.strptime(blocked_end, '%H:%M').time()
-
-                print(selected_start_time,'-',selected_end_time)
-                print(blocked_start_time,'-',blocked_end_time)
-                print('------')
-                
-                if (selected_start_time < blocked_end_time) and (selected_end_time > blocked_start_time):
+                blocked_start_time = datetime.strptime(blocked_start.strip(), '%H:%M').time()
+                blocked_end_time = datetime.strptime(blocked_end.strip(), '%H:%M').time()
+                if (check_selected_start_time < blocked_end_time) and (check_selected_end_time > blocked_start_time):
                     print('pass')
                     is_blocked = True
                     break
         
         print(existing_reservation, is_blocked)
 
-        # Check if the selected time is blocked or reserved
-        # or time_key in blocked_times.get(day_of_week, [])
         if existing_reservation or is_blocked:
             error_message = "The selected time slot for this room is not available (blocked or already reserved)."
             messages.error(request, error_message)
