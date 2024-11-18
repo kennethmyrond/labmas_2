@@ -21,7 +21,7 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-11">
-                                <h5 class="card-title">Total Items Purchased <span>| <span id="filter-display">{{ reports_filter_display }}</span></span></h5>
+                                <h5 class="card-title">Total Items Purchased <span>| <span id="purchased-filter-display">{{ purchased_filter_display }}</span></span></h5>
                         <div class="d-flex align-items-center">
                             <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                                 <i class="bi bi-cart"></i>
@@ -32,14 +32,14 @@
                         </div>
                             </div>
                             <div class="col-1">
-                                <div class="filter">
+                                <div class="purchased-filter">
                                     <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
                                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                                         <li class="dropdown-header text-start"><h6>Filter</h6></li>
-                                        <li><a class="dropdown-item filter-option" href="#" data-filter="today">Today</a></li>
-                                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_week">This Week</a></li>
-                                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_month">This Month</a></li>
-                                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_year">This Year</a></li>
+                                        <li><a class="dropdown-item purchased-filter-option" href="#" data-filter="today">Today</a></li>
+                                        <li><a class="dropdown-item purchased-filter-option" href="#" data-filter="this_week">This Week</a></li>
+                                        <li><a class="dropdown-item purchased-filter-option" href="#" data-filter="this_month">This Month</a></li>
+                                        <li><a class="dropdown-item purchased-filter-option" href="#" data-filter="this_year">This Year</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -56,7 +56,7 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-11">
-                                <h5 class="card-title">Total Items Used <span>| <span id="filter-display">{{ reports_filter_display }}</span></span></h5>
+                                <h5 class="card-title">Total Items Used <span>| <span id="used-filter-display">{{ used_filter_display }}</span></span></h5>
                                 <div class="d-flex align-items-center">
                                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                                         <i class="bi bi-file-x"></i>
@@ -67,14 +67,14 @@
                                 </div>
                             </div>
                             <div class="col-1">
-                                <div class="filter">
+                                <div class="used-filter">
                                     <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
                                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
                                         <li class="dropdown-header text-start"><h6>Filter</h6></li>
-                                        <li><a class="dropdown-item filter-option" href="#" data-filter="today">Today</a></li>
-                                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_week">This Week</a></li>
-                                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_month">This Month</a></li>
-                                        <li><a class="dropdown-item filter-option" href="#" data-filter="this_year">This Year</a></li>
+                                        <li><a class="dropdown-item used-filter-option" href="#" data-filter="today">Today</a></li>
+                                        <li><a class="dropdown-item used-filter-option" href="#" data-filter="this_week">This Week</a></li>
+                                        <li><a class="dropdown-item used-filter-option" href="#" data-filter="this_month">This Month</a></li>
+                                        <li><a class="dropdown-item used-filter-option" href="#" data-filter="this_year">This Year</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -191,22 +191,46 @@
             var inventory_chartLine = new ApexCharts(document.querySelector("#inventory_chart-line"), optionsLine);
             inventory_chartLine.render();
 
-            function updateTotals(filter) {
+            function titleCase(str) {
+                return str
+                    .toLowerCase()
+                    .split('_') // Split by underscore to handle underscore-separated words
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+            }
+
+            function updateUsed(filter) {
                 $.ajax({
                     url: window.location.pathname,
-                    data: { reports_filter: filter },
+                    data: { used_filter: filter },
                     success: function (data) {
-                        $('#total-purchased').text(data.total_purchased);
                         $('#total-used').text(data.total_used);
-                        $('#filter-display').text(filter.replace('_', ' ').title());
+                        $('#used-filter-display').text(titleCase(filter)); // Use titleCase function
                     }
                 });
             }
 
-            $('.filter-option').on('click', function (e) {
+            function updatePurchased(filter) {
+                $.ajax({
+                    url: window.location.pathname,
+                    data: { purchased_filter: filter },
+                    success: function (data) {
+                        $('#total-purchased').text(data.total_purchased);
+                        $('#purchased-filter-display').text(titleCase(filter)); // Use titleCase function
+                    }
+                });
+            }
+
+            $('.used-filter-option').on('click', function (e) {
                 e.preventDefault();
-                const filter = $(this).data('filter');
-                updateTotals(filter);
+                const filter = $(this).data('filter'); // Use data-filter attribute
+                updateUsed(filter);
+            });
+
+            $('.purchased-filter-option').on('click', function (e) {
+                e.preventDefault();
+                const filter = $(this).data('filter'); // Use data-filter attribute
+                updatePurchased(filter);
             });
         });
 

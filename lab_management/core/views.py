@@ -1808,7 +1808,7 @@ def cancel_borrow_request(request):
         return JsonResponse({'success': False, 'message': 'Request not found.'})
 
 @login_required
-@lab_permission_required('view_booking_requests')
+@lab_permission_required('borrow_items')
 def borrowing_student_WalkInRequestsview(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -1831,7 +1831,7 @@ def borrowing_student_WalkInRequestsview(request):
     })
 
 @login_required
-@lab_permission_required('view_booking_requests')
+@lab_permission_required('borrow_items')
 def borrowing_student_detailedPreBookRequestsview(request, borrow_id):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -1848,7 +1848,7 @@ def borrowing_student_detailedPreBookRequestsview(request, borrow_id):
     })
 
 @login_required
-@lab_permission_required('view_booking_requests')
+@lab_permission_required('borrow_items')
 def borrowing_student_detailedWalkInRequestsview(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
@@ -3259,61 +3259,24 @@ def reports_view(request):
 def inventory_reports(request):
     selected_laboratory_id = request.session.get('selected_lab')
     current_date = date.today()
-    filter_type = request.GET.get('reports_filter', 'this_week')
+    purchased_filter_type = request.GET.get('purchased_filter', 'this_week')
+    used_filter_type = request.GET.get('used_filter', 'this_week')
 
-    # Calculate total quantities based on the filter type
-    if filter_type == 'today':
-        total_purchased = item_handling.objects.filter(
+    print(purchased_filter_type, '---',used_filter_type )
+
+    total_purchased = item_handling.objects.filter(
             inventory_item__item__laboratory_id=selected_laboratory_id,
             qty__gt=0,
-            timestamp__date=timezone.now().date()
+            timestamp__date__range = calculate_date_range(request, purchased_filter_type)
         ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
 
-        total_used = item_handling.objects.filter(
-            inventory_item__item__laboratory_id=selected_laboratory_id,
-            qty__lt=0,
-            timestamp__date=timezone.now().date()
-        ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
+    total_used = item_handling.objects.filter(
+        inventory_item__item__laboratory_id=selected_laboratory_id,
+        qty__lt=0,
+        timestamp__date__range = calculate_date_range(request, used_filter_type)
+    ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
 
-    elif filter_type == 'this_week':
-        total_purchased = item_handling.objects.filter(
-            inventory_item__item__laboratory_id=selected_laboratory_id,
-            qty__gt=0,
-            timestamp__gte=timezone.now() - timezone.timedelta(days=7)
-        ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
-
-        total_used = item_handling.objects.filter(
-            inventory_item__item__laboratory_id=selected_laboratory_id,
-            qty__lt=0,
-            timestamp__gte=timezone.now() - timezone.timedelta(days=7)
-        ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
-
-    elif filter_type == 'this_month':
-        total_purchased = item_handling.objects.filter(
-            inventory_item__item__laboratory_id=selected_laboratory_id,
-            qty__gt=0,
-            timestamp__gte=timezone.now() - timezone.timedelta(days=30)
-        ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
-
-        total_used = item_handling.objects.filter(
-            inventory_item__item__laboratory_id=selected_laboratory_id,
-            qty__lt=0,
-            timestamp__gte=timezone.now() - timezone.timedelta(days=30)
-        ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
-
-    else:  # this_year
-        total_purchased = item_handling.objects.filter(
-            inventory_item__item__laboratory_id=selected_laboratory_id,
-            qty__gt=0,
-            timestamp__gte=timezone.now() - timezone.timedelta(days=365)
-        ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
-
-        total_used = item_handling.objects.filter(
-            inventory_item__item__laboratory_id=selected_laboratory_id,
-            qty__lt=0,
-            timestamp__gte=timezone.now() - timezone.timedelta(days=365)
-        ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
-
+    print(total_purchased,' --- ', total_used)
     
     # total qty of expired items
     expired_items_qty = item_inventory.objects.filter(
@@ -3396,26 +3359,6 @@ def inventory_reports(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
-    # Define the date range based on the filter selected
-    # if supplier_filter_type == 'today':
-    #     start_date = end_date = current_date
-    # elif supplier_filter_type == 'this_week':
-    #     start_date = current_date - timedelta(days=current_date.weekday())  # Start of the week
-    #     end_date = current_date
-    # elif supplier_filter_type == 'this_month':
-    #     start_date = current_date.replace(day=1)  # Start of the month
-    #     end_date = current_date
-    # elif supplier_filter_type == 'this_year':
-    #     start_date = current_date.replace(month=1, day=1)  # Start of the year
-    #     end_date = current_date
-    # elif supplier_filter_type == 'custom' and start_date and end_date:
-    #     start_date = timezone.datetime.strptime(start_date, "%Y-%m-%d").date()
-    #     end_date = timezone.datetime.strptime(end_date, "%Y-%m-%d").date()
-    # else:
-    #     # Default to last 7 days if no filter selected
-    #     start_date = current_date - timedelta(days=7)
-    #     end_date = current_date
-
     # Filter supplier data based on the selected item and date range
     supplier_data = []
     if supplier_item_id:
@@ -3452,7 +3395,8 @@ def inventory_reports(request):
 
         'total_purchased': total_purchased,
         'total_used': abs(total_used),  # Convert to positive number
-        'reports_filter_display': filter_type.replace('_', ' ').title(),
+        'purchased_filter_display': purchased_filter_type.replace("_", " ").title(),
+        'used_filter_display': used_filter_type.replace("_", " ").title(),
         'expired_items_qty': expired_items_qty,
 
         'supplier_data': supplier_data,
