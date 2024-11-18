@@ -2619,6 +2619,8 @@ def lab_reservation_student_reserveLabChooseRoom(request):
         # Load and parse the blocked times (assuming it's stored as a JSON string)
         blocked_times = json.loads(room.blocked_time) if room.blocked_time else {}
 
+        
+
         for start in time_slots:
             time_key = f"{start}"
 
