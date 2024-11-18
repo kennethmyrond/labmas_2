@@ -815,7 +815,8 @@ def inventory_updateItem_view(request):
                 inventory_item = get_object_or_404(item_inventory, inventory_item_id=inventory_item_id)
                 if quantity > inventory_item.qty:
                     messages.error(request, "The quantity to remove/report exceeds the available stock.")
-                    return redirect('inventory_updateItem')
+                    # return redirect('inventory_updateItem')
+                    return JsonResponse({'success': True})
                 else:
                     # Deduct quantity and save the item handling action
                     inventory_item.qty -= quantity
@@ -829,6 +830,13 @@ def inventory_updateItem_view(request):
                         remarks= 'Remove from inventory' if action_type == 'remove' else remarks
                     )
             else:
+                item_totalqty = item_inventory.objects.filter(item=item_instance).aggregate(total_qty=Sum('qty'))
+                total_qty = item_totalqty['total_qty'] or 0  # Use 0 if total_qty is None
+                print(quantity, '>', total_qty)
+                if quantity > total_qty:
+                    messages.error(request, "The quantity to remove/report exceeds the available stock.")
+                    return JsonResponse({'success': True})
+
                 remaining_qty = quantity
                 inventory_qs = item_inventory.objects.filter(item=item_instance, qty__gt=0).order_by('date_received')
                 for inventory_item in inventory_qs:
@@ -863,7 +871,6 @@ def inventory_updateItem_view(request):
             if remaining_qty > 0:
                 messages.error(request, f"Unable to fully remove requested quantity. Remaining: {remaining_qty}")
                 return JsonResponse({'success': True})
-                
             else:
                 messages.success(request, f"{action_type.capitalize()} action completed successfully.")
                 return JsonResponse({'success': True})
