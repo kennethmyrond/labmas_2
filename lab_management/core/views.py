@@ -3514,36 +3514,15 @@ def borrowing_reports(request):
     # borrow table ============================
     # Get filter parameters from request
     filter_type = request.GET.get('filter_type', 'today')
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
+    start_date, end_date = calculate_date_range(request, filter_type)
 
     # Get the current date
     current_date = date.today()
 
-    # Determine the date range based on the filter type
-    if filter_type == 'today':
-        date_range = [current_date, current_date]
-    elif filter_type == 'this_week':
-        start_of_week = current_date - timedelta(days=current_date.weekday())
-        end_of_week = start_of_week + timedelta(days=6)
-        date_range = [start_of_week, end_of_week]
-    elif filter_type == 'this_month':
-        start_of_month = current_date.replace(day=1)
-        end_of_month = (start_of_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-        date_range = [start_of_month, end_of_month]
-    elif filter_type == 'this_year':
-        start_of_year = current_date.replace(month=1, day=1)
-        end_of_year = current_date.replace(month=12, day=31)
-        date_range = [start_of_year, end_of_year]
-    elif filter_type == 'custom' and start_date and end_date:
-        date_range = [datetime.strptime(start_date, '%Y-%m-%d').date(), datetime.strptime(end_date, '%Y-%m-%d').date()]
-    else:
-        date_range = [current_date, current_date]
-
     # Query to get the total quantity of items borrowed for each item in a specific laboratory
     borrowed_items_data = borrowed_items.objects.filter(
         borrow__status__in=['B', 'X', 'Y'],
-        borrow__borrow_date__range=date_range,
+        borrow__borrow_date__range= (start_date, end_date),
         borrow__laboratory_id=selected_laboratory_id
     ).values('item__item_id','item__item_name', 'item__itemType__itemType_name').annotate(total_qty=Sum('qty')).order_by('item__item_name')
 
@@ -3551,27 +3530,9 @@ def borrowing_reports(request):
     # New Query for borrow_info (borrowing requests)
     borrowreq_filter_type = request.GET.get('borrowreq_filter_type', 'today')
     borrowreq_start_date, borrowreq_end_date = calculate_date_range(request, borrowreq_filter_type)
-    if borrowreq_filter_type == 'today':
-        borrowreq_date_range = [current_date, current_date]
-    elif borrowreq_filter_type == 'this_week':
-        start_of_week = current_date - timedelta(days=current_date.weekday())
-        end_of_week = start_of_week + timedelta(days=6)
-        borrowreq_date_range = [start_of_week, end_of_week]
-    elif borrowreq_filter_type == 'this_month':
-        start_of_month = current_date.replace(day=1)
-        end_of_month = (start_of_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-        borrowreq_date_range = [start_of_month, end_of_month]
-    elif borrowreq_filter_type == 'this_year':
-        start_of_year = current_date.replace(month=1, day=1)
-        end_of_year = current_date.replace(month=12, day=31)
-        borrowreq_date_range = [start_of_year, end_of_year]
-    elif borrowreq_filter_type == 'custom' and borrowreq_start_date and borrowreq_end_date:
-        borrowreq_date_range = [datetime.strptime(start_date, '%Y-%m-%d').date(), datetime.strptime(end_date, '%Y-%m-%d').date()]
-    else:
-        borrowreq_date_range = [current_date, current_date]
 
     borrow_requests_data = borrow_info.objects.filter(
-        borrow_date__range=borrowreq_date_range,
+        borrow_date__range=(borrowreq_start_date, borrowreq_end_date),
         laboratory_id=selected_laboratory_id
     ).order_by('borrow_date')
 
@@ -3582,6 +3543,10 @@ def borrowing_reports(request):
         'filter_type': filter_type,
         'start_date': start_date,
         'end_date': end_date,
+
+        'borrowreq_filter_type': borrowreq_filter_type,
+        'borrowreq_start_date': borrowreq_start_date,
+        'borrowreq_end_date': borrowreq_end_date,
 
         'borrow_requests_data': borrow_requests_data
     }

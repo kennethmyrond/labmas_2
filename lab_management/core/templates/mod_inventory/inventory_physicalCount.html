@@ -78,7 +78,7 @@
                             <tr>
                               <td style="text-align:left;"><button type="button" class="btn btn-secondary btn-sm" data-toggle="modal" data-target="#detailsModal-{{ item.item_id }}">
                                 <i class="bi bi-info-square"></i>
-                              </button>&emsp;{{ item.item_name }} - {{inventory.inventory_item_id}}</td> 
+                              </button>&emsp;{{ item.item_name }} <br> <div class="small">&emsp;&emsp;&emsp;&emsp;{{inventory.inventory_item_id}}</div></td> 
                                 <td>{{ inventory.qty|default:0 }}</td>
                                 <td>
                                     <input type="number" name="count_qty_{{ inventory.inventory_item_id }}" class="form-control" min="0" oninput="validity.valid||(value='');">
