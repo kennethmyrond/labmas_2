@@ -2748,6 +2748,9 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
     if not reservation_data:
         return redirect('lab_reservation_student_reserveLabChooseRoom')
 
+    room_id = reservation_data.get('room_id')
+    room = get_object_or_404(rooms, room_id=room_id)
+
     if reservation_config_obj.require_approval:
         preapproval_details = get_object_or_404(laboratory_reservations, reservation_id=reservation_data.get('res_id'))
 
@@ -2762,9 +2765,9 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
         status = 'R'
         message = 'Room Reserved Successfully'
 
-        # Use room_id from session data
-        room_id = reservation_data.get('room_id')
-        room = get_object_or_404(rooms, room_id=room_id)
+        if room.capacity < int(num_people):
+            messages.error(request, 'Number of people reached the maximum capacity.')
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
         # Handle the uploaded PDF file if required
         if reservation_config_obj.require_approval:
@@ -2805,6 +2808,7 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
         'user': current_user if request.user.is_authenticated else None,
         'reserv_config': reservation_config_obj,
         'approval_form_exists': approval_form_exists,
+        'room': room
     })
 
 # not used for now
@@ -3158,6 +3162,9 @@ def labres_labcoord_configroom(request):
 
             reservation_leadtime = request.POST.get('lead_time')
             reservation_config_obj.leadtime = reservation_leadtime
+
+            room = rooms.objects.filter(laboratory_id=selected_laboratory_id)
+            room.update(blocked_time='{}')
 
             reservation_config_obj.save()
             message = f'Time configuration saved'
