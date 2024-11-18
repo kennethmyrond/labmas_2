@@ -1445,7 +1445,14 @@ def borrowing_student_prebookview(request):
             for question in prebook_questions:
                 custom_question_responses[question['question_text']] = request.POST.get(question['question_text'])
 
-            request_date = timezone.now().date()
+
+            # Get the current time in the configured timezone
+            current_time = timezone.localtime()
+
+            # Format the date as "Month DD, YYYY"
+            request_date = current_time.date()
+
+            # request_date = timezone.now().date()
 
             # Determine borrow and due dates based on borrowing type
             error_message = None
@@ -1526,7 +1533,12 @@ def borrowing_student_prebookview(request):
                 )
             return redirect('borrowing_studentviewPreBookRequests')
 
-        current_date = timezone.now().date()
+        # Get the current time in the configured timezone
+        current_time = timezone.localtime()
+
+        # Format the date as "Month DD, YYYY"
+        current_date = current_time.strftime('%Y-%m-%d')
+
 
     except Http404:
         return render(request, 'error_page.html', {'message': 'The laboratory was not found.'})
@@ -1619,7 +1631,7 @@ def borrowing_student_walkinview(request):
     if request.method == 'POST':
         # request_date = timezone.now()
         # Format the date as "Month DD, YYYY"
-        request_date = current_time.strftime('%B %d, %Y')
+        request_date = current_time.strftime('%Y-%m-%d')
 
         borrow_date = request_date
         due_date = request_date
@@ -1705,7 +1717,7 @@ def borrowing_student_walkinview(request):
 
     # Fetch the current date and all equipment items including chemicals
     # current_date = current_time.strftime('%B %d, %Y')
-    current_date = current_time.strftime('%B %d, %Y')
+    current_date = current_time.strftime('%Y-%m-%d')
 
     # Get unique item types for dropdown filtering
     item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
