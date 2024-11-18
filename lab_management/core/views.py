@@ -703,13 +703,14 @@ def inventory_addNewItem_view(request):
         if item_type.add_cols:
             add_cols = json.loads(item_type.add_cols)
             for col in add_cols:
-                 # Extract field name and potential dropdown options
-                field_name = f'add_col_{col.split()[0].lower()}'  # Using only the prefix of the column name
+                # Replace spaces with underscores to match how they are generated in HTML
+                field_name = f'add_col_{col.replace(" ", "_").lower()}'
                 field_value = request.POST.get(field_name)
                 add_cols_dict[col] = field_value if field_value else None  # Handle None values for empty inputs
 
         # Convert the additional columns to a JSON string
         add_cols_json = json.dumps(add_cols_dict)
+
 
         # Save the data to the database
         new_item = item_description(
