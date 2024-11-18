@@ -2685,24 +2685,42 @@ def lab_reservation_student_reserveLabConfirm(request):
         # Fetch room information
         selected_room = get_object_or_404(rooms, room_id=selected_room_id)
 
+        print(selected_start_time, '--', selected_end_time)
+
         # Check if the room is already reserved for the selected date and time
         existing_reservation = laboratory_reservations.objects.filter(
             room=selected_room,
             start_date=selected_date,
             status__in=['R', 'A', 'P']
         ).filter(
-            start_time__lt=selected_end_time,
-            end_time__gt=selected_start_time
+            # Check for overlapping time slots
+            start_time__lt=selected_end_time,  # Existing reservation starts before new reservation ends
+            end_time__gt=selected_start_time     # Existing reservation ends after new reservation starts
         ).exists()
+
+
+        # # Fetch blocked times for the room
+        # blocked_times = json.loads(selected_room.blocked_time) if selected_room.blocked_time else {}
+        # day_of_week = datetime.strptime(selected_date, '%Y-%m-%d').strftime('%A')  # Get the day of the week
+
+        # time_key = f"{selected_start_time}-{selected_end_time}"
 
         # Fetch blocked times for the room
         blocked_times = json.loads(selected_room.blocked_time) if selected_room.blocked_time else {}
         day_of_week = datetime.strptime(selected_date, '%Y-%m-%d').strftime('%A')  # Get the day of the week
 
-        time_key = f"{selected_start_time}-{selected_end_time}"
+        # Check for overlaps with blocked times
+        is_blocked = False
+        if day_of_week in blocked_times:
+            for blocked_time in blocked_times[day_of_week]:
+                blocked_start, blocked_end = blocked_time.split('-')
+                if (selected_start_time < blocked_end) and (selected_end_time > blocked_start):
+                    is_blocked = True
+                    break
 
         # Check if the selected time is blocked or reserved
-        if existing_reservation or time_key in blocked_times.get(day_of_week, []):
+        # or time_key in blocked_times.get(day_of_week, [])
+        if existing_reservation or is_blocked:
             error_message = "The selected time slot for this room is not available (blocked or already reserved)."
             messages.error(request, error_message)
             return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))

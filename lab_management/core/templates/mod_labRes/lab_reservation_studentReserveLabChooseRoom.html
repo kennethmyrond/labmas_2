@@ -21,9 +21,12 @@
           
 
           <!-- Display error message if any -->
-          {% if error_message %}
-            <div class="alert alert-danger">{{ error_message }}</div>
+          {% if messages %}
+              {% for message in messages %}
+                  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+              {% endfor %}
           {% endif %}
+  
 
           <!-- Filters Section -->
           <form id="filterForm" method="GET" action="">
@@ -156,8 +159,51 @@
                         </div>
                         <div id="timeErrorMessage" class="text-danger" style="display: none;">
                           *Invalid start and end time.
-                        </div>
                       </div>
+                      <div id="rangeErrorMessage" class="text-danger" style="display: none;">
+                          *Time must be between {{ reservation_config_obj.start_time }} and {{ reservation_config_obj.end_time }}.
+                      </div>
+                      </div>
+
+                      <script>
+                        const startTimeInput = document.getElementById('selectedStartTime');
+                        const endTimeInput = document.getElementById('selectedEndTime');
+                        const timeErrorMessage = document.getElementById('timeErrorMessage');
+                        const rangeErrorMessage = document.getElementById('rangeErrorMessage');
+                    
+                        function validateTime() {
+                            const startTime = startTimeInput.value;
+                            const endTime = endTimeInput.value;
+                            const minTime = startTimeInput.min; // Get minimum time
+                            const maxTime = endTimeInput.max;   // Get maximum time
+                            let isValid = true;
+                            // Reset error messages
+                            timeErrorMessage.style.display = 'none';
+                            rangeErrorMessage.style.display = 'none';
+                    
+                            // Check if start and end times are within range
+                            if (startTime < minTime || endTime < minTime || startTime > maxTime || endTime > maxTime) {
+                                rangeErrorMessage.style.display = 'block'; // Show range error message
+                                isValid = false;
+                            }
+                    
+                            // Check if start time is less than end time
+                            if (startTime && endTime && startTime >= endTime) {
+                                timeErrorMessage.style.display = 'block'; // Show time error message
+                                isValid = false;
+                            }
+                    
+                            // If both checks pass, hide error messages
+                            if (isValid) {
+                                timeErrorMessage.style.display = 'none';
+                                rangeErrorMessage.style.display = 'none';
+                            }
+                        }
+                    
+                        // Attach event listeners
+                        startTimeInput.addEventListener('change', validateTime);
+                        endTimeInput.addEventListener('change', validateTime);
+                    </script>
                     
                       
 
@@ -180,7 +226,7 @@
   </div>
 </section>
 
-<script>
+<!-- <script>
   document.addEventListener('DOMContentLoaded', function() {
       const reservdate = document.getElementById('selectedDate');
       const startTimeInput = document.getElementById('selectedStartTime');
@@ -198,8 +244,6 @@
           curr_time = hh+':'+mm;
           return curr_time;
       }
-
-      
 
       const datenow = date.toISOString().split('T')[0];
       const timenow = getCurrentTime();
@@ -226,6 +270,6 @@
           }
       });
   });
-  </script>
+  </script> -->
 
 {% endblock %}
