@@ -246,13 +246,16 @@
                         <input type="hidden" id="editUserId" name="user_id">
                         <div class="form-group">
                           <label for="roleSelect">Select New Role:</label>
-                          <select class="form-control" id="roleSelect" name="role_id">
+                          <select class="form-control" id="roleSelect" name="role_id" required>
                             {% for role in lab_roles %}
-                              <option value="{{ role.roles_id }}" {%if user.role_id == role.roles_id %}selected{%endif%} >{{ role.name }}</option>
+                                <option value="{{ role.roles_id }}" 
+                                    {% if user.role_id == role.roles_id %}selected{% endif %}>
+                                    {{ role.name }}
+                                </option>
                             {% endfor %}
                           </select>
                           <label for="Status">Status</label>
-                          <select class="form-control" id="Status" name="Status">
+                          <select class="form-control" id="Status" name="Status" required>
                             <option value="A" {%if user.status == 'A' %}selected{%endif%}>Active</option>
                             <option value="I" {%if user.status == 'I' %}selected{%endif%}>Inactive</option>
                           </select>
