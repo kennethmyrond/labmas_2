@@ -342,8 +342,12 @@ def userlogin(request):
         # Authenticate using email and password
         user = authenticate(request, email=email, password=password)
         if user is not None:
-            auth_login(request, user)
-            return redirect('home')  # Redirect to a specific page after login
+            # Check if the user is deactivated
+            if user.is_deactivated == 1:  # Assuming is_deactivated is an integer field
+                messages.error(request, "Invalid email or password")
+            else:
+                auth_login(request, user)
+                return redirect('home')  # Redirect to a specific page after login
         else:
             messages.error(request, "Invalid email or password")
     
