@@ -4137,6 +4137,7 @@ def superuser_lab_info(request, laboratory_id):
             lab_user = laboratory_users.objects.filter(user_id=user_id, laboratory_id=laboratory_id, status='P').first()
             if lab_user:
                 lab_user.status = 'D'  # Declined
+                lab_user.is_active = False  # Declined
                 lab_user.save()
                 messages.success(request, f"User {lab_user.user.get_fullname()} declined.")
         
@@ -4172,7 +4173,7 @@ def superuser_lab_info(request, laboratory_id):
         full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
         role_name=F('role__name')
     )
-    lab_roles = laboratory_roles.objects.filter(Q(laboratory_id=0) | Q(laboratory_id=lab.laboratory_id)).annotate(
+    lab_roles = laboratory_roles.objects.filter(Q(laboratory_id=0) | Q(laboratory_id=lab.laboratory_id), users__is_active=True).annotate(
         usercount=Count('users', filter=Q(users__laboratory_id=laboratory_id))
     )
 
@@ -4440,7 +4441,6 @@ def get_roles(request, laboratory_id):
 def remove_lab_user(request, lab_user_id):
     lab_user = get_object_or_404(laboratory_users, id=lab_user_id)
 
-    # Set is_active to False (0)
     lab_user.is_active = False
     lab_user.save()
 
