@@ -4432,9 +4432,7 @@ def superuser_user_info(request, user_id):
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def get_roles(request, laboratory_id):
-    print(f"Fetching roles for laboratory ID: {laboratory_id}")
     roles = laboratory_roles.objects.filter(Q(laboratory_id=laboratory_id) | Q(laboratory_id=0)).values('roles_id', 'name')
-    print('Roles fetched:', list(roles))
     return JsonResponse({'roles': list(roles)})
 
 @login_required()
