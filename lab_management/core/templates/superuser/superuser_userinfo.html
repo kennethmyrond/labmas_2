@@ -168,7 +168,7 @@
         <div class="modal-body">
           <div class="form-group">
             <label for="laboratory">Laboratory</label>
-            <select class="form-control" id="laboratory" name="laboratory_id" onchange="updateRoles(this.value)">
+            <select class="form-control" id="laboratory" name="laboratory_id" onchange="updateRoles(this.value)" required>
               <option value="" disabled selected>Select a Laboratory</option>
               {% for lab in all_laboratories %}
               <option value="{{ lab.laboratory_id }}">{{ lab.name }}</option>
@@ -177,7 +177,7 @@
           </div>
           <div class="form-group">
             <label for="role">Role</label>
-            <select class="form-control" id="role" name="role_id">
+            <select class="form-control" id="role" name="role_id" required>
               <option value="" disabled selected>Select a Role</option>
               {% for role in all_roles %}
               <option value="{{ role.roles_id }}">{{ role.name }}</option>
