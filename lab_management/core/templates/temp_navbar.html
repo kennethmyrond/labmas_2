@@ -440,7 +440,7 @@
 
       {% endif %}
     
-      {% if 5 in selected_lab_modules %}
+      {% if 5 in selected_lab_modules or logged_user.is_superuser %}
       {% if permissions.can_view_reports or logged_user.is_superuser %}
       <li class="nav-item">
         <a class="nav-link {% if request.resolver_match.url_name in 'user_reports admin_reports inventory_reports borrowing_reports clearance_reports labres_reports'%}active{% else %}collapsed{% endif %}" data-bs-target="#reports-nav" data-bs-toggle="collapse" href="#">

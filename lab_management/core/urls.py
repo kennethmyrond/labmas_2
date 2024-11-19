@@ -143,6 +143,9 @@ urlpatterns = [
     path('user/<int:user_id>/deactivate/', views.deactivate_user, name='deactivate_user'),
     path('user/<int:user_id>/assign-lab/', views.assign_lab, name='assign_lab'),
 
+    path('get_roles/<int:laboratory_id>/', views.get_roles, name='get_roles'),
+    path('remove_lab_user/<int:lab_user_id>/', views.remove_lab_user, name='remove_lab_user'),
+
     path('late_borrow/', views.late_borrow, name='late_borrow')
 ]
 

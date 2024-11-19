@@ -4418,8 +4418,10 @@ def add_user(request):
 @user_passes_test(lambda u: u.is_superuser)
 def superuser_user_info(request, user_id):
     user1 = get_object_or_404(user, user_id=user_id)
-    lab_users = laboratory_users.objects.filter(user=user1, is_active=True)
-    all_laboratories = laboratory.objects.filter(is_available=True)
+    lab_users = laboratory_users.objects.filter(user=user1, is_active=True, laboratory_id__is_available=1)
+    assigned_laboratories = lab_users.values_list('laboratory', flat=True)
+
+    all_laboratories = laboratory.objects.filter(is_available=1).exclude(laboratory_id__in=assigned_laboratories)
     all_roles = laboratory_roles.objects.filter()
     context = {
         'user': user1,
@@ -4428,6 +4430,26 @@ def superuser_user_info(request, user_id):
         'all_roles': all_roles,
     }
     return render(request, 'superuser/superuser_userinfo.html', context)
+
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
+def get_roles(request, laboratory_id):
+    print(f"Fetching roles for laboratory ID: {laboratory_id}")
+    roles = laboratory_roles.objects.filter(Q(laboratory_id=laboratory_id) | Q(laboratory_id=0)).values('roles_id', 'name')
+    print('Roles fetched:', list(roles))
+    return JsonResponse({'roles': list(roles)})
+
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
+def remove_lab_user(request, lab_user_id):
+    lab_user = get_object_or_404(laboratory_users, id=lab_user_id)
+
+    # Set is_active to False (0)
+    lab_user.is_active = False
+    lab_user.save()
+
+    messages.success(request, 'User  has been successfully removed from the laboratory.')
+    return redirect('superuser_manage_users')  # Redirect to an appropriate page
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)

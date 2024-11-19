@@ -69,7 +69,12 @@
               <tr>
                 <td>{{ lab_user.laboratory.name }}</td>
                 <td>{{ lab_user.role.name }}</td>
-                <td><button class="btn btn-danger btn-sm">Remove</button></td>
+                <td>
+                  <form method="POST" action="{% url 'remove_lab_user' lab_user.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                  </form>
+                </td>
               </tr>
               {% endfor %}
             </tbody>
@@ -163,7 +168,8 @@
         <div class="modal-body">
           <div class="form-group">
             <label for="laboratory">Laboratory</label>
-            <select class="form-control" id="laboratory" name="laboratory_id">
+            <select class="form-control" id="laboratory" name="laboratory_id" onchange="updateRoles(this.value)">
+              <option value="" disabled selected>Select a Laboratory</option>
               {% for lab in all_laboratories %}
               <option value="{{ lab.laboratory_id }}">{{ lab.name }}</option>
               {% endfor %}
@@ -172,6 +178,7 @@
           <div class="form-group">
             <label for="role">Role</label>
             <select class="form-control" id="role" name="role_id">
+              <option value="" disabled selected>Select a Role</option>
               {% for role in all_roles %}
               <option value="{{ role.roles_id }}">{{ role.name }}</option>
               {% endfor %}
@@ -186,4 +193,24 @@
     </div>
   </div>
 </div>
+
+<script>
+  function updateRoles(laboratoryId) {
+    // Make an AJAX call to get roles for the selected laboratory
+    fetch(`/get_roles/${laboratoryId}/`)  // Adjust the URL based on your routing
+      .then(response => response.json())
+      .then(data => {
+        const roleSelect = document.getElementById('role');
+        roleSelect.innerHTML = '';  // Clear existing options
+        
+        data.roles.forEach(role => {
+          const option = document.createElement('option');
+          option.value = role.roles_id;
+          option.textContent = role.name;
+          roleSelect.appendChild(option);
+        });
+      })
+      .catch(error => console.error('Error fetching roles:', error));
+  }
+</script>
 {% endblock %}
