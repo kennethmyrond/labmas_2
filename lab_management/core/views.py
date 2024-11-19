@@ -4165,8 +4165,6 @@ def superuser_lab_info(request, laboratory_id):
 
     all_modules = Module.objects.all()  # All available modules
 
-
-
     # Retrieve all lab users and roles
     lab_users = laboratory_users.objects.filter(laboratory_id=lab.laboratory_id, is_active=1, status__in=['A', 'I']).select_related('user', 'role').annotate(
         username=F('user__username'),
