@@ -114,9 +114,9 @@
               {% endif %}
           </div>
           
-            
+          <a id="exportExcel" href="{% url 'export_schedule' %}?roomSelect={{ selected_room }}&selectMonth={{ selected_month }}" class="btn btn-success">Export to Excel</a>
           </div>
-
+          
           <!-- Modal -->
           <div class="modal fade" id="scheduleModal" tabindex="-1" role="dialog" aria-labelledby="scheduleModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
@@ -140,6 +140,13 @@
     </div>
   </div>
 </section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+  document.getElementById('exportExcel').addEventListener('click', function () {
+    // Manual XLSX export logic here
+  });
+</script>
 
 <script>
   // Capture clicks on the day divs and populate the modal

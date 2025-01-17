@@ -1,3 +1,5 @@
+import openpyxl
+from openpyxl.styles import Alignment
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.serializers.json import DjangoJSONEncoder
@@ -2951,6 +2953,89 @@ def lab_reservation_detail(request, reservation_id):
     }
 
     return render(request, 'mod_labRes/lab_reservation_detail.html', context)
+
+@login_required
+@lab_permission_required('view_reservations')
+def export_schedule_to_excel(request):
+    selected_room = request.GET.get('roomSelect')
+    selected_month = request.GET.get('selectMonth')
+    if not selected_room or not selected_month:
+        return JsonResponse({"error": "Invalid parameters. Please provide a valid room and month."}, status=400)
+
+    # Fetch reservations
+    room = rooms.objects.get(room_id=selected_room)
+    year, month = map(int, selected_month.split('-'))
+    start_date = datetime(year, month, 1)
+    end_date = (start_date + timedelta(days=31)).replace(day=1) - timedelta(days=1)
+
+    reservations = laboratory_reservations.objects.filter(
+        room_id=room.room_id,
+        start_date__range=[start_date, end_date]
+    )
+
+    # Prepare reservations by day
+    reservations_by_day = {}
+    for reservation in reservations:
+        day = reservation.start_date.day
+        if day not in reservations_by_day:
+            reservations_by_day[day] = []
+        reservations_by_day[day].append(reservation)
+
+    # Create Excel workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"{room.name} - {selected_month} ({year})"
+
+    # Write headers for the calendar
+    headers = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    ws.append(headers)
+
+    # Fill in the calendar
+    first_day_of_month = start_date.weekday()  # 0 = Monday, 6 = Sunday
+    total_days = (end_date - start_date).days + 1
+
+    row = []
+    # Add empty cells for days before the start of the month
+    for _ in range(first_day_of_month):
+        row.append("")
+
+    for day in range(1, total_days + 1):
+        day_reservations = reservations_by_day.get(day, [])
+        cell_content = f"{day}\n"  # Add the day number
+        for res in day_reservations:
+            cell_content += f"{res.start_time.strftime('%I:%M %p')} - {res.end_time.strftime('%I:%M %p')}\n{res.contact_name}\n"
+
+        row.append(cell_content.strip())  # Add to the current row
+
+        # Start a new row every 7 days or at the end of the month
+        if len(row) == 7 or day == total_days:
+            ws.append(row)
+            row = []
+
+    # Merge cells to add a title above the calendar
+    title_cell = f"Laboratory Schedule - {room.name} ({month:02d}/{year})"
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=7)
+    ws.cell(row=1, column=1, value=title_cell)
+    ws.row_dimensions[1].height = 20
+    title_font = openpyxl.styles.Font(size=14, bold=True)
+    ws.cell(row=1, column=1).font = title_font
+    ws.cell(row=1, column=1).alignment = openpyxl.styles.Alignment(horizontal="center")
+
+    # Adjust cell alignment for better readability
+    for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=7):
+        for cell in row:
+            if cell.value:
+                cell.alignment = openpyxl.styles.Alignment(wrap_text=True, vertical="top")
+
+    # Return Excel file
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = f"attachment; filename=Laboratory_Schedule_{month:02d}_{year}.xlsx"
+    wb.save(response)
+    return response
+
+    
 
 @login_required
 @lab_permission_required('view_reservations')
