@@ -4421,6 +4421,90 @@ def toggle_user_status(request):
     messages.success(request, "User status updated successfully.")
     return JsonResponse({'success': True, 'is_active': lab_user.is_active})
 
+
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
+def bulk_upload_users_to_lab(request, laboratory_id):
+    if request.method == 'POST' and request.FILES.get('userfile'):
+        userfile = request.FILES['userfile']
+
+        try:
+            workbook = openpyxl.load_workbook(userfile)
+            sheet = workbook.active
+
+            # Expected format: Email, Role
+            required_columns = ['email address', 'role']
+
+            header = [
+                str(cell.value).strip().lower()
+                for cell in sheet[1] if cell.value  # Filter out empty columns
+            ]
+
+            if not set([col.lower() for col in required_columns]).issubset(header):
+                messages.error(request, f"Invalid format. Expected columns: {', '.join(required_columns)}")
+                return redirect('superuser_manage_labs')
+
+            roles_dict = {role.name.strip().lower(): role.roles_id for role in laboratory_roles.objects.all()}
+
+            error_messages = []
+            success_count = 0
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                row = [cell for cell in row if cell]
+                if len(row) < 2:
+                    continue
+
+                email, role_name = row[:2]
+
+                if not email or not role_name:
+                    continue
+
+                role_id = roles_dict.get(role_name.strip().lower())
+                if not role_id:
+                    error_messages.append(f"Invalid Role '{role_name}' for email {email}. Skipping.")
+                    continue
+
+                try:
+                    user_instance = user.objects.get(email=email)
+                except user.DoesNotExist:
+                    error_messages.append(f"User with email {email} does not exist. Skipping.")
+                    continue
+
+                user_assigned = laboratory_users.objects.filter(
+                    user_id=user_instance.user_id,
+                    laboratory_id=laboratory_id,
+                    is_active=1
+                ).exists()
+
+                if not user_assigned:
+                    laboratory_users.objects.create(
+                        user_id=user_instance.user_id,
+                        laboratory_id=laboratory_id,
+                        role_id=role_id,
+                        is_active=1,
+                        status='A',
+                    )
+                    success_count += 1
+                else:
+                    error_messages.append(f"User {email} is already assigned to this laboratory with role {role_name}.")
+
+            if success_count > 0:
+                messages.success(request, f"{success_count} user(s) added successfully.")
+            if error_messages:
+                messages.warning(request, " | ".join(error_messages))
+
+        except openpyxl.utils.exceptions.InvalidFileException:
+            messages.error(request, "Invalid file format. Please upload a valid Excel file.")
+        except Exception as e:
+            messages.error(request, f"Error processing the file: {e}")
+            print(f"Error processing the file: {e}")
+
+    return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+
+
+
+
+
 @superuser_or_lab_permission_required('configure_laboratory')
 def add_user_laboratory(request, laboratory_id):
     if request.method == "POST":
@@ -4461,6 +4545,70 @@ def superuser_manage_users(request):
         'users': users,
     }
     return render(request, 'superuser/superuser_manageusers.html', context)
+
+@login_required()
+@user_passes_test(lambda u: u.is_superuser)
+def bulk_upload_users(request):
+    if request.method == 'POST' and request.FILES.get('userfile'):
+        userfile = request.FILES['userfile']
+
+        try:
+            # Load the Excel file
+            workbook = openpyxl.load_workbook(userfile)
+            sheet = workbook.active
+
+            # Expected format: First Name, Last Name, ID Number, Email, Password
+            required_columns = ['First Name', 'Last Name', 'ID Number', 'Email', 'Password']
+            
+            # Sanitize the header: Strip spaces and convert to lowercase for case-insensitivity
+            header = [str(cell.value).strip().lower() for cell in sheet[1]]  # Strip spaces and lower-case
+            
+            # Validate columns by comparing sanitized header with required columns
+            sanitized_required_columns = [col.lower() for col in required_columns]  # Lowercase for case-insensitivity
+            if header != sanitized_required_columns:
+                messages.error(request, f"Invalid format. Expected columns: {', '.join(required_columns)}")
+                return redirect('superuser_manage_users')
+
+            # Process each row
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                # Clean up each value by stripping white spaces and ensuring proper case handling
+                firstname, lastname, idnum, email, password = [str(cell).strip() if cell else '' for cell in row]
+
+                # Skip rows with missing data
+                if not (firstname and lastname and email and password):
+                    continue
+                
+                # Ensure the ID number is an integer
+                try:
+                    idnum = int(float(idnum))  # Convert to float first to handle cases like 1234.5, then to int
+                except (ValueError, TypeError):
+                    messages.warning(request, f"Invalid ID Number format for email {email}. Skipping.")
+                    continue
+                
+                # Check if the user already exists (email is case-insensitive)
+                if User.objects.filter(email=email.lower()).exists():
+                    messages.warning(request, f"Email {email} is already registered. Skipping.")
+                    continue
+
+                # Create user
+                try:
+                    User.objects.create_user(
+                        firstname=firstname,
+                        lastname=lastname,
+                        personal_id=idnum,
+                        email=email,
+                        username=email.lower(),  # Ensure username is unique and case-insensitive
+                        password=password,
+                    )
+                except ValidationError as e:
+                    messages.warning(request, f"Error creating user {email}: {e}")
+                    continue
+
+            messages.success(request, "Bulk user upload completed successfully.")
+        except Exception as e:
+            messages.error(request, f"Error processing the file: {e}")
+
+    return redirect('superuser_manage_users')
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)

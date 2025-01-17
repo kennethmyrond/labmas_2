@@ -195,6 +195,39 @@
         <hr><br>
         <h5 class="card-title">Laboratory Users</h5>
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addUserModal" {% if not lab.is_available %} disabled {% endif %}>Add User</button>
+        <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#bulkUploadModal" {% if not lab.is_available %} disabled {% endif %}>Bulk Upload Users (Existing)</button>
+        
+        <!-- Bulk Upload Modal (for existing users) -->
+        <div class="modal fade" id="bulkUploadModal" tabindex="-1" aria-labelledby="bulkUploadModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <form method="POST" action="{% url 'bulk_upload_existing_users' laboratory_id=lab.laboratory_id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                  <h5 class="modal-title" id="bulkUploadModalLabel">Bulk Upload Existing Users to Laboratory</h5>
+                  <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <div class="form-group">
+                    <label for="userfile">Upload Excel File</label>
+                    <input type="file" class="form-control" id="userfile" name="userfile" required>
+                    <small><p>
+                      <strong>Format:</strong> Email Address, Role (in order).<br>
+                      Ensure the file has these headers in the first row.
+                    </p></small>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        
         <!-- User Table -->
         <table class="table datatable">
           <thead>

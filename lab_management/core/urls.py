@@ -124,6 +124,8 @@ urlpatterns = [
     path('setup/labInfo/<int:laboratory_id>/add_room/', views.add_room, name='add_room'),
     #path('setup/editLab/<int:laboratory_id>/', views.setup_editLab, name='setup_editLab'),
     path('setup/manageRooms', views.setup_manageRooms, name='setup_manageRooms'),
+    path('superuser/bulk_upload/', views.bulk_upload_users, name='bulk_upload_users'),
+    path('setup/labInfo/<int:laboratory_id>/bulk_upload_existing_users/', views.bulk_upload_users_to_lab, name='bulk_upload_existing_users'),
     path('setup/manageusers', views.superuser_manage_users, name='superuser_manage_users'),
     path('setup/userInfo/<int:user_id>/', views.superuser_user_info, name='superuser_user_info'),
     path('setup/edituser', views.setup_edituser, name='setup_edituser'),
@@ -144,7 +146,7 @@ urlpatterns = [
     path('user/<int:user_id>/assign-lab/', views.assign_lab, name='assign_lab'),
 
     path('export-schedule/', views.export_schedule_to_excel, name='export_schedule'),
-    
+
     path('get_roles/<int:laboratory_id>/', views.get_roles, name='get_roles'),
     path('remove_lab_user/<int:lab_user_id>/', views.remove_lab_user, name='remove_lab_user'),
 
