@@ -9,6 +9,7 @@ from io import BytesIO
 from django.core.files import File
 from PIL import Image, ImageDraw
 from django.contrib.postgres.fields import JSONField
+from django.conf import settings
 
 ''' 
 convention for pks
@@ -153,7 +154,7 @@ class user(AbstractBaseUser):
         return f"{self.firstname} {self.lastname}"
 
 class laboratory_users(models.Model):
-    user = models.ForeignKey(user, on_delete=models.CASCADE)
+    user = models.ForeignKey('core.user', on_delete=models.CASCADE)
     laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
     role = models.ForeignKey(laboratory_roles, on_delete=models.CASCADE, related_name='users')
     is_active = models.BooleanField(default=True)
