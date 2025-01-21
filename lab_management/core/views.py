@@ -26,7 +26,7 @@ from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from .models import rooms, laboratory_reservations, reservation_config
-from .models import laboratory_users, laboratory_roles, laboratory_permissions, permissions
+from .models import laboratory_users, laboratory_roles, laboratory_permissions, permissions, Notification
 from .decorators import lab_permission_required, superuser_or_lab_permission_required
 from datetime import timedelta, date, datetime
 from calendar import monthrange
@@ -487,7 +487,6 @@ def edit_profile(request):
 def signup_redirect(request):
     messages.error(request, "Something wrong here, it may be that you already have account!")
     return redirect("homepage")
-
 
 
 # inventory
@@ -1909,13 +1908,33 @@ def borrowing_student_detailedWalkInRequestsview(request):
         'borrowed_items': borrowed_items_list,
     })
 
+def create_notification(user, message):
+    Notification.objects.create(user=user, message=message)
+    
+def get_notifications(request):
+    # Only get unread notifications for the user
+    return Notification.objects.filter(user=request.user, is_read=False)
+
+
+# View to mark all notifications as read
+def mark_all_notifications_read(request):
+    # Mark all notifications for the current user as read
+    notifications = Notification.objects.filter(user=request.user, is_read=False)
+    notifications.update(is_read=True)  # Update all notifications to read
+
+    # Optionally, add a success message
+    messages.success(request, "All notifications have been marked as read.")
+
+    # Redirect back to the page where the notifications are displayed
+    return redirect('borrowing_labcoord_prebookrequests')
+
 @login_required
 @lab_permission_required('view_booking_requests')
 def borrowing_labcoord_prebookrequests(request):
     selected_laboratory_id = request.session.get('selected_lab')
     if not request.user.is_authenticated:
         return redirect('userlogin')
-    
+
     # Get selected status from the GET request, default to 'P' (Pending)
     selected_status = request.GET.get('status', 'P')
 
@@ -1925,6 +1944,24 @@ def borrowing_labcoord_prebookrequests(request):
     else:
         borrowing_requests = borrow_info.objects.filter(laboratory_id=selected_laboratory_id, status=selected_status).order_by('request_date')
 
+    # Check if there are new requests that have not yet been notified
+    new_requests = borrow_info.objects.filter(
+        laboratory_id=selected_laboratory_id, 
+        status='P', 
+        request_date__gte=timezone.now()-timezone.timedelta(minutes=5), 
+        notification_sent=False
+    )
+
+    # Send notifications for new borrow requests
+    for borrow_request in new_requests:
+        message = f"New borrow request for borrow ID: {borrow_request.borrow_id}"
+        create_notification(request.user, message)
+
+        # Mark the borrow request as having been notified
+        borrow_request.notification_sent = True
+        borrow_request.save()
+
+    # Handle POST request for approval or rejection of borrow requests
     if request.method == 'POST':
         # Get borrow_id and action from form submission
         borrow_id = request.POST.get('borrow_id')
@@ -1947,9 +1984,13 @@ def borrowing_labcoord_prebookrequests(request):
 
         return redirect('borrowing_labcoord_prebookrequests')
 
+    # Get updated notifications count and list
+    notifications = get_notifications(request)
+
     return render(request, 'mod_borrowing/borrowing_labcoord_prebookrequests.html', {
         'borrowing_requests': borrowing_requests,
         'selected_status': selected_status,  # Pass the selected status to the template
+        'notifications': notifications,
     })
 
 @login_required

@@ -9,6 +9,8 @@ from io import BytesIO
 from django.core.files import File
 from PIL import Image, ImageDraw
 from django.contrib.postgres.fields import JSONField
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 ''' 
 convention for pks
@@ -44,6 +46,7 @@ class Module(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class permissions(models.Model):
     permission_id = models.AutoField(primary_key=True)
@@ -152,6 +155,7 @@ class user(AbstractBaseUser):
     def get_fullname(self):
         return f"{self.firstname} {self.lastname}"
 
+    
 class laboratory_users(models.Model):
     user = models.ForeignKey(user, on_delete=models.CASCADE)
     laboratory = models.ForeignKey(laboratory, on_delete=models.CASCADE)
@@ -372,6 +376,7 @@ class borrow_info(models.Model):
     approved_by = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True)
     questions_responses = models.JSONField(default=dict, blank=True)
     remarks = models.CharField(max_length=45, null=True, blank=True)
+    notification_sent = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if not self.borrow_id:
@@ -494,7 +499,14 @@ class reservation_config(models.Model):
     tc_description = models.TextField(null=True, blank=True)  # Description for terms and conditions
     leadtime = models.PositiveIntegerField(default=0)
 
+class Notification(models.Model):
+    user = models.ForeignKey(user, on_delete=models.CASCADE)
+    message = models.CharField(max_length=255)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.message
 
 
 

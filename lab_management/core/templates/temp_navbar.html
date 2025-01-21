@@ -80,6 +80,29 @@
     .clickable-row:hover {
       background-color: #dbdbdb !important; /* Change this color to your desired hover color */
     }
+
+    /* Remove animation and just change background color to green on hover */
+    .mark-all-btn {
+        transition: background-color 0.3s ease;
+    }
+
+    .mark-all-btn:hover {
+        background-color: #28a745 !important; /* Green background on hover */
+        color: white; /* White text on hover */
+    }
+
+    /* Style the notification list to be plain text */
+    .notification-text {
+        display: block;
+        padding: 10px 15px;
+        color: #000; /* Black text color */
+        text-decoration: none; /* Remove underline */
+    }
+
+    .notification-text:hover {
+        background-color: #f1f1f1; /* Light background on hover for notifications */
+    }
+
   </style>
 
 
@@ -117,6 +140,33 @@
           </a>
         </li><!-- End Search Icon-->
         {% endcomment %}
+        
+      
+        <li class="nav-item dropdown pe-3">
+          <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
+              <i class="bi bi-bell"></i> 
+              {% if notifications %}
+                  <span class="badge bg-danger">{{ notifications.count }}</span>
+              {% endif %}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow notifications">
+              <!-- Button to mark all notifications as read inside the dropdown -->
+              <form method="post" action="{% url 'mark_all_notifications_read' %}">
+                  {% csrf_token %}
+                  <button type="submit" class="dropdown-item mark-all-btn">Mark All as Read</button>
+              </form>
+              
+              <!-- Notifications List (text only) -->
+              {% for notification in notifications %}
+                  <a class="dropdown-item notification-text">
+                      <span>{{ notification.message }}</span>
+                  </a>
+              {% endfor %}
+          </ul>
+      </li>
+
+      
+        
 
         <!-- {%if not logged_user.is_superuser%} -->
         <!-- Choose lab dropdown -->
