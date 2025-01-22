@@ -1444,6 +1444,9 @@ def borrowing_student_prebookview(request):
             one_day_date = request.POST.get('one_day_booking_date')
             from_date = request.POST.get('from_date')
             to_date = request.POST.get('to_date')
+            equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
+            quantities = request.POST.getlist('quantities[]')         # Corresponding quantities
+            units = request.POST.getlist('units[]')  
 
             # Collect responses to the custom questions
             custom_question_responses = {}
@@ -1460,7 +1463,9 @@ def borrowing_student_prebookview(request):
             # request_date = timezone.localtime().date()
 
             # Determine borrow and due dates based on borrowing type
-            error_message = None
+            error_message = None         
+    
+           
             if borrowing_type == 'oneday':
                 borrow_date = one_day_date
                 due_date = one_day_date
@@ -1487,12 +1492,25 @@ def borrowing_student_prebookview(request):
 
             # Validate quantity limits for equipment
             equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
-            quantities = request.POST.getlist('quantities[]')       # Corresponding quantities
+            quantities = request.POST.getlist('quantities[]')   
+            units = request.POST.getlist('units[]')     # Corresponding quantities
             error_message_qty = None
+            
 
+
+            if not equipment_rows:
+                error_message = "You must select at least one equipment to proceed."
+                return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
+                    'error_message': error_message,
+                    'current_date': request_date,
+                    'items_by_type': items_by_type, 
+                    'prebook_questions': prebook_questions, 
+            })
+
+    
             for i, item_id in enumerate(equipment_rows):
                 quantity = int(quantities[i])
-                item = item_description.objects.get(item_id=item_id)
+                item = item_description.objects.get(item_id=item_id)                
 
                 # If qty_limit is not null and quantity exceeds the limit, show error
                 if item.qty_limit is not None and quantity > item.qty_limit:
@@ -1665,6 +1683,20 @@ def borrowing_student_walkinview(request):
 
         # Validate equipment quantities and items
         error_message = None
+        if not equipment_rows:  # If no equipment is selected
+            error_message = 'Please select at least one equipment item to borrow.'
+            return render(request, 'mod_borrowing/borrowing_studentWalkIn.html', {
+                'current_date': request_date,
+                'equipment_list': item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1),
+                'error_message': error_message,
+                'inventory_items': inventory_items,
+                'walkin_questions': walkin_questions,  # Pass walk-in questions back to the template
+                'items_by_type': items_by_type,  # Pass grouped items to the template
+                'lab_config': lab
+            })
+
+       
+        
         for i, item_id in enumerate(equipment_rows):
             try:
                 quantity = int(quantities[i])
