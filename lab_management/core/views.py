@@ -28,7 +28,7 @@ from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from .models import rooms, laboratory_reservations, reservation_config
-from .models import laboratory_users, laboratory_roles, laboratory_permissions, permissions
+from .models import laboratory_users, laboratory_roles, laboratory_permissions, permissions, Notification
 from .decorators import lab_permission_required, superuser_or_lab_permission_required
 from datetime import timedelta, date, datetime
 from calendar import monthrange
@@ -493,7 +493,6 @@ def edit_profile(request):
 def signup_redirect(request):
     messages.error(request, "Something wrong here, it may be that you already have account!")
     return redirect("homepage")
-
 
 
 # inventory
@@ -1451,6 +1450,9 @@ def borrowing_student_prebookview(request):
             one_day_date = request.POST.get('one_day_booking_date')
             from_date = request.POST.get('from_date')
             to_date = request.POST.get('to_date')
+            equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
+            quantities = request.POST.getlist('quantities[]')         # Corresponding quantities
+            units = request.POST.getlist('units[]')  
 
             # Collect responses to the custom questions
             custom_question_responses = {}
@@ -1467,7 +1469,9 @@ def borrowing_student_prebookview(request):
             # request_date = timezone.localtime().date()
 
             # Determine borrow and due dates based on borrowing type
-            error_message = None
+            error_message = None         
+    
+           
             if borrowing_type == 'oneday':
                 borrow_date = one_day_date
                 due_date = one_day_date
@@ -1494,12 +1498,25 @@ def borrowing_student_prebookview(request):
 
             # Validate quantity limits for equipment
             equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
-            quantities = request.POST.getlist('quantities[]')       # Corresponding quantities
+            quantities = request.POST.getlist('quantities[]')   
+            units = request.POST.getlist('units[]')     # Corresponding quantities
             error_message_qty = None
+            
 
+
+            if not equipment_rows:
+                error_message = "You must select at least one equipment to proceed."
+                return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
+                    'error_message': error_message,
+                    'current_date': request_date,
+                    'items_by_type': items_by_type, 
+                    'prebook_questions': prebook_questions, 
+            })
+
+    
             for i, item_id in enumerate(equipment_rows):
                 quantity = int(quantities[i])
-                item = item_description.objects.get(item_id=item_id)
+                item = item_description.objects.get(item_id=item_id)                
 
                 # If qty_limit is not null and quantity exceeds the limit, show error
                 if item.qty_limit is not None and quantity > item.qty_limit:
@@ -1672,6 +1689,20 @@ def borrowing_student_walkinview(request):
 
         # Validate equipment quantities and items
         error_message = None
+        if not equipment_rows:  # If no equipment is selected
+            error_message = 'Please select at least one equipment item to borrow.'
+            return render(request, 'mod_borrowing/borrowing_studentWalkIn.html', {
+                'current_date': request_date,
+                'equipment_list': item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1),
+                'error_message': error_message,
+                'inventory_items': inventory_items,
+                'walkin_questions': walkin_questions,  # Pass walk-in questions back to the template
+                'items_by_type': items_by_type,  # Pass grouped items to the template
+                'lab_config': lab
+            })
+
+       
+        
         for i, item_id in enumerate(equipment_rows):
             try:
                 quantity = int(quantities[i])
@@ -1915,13 +1946,33 @@ def borrowing_student_detailedWalkInRequestsview(request):
         'borrowed_items': borrowed_items_list,
     })
 
+def create_notification(user, message):
+    Notification.objects.create(user=user, message=message)
+    
+def get_notifications(request):
+    # Only get unread notifications for the user
+    return Notification.objects.filter(user=request.user, is_read=False)
+
+
+# View to mark all notifications as read
+def mark_all_notifications_read(request):
+    # Mark all notifications for the current user as read
+    notifications = Notification.objects.filter(user=request.user, is_read=False)
+    notifications.update(is_read=True)  # Update all notifications to read
+
+    # Optionally, add a success message
+    messages.success(request, "All notifications have been marked as read.")
+
+    # Redirect back to the page where the notifications are displayed
+    return redirect('borrowing_labcoord_prebookrequests')
+
 @login_required
 @lab_permission_required('view_booking_requests')
 def borrowing_labcoord_prebookrequests(request):
     selected_laboratory_id = request.session.get('selected_lab')
     if not request.user.is_authenticated:
         return redirect('userlogin')
-    
+
     # Get selected status from the GET request, default to 'P' (Pending)
     selected_status = request.GET.get('status', 'P')
 
@@ -1931,6 +1982,24 @@ def borrowing_labcoord_prebookrequests(request):
     else:
         borrowing_requests = borrow_info.objects.filter(laboratory_id=selected_laboratory_id, status=selected_status).order_by('request_date')
 
+    # Check if there are new requests that have not yet been notified
+    new_requests = borrow_info.objects.filter(
+        laboratory_id=selected_laboratory_id, 
+        status='P', 
+        request_date__gte=timezone.now()-timezone.timedelta(minutes=5), 
+        notification_sent=False
+    )
+
+    # Send notifications for new borrow requests
+    for borrow_request in new_requests:
+        message = f"New borrow request for borrow ID: {borrow_request.borrow_id}"
+        create_notification(request.user, message)
+
+        # Mark the borrow request as having been notified
+        borrow_request.notification_sent = True
+        borrow_request.save()
+
+    # Handle POST request for approval or rejection of borrow requests
     if request.method == 'POST':
         # Get borrow_id and action from form submission
         borrow_id = request.POST.get('borrow_id')
@@ -1953,9 +2022,13 @@ def borrowing_labcoord_prebookrequests(request):
 
         return redirect('borrowing_labcoord_prebookrequests')
 
+    # Get updated notifications count and list
+    notifications = get_notifications(request)
+
     return render(request, 'mod_borrowing/borrowing_labcoord_prebookrequests.html', {
         'borrowing_requests': borrowing_requests,
         'selected_status': selected_status,  # Pass the selected status to the template
+        'notifications': notifications,
     })
 
 @login_required

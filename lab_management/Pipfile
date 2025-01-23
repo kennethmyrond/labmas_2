@@ -5,6 +5,14 @@ name = "pypi"
 
 [packages]
 django = "*"
+pipenv = "*"
+django-allauth = "*"
+qrcode = "*"
+django-qr-code = "*"
+pillow = "*"
+psycopg2 = "*"
+pyzbar = "*"
+openpyxl = "*"
 
 [dev-packages]
 
