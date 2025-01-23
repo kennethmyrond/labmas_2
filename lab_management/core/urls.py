@@ -24,6 +24,9 @@ urlpatterns = [
     path('deactivate-account/', views.deactivate_account, name='deactivate_account'),
     path('social/signup/', views.signup_redirect, name='signup_redirect'),
 
+    # path('accounts/', include('allauth.urls')),
+    # path('auth/', include('dj_rest_auth.urls')),
+
     # inventory
     path('inventory/', views.inventory_view, name='inventory_view'),
     path('inventory/addNewItem/', views.inventory_addNewItem_view, name='inventory_addNewItem'),  # Added trailing slash

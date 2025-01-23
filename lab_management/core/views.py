@@ -21,6 +21,8 @@ from django import forms
 from collections import defaultdict
 from functools import wraps
 
+from allauth.socialaccount.models import SocialAccount
+
 # from allauth.socialaccount.helpers import provider_login_url
 from .forms import LoginForm, InventoryItemForm
 from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
@@ -352,6 +354,10 @@ def userlogin(request):
                 return redirect('home')  # Redirect to a specific page after login
         else:
             messages.error(request, "Invalid email or password")
+    
+    # Check if the user came back from Google OAuth
+    if request.user.is_authenticated and SocialAccount.objects.filter(user=request.user).exists():
+        return redirect('home')  # Redirect to home if authenticated via Google
     
     # Render the login template
     return render(request, "user_login.html")

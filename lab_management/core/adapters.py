@@ -1,49 +1,28 @@
-# adapters.py in core app
-from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.exceptions import ImmediateHttpResponse
-from allauth.socialaccount.signals import pre_social_login
-from allauth.account.utils import perform_login
-from allauth.utils import get_user_model
-from django.http import HttpResponse
-from django.dispatch import receiver
 from django.shortcuts import redirect
-from django.conf import settings
-from django.shortcuts import redirect
-from django.urls import reverse
-from .models import user
 from django.contrib import messages
-import json
-
-# core/adapters.py
-
-# core/adapters.py
-
-from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
-from django.contrib.auth import get_user_model
-from django.shortcuts import redirect
-from django.urls import reverse
-from django.contrib import messages
-from allauth.exceptions import ImmediateHttpResponse
-
-User = get_user_model()
+from core.models import user as CoreUser
 
 class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
+        # Extract the email from the social account
         email = sociallogin.account.extra_data.get('email')
-        if email and not User.objects.filter(email=email).exists():
-            messages.error(request, "Account does not exist. Please sign up first.")
-            sociallogin.state['process'] = 'connect'  # Prevents the signup process
-            raise ImmediateHttpResponse(redirect(reverse('userlogin')))  # Redirect to a custom page
 
+        if not email:
+            # Handle case where email is not provided by Google
+            messages.error(request, "Google account does not have an associated email.")
+            raise ImmediateHttpResponse(redirect('userlogin'))
 
+        try:
+            # Match the email with your custom user model
+            core_user = CoreUser.objects.get(email=email)
+            sociallogin.user = core_user  # Associate the social login with the existing user
+        except CoreUser.DoesNotExist:
+            # Redirect to login page with an error message if the user doesn't exist
+            messages.error(request, "No account found for the provided Google email. Please log in with your credentials or contact support.")
+            raise ImmediateHttpResponse(redirect('userlogin'))
 
-
-# class MySocialAccountAdapter(DefaultSocialAccountAdapter):
-#     def pre_social_login(self, request, sociallogin):
-#         # Get the email from the social login response
-#         email = sociallogin.account.extra_data.get('email')
-#         # Check if this email exists in core_user
-#         if not user.objects.filter(email=email).exists():
-#             # Redirect to an error or info page if user does not exist
-#             return redirect(reverse('error_page'))  # Define error_page view for users without access
+    def is_auto_signup_allowed(self, request, sociallogin):
+        # Ensure automatic signup is disabled
+        return False

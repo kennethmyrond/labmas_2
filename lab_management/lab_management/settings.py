@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    # 'dj_rest_auth',
 
     'qr_code',
 ]
@@ -146,26 +147,26 @@ WSGI_APPLICATION = 'lab_management.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dblabmas_v2',
-        'USER': 'root',
-        'PASSWORD': 'DLSU1234',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
-        }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'dblabmas_v2',
+#         'USER': 'root',
+#         'PASSWORD': 'DLSU1234',
+#         'HOST': '127.0.0.1',
+#         'PORT': '3306',
+#         'OPTIONS': {
+#             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
+#         }
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -218,11 +219,13 @@ STATICFILES_DIRS= (os.path.join(BASE_DIR, 'static'),)
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
+    # 'django.contrib.auth.backends.ModelBackend',
+    'core.auth_backend.CustomUserBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 
     # 'social_core.backends.google.GoogleOAuth2',
 )
+
 
 
 LOGIN_URL = '/accounts/login/'
@@ -236,9 +239,10 @@ ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = 'none'  # Set to 'mandatory' for production
 ACCOUNT_UNIQUE_EMAIL = True
-SOCIALACCOUNT_AUTO_SIGNUP = False  # Control Google signup behavior
 
+SOCIALACCOUNT_AUTO_SIGNUP = False
 SOCIALACCOUNT_ADAPTER = 'core.adapters.CustomSocialAccountAdapter'
+
 
 
 from django.contrib.messages import constants as messages
@@ -250,7 +254,7 @@ MESSAGE_TAGS = {
     messages.ERROR: 'danger',  # Map error to Bootstrap's 'danger' class
 }
 
-
+AUTH_USER_MODEL = 'core.user'
 
 # ACCOUNT_LOGOUT_REDIRECT_URL = '/userlogin/'
 # ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # Since you're using custom user model
@@ -260,8 +264,6 @@ MESSAGE_TAGS = {
 # ACCOUNT_EMAIL_VERIFICATION = 'none'
 # SOCIALACCOUNT_AUTO_SIGNUP = False
 
-
-AUTH_USER_MODEL = 'core.user'
 # ACCOUNT_EMAIL_VERIFICATION = "none"
 # ACCOUNT_EMAIL_REQUIRED = True
 # ACCOUNT_UNIQUE_EMAIL = True
