@@ -20,7 +20,7 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
             sociallogin.user = core_user  # Associate the social login with the existing user
         except CoreUser.DoesNotExist:
             # Redirect to login page with an error message if the user doesn't exist
-            messages.error(request, "No account found for the provided Google email. Please log in with your credentials or contact support.")
+            messages.error(request, "No account found for the provided Google email. Please register your account or contact support.")
             raise ImmediateHttpResponse(redirect('userlogin'))
 
     def is_auto_signup_allowed(self, request, sociallogin):
