@@ -69,7 +69,7 @@
   {% if messages %}
     <div class="alert alert-success">
       {% for message in messages %}
-        {{ message }}
+        {{ message|safe }}
       {% endfor %}
     </div>
   {% endif %}

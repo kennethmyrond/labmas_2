@@ -4337,9 +4337,11 @@ def superuser_lab_info(request, laboratory_id):
         full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
         role_name=F('role__name')
     )
-    lab_roles = laboratory_roles.objects.filter(Q(laboratory_id=0) | Q(laboratory_id=lab.laboratory_id), users__is_active=True).annotate(
+    lab_roles = laboratory_roles.objects.filter(Q(laboratory_id=0) | Q(laboratory_id=lab.laboratory_id)).annotate(
         usercount=Count('users', filter=Q(users__laboratory_id=laboratory_id))
     )
+
+    print(lab_roles)
 
      # Retrieve pending users for display in the "Share" tab
     pending_users = laboratory_users.objects.filter(
@@ -4354,7 +4356,8 @@ def superuser_lab_info(request, laboratory_id):
     role_permissions = {(perm.role.roles_id, perm.permissions.codename): True 
                         for perm in laboratory_permissions.objects.filter(laboratory=lab)}
     # print(role_permissions)
-    print(lab_roles)
+    
+
     context = {
         'laboratory_id': laboratory_id,
         'lab': lab,
@@ -4570,7 +4573,9 @@ def bulk_upload_users_to_lab(request, laboratory_id):
             if success_count > 0:
                 messages.success(request, f"{success_count} user(s) added successfully.")
             if error_messages:
-                messages.warning(request, " | ".join(error_messages))
+                # Use <br> to separate the messages
+                formatted_errors = "<br>".join(error_messages)
+                messages.warning(request, formatted_errors)
 
         except openpyxl.utils.exceptions.InvalidFileException:
             messages.error(request, "Invalid file format. Please upload a valid Excel file.")
