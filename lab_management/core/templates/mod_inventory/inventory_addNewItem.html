@@ -106,8 +106,9 @@
                 </div> -->
             </div>
             <div class="modal-footer">
-              <!-- Download Button -->
-              <!-- <a id="downloadQrCode" class="btn btn-success" download="qr_code.png">Download QR Code</a> -->
+              <a href="{{qr_code_data}}" class="btn btn-primary float-end ms-2" download="QR_{{ new_item.item_name }}.png">
+                <i class="bi bi-qr-code"></i>
+              </a>
               <button type="button" class="btn btn-secondary" data-bs-dismiss="successModal">Close</button>
           </div>
         </div>

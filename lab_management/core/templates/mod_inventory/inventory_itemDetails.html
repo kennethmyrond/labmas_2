@@ -100,7 +100,9 @@
                 {% if permissions.can_edit_item_details %}
                 <a id="editbtn" class="btn btn-secondary float-end ms-2" href="{% url 'inventory_itemEdit_view' item.item_id %}">Edit</a>
                 {% endif %}
-                <a id="downloadQrCode" class="btn btn-primary float-end ms-2">Download QR Code</a>
+                <a href="{{qr_code_data}}" class="btn btn-primary float-end ms-2" download="QR_{{ item.item_name }}.png">
+                  <i class="bi bi-qr-code"></i>
+                </a>
               </div>
             </div>  
           </div>
@@ -220,7 +222,19 @@
                       <hr>
                       <p class="small"><strong>Handled by:</strong> {{ handling.updated_by }}</p>
                     </div>
+                    <!-- QR Code Section -->
+                    <div class="qr-code-section text-center">
+                      <!-- <h6>QR Code</h6> -->
+                      <!-- <img src="{{ inventory.qr_code }}" alt="QR Code for {{ inventory.inventory_item_id }}"> -->
+                      <!-- <br> -->
+                      
+                    </div>
                     <div class="modal-footer">
+                      {% if item.rec_expiration or item.rec_per_inv %}
+                      <a href="{{ inventory.qr_code }}" class="btn btn-primary" download="QR_{{ inventory.item.item_name }}_{{ inventory.inventory_item_id }}.png">
+                        <i class="bi bi-qr-code"></i>
+                      </a>
+                      {%endif%}
                       <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     </div>
                   </div>
@@ -334,6 +348,7 @@
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
 <script>
+
   document.addEventListener('DOMContentLoaded', function() {
     const downloadLink = document.getElementById('downloadQrCode');
     const qrCodeImage = document.getElementById('qrCodeImage');

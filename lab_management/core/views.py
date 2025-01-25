@@ -129,10 +129,17 @@ def suggest_items(request):
     selected_laboratory_id = request.session.get('selected_lab')
     
     # Fetch suggestions from the database
+    # suggestions = item_description.objects.filter(
+    #     item_name__icontains=query, 
+    #     laboratory_id=selected_laboratory_id, 
+    #     is_disabled=0
+    # )[:5]
+
     suggestions = item_description.objects.filter(
-        item_name__icontains=query, 
         laboratory_id=selected_laboratory_id, 
         is_disabled=0
+    ).filter(
+        Q(item_name__icontains=query) | Q(item_id=query)
     )[:5]
 
     data = []
@@ -243,31 +250,25 @@ def remove_item_from_inventory(inventory_item, amount, user, change_type, remark
         remarks=remarks,
     )
 
-def generate_qr_code(item_id):
+def generate_qr_code(item_QRize):
     # Create a QR code instance
+    qr_data = item_QRize
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
         box_size=10,
         border=4,
     )
-
-    # Add data to the QR code (in this case, the item_id)
-    qr.add_data(f'Item ID: {item_id}')
+    qr.add_data(qr_data)
     qr.make(fit=True)
 
-    # Create an image from the QR code
-    img = qr.make_image(fill='black', back_color='white')
-
-    # Convert the image to a byte stream
-    buffer = BytesIO()
-    img.save(buffer, format="PNG")
-    qr_code_img = buffer.getvalue()
-
-    # Encode the byte stream to base64
-    qr_code_b64 = base64.b64encode(qr_code_img).decode('utf-8')
-
-    return qr_code_b64  # Return the base64 encoded string
+    # Save the QR code as a base64 image
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    qr_base64 = base64.b64encode(buffered.getvalue()).decode()
+    qr_code = f"data:image/png;base64,{qr_base64}"
+    return qr_code  # Return the base64 encoded string
 
 # forms
 class ItemEditForm(forms.ModelForm):
@@ -624,7 +625,38 @@ def inventory_itemDetails_view(request, item_id):
     # Calculate the total quantity
     total_qty = item_inventories.aggregate(Sum('qty'))['qty__sum'] or 0
 
-    qr_code_data = generate_qr_code(item.item_id)
+    # Generate QR codes
+    qr_data = f"{item.item_id}"
+    qr_code_data_item_only = generate_qr_code(qr_data)
+
+    if item.rec_expiration | item.rec_per_inv:
+        for item_inv in item_inventories:
+            qr_data = f"{item_inv.item.item_id}, {item_inv.inventory_item_id}"
+            qr_code_data = generate_qr_code(qr_data)
+            item_inv.qr_code = qr_code_data
+       
+
+    # # Generate QR codes for each inventory item
+    # for item_inv in item_inventories:
+    #     if item.rec_expiration | item.rec_per_inv:
+    #         qr_data = f"{item_inv.item.item_id}, {item_inv.inventory_item_id}"
+    #     else:    
+    #         qr_data = f"{item_inv.item.item_id}, 0"
+    #     qr = qrcode.QRCode(
+    #         version=1,
+    #         error_correction=qrcode.constants.ERROR_CORRECT_L,
+    #         box_size=10,
+    #         border=4,
+    #     )
+    #     qr.add_data(qr_data)
+    #     qr.make(fit=True)
+
+    #     # Save the QR code as a base64 image
+    #     img = qr.make_image(fill_color="black", back_color="white")
+    #     buffered = BytesIO()
+    #     img.save(buffered, format="PNG")
+    #     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
+    #     item_inv.qr_code = f"data:image/png;base64,{qr_base64}"
 
     # Fetch expiration data and attach it to each inventory item if applicable
     if item.rec_expiration:
@@ -675,7 +707,7 @@ def inventory_itemDetails_view(request, item_id):
         'total_qty': total_qty,
         'add_cols_data': add_cols_data,
         'is_edit_mode': False,  # Not in edit mode
-        'qr_code_data': qr_code_data,
+        'qr_code_data': qr_code_data_item_only,
         'date_today': date_today,
 
         'lab_name': lab.name,
@@ -810,9 +842,38 @@ def inventory_updateItem_view(request):
                     inventory_item=new_inventory_item,
                     expired_date=expiration_date
                 )
-            
-            # messages.success(request, f"Added Inventory successfully.")
-            return JsonResponse({'success': True, 'new_inventory_item_id': new_inventory_item.inventory_item_id, 'action_type': action_type})
+
+            # Inside the 'add' action block in your view
+            if item_instance.rec_expiration | item_instance.rec_per_inv:
+                qr_data = f"{item_id}, {new_inventory_item.inventory_item_id}"
+            else:
+                qr_data = f"{item_id}, 0"
+
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(qr_data)
+            qr.make(fit=True)
+
+            # Save the QR code as a base64 image
+            img = qr.make_image(fill_color="black", back_color="white")
+            buffered = BytesIO()
+            img.save(buffered, format="PNG")
+            qr_base64 = base64.b64encode(buffered.getvalue()).decode()
+            qr_code = f"data:image/png;base64,{qr_base64}"
+
+            print(item_instance.item_name)
+
+            return JsonResponse({
+                'success': True,
+                'new_inventory_item_id': new_inventory_item.inventory_item_id,
+                'item_qrcode': qr_code,  # Include the QR code in the response
+                'item_name': item_instance.item_name,
+                'action_type': action_type
+            })
         
         elif action_type in ['remove', 'report']:# Handle remove & report from inventory
             if action_type=='remove':
@@ -4341,7 +4402,7 @@ def superuser_lab_info(request, laboratory_id):
         usercount=Count('users', filter=Q(users__laboratory_id=laboratory_id))
     )
 
-    # print(lab_roles)
+    print(lab_roles)
 
      # Retrieve pending users for display in the "Share" tab
     pending_users = laboratory_users.objects.filter(

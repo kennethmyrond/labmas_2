@@ -72,11 +72,41 @@
                             <div id="itemNameSection">
                                 <div class="row mb-3" >
                                     <label for="itemName" class="col-sm-2 col-form-label">Item Name:</label>
-                                    <div class="col-sm-10">
+                                    <div class="col-sm-8">
                                         <select class="js-example-basic-single form-control" id="itemName" name="item_name" required></select>
+                                    </div>
+                                    <div class="col-sm-2">
+                                        <button id="scanQrButton" type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#qrScannerModal">
+                                            <i class="bi bi-camera"></i> Scan QR
+                                        </button>
+                                        <!-- <button id="scanQrButton" class="btn btn-primary">Scan QR Code</button> -->
+                                    </div>
+                                    <!-- <video id="qrVideo" style="display: none; width: 100%; max-height: 300px;"></video> -->
+                                </div>
+                            </div>
+
+                            
+
+                            <!-- QR Code Scanner Modal -->
+                            <div class="modal fade" id="qrScannerModal" tabindex="-1" role="dialog" aria-labelledby="qrScannerModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="qrScannerModalLabel">Scan QR Code</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <!-- <button id="scanQrButton" class="btn btn-primary">Scan QR</button> -->
+                                            <video id="qrVideo" style="display: none; width: 100%; height: 300px;"></video>
+                                            <p class="text-danger" id="qrError" style="display: none;">Unable to scan QR code. Please try again.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button id="scanQrButton" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
 
                             
                                 <!-- Inventory Item ID Selection
@@ -246,14 +276,188 @@
             <div class="modal-body">
                 <div class="alert alert-success">The item has been successfully added to inventory with Inventory Item ID</div>
                 <h2 style="text-align: center;"><strong id="newInventoryItemId"></strong></h2>
-                <p style="text-align: center;">Please save this Inventory Item ID and attach it to the items stored.</p>
+                <p style="text-align: center;">Please save this Inventory Item ID or QR code and attach it to the items stored.</p>
             </div>
             <div class="modal-footer">
+                <a id="qr_code_dl" class="btn btn-primary " style="text-align: center;">
+                    Download QR Code <i class="bi bi-qr-code"></i> 
+                </a>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="$('#successModal').modal('hide'); location.reload();" >Close</button>
             </div>
         </div>
     </div>
 </div>
+
+<script type="module">
+    import QrScanner from "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js";
+
+    QrScanner.WORKER_PATH = "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner-worker.min.js";
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const scanQrButton = document.getElementById("scanQrButton");
+        const qrVideo = document.getElementById("qrVideo");
+        const itemNameDropdown = $('#itemName'); // Reference the item dropdown
+        const inventoryItemDropdown = $('#inventoryItemID'); // Reference the inventory dropdown
+        const qrScannerModalElement = document.getElementById('qrScannerModal');
+        const closeButton = qrScannerModalElement.querySelector('.btn-close');
+        let qrScanner;
+
+        // Function to dynamically fetch and add an item to the dropdown
+        function fetchAndAddItem(itemId, inventoryItemId) {
+            $.ajax({
+                url: `/suggest_items/`,
+                data: { query: itemId },
+                method: 'GET',
+                success: function (data) {
+                    if (data.length > 0) {
+                        const item = data[0]; // Assuming only one item matches the exact item_id
+                        const newOption = new Option(`${item.item_name} | ${item.add_cols}`, item.item_id, true, true);
+                        itemNameDropdown.append(newOption).trigger('change'); // Add and select the new option
+
+                        if (inventoryItemId && inventoryItemId !== "0") {
+                            // Fetch and add inventory items if required
+                            fetchAndAddInventoryItem(itemId, inventoryItemId);
+                            
+                        }
+                    } else {
+                        alert('Item Does Not Exist. Try Again.');
+                    }
+                },
+                error: function () {
+                    alert('An error occurred while fetching item details.');
+                }
+            });
+        }
+
+        // Function to fetch and add inventory items to the inventory dropdown
+        function fetchAndAddInventoryItem(itemId, inventoryItemId) {
+            $.ajax({
+            url: `/check_item_expiration/${itemId}/`,
+            method: 'GET',
+            success: function(response) {
+                if (response.rec_expiration || response.rec_per_inv) {
+                    if (actionType === 'remove' || actionType === 'report') {
+                        $('#inventoryItemIDSection').show();
+                        $.ajax({
+                            url: `/suggest_inventory_items/${itemId}/`,
+                            method: 'GET',
+                            success: function (data) {
+                                inventoryItemDropdown.empty(); // Clear existing options
+                                let itemExists = false;
+
+                                data.forEach(item => {
+                                    const formattedText = item.expiration_date !== 'None'
+                                        ? `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`
+                                        : `${item.inventory_item_id} | qty: ${item.qty}`;
+                                    
+                                    const isSelected = item.inventory_item_id === inventoryItemId;
+                                    
+                                    const newOption = new Option(formattedText, item.inventory_item_id, isSelected, isSelected);
+                                    inventoryItemDropdown.append(newOption);
+
+                                    if (isSelected) {
+                                        itemExists = true;
+                                    }
+                                });
+
+                                // Reinitialize Select2 with updated options
+                                inventoryItemDropdown.select2({
+                                    placeholder: 'Select Inventory Item ID',
+                                    allowClear: true,
+                                });
+
+                                if (!itemExists) {
+                                    alert('Inventory Item Does Not Exist. Try Again.');
+                                }
+                            },
+                            error: function () {
+                                alert('An error occurred while fetching inventory items.');
+                            }
+                        });
+                    }
+                }
+            }
+            });  
+        }
+
+        // Toggle QR scanner when the button is clicked
+        scanQrButton.addEventListener("click", function () {
+            if (!qrScanner) {
+                // Initialize the scanner
+                qrScanner = new QrScanner(qrVideo, (result) => {
+                    // Extract item_id and inventory_item_id from the scanned QR code
+                    const [itemId, inventoryItemId] = result.split(", ");
+
+                    // Check if the item already exists in the dropdown
+                    const exists = itemNameDropdown.find(`option[value="${itemId}"]`).length > 0;
+
+                    if (exists) {
+                        // If it exists, select it
+                        itemNameDropdown.val(itemId).trigger('change');
+
+                        if (inventoryItemId && inventoryItemId !== "0") {
+                            fetchAndAddInventoryItem(itemId, inventoryItemId);
+                        }
+                    } else {
+                        // Fetch and add the item dynamically
+                        fetchAndAddItem(itemId, inventoryItemId);
+                    }
+
+                    // Stop the scanner and hide the video
+                    qrScanner.stop();
+                    qrVideo.style.display = "none";
+                    closeButton.click(); 
+                });
+            }
+
+            if (qrVideo.style.display === "none") {
+                qrVideo.style.display = "block";
+                qrScanner.start(); // Start the scanner
+            } else {
+                qrScanner.stop(); // Stop the scanner
+                qrVideo.style.display = "none";
+                closeButton.click(); 
+            }
+        });
+
+        // Add event listener to the close button
+        closeButton.addEventListener('click', function() {
+            qrScanner.stop();
+        });
+
+        // Initialize the dropdown with select2 and its AJAX settings
+        itemNameDropdown.select2({
+            ajax: {
+                url: '/suggest_items/',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        query: params.term // Search term
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.map(function (item) {
+                            return {
+                                id: item.item_id,
+                                text: `${item.item_name} | ${item.add_cols}`
+                            };
+                        })
+                    };
+                },
+                placeholder: 'Search for an item',
+                minimumInputLength: 2
+            }
+        }).on('change', checkItemExpiration);
+
+        inventoryItemDropdown.select2({
+            placeholder: 'Select Inventory Item ID',
+            allowClear: true
+        });
+    });
+</script>
+
 
 <script>
     // check date purchased and received
@@ -373,12 +577,6 @@
         $('#confirmationModal').modal('show');
     }
 
-    // Function to submit the form after confirmation
-    // function submitForm() {
-    //     $('#confirmationModal').modal('hide');
-    //     $('#updateForm').submit();  // Submit the form
-    // }
-
     function submitForm() {
     $('#confirmationModal').modal('hide');
 
@@ -388,21 +586,23 @@
         url: '', // Keep this as the current view URL
         data: $('#updateForm').serialize(),
         success: function(response) {
-            if (response.success && !response.new_inventory_item_id) {
-                location.reload();
-            } else if(response.success && response.new_inventory_item_id) {
+            if (response.success && response.new_inventory_item_id) {
+                // Populate the modal with the response data
                 $('#newInventoryItemId').text(response.new_inventory_item_id);
+                $('#itemQrCodeImage').attr('src', response.item_qrcode); // Set the QR code image
+                $('#qr_code_dl').attr('href', response.item_qrcode); // Set download link
+                $('#qr_code_dl').attr('download', `QR_${response.item_name}_${response.new_inventory_item_id}.png`); // Set download filename
                 $('#successModal').modal('show');
             } else {
                 alert('Error adding item to inventory. Please try again.');
             }
         },
         error: function() {
-            location.reload();
+            alert('An error occurred while processing the request.');
         }
     });
-}
 
+}
 
     function checkItemExpiration() {
     const itemId = $('#itemName').val();
