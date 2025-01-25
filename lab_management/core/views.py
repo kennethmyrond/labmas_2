@@ -4341,7 +4341,7 @@ def superuser_lab_info(request, laboratory_id):
         usercount=Count('users', filter=Q(users__laboratory_id=laboratory_id))
     )
 
-    print(lab_roles)
+    # print(lab_roles)
 
      # Retrieve pending users for display in the "Share" tab
     pending_users = laboratory_users.objects.filter(
