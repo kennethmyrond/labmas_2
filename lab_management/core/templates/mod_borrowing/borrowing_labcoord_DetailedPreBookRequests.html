@@ -95,7 +95,10 @@
                       <div class="alert alert-info">This request has already been processed.</div>
                       {% endif %}
 
+                      {% if borrow_request.status == 'X' %}
                       <button class="btn btn-info" id="downloadBtn">Download PDF</button>
+                      {% endif %}
+                     
 
                       <!-- Accept Modal -->
                     <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">

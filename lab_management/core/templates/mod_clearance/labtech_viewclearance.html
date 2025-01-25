@@ -55,7 +55,7 @@
                 <select class="form-select" id="status" name="status" onchange="document.getElementById('statusFilterForm').submit()">
                   <option value="Pending" {% if request.GET.status == "Pending" %}selected{% endif %}>Pending</option>
                   <option value="Cleared" {% if request.GET.status == "Cleared" %}selected{% endif %}>Cleared</option>
-                  <option value="All" {% if request.GET.status == "All" %}selected{% endif %}>All</option>
+                  <option value="All" {% if request.GET.status == "All" or not request.GET.status %}selected{% endif %}>All</option>
                 </select>
               </div>
             </div>

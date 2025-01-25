@@ -50,53 +50,92 @@
   
             <form method="POST">
               {% csrf_token %}
-              
+              <div id="clearanceDetails">
               <div class="row mb-3">
+                
                 <label for="RFno" class="col-sm-2 col-form-label">RF No.:</label>
                 <div class="col-sm-10">
+                  
+                  {% if report_data.status == 'Pending' %}
                   <input type="text" class="form-control" id="RFno" disabled name="RFno" value="{{ report_data.borrow_id }}">
+                  {% else %}
+                    {{ report_data.borrow_id }}
+                  {% endif %}
+             
                 </div>
               </div>
   
               <div class="row mb-3">
                 <label for="studentName" class="col-sm-2 col-form-label">Student Name:</label>
                 <div class="col-sm-10">
+                  
+                  {% if report_data.status == 'Pending' %}
                   <input type="text" class="form-control" id="studentName" disabled name="studentName" value="{{ report_data.user_name }}">
+                  {% else %}
+                    {{ report_data.user_name }}
+                  {% endif %}
+
                 </div>
               </div>
 
-              <div class="row mb-3">
-                <label for="IDNumber" class="col-sm-2 col-form-label">ID Number:</label>
-                <div class="col-sm-10">
+              <div class="row mb-3 border-1">
+                <span for="IDNumber" class="col-2 col-form-label">ID Number:</span>
+                <span class="col-10">
+                  
+                  {% if report_data.status == 'Pending' %}
                   <input type="text" class="form-control" id="IDNumber" disabled name="IDNumber" value="{{ report_data.id_number }}">
-                </div>
+                  {% else %}
+                    {{ report_data.id_number }}
+                  {% endif %}
+                
+                </span>
               </div>
   
               <div class="row mb-3">
                 <label for="itemName" class="col-sm-2 col-form-label">Item:</label>
                 <div class="col-sm-10">
+                  {% if report_data.status == 'Pending' %}
                   <input type="text" class="form-control" id="itemName" disabled name="itemName" value="{{ report_data.item_name }}">
+                  {% else %}
+                    {{ report_data.item_name }}
+                  {% endif %}
+                 
+                 
                 </div>
               </div>
   
               <div class="row mb-3">
                 <label for="reason" class="col-sm-2 col-form-label">Reason:</label>
                 <div class="col-sm-10">
+                  
+                  {% if report_data.status == 'Pending' %}
                   <input type="text" class="form-control" id="reason" disabled name="reason" value="{{ report_data.reason }}">
+                  {% else %}
+                    {{ report_data.reason }}
+                  {% endif %}
+                 
                 </div>
               </div>
   
               <div class="row mb-3">
                 <label for="amtdue" class="col-sm-2 col-form-label">Amount Due (₱):</label>
-                <div class="col-sm-10">
+                <div class="col-sm-10">               
+                  {% if report_data.status == 'Pending' %}
                   <input type="number" class="form-control" id="amtdue" disabled name="amtdue" value="{{ report_data.amount_due }}">
+                  {% else %}
+                    {{ report_data.amount_due }}
+                  {% endif %}
                 </div>
               </div>
   
               <div class="row mb-3">
                 <label for="remarks" class="col-sm-2 col-form-label">Remarks:</label>
                 <div class="col-sm-10">
+                  {% if report_data.status == 'Pending' %}
                   <textarea class="form-control" id="remarks" name="remarks">{{ report_data.remarks }}</textarea>
+                  {% else %}
+                    {{ report_data.remarks }}
+                  {% endif %}
                 </div>
               </div>
   
@@ -110,6 +149,7 @@
                     {% endif %}
                 </div>
             </div>
+          </div>
             
   
               <div class="row mb-5">
@@ -117,7 +157,9 @@
                     <button type="submit" class="btn btn-primary me-3" {% if report_data.status == 'Cleared' %} disabled {% endif %}>Mark as Cleared</button>
                 </div>
             </div>
-            
+            {% if report_data.status == 'Cleared' %}
+            <button class="btn btn-info" id="downloadBtn">Download PDF</button>
+            {% endif %}
             </form>
   
           </div>
@@ -125,4 +167,65 @@
       </div>
     </div>
   </section>
+
+  <script type="text/javascript">
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const rfNumber = '{{ report_data.borrow_id }}';
+            const studentName = '{{report_data.user_name}}';
+            const idNumber = '{{report_data.id_number}}';
+            const itemName = '{{report_data.item_name}}';
+            const reason = '{{report_data.reason}}';
+            const amountDue = '{{report_data.amount_due}}';
+            const remarks = '{{report_data.remarks}}';
+            const status = '{{report_data.status}}';
+
+      
+            const clearanceData = [
+              `RF No.: ${rfNumber}`,
+              `Student Name: ${studentName}`,
+              `ID Number: ${idNumber}`,
+              `Item: ${itemName}`,
+              `Reason: ${reason}`,
+              `Amount Due (PHP): ${amountDue}`,
+              `Remarks: ${remarks}`,
+              `Status: ${status}`
+          ];
+
+            
+            const margin = 10;
+            const lineHeight = 10;
+            let yPosition = margin;
+
+            doc.setFontSize(12);
+          
+
+      
+        clearanceData.forEach((line) => {
+          doc.text(line, margin, yPosition);
+          yPosition += lineHeight;
+
+          // Add a new page if content exceeds page height
+          if (yPosition > doc.internal.pageSize.getHeight() - margin) {
+              doc.addPage();
+              yPosition = margin;
+          }
+      });
+
+            
+    
+            
+         
+
+            const fileName = `clearance_RF#${rfNumber}_ID#${idNumber}_${status}.pdf`;
+    
+            
+            doc.save(fileName);
+        });
+    });
+  </script>
 {% endblock %}
