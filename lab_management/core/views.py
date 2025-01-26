@@ -33,7 +33,7 @@ from .decorators import lab_permission_required, superuser_or_lab_permission_req
 from datetime import timedelta, date, datetime
 from calendar import monthrange
 from pyzbar.pyzbar import decode
-from PIL import Image 
+from PIL import Image, ImageDraw, ImageFont 
 from io import BytesIO
 
 # python image library pillow
@@ -250,24 +250,57 @@ def remove_item_from_inventory(inventory_item, amount, user, change_type, remark
         remarks=remarks,
     )
 
-def generate_qr_code(item_QRize):
+def generate_qr_code(item_QRize, details):
+
     # Create a QR code instance
-    qr_data = item_QRize
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
         box_size=10,
         border=4,
     )
-    qr.add_data(qr_data)
+    qr.add_data(item_QRize)
     qr.make(fit=True)
 
-    # Save the QR code as a base64 image
-    img = qr.make_image(fill_color="black", back_color="white")
+    # Generate the QR code image
+    qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGBA")
+
+    # Add text below the QR code
+    text = details
+    font_size = 20
+    try:
+        # Load a default font; replace "arial.ttf" with the path to your font file if needed
+        font = ImageFont.truetype("arial.ttf", font_size)
+    except IOError:
+        # Fallback to default PIL font if the specified font is not found
+        font = ImageFont.load_default()
+
+    # Split the text into multiple lines
+    lines = text.split("\n")
+    line_heights = [font.getbbox(line)[3] - font.getbbox(line)[1] for line in lines]
+    total_text_height = sum(line_heights) + (len(lines) - 1) * 5  # 5px spacing between lines
+
+    # Create a new image with space for the QR code and text
+    img_width, img_height = qr_img.size
+    new_height = img_height + total_text_height + 10  # Add space for text and margins
+    new_img = Image.new("RGBA", (img_width, new_height), "white")
+    new_img.paste(qr_img, (0, 0))
+
+    # Draw text on the new image
+    draw = ImageDraw.Draw(new_img)
+    current_y = img_height + 5  # Start drawing below the QR code
+    for line in lines:
+        text_width = font.getbbox(line)[2] - font.getbbox(line)[0]
+        text_x = (img_width - text_width) // 2  # Center text horizontally
+        draw.text((text_x, current_y), line, fill="black", font=font)
+        current_y += font.getbbox(line)[3] - font.getbbox(line)[1] + 5  # Move to the next line
+
+    # Save the QR code with text as a base64 image
     buffered = BytesIO()
-    img.save(buffered, format="PNG")
+    new_img.save(buffered, format="PNG")
     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
     qr_code = f"data:image/png;base64,{qr_base64}"
+
     return qr_code  # Return the base64 encoded string
 
 # forms
@@ -627,12 +660,14 @@ def inventory_itemDetails_view(request, item_id):
 
     # Generate QR codes
     qr_data = f"{item.item_id}"
-    qr_code_data_item_only = generate_qr_code(qr_data)
+    qr_details = f"{item.item_name}"
+    qr_code_data_item_only = generate_qr_code(qr_data, qr_details)
 
     if item.rec_expiration | item.rec_per_inv:
         for item_inv in item_inventories:
             qr_data = f"{item_inv.item.item_id}, {item_inv.inventory_item_id}"
-            qr_code_data = generate_qr_code(qr_data)
+            qr_details = f"{item.item_name}\nInvID: {item_inv.inventory_item_id}"
+            qr_code_data = generate_qr_code(qr_data, qr_details)
             item_inv.qr_code = qr_code_data
        
 
@@ -767,7 +802,8 @@ def inventory_addNewItem_view(request):
         )
         new_item.save()
 
-        qr_code_data = generate_qr_code(new_item.item_id)
+        qr_details=f"{item_name}"
+        qr_code_data = generate_qr_code(new_item.item_id, qr_details)
         # Render the page with QR code and modal trigger
         return render(request, 'mod_inventory/inventory_addNewItem.html', {
             'item_types': item_types_list,
@@ -1984,10 +2020,14 @@ def borrowing_student_detailedPreBookRequestsview(request, borrow_id):
 
     # Get all the items that were borrowed under this request
     borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_request)
+    qr_data = f"{borrow_id}"
+    qr_details = f"{borrow_id}"
+    qr_code_data_borrowid = generate_qr_code(qr_data, qr_details)
 
     return render(request, 'mod_borrowing/borrowing_studentDetailedPreBookRequests.html', {
         'borrow_request': borrow_request,
         'borrowed_items': borrowed_items_list,
+        'qrcode': qr_code_data_borrowid,
     })
 
 @login_required
@@ -2467,7 +2507,13 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
         'today': today
     })
 
-
+def validate_borrow_id(request):
+    borrow_id = request.GET.get('borrow_id', '').strip()
+    if borrow_id:
+        is_valid = borrow_info.objects.filter(borrow_id=borrow_id).exists()
+        messages.error(request, 'Invalid Borrow ID')
+        return JsonResponse({'valid': is_valid})
+    return JsonResponse({'valid': False})
 
 
 #CLEARANCE

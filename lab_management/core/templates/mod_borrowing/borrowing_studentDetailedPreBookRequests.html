@@ -18,16 +18,26 @@
       <div class="col-lg-12">
         <div class="card">
           <div class="card-body">
-            {% if borrow_request.status == 'P' %}
-              <button class="btn btn-danger btn-sm custom-cancel-btn" onclick="cancelRequest('{{ request.borrow_id }}')">Cancel Booking</button>
-            {% endif %}
-            <h5 class="card-title">Request ID: {{ borrow_request.borrow_id }}</h5>
-            <p><strong>Date Requested:</strong> {{ borrow_request.request_date|date:"Y/m/d" }}</p>
-            <p><strong>Date Needed:</strong> {{ borrow_request.borrow_date|date:"Y/m/d" }}</p>
-            <p><strong>Due Date:</strong> {{ borrow_request.due_date|date:"Y/m/d" }}</p>
-            <p><strong>Status:</strong> 
-              {{ borrow_request.get_status_display }}
-            </p>
+            <div class="row">
+              <div class="col">
+                {% if borrow_request.status == 'P' %}
+                  <button class="btn btn-danger btn-sm custom-cancel-btn" onclick="cancelRequest('{{ request.borrow_id }}')">Cancel Booking</button>
+                {% endif %}
+                <h5 class="card-title">Request ID: {{ borrow_request.borrow_id }}</h5>
+                <p><strong>Date Requested:</strong> {{ borrow_request.request_date|date:"Y/m/d" }}</p>
+                <p><strong>Date Needed:</strong> {{ borrow_request.borrow_date|date:"Y/m/d" }}</p>
+                <p><strong>Due Date:</strong> {{ borrow_request.due_date|date:"Y/m/d" }}</p>
+                <p><strong>Status:</strong> 
+                  {{ borrow_request.get_status_display }}
+                </p>
+              </div>
+              <div class="col text-center">
+                <img src="{{ qrcode }}" alt="QR Code" class="img-thumbnail mt-2 float-end" style="width:50%"><br>
+                <a href="{{qrcode}}" class="btn btn-secondary btn-sm float-end ms-2" download="QR_{{borrow_request.borrow_id}}.png">
+                  <i class="bi bi-download"></i>
+                </a>
+              </div>
+            </div>
 
             <!-- Borrowed Items List -->
             <h5 class="card-title">Borrowed Items</h5>

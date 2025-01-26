@@ -12,11 +12,9 @@
 </div>
 
 {% if messages %}
-<div class="alert alert-success mt-3">
-    {% for message in messages %}
-    {{ message }}
-    {% endfor %}
-</div>
+  {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
 {% endif %}
 
 
@@ -25,6 +23,34 @@
     text-align: left;
   }
 </style>
+
+<div class="row mb-3">
+  <div class="col-sm-12 text-start">
+      <button id="scanQrButton" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#qrScannerModal">
+          <i class="bi bi-camera"></i> Scan QR Code
+      </button>
+  </div>
+</div>
+
+<!-- QR Code Scanner Modal -->
+<div class="modal fade" id="qrScannerModal" tabindex="-1" role="dialog" aria-labelledby="qrScannerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="qrScannerModalLabel">Scan QR Code</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <video id="qrVideo" style="width: 100%; height: auto;"></video>
+              <p class="text-danger" id="qrError" style="display: none;">Unable to scan QR code. Please try again.</p>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+      </div>
+  </div>
+</div>
+
 
 <!-- Tabs for Today, Future, Past, Cancelled, and Accepted borrows -->
 <ul class="nav nav-tabs" id="borrowRequestsTabs" role="tablist">
@@ -369,6 +395,89 @@
     </div>
   </div>
 </div>
+
+<script type="module">
+  import QrScanner from "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js";
+
+  QrScanner.WORKER_PATH = "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner-worker.min.js";
+
+  document.addEventListener("DOMContentLoaded", function () {
+      const qrVideo = document.getElementById("qrVideo");
+      const qrError = document.getElementById("qrError");
+      const qrScannerModal = document.getElementById("qrScannerModal");
+      let qrScanner;
+
+      const validateBorrowId = (borrowId) => {
+          return new Promise((resolve, reject) => {
+              // Perform an AJAX request to validate the borrow ID
+              $.ajax({
+                  url: `/validate_borrow_id/`, // Replace with the actual URL for validation
+                  method: "GET",
+                  data: { borrow_id: borrowId },
+                  success: function (response) {
+                      if (response.valid) {
+                          resolve(true);
+                      } else {
+                          resolve(false);
+                      }
+                  },
+                  error: function () {
+                      reject("Error occurred while validating the Borrow ID.");
+                  },
+              });
+          });
+      };
+
+      const initializeQrScanner = () => {
+          qrScanner = new QrScanner(qrVideo, async (result) => {
+              // Stop the scanner
+              qrScanner.stop();
+              qrVideo.style.display = "none";
+
+              const borrowId = result.trim();
+
+              // Validate the scanned Borrow ID
+              try {
+                  const isValid = await validateBorrowId(borrowId);
+                  if (isValid) {
+                      // Redirect if valid
+                      window.location.href = `/borrowing/labtech/detailedprebookrequests/${borrowId}/`;
+                  } else {
+                      // Show error if invalid
+                      qrError.textContent = "Invalid Borrow ID. Please try again.";
+                      qrError.style.display = "block";
+                      location.reload();
+                  }
+              } catch (error) {
+                  qrError.textContent = error;
+                  qrError.style.display = "block";
+                  location.reload();
+              }
+
+              // Close the modal
+              const closeButton = qrScannerModal.querySelector(".btn-close");
+              closeButton.click();
+          });
+      };
+
+      qrScannerModal.addEventListener("show.bs.modal", function () {
+          qrVideo.style.display = "block";
+          qrError.style.display = "none"; // Hide error message when the modal is opened
+          if (!qrScanner) {
+              initializeQrScanner();
+          }
+          qrScanner.start();
+      });
+
+      qrScannerModal.addEventListener("hide.bs.modal", function () {
+          if (qrScanner) {
+              qrScanner.stop();
+          }
+      });
+  });
+</script>
+
+
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {

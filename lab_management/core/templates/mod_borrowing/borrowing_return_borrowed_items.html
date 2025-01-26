@@ -27,13 +27,34 @@
                     <!-- Search Form for Borrow ID -->
                     <form method="GET" action="{% url 'return_borrowed_items' %}">
                         {% csrf_token %}
+                        <!-- QR Code Scanner Modal -->
+                        <div class="modal fade" id="qrScannerModal" tabindex="-1" role="dialog" aria-labelledby="qrScannerModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="qrScannerModalLabel">Scan QR Code</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <video id="qrVideo" style="width: 100%; height: auto;"></video>
+                                        <p class="text-danger" id="qrError" style="display: none;">Unable to scan QR code. Please try again.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="row mb-3">
                             <label for="borrow_id" class="col-sm-2 col-form-label">Borrow ID:</label>
                             <div class="col-sm-8">
-                                <input type="text" class="form-control" name="borrow_id" placeholder="Enter Borrow ID" value="{{ borrow_id }}" required>
+                                <input type="text" class="form-control" id="borrow_id" name="borrow_id" placeholder="Enter Borrow ID" value="{{ borrow_id }}" required>
                             </div>
-                            <div class="col-sm-2">
-                                <button type="submit" class="btn btn-primary">Search</button>
+                            <div class="col-sm-2 d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary me-2"><i class="bi bi-search"></i></button>
+                                <button id="scanQrButton" type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#qrScannerModal">
+                                    <i class="bi bi-camera"></i>
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -127,6 +148,49 @@
         </div>
     </div>
 </section>
+
+<script type="module">
+    import QrScanner from "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js";
+
+    QrScanner.WORKER_PATH = "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner-worker.min.js";
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const scanQrButton = document.getElementById("scanQrButton");
+        const qrVideo = document.getElementById("qrVideo");
+        const qrScannerModal = document.getElementById("qrScannerModal");
+        const borrowIdInput = document.getElementById("borrow_id");
+        let qrScanner;
+
+        // Initialize QR Scanner
+        scanQrButton.addEventListener("click", function () {
+            if (!qrScanner) {
+                qrScanner = new QrScanner(qrVideo, (result) => {
+                    // Place the scanned value in the Borrow ID input field
+                    borrowIdInput.value = result;
+                    console.log(`Scanned Borrow ID: ${result}`);
+
+                    // Automatically submit the form
+                    borrowIdInput.form.submit();
+
+                    // Stop the scanner and hide the modal
+                    qrScanner.stop();
+                    bootstrap.Modal.getInstance(qrScannerModal).hide();
+                });
+            }
+
+            // Start the scanner when the modal is shown
+            qrScanner.start();
+        });
+
+        // Stop the scanner when the modal is closed
+        qrScannerModal.addEventListener("hidden.bs.modal", function () {
+            if (qrScanner) {
+                qrScanner.stop();
+            }
+        });
+    });
+</script>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
