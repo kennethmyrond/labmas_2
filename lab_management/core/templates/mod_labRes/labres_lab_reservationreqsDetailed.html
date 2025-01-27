@@ -31,8 +31,9 @@
     <div class="col-lg-12">
       <div class="card">
         <div class="card-body">
+           
           <h5 class="card-title">Reservation ID: {{ reservation.reservation_id }}</h5>
-          <table class="table table-bordered table-striped">
+          <table class="table table-bordered table-striped" id="reservationDetailsTable">
             <tr>
               <th>Name</th>
               <td>{{ reservation.contact_name }}</td>
@@ -73,8 +74,8 @@
               <th>Status</th>
               <td>{{ reservation.get_status_display }}</td>
             </tr>
-          </table>          
-
+          </table>     
+       
           {% if reservation.filled_approval_form %}
             <div class="row mb-3">
               <label class="col-sm-2 col-form-label">Approval Form:</label>
@@ -90,11 +91,43 @@
             <button type="submit" name="action" value="accept" class="btn btn-success" {% if reservation.status == 'R' %}disabled{% endif %}>Accept</button>
             <button type="submit" name="action" value="delete" class="btn btn-danger" {% if reservation.status == 'R' %}disabled{% endif %}>Decline</button>
           </form>
-
+         <br>
+         <button class="btn btn-info" id="downloadBtn">Download PDF</button>
         </div>
+       
       </div>
+      
     </div>
   </div>
 </section>
 
+<script type="text/javascript">
+
+  document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('downloadBtn').addEventListener('click', function() {
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+  
+          const table = document.getElementById('reservationDetailsTable');
+         
+          doc.setFontSize(12);
+            
+  
+          // Add the table below the borrower details
+          doc.autoTable({ html: table, startY: 30 }); // Adjust Y position to avoid overlap with borrower details
+  
+          
+          const reservationId = '{{ reservation.reservation_id }}';
+          const name = '{{ reservation.contact_name }}';
+          const date = '{{ reservation.request_date|date:"Y/m/d" }}';
+          const status = '{{ reservation.get_status_display }}';
+          const fileName = `reservationrequest_${reservationId}_${name}_${date}_${status}}.pdf`;
+  
+          
+          doc.save(fileName);
+      });
+  });
+</script>
 {% endblock %}
+
+
