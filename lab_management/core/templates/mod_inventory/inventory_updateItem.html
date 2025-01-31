@@ -317,53 +317,51 @@
 
         // Function to fetch and add inventory items to the inventory dropdown
         function fetchAndAddInventoryItem(itemId, inventoryItemId) {
-            console.log(`Fetching inventory for itemId: ${itemId}, inventoryItemId: ${inventoryItemId}`);
-            $.ajax({
-                url: `/suggest_inventory_items/${itemId}/`, // Fetch inventory items for the given item_id
-                method: 'GET',
-                success: function (data) {
-                    inventoryItemDropdown.empty(); // Clear existing options
-                    let selectedOptionFound = false; // Track if the target option is found
+    console.log(`Fetching inventory for itemId: ${itemId}, inventoryItemId: ${inventoryItemId}`);
+    $.ajax({
+        url: `/suggest_inventory_items/${itemId}/`, // Fetch inventory items for the given item_id
+        method: 'GET',
+        success: function (data) {
+            const inventoryItemDropdown = $('#inventoryItemID');
+            inventoryItemDropdown.empty(); // Clear existing options
 
-                    // Iterate over the returned inventory items
-                    data.forEach(item => {
-                        const formattedText = item.expiration_date !== 'None'
-                            ? `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`
-                            : `${item.inventory_item_id} | qty: ${item.qty}`;
-                        
-                        // Check if this option matches the inventoryItemId from the QR code
-                        const isSelected = item.inventory_item_id === inventoryItemId;
-                        console.log(`Adding option: ${item.inventory_item_id}, Selected: ${isSelected}`);
+            // Append new options to the dropdown
+            data.forEach(item => {
+                const formattedText = item.expiration_date !== 'None'
+                    ? `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`
+                    : `${item.inventory_item_id} | qty: ${item.qty}`;
 
-                        // Append the option to the dropdown
-                        const newOption = new Option(formattedText, item.inventory_item_id, isSelected, isSelected);
-                        inventoryItemDropdown.append(newOption);
-
-                        if (isSelected) {
-                            selectedOptionFound = true; // Mark that the correct option is found
-                        }
-                    });
-
-                    // Reinitialize Select2 with updated options
-                    inventoryItemDropdown.select2({
-                        placeholder: 'Select Inventory Item ID',
-                        allowClear: true,
-                    });
-
-                    // Explicitly set the value and trigger change if a match was found
-                    if (selectedOptionFound) {
-                        inventoryItemDropdown.val(inventoryItemId).trigger('change');
-                        console.log(`Inventory item ID ${inventoryItemId} selected successfully.`);
-                    } else if (inventoryItemId) {
-                        alert('Inventory Item Does Not Exist. Try Again.');
-                    }
-                },
-                error: function () {
-                    alert('An error occurred while fetching inventory items.');
-                }
+                // Append the option to the dropdown
+                const newOption = new Option(formattedText, item.inventory_item_id);
+                inventoryItemDropdown.append(newOption);
             });
-        }
 
+            // Reinitialize Select2 with updated options
+            inventoryItemDropdown.select2({
+                placeholder: 'Select Inventory Item ID',
+                allowClear: true,
+            });
+
+            // Ensure the value matches the data type of the options
+            const targetValue = String(inventoryItemId); // Convert to string to match option values
+
+            // Set the value and trigger change AFTER the options are loaded and Select2 is reinitialized
+            if (targetValue) {
+                // Add a small delay to ensure Select2 is fully initialized
+                setTimeout(() => {
+                    inventoryItemDropdown.val(targetValue).trigger('change');
+                    console.log(`Inventory item ID ${targetValue} selected successfully.`);
+
+                    // Debug: Log the current value of the dropdown
+                    console.log('Current dropdown value:', inventoryItemDropdown.val());
+                }, 100); // 100ms delay
+            }
+        },
+        error: function () {
+            alert('An error occurred while fetching inventory items.');
+        }
+    });
+}
         // Toggle QR scanner when the button is clicked
         scanQrButton.addEventListener("click", function () {
             if (!qrScanner) {
@@ -438,10 +436,10 @@
             }
         });
 
-        inventoryItemDropdown.select2({
-            placeholder: 'Select Inventory Item ID',
-            allowClear: true
-        });
+        // inventoryItemDropdown.select2({
+        //     placeholder: 'Select Inventory Item ID',
+        //     allowClear: true
+        // });
     });
 </script>
 
@@ -681,10 +679,10 @@
             }
         }).on('change', checkItemExpiration);
 
-        $('#inventoryItemID').select2({
-            placeholder: 'Select Inventory Item ID',
-            allowClear: true
-        });
+        // $('#inventoryItemID').select2({
+        //     placeholder: 'Select Inventory Item ID',
+        //     allowClear: true
+        // });
 
         $('#itemSupplier').select2({
             ajax: {
