@@ -182,9 +182,12 @@
     
             
             const borrowId = '{{ borrow_request.borrow_id }}';
+            const firstName = '{{ borrow_request.user.firstname }}';
+            const lastName = '{{ borrow_request.user.lastname }}';
             const borrowDate = '{{ borrow_request.request_date|date:"Y/m/d" }}';
             const dueDate = '{{ borrow_request.due_date|date:"Y/m/d" }}';
-            const fileName = `borrowrequest_${borrowId}_${borrowDate}_to_${dueDate}.pdf`;
+            const status= '{{ borrow_request.get_status_display }}';
+            const fileName = `borrowrequest_${borrowId}_${firstName}${lastName}${borrowDate}_to_${dueDate}_${status}.pdf`;
     
             
             doc.save(fileName);

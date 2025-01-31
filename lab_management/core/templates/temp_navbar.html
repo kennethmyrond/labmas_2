@@ -359,6 +359,12 @@
                 </a>
             </li>
             {%endif%}
+
+            <li>
+              <a href="{% url 'inventory_tobuyList' %}" class="{% if request.resolver_match.url_name == 'inventory_tobuyList' %}active{% endif %}">
+                  <i class="bi bi-circle"></i><span>To-Buy List</span>
+              </a>
+          </li>
         </ul>
     </li><!-- End inventory Nav -->
     {% endif %}

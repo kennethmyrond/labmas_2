@@ -1491,7 +1491,9 @@ def get_add_cols(request, category_id):
     add_cols = json.loads(category.add_cols) if category.add_cols else []
     return JsonResponse({'add_cols': add_cols})
 
-
+@login_required
+def inventory_tobuyList(request):
+    return render(request, 'mod_inventory/inventory_tobuyList.html')
 
 
 

@@ -56,11 +56,9 @@
                 <label for="RFno" class="col-sm-2 col-form-label">RF No.:</label>
                 <div class="col-sm-10">
                   
-                  {% if report_data.status == 'Pending' %}
-                  <input type="text" class="form-control" id="RFno" disabled name="RFno" value="{{ report_data.borrow_id }}">
-                  {% else %}
+               
                     {{ report_data.borrow_id }}
-                  {% endif %}
+               
              
                 </div>
               </div>
@@ -69,11 +67,9 @@
                 <label for="studentName" class="col-sm-2 col-form-label">Student Name:</label>
                 <div class="col-sm-10">
                   
-                  {% if report_data.status == 'Pending' %}
-                  <input type="text" class="form-control" id="studentName" disabled name="studentName" value="{{ report_data.user_name }}">
-                  {% else %}
+                
                     {{ report_data.user_name }}
-                  {% endif %}
+             
 
                 </div>
               </div>
@@ -82,11 +78,9 @@
                 <span for="IDNumber" class="col-2 col-form-label">ID Number:</span>
                 <span class="col-10">
                   
-                  {% if report_data.status == 'Pending' %}
-                  <input type="text" class="form-control" id="IDNumber" disabled name="IDNumber" value="{{ report_data.id_number }}">
-                  {% else %}
+                
                     {{ report_data.id_number }}
-                  {% endif %}
+               
                 
                 </span>
               </div>
@@ -94,11 +88,9 @@
               <div class="row mb-3">
                 <label for="itemName" class="col-sm-2 col-form-label">Item:</label>
                 <div class="col-sm-10">
-                  {% if report_data.status == 'Pending' %}
-                  <input type="text" class="form-control" id="itemName" disabled name="itemName" value="{{ report_data.item_name }}">
-                  {% else %}
+             
                     {{ report_data.item_name }}
-                  {% endif %}
+               
                  
                  
                 </div>
@@ -108,45 +100,35 @@
                 <label for="reason" class="col-sm-2 col-form-label">Reason:</label>
                 <div class="col-sm-10">
                   
-                  {% if report_data.status == 'Pending' %}
-                  <input type="text" class="form-control" id="reason" disabled name="reason" value="{{ report_data.reason }}">
-                  {% else %}
                     {{ report_data.reason }}
-                  {% endif %}
-                 
+            
                 </div>
               </div>
   
               <div class="row mb-3">
                 <label for="amtdue" class="col-sm-2 col-form-label">Amount Due (₱):</label>
                 <div class="col-sm-10">               
-                  {% if report_data.status == 'Pending' %}
-                  <input type="number" class="form-control" id="amtdue" disabled name="amtdue" value="{{ report_data.amount_due }}">
-                  {% else %}
+              
                     {{ report_data.amount_due }}
-                  {% endif %}
+                 
                 </div>
               </div>
   
               <div class="row mb-3">
                 <label for="remarks" class="col-sm-2 col-form-label">Remarks:</label>
                 <div class="col-sm-10">
-                  {% if report_data.status == 'Pending' %}
-                  <textarea class="form-control" id="remarks" name="remarks">{{ report_data.remarks }}</textarea>
-                  {% else %}
+                
                     {{ report_data.remarks }}
-                  {% endif %}
+                
                 </div>
               </div>
   
               <div class="row mb-3">
                 <label for="status" class="col-sm-2 col-form-label">Status:</label>
                 <div class="col-sm-10">
-                    {% if report_data.status == 'Pending' %}
-                        <span class="status-pending">{{ report_data.status }}</span>
-                    {% else %}
+                  
                         <span class="status-cleared">{{ report_data.status }}</span>
-                    {% endif %}
+                    
                 </div>
             </div>
           </div>
@@ -157,9 +139,9 @@
                     <button type="submit" class="btn btn-primary me-3" {% if report_data.status == 'Cleared' %} disabled {% endif %}>Mark as Cleared</button>
                 </div>
             </div>
-            {% if report_data.status == 'Cleared' %}
+            
             <button class="btn btn-info" id="downloadBtn">Download PDF</button>
-            {% endif %}
+     
             </form>
   
           </div>
@@ -215,11 +197,6 @@
               yPosition = margin;
           }
       });
-
-            
-    
-            
-         
 
             const fileName = `clearance_RF#${rfNumber}_ID#${idNumber}_${status}.pdf`;
     
