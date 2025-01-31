@@ -568,28 +568,39 @@
     function submitForm() {
     $('#confirmationModal').modal('hide');
 
-    // Submit the form data via AJAX to get the new inventory_item_id
+    const actionType = document.getElementById('actionType').value;
+
+    // Submit the form data via AJAX
     $.ajax({
         type: 'POST',
         url: '', // Keep this as the current view URL
         data: $('#updateForm').serialize(),
         success: function(response) {
-            if (response.success && response.new_inventory_item_id) {
-                // Populate the modal with the response data
-                $('#newInventoryItemId').text(response.new_inventory_item_id);
-                $('#itemQrCodeImage').attr('src', response.item_qrcode); // Set the QR code image
-                $('#qr_code_dl').attr('href', response.item_qrcode); // Set download link
-                $('#qr_code_dl').attr('download', `QR_${response.item_name}_${response.new_inventory_item_id}.png`); // Set download filename
-                $('#successModal').modal('show');
+            if (response.success) {
+                if (actionType === 'add') {
+                    // Handle "add" action
+                    if (response.new_inventory_item_id) {
+                        // Populate the modal with the response data
+                        $('#newInventoryItemId').text(response.new_inventory_item_id);
+                        $('#itemQrCodeImage').attr('src', response.item_qrcode); // Set the QR code image
+                        $('#qr_code_dl').attr('href', response.item_qrcode); // Set download link
+                        $('#qr_code_dl').attr('download', `QR_${response.item_name}_${response.new_inventory_item_id}.png`); // Set download filename
+                        $('#successModal').modal('show');
+                    } else {
+                        alert('Error adding item to inventory. Please try again.');
+                    }
+                } else if (actionType === 'remove' || actionType === 'report') {
+                    // Handle "remove" or "report" action
+                    location.reload(); // Reload the page to reflect changes
+                }
             } else {
-                alert('Error adding item to inventory. Please try again.');
+                alert('An error occurred while processing the request.');
             }
         },
         error: function() {
             alert('An error occurred while processing the request.');
         }
     });
-
 }
 
     function checkItemExpiration() {
