@@ -1,4 +1,5 @@
 import openpyxl
+import pandas as pd
 from openpyxl.styles import Alignment
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -3556,6 +3557,142 @@ def labres_labcoord_configroom(request):
     }
 
     return render(request, 'mod_labRes/labres_labcoord_configroom.html', context)
+
+@login_required
+@lab_permission_required('configure_lab_reservation')
+def labres_bulk_upload(request):
+    selected_laboratory_id = request.session.get('selected_lab')
+    rooms_query = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
+
+    if request.method == "POST" and 'download_template' in request.POST:
+        selected_room_ids = request.POST.getlist('selected_rooms')
+        print(f"Selected Room IDs: {selected_room_ids}")  # Debugging line
+        if not selected_room_ids:
+            print("No rooms selected!")  # Debugging line
+
+        selected_rooms = rooms.objects.filter(room_id__in=selected_room_ids)
+        
+        # If no rooms are selected, return an error message
+        if not selected_rooms.exists():
+            print("No rooms found!")  # Debugging line
+            return HttpResponse("No rooms found.", status=400)
+
+        # Create Excel template with selected room names
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Room Time Slots"
+        
+        # Add headers
+        ws.append(["Room ID", "Room Name", "Time Slot"])
+
+        # Add rows for each selected room
+        for room in selected_rooms:
+            ws.append([room.room_id, room.name, ''])  # Add an empty column for Time Slot
+
+        # Create an in-memory file
+        response = HttpResponse(content_type='application/vnd.ms-excel')
+        response['Content-Disposition'] = 'attachment; filename="room_time_slots_template.xlsx"'
+
+        # Save the workbook to the response object
+        with BytesIO() as buffer:
+            wb.save(buffer)
+            buffer.seek(0)
+            response.write(buffer.read())
+
+        return response
+
+    context = {
+        'rooms': rooms_query,
+    }
+
+    return render(request, 'mod_labRes/labres_bulk_upload.html', context)
+
+
+@login_required
+@lab_permission_required('configure_lab_reservation')
+def labres_bulk_upload_time(request):
+    selected_laboratory_id = request.session.get('selected_lab')
+    
+    # Define allowed time slots
+    ALLOWED_TIME_SLOTS = [
+        '7:30-9:00',
+        '9:15-10:45',
+        '11:00-12:30',
+        '12:45-2:15',
+        '2:30-4:00',
+        '4:15-5:45',
+        '6:00-7:30',
+    ]
+    
+    if request.method == 'POST' and 'upload_file' in request.FILES:
+        excel_file = request.FILES['upload_file']
+        
+        try:
+            df = pd.read_excel(excel_file)
+        except Exception as e:
+            messages.error(request, f"Error reading the Excel file: {str(e)}")
+            return redirect('labres_labcoord_configroom')  # Redirect to the lab configuration page
+
+        # Validate that required columns exist
+        required_columns = ['Room ID', 'Room Name', 'Time Slot']
+        for column in required_columns:
+            if column not in df.columns:
+                messages.error(request, f"Missing required column: {column}")
+                return redirect('labres_labcoord_configroom')
+        
+        # Iterate through the rows and update the `blocked_time` for each room
+        for index, row in df.iterrows():
+            room_id = row.get('Room ID')
+            time_slot = row.get('Time Slot')
+
+            if not room_id or not time_slot:
+                messages.error(request, f"Missing Room ID or Time Slot in row {index + 1}.")
+                return redirect('labres_labcoord_configroom')
+            
+            room = rooms.objects.filter(room_id=room_id).first()
+            if room:
+                blocked_times = json.loads(room.blocked_time) if room.blocked_time else {}
+
+                # Split the time slots by commas if multiple slots are provided
+                time_slots = time_slot.split(',')  # This will handle multiple time slots in a single cell
+                
+                for ts in time_slots:
+                    ts = ts.strip()  # Remove any extra spaces around the time slot
+                    
+                    # Extract the time range (e.g., "7:30-9:00" from "Monday 7:30-9:00")
+                    try:
+                        _, time_range = ts.split(' ', 1)  # Split day and time
+                        
+                        # Validate if the extracted time is in the allowed list
+                        if time_range not in ALLOWED_TIME_SLOTS:
+                            messages.error(request, f"Invalid time slot '{time_range}' in row {index + 1}. Allowed time slots are: {', '.join(ALLOWED_TIME_SLOTS)}.")
+                            return redirect('labres_labcoord_configroom')
+
+                        # Update blocked times for the room
+                        day = ts.split(' ', 1)[0]  # Extract the day
+                        if day not in blocked_times:
+                            blocked_times[day] = []
+                        blocked_times[day].append(time_range)
+
+                    except ValueError:
+                        messages.error(request, f"Invalid time slot format in row {index + 1}. Correct format: 'Day time' (e.g., 'Monday 7:30-9:00').")
+                        return redirect('labres_labcoord_configroom')
+
+                room.blocked_time = json.dumps(blocked_times)
+                room.save()
+
+            else:
+                messages.error(request, f"Room with ID {room_id} not found in row {index + 1}.")
+                return redirect('labres_labcoord_configroom')
+
+        messages.success(request, "Bulk upload of time slots was successful.")
+        return redirect('labres_labcoord_configroom')  # Redirect back to the lab configuration page
+    
+    return redirect('labres_labcoord_configroom')  # In case of non-POST request, just redirect
+
+
+
+
 
 @login_required
 @lab_permission_required('configure_lab_reservation')
