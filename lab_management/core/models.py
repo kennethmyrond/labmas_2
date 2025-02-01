@@ -195,7 +195,19 @@ class rooms(models.Model):
     
     def __str__(self):
         return self.name
+    
+    def get_tables(self):
+        return self.tables.all()
+    
+class RoomTable(models.Model):
+    table_id = models.AutoField(primary_key=True)
+    room = models.ForeignKey('rooms', on_delete=models.CASCADE, related_name='tables')
+    table_name = models.CharField(max_length=45, null=True, blank=True)
+    capacity = models.IntegerField(default=0)
 
+    def __str__(self):
+        return f"Table {self.table_name} in Room {self.room.name}"
+    
 # inventory
 class item_description(models.Model):
     item_id = models.CharField(max_length=20, unique=True, primary_key=True)

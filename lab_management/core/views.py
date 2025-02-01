@@ -26,7 +26,7 @@ from allauth.socialaccount.models import SocialAccount
 
 # from allauth.socialaccount.helpers import provider_login_url
 from .forms import LoginForm, InventoryItemForm
-from .models import laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
+from .models import RoomTable, laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from .models import rooms, laboratory_reservations, reservation_config
 from .models import laboratory_users, laboratory_roles, laboratory_permissions, permissions, Notification
@@ -2897,6 +2897,14 @@ def lab_reservation_student_reserveLabChooseRoom(request):
         room_availability[room.room_id] = availability
         # print(room_availability)
 
+   
+    room_tables = {}
+    for room in rooms_query:
+        tables = RoomTable.objects.filter(room=room)
+        room_tables[room.room_id] = tables
+
+    
+
     context = {
         'rooms': rooms_query,
         'time_slots': time_slots,
@@ -2906,7 +2914,8 @@ def lab_reservation_student_reserveLabChooseRoom(request):
         'capacity_filter': capacity_filter,
         'error_message': error_message,
         'reservation_config_obj': reservation_config_obj,
-        'res_id': res_id
+        'res_id': res_id,
+        'room_tables': room_tables 
     }
 
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html', context)
@@ -3536,6 +3545,28 @@ def labres_labcoord_configroom(request):
             reservation_config_obj.tc_description = request.POST.get('tc_description')
             reservation_config_obj.save()
             message = 'Terms and conditions saved'
+
+        elif 'add_table' in request.POST:
+            room_id = request.POST.get('room_id')
+            table_name = request.POST.get('table_name')
+            table_capacity = request.POST.get('table_capacity')
+            room = get_object_or_404(rooms, room_id=room_id)
+
+            if table_name and table_capacity:
+                new_table = RoomTable(
+                    room=room,
+                    table_name=table_name,
+                    capacity=table_capacity
+                )
+                new_table.save()
+            message = f'Successfully added Table {table_name} to Room {room.name}'
+
+        elif 'delete_table' in request.POST:
+            table_id = request.POST.get('table_id')
+            table = get_object_or_404(RoomTable, table_id=table_id)
+            table.delete()
+            message = f'Successfully deleted Table {table.table_name} from Room {table.room.name}'
+       
 
         messages.success(request, message)
     # Fetch rooms and reservation config
