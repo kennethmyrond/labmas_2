@@ -466,6 +466,7 @@ class laboratory_reservations(models.Model):
     user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='user')
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
     room = models.ForeignKey('rooms', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
+    table = models.ForeignKey('RoomTable', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations') 
     request_date = models.DateTimeField(auto_now_add=True)
     start_date = models.DateField(null=True, blank=True)
     start_time = models.TimeField(null=True, blank=True)
