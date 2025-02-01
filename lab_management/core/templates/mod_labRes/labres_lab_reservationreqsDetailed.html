@@ -74,6 +74,10 @@
               <th>Status</th>
               <td>{{ reservation.get_status_display }}</td>
             </tr>
+            <tr>
+              <th>Table</th>
+              <td>{{ reservation.table.table_name }}</td>
+            </tr>
           </table>     
        
           {% if reservation.filled_approval_form %}

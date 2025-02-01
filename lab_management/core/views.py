@@ -2904,7 +2904,6 @@ def lab_reservation_student_reserveLabChooseRoom(request):
         room_tables[room.room_id] = tables
 
     
-
     context = {
         'rooms': rooms_query,
         'time_slots': time_slots,
@@ -2920,6 +2919,11 @@ def lab_reservation_student_reserveLabChooseRoom(request):
 
     return render(request, 'mod_labRes/lab_reservation_studentReserveLabChooseRoom.html', context)
 
+def get_room_tables(request):
+    room_id = request.GET.get('room_id')
+    tables = RoomTable.objects.filter(room_id=room_id).values('table_id', 'table_name', 'capacity')
+    return JsonResponse({'tables': list(tables)})
+
 @login_required
 @lab_permission_required('reserve_laboratory')
 def lab_reservation_student_reserveLabConfirm(request):
@@ -2931,6 +2935,7 @@ def lab_reservation_student_reserveLabConfirm(request):
     res_id = None
     if request.method == 'POST':
         selected_room_id = request.POST.get('selectedRoom')
+        selected_table_id = request.POST.get('selectedTable')  
         selected_date = request.POST.get('selectedDate')
         selected_start_time = request.POST.get('selectedStartTime')
         selected_end_time = request.POST.get('selectedEndTime')
@@ -2940,12 +2945,13 @@ def lab_reservation_student_reserveLabConfirm(request):
 
         # Fetch room information
         selected_room = get_object_or_404(rooms, room_id=selected_room_id)
+        selected_table = get_object_or_404(RoomTable, table_id=selected_table_id)
 
         print(selected_start_time, '--', selected_end_time)
 
-        # Check if the room is already reserved for the selected date and time
+        # Check if the table is already reserved for the selected date and time
         existing_reservation = laboratory_reservations.objects.filter(
-            room=selected_room,
+            table=selected_table,
             start_date=selected_date,
             status__in=['R', 'A', 'P']
         ).filter(
@@ -2953,6 +2959,7 @@ def lab_reservation_student_reserveLabConfirm(request):
             start_time__lt=selected_end_time,  # Existing reservation starts before new reservation ends
             end_time__gt=selected_start_time     # Existing reservation ends after new reservation starts
         ).exists()
+
 
         # Fetch blocked times for the room
         blocked_times = json.loads(selected_room.blocked_time) if selected_room.blocked_time else {}
@@ -2994,6 +3001,8 @@ def lab_reservation_student_reserveLabConfirm(request):
             'selected_date': selected_date,
             'start_time': selected_start_time,
             'end_time': selected_end_time,
+            'table_id': selected_table.table_id,  
+            'table_name': selected_table.table_name,  
         }
 
         return redirect('lab_reservation_student_reserveLabConfirmDetails')
@@ -3015,6 +3024,9 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
     room_id = reservation_data.get('room_id')
     room = get_object_or_404(rooms, room_id=room_id)
 
+    table_id = reservation_data.get('table_id')
+    table = get_object_or_404(RoomTable, table_id=table_id)
+
     if reservation_config_obj.require_approval:
         preapproval_details = get_object_or_404(laboratory_reservations, reservation_id=reservation_data.get('res_id'))
 
@@ -3024,28 +3036,78 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
         contact_email = request.POST.get('contact_email')
         num_people = request.POST.get('num_people')
         purpose = request.POST.get('purpose')
+        selected_table_name = request.POST.get('selectedTable')
+        
 
         # Set reservation status
-        status = 'R'
+        status = 'P'  # Set to pending initially
         message = 'Room Reserved Successfully'
 
         if room.capacity < int(num_people):
             messages.error(request, 'Number of people reached the maximum capacity.')
             return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+        
+        # Get the selected table and update its capacity
+        selected_table = get_object_or_404(RoomTable, table_id=table_id)
+        blocked_times = selected_table.blocked_time.get(reservation_data['selected_date'], [])
+ 
+         # Convert selected times to datetime.time if they are strings
+        start_time = datetime.strptime(reservation_data['start_time'], '%H:%M').time()
+        end_time = datetime.strptime(reservation_data['end_time'], '%H:%M').time()
+
+         # Check for overlaps with blocked times
+        is_blocked = False
+        for blocked_time in blocked_times:
+            blocked_start, blocked_end = blocked_time.split('-')
+            blocked_start_time = datetime.strptime(blocked_start.strip(), '%H:%M').time()
+            blocked_end_time = datetime.strptime(blocked_end.strip(), '%H:%M').time()
+            if (start_time < blocked_end_time) and (end_time > blocked_start_time):
+                is_blocked = True
+                break
+
+        if is_blocked:
+            messages.error(request, 'Selected table is already reserved for the selected time slot.')
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+        # Mark the table as reserved for the selected time slot
+        blocked_times.append(f"{reservation_data['start_time']}-{reservation_data['end_time']}")
+        selected_table.blocked_time[reservation_data['selected_date']] = blocked_times
+        selected_table.save()
+
+        if selected_table.capacity < int(num_people):
+            messages.error(request, 'Selected table does not have enough capacity.')
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+        # selected_table.capacity -= int(num_people)
+        # selected_table.save()
+
+         # Check if all tables are reserved for the selected time slot
+        all_tables_reserved = all(
+            any(
+                (start_time < datetime.strptime(bt.split('-')[1], '%H:%M').time()) and
+                (end_time > datetime.strptime(bt.split('-')[0], '%H:%M').time())
+                for bt in table.blocked_time.get(reservation_data['selected_date'], [])
+            ) for table in room.tables.all()
+        )
+        if all_tables_reserved:
+            status = 'R'  # Set to reserved if all tables are reserved for the selected time slot
+
 
         # Handle the uploaded PDF file if required
         if reservation_config_obj.require_approval:
             reservation = get_object_or_404(laboratory_reservations, reservation_id=reservation_data['res_id'])
             reservation.room = room
+            reservation.table = selected_table  
             reservation.start_date = reservation_data['selected_date']
             reservation.start_time = reservation_data['start_time']
             reservation.end_time = reservation_data['end_time']
-            reservation.status = 'R'
+            reservation.status = status
             reservation.save()
         else:
             reservation = laboratory_reservations.objects.create(
                 user=current_user,
                 room=room,
+                table=selected_table,
                 start_date=reservation_data['selected_date'],
                 start_time=reservation_data['start_time'],
                 end_time=reservation_data['end_time'],

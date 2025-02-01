@@ -152,16 +152,14 @@
                       </div>
 
                       <div class="row mb-3">
-                        <label for="table_id" class="col-sm-2 col-form-label">Select Table:</label>
+                        <label for="selectedTable" class="col-sm-2 col-form-label">Select Table:</label>
                         <div class="col-sm-10">
-                            <select id="table_id" name="table_id" class="form-control" required>
-                                <option value="">Select a table</option>
-                                {% for table in room_tables %}
-                                <option value="{{ table.table_id }}">{{ table.table_name }} (Capacity: {{ table.capacity }})</option>
-                                {% endfor %}
+                            <select id="selectedTable" name="selectedTable" class="form-select" required>
+                                <option value="" disabled selected>Select a table</option>
                             </select>
                         </div>
                     </div>
+
 
                       <div class="row mb-3">
                           <label for="selectedStartTime" class="col-sm-2 col-form-label">Reserve Time:</label>
@@ -247,6 +245,43 @@
     </div>
   </div>
 </section>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+      function loadTables(roomId) {
+          if (roomId) {
+              $.ajax({
+                  url: '{% url "get_room_tables" %}',  // Update with the correct URL for fetching tables
+                  data: {
+                      'room_id': roomId
+                  },
+                  success: function(data) {
+                      var tableSelect = $('#selectedTable');
+                      tableSelect.empty();
+                      tableSelect.append('<option value="" disabled selected>Select a table</option>');
+                      $.each(data.tables, function(index, table) {
+                          tableSelect.append('<option value="' + table.table_id + '">' + table.table_name + ' (Capacity: ' + table.capacity + ')</option>');
+                      });
+                  }
+              });
+          } else {
+              $('#selectedTable').empty();
+              $('#selectedTable').append('<option value="" disabled selected>Select a table</option>');
+          }
+      }
+
+      $('#selectedRoom').change(function() {
+          var roomId = $(this).val();
+          loadTables(roomId);
+      });
+
+      // Trigger change event on page load if a room is already selected
+      var initialRoomId = $('#selectedRoom').val();
+      if (initialRoomId) {
+          loadTables(initialRoomId);
+      }
+  });
+</script>
 
 <!-- <script>
   document.addEventListener('DOMContentLoaded', function() {

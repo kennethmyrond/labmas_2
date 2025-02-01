@@ -102,7 +102,7 @@ urlpatterns = [
     path('lab-reservation/labcoord/configRoom', views.labres_labcoord_configroom, name='labres_labcoord_configroom'),
     path('get-room-configuration/<int:room_id>/', views.get_room_configuration, name='get_room_configuration'),
 
-
+    path('get_room_tables/', views.get_room_tables, name='get_room_tables'),
     path('lab-reservation/bulk-upload/', views.labres_bulk_upload, name='labres_bulk_upload'),
     path('lab-reservation/bulk-upload-time/', views.labres_bulk_upload_time, name='labres_bulk_upload_time'),
     path('lab-reservation/lab/schedule', views.labres_lab_schedule, name='labres_lab_schedule'),

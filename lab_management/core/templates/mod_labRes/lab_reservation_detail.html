@@ -70,6 +70,10 @@
               <th>Contact Email</th>
               <td>{{ reservation.contact_email }}</td>
             </tr>
+            <tr>
+              <th>Table</th>
+              <td>{{ reservation.table.table_name }}</td>
+            </tr>
           </table>
 
           {% if reservation.filled_approval_form %}

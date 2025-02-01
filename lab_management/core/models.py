@@ -204,6 +204,7 @@ class RoomTable(models.Model):
     room = models.ForeignKey('rooms', on_delete=models.CASCADE, related_name='tables')
     table_name = models.CharField(max_length=45, null=True, blank=True)
     capacity = models.IntegerField(default=0)
+    blocked_time = models.JSONField(default=dict)  # New field to track blocked times
 
     def __str__(self):
         return f"Table {self.table_name} in Room {self.room.name}"
@@ -466,7 +467,7 @@ class laboratory_reservations(models.Model):
     user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='user')
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
     room = models.ForeignKey('rooms', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
-    table = models.ForeignKey('RoomTable', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations') 
+    table = models.ForeignKey('RoomTable', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
     request_date = models.DateTimeField(auto_now_add=True)
     start_date = models.DateField(null=True, blank=True)
     start_time = models.TimeField(null=True, blank=True)
