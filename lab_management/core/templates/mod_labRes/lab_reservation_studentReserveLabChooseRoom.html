@@ -248,12 +248,20 @@
 
 <script type="text/javascript">
   $(document).ready(function() {
-      function loadTables(roomId) {
-          if (roomId) {
+      $('#selectedRoom').change(function() {
+          var roomId = $(this).val();
+          var selectedDate = $('#selectedDate').val();
+          var selectedStartTime = $('#selectedStartTime').val();
+          var selectedEndTime = $('#selectedEndTime').val();
+
+          if (roomId && selectedDate && selectedStartTime && selectedEndTime) {
               $.ajax({
-                  url: '{% url "get_room_tables" %}',  // Update with the correct URL for fetching tables
+                  url: '{% url "get_room_tables" %}',
                   data: {
-                      'room_id': roomId
+                      'room_id': roomId,
+                      'selected_date': selectedDate,
+                      'selected_start_time': selectedStartTime,
+                      'selected_end_time': selectedEndTime
                   },
                   success: function(data) {
                       var tableSelect = $('#selectedTable');
@@ -268,17 +276,12 @@
               $('#selectedTable').empty();
               $('#selectedTable').append('<option value="" disabled selected>Select a table</option>');
           }
-      }
-
-      $('#selectedRoom').change(function() {
-          var roomId = $(this).val();
-          loadTables(roomId);
       });
 
       // Trigger change event on page load if a room is already selected
       var initialRoomId = $('#selectedRoom').val();
       if (initialRoomId) {
-          loadTables(initialRoomId);
+          $('#selectedRoom').trigger('change');
       }
   });
 </script>

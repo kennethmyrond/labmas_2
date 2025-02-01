@@ -2921,8 +2921,29 @@ def lab_reservation_student_reserveLabChooseRoom(request):
 
 def get_room_tables(request):
     room_id = request.GET.get('room_id')
-    tables = RoomTable.objects.filter(room_id=room_id).values('table_id', 'table_name', 'capacity')
+    selected_date = request.GET.get('selected_date')
+    selected_start_time = request.GET.get('selected_start_time')
+    selected_end_time = request.GET.get('selected_end_time')
+
+    # Convert selected times to datetime.time if they are strings
+    start_time = datetime.strptime(selected_start_time, '%H:%M').time()
+    end_time = datetime.strptime(selected_end_time, '%H:%M').time()
+
+    # Filter out tables that are already reserved for the selected date and time
+    reserved_tables = laboratory_reservations.objects.filter(
+        room_id=room_id,
+        start_date=selected_date,
+        status__in=['R', 'A', 'P']
+    ).filter(
+        start_time__lt=end_time,
+        end_time__gt=start_time
+    ).values_list('table_id', flat=True)
+
+    tables = RoomTable.objects.filter(room_id=room_id).exclude(table_id__in=reserved_tables).values('table_id', 'table_name', 'capacity')
     return JsonResponse({'tables': list(tables)})
+
+
+
 
 @login_required
 @lab_permission_required('reserve_laboratory')
@@ -3136,6 +3157,9 @@ def lab_reservation_student_reserveLabConfirmDetails(request):
         'approval_form_exists': approval_form_exists,
         'room': room
     })
+
+
+
 
 # not used for now
 @login_required
