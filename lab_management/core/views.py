@@ -41,7 +41,11 @@ from io import BytesIO
 
 import json, qrcode, base64, threading, time, re
 
+import logging
 
+sec_logger = logging.getLogger('django.security')
+
+logger = logging.getLogger('custom_logger')
 
 
 
@@ -535,232 +539,216 @@ def signup_redirect(request):
 @lab_permission_required('view_inventory')
 def inventory_view(request):
     if not request.user.is_authenticated:
+        logger.warning(f"Unauthorized attempt to access inventory_view by {request.user}")
         return redirect('userlogin')
     
-    # Get the selected laboratory from the session
-    selected_laboratory_id = request.session.get('selected_lab')
-    
-    # Get all item types for the selected laboratory
-    item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
-    
-    # Get the selected item_type from the GET parameters
-    selected_item_type = request.GET.get('item_type')
-
-    # Fetch current date for expiration comparison
-    current_date = timezone.localtime().date()
+    selected_laboratory_id = request.session.get('selected_lab')# Get the selected laboratory from the session
+    item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)# Get all item types for the selected laboratory
+    selected_item_type = request.GET.get('item_type')# Get the selected item_type from the GET parameters
+    current_date = timezone.localtime().date()# Fetch current date for expiration comparison
 
     # Filter inventory items by both the selected item_type and the selected laboratory,
     # and ensure the item is not disabled
-    if selected_item_type:
-        if selected_item_type == '0':
-            inventory_items = item_description.objects.filter(
-                laboratory_id=selected_laboratory_id,
-                is_disabled=0,
-                itemType_id = None    # Only get items that are enabled
-            ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
-            add_cols = []
+    logger.info(f"User {request.user.email} is viewing inventory for lab {selected_laboratory_id}. Selected Item Type: {selected_item_type}")
+
+    try:
+        if selected_item_type:
+            if selected_item_type == '0':
+                inventory_items = item_description.objects.filter(
+                    laboratory_id=selected_laboratory_id,
+                    is_disabled=0,
+                    itemType_id = None    # Only get items that are enabled
+                ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
+                add_cols = []
+            else:
+                inventory_items = item_description.objects.filter(
+                    itemType_id=selected_item_type,
+                    laboratory_id=selected_laboratory_id,
+                    is_disabled=0  # Only get items that are enabled
+                ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0)) # Calculate total quantity
+                selected_item_type_instance = item_types.objects.get(pk=selected_item_type)
+                add_cols = json.loads(selected_item_type_instance.add_cols)
         else:
             inventory_items = item_description.objects.filter(
-                itemType_id=selected_item_type,
                 laboratory_id=selected_laboratory_id,
                 is_disabled=0  # Only get items that are enabled
-            ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0)) # Calculate total quantity
-            selected_item_type_instance = item_types.objects.get(pk=selected_item_type)
-            add_cols = json.loads(selected_item_type_instance.add_cols)
-    else:
-        inventory_items = item_description.objects.filter(
-            laboratory_id=selected_laboratory_id,
-            is_disabled=0  # Only get items that are enabled
-        ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
-        add_cols = []
+            ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
+            add_cols = []
+        
+        # Log inventory count
+        logger.debug(f"Inventory fetched: {inventory_items.count()} items found.")
 
-     # Check for items nearing expiration and add a warning flag
-    # for item in inventory_items:
-    #     expirations = item_expirations.objects.filter(inventory_item__item=item)
-    #     expiration_warnings = []
-    #     for exp in expirations:
-    #         if exp.expired_date <= current_date + timedelta(days=7):  # Threshold of 7 days
-    #             expiration_warnings.append(exp)
-    #     item.expiration_warning = len(expiration_warnings) > 0  
+        for item in inventory_items:
+            expirations = item_expirations.objects.filter(inventory_item__item=item)
+            expiration_warnings = []
+            for exp in expirations:
+                if exp.expired_date <= current_date + timedelta(days=7):  # Threshold of 7 days
+                    if exp.inventory_item.qty > 0:  # Check if the item_inventory still has quantity
+                        expiration_warnings.append(exp)
+            item.expiration_warning = len(expiration_warnings) > 0  # Set expiration_warning  
 
-    for item in inventory_items:
-        expirations = item_expirations.objects.filter(inventory_item__item=item)
-        expiration_warnings = []
-        for exp in expirations:
-            if exp.expired_date <= current_date + timedelta(days=7):  # Threshold of 7 days
-                if exp.inventory_item.qty > 0:  # Check if the item_inventory still has quantity
-                    expiration_warnings.append(exp)
-        item.expiration_warning = len(expiration_warnings) > 0  # Set expiration_warning  
-
-    return render(request, 'mod_inventory/view_inventory.html', {
-        'inventory_items': inventory_items,
-        'item_types': item_types_list,
-        'selected_item_type': int(selected_item_type) if selected_item_type else None,
-        'add_cols': add_cols,
-    })
+        return render(request, 'mod_inventory/view_inventory.html', {
+            'inventory_items': inventory_items,
+            'item_types': item_types_list,
+            'selected_item_type': int(selected_item_type) if selected_item_type else None,
+            'add_cols': add_cols,
+        })
+    except Exception as e:
+        logger.error(f"Error fetching inventory: {e}", exc_info=True)
+        messages.error(request, "An error occurred while fetching inventory.")
+        return redirect('home')
 
 @login_required
 @lab_permission_required('view_inventory')
 def inventory_itemDetails_view(request, item_id):
     selected_laboratory_id = request.session.get('selected_lab')
-    item = get_object_or_404(item_description, item_id=item_id) # Get the item_description instance
-    add_cols_data = json.loads(item.add_cols) if item.add_cols else {} # Parse add_cols JSON
-    item_inventories = item_inventory.objects.filter(item=item).select_related('supplier')
-    
-    item_type = item.itemType# Get the related itemType instance
-    date_today = date.today()
-    lab = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id)
 
+    logger.info(f"User {request.user.email} is viewing details for item ID: {item_id} in lab {selected_laboratory_id}")
 
-    # Gather expiration data for each inventory item if item records expiration
-    expiration_data = {}
-    if item.rec_expiration:
-        expirations = item_expirations.objects.filter(inventory_item__in=item_inventories)
-        expiration_data = {exp.inventory_item.inventory_item_id: exp.expired_date for exp in expirations}
-
-
-    # inventory items
-    # Initialize the inventory data list
-    inventory_data = []
-
-    # Gather data for each inventory item
-    for inventory in item_inventories:
-        # Get the latest handling record for each inventory item
-        last_handling = inventory.item_handling_set.order_by('-timestamp').first()
-        first_handling = inventory.item_handling_set.order_by('timestamp').first()
+    try:
+        item = get_object_or_404(item_description, item_id=item_id) # Get the item_description instance
+        add_cols_data = json.loads(item.add_cols) if item.add_cols else {} # Parse add_cols JSON
+        item_inventories = item_inventory.objects.filter(item=item).select_related('supplier')
         
-        expiration_date = expiration_data.get(inventory.inventory_item_id, 'None') if item.rec_expiration else 'N/A'
-        last_updated_date = last_handling.timestamp if last_handling else 'N/A'
-        last_updated_by = last_handling.updated_by if last_handling and last_handling.updated_by else 'N/A'
-        date_created = first_handling.timestamp if first_handling else 'N/A'
-
-        # Append data to the inventory_data list
-        inventory_data.append({
-            'inventory_item_id': inventory.inventory_item_id,
-            'current_qty': inventory.qty,
-            'expiration_date': expiration_date,
-            'last_updated_date': last_updated_date,
-            'last_updated_by': last_updated_by,
-            'date_created': date_created
-        })
+        item_type = item.itemType# Get the related itemType instance
+        date_today = date.today()
+        lab = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id)
 
 
-    # Prefetch item_handling related to item_inventory, ordered by timestamp in descending order
-    item_handling_prefetch = Prefetch('item_handling_set', queryset=item_handling.objects.all().order_by('-timestamp'))
+        # Gather expiration data for each inventory item if item records expiration
+        expiration_data = {}
+        if item.rec_expiration:
+            expirations = item_expirations.objects.filter(inventory_item__in=item_inventories)
+            expiration_data = {exp.inventory_item.inventory_item_id: exp.expired_date for exp in expirations}
 
-    item_inventories = item_inventory.objects.filter(item=item)\
-        .select_related('supplier')\
-        .prefetch_related(item_handling_prefetch)\
-        .annotate(latest_handling_timestamp=Max('item_handling__timestamp'))\
-        .order_by('-latest_handling_timestamp')  # Use the annotated field for ordering
 
-    print(item_inventories)
+        # inventory items
+        # Initialize the inventory data list
+        inventory_data = []
 
-    # Calculate the total quantity
-    total_qty = item_inventories.aggregate(Sum('qty'))['qty__sum'] or 0
-
-    # Generate QR codes
-    qr_data = f"{item.item_id}"
-    qr_details = f"{item.item_name}"
-    qr_code_data_item_only = generate_qr_code(qr_data, qr_details)
-
-    if item.rec_expiration | item.rec_per_inv:
-        for item_inv in item_inventories:
-            qr_data = f"{item_inv.item.item_id}, {item_inv.inventory_item_id}"
-            qr_details = f"{item.item_name}\nInvID: {item_inv.inventory_item_id}"
-            qr_code_data = generate_qr_code(qr_data, qr_details)
-            item_inv.qr_code = qr_code_data
-       
-
-    # # Generate QR codes for each inventory item
-    # for item_inv in item_inventories:
-    #     if item.rec_expiration | item.rec_per_inv:
-    #         qr_data = f"{item_inv.item.item_id}, {item_inv.inventory_item_id}"
-    #     else:    
-    #         qr_data = f"{item_inv.item.item_id}, 0"
-    #     qr = qrcode.QRCode(
-    #         version=1,
-    #         error_correction=qrcode.constants.ERROR_CORRECT_L,
-    #         box_size=10,
-    #         border=4,
-    #     )
-    #     qr.add_data(qr_data)
-    #     qr.make(fit=True)
-
-    #     # Save the QR code as a base64 image
-    #     img = qr.make_image(fill_color="black", back_color="white")
-    #     buffered = BytesIO()
-    #     img.save(buffered, format="PNG")
-    #     qr_base64 = base64.b64encode(buffered.getvalue()).decode()
-    #     item_inv.qr_code = f"data:image/png;base64,{qr_base64}"
-
-    # Fetch expiration data and attach it to each inventory item if applicable
-    if item.rec_expiration:
-        expirations = item_expirations.objects.filter(inventory_item__in=item_inventories)
-        expiration_data = {exp.inventory_item.inventory_item_id: exp.expired_date for exp in expirations}
-        
-        # Attach expiration_date directly to each inventory instance
+        # Gather data for each inventory item
         for inventory in item_inventories:
-            latest_handling = inventory.item_handling_set.first()  # Access related item_handling
-            inventory.expiration_date = expiration_data.get(inventory.inventory_item_id)
-    else:
-        # If no expirations are recorded, set expiration_date to None for consistency
-        for inventory in item_inventories:
-            latest_handling = inventory.item_handling_set.first()  # Access related item_handling
-            inventory.expiration_date = None
-
-    # suppliers table
-    supplier_data = []
-    for inventory in item_inventories:
-        if inventory.supplier_id != None:
-            first_handling = (
-                item_handling.objects.filter(inventory_item=inventory)
-                .order_by('timestamp')
-                .first()
-            )
+            # Get the latest handling record for each inventory item
+            last_handling = inventory.item_handling_set.order_by('-timestamp').first()
+            first_handling = inventory.item_handling_set.order_by('timestamp').first()
             
-            date_purchased = inventory.date_purchased
-            date_received = inventory.date_received
-            duration = (date_received - date_purchased).days if date_purchased and date_received else None
-            expiration_date = expiration_data.get(inventory.inventory_item_id, 'None')
+            expiration_date = expiration_data.get(inventory.inventory_item_id, 'None') if item.rec_expiration else 'N/A'
+            last_updated_date = last_handling.timestamp if last_handling else 'N/A'
+            last_updated_by = last_handling.updated_by if last_handling and last_handling.updated_by else 'N/A'
+            date_created = first_handling.timestamp if first_handling else 'N/A'
 
-            supplier_data.append({
-                'inventory_id': inventory.inventory_item_id,
-                'supplier_name': inventory.supplier.supplier_name if inventory.supplier else 'N/A',
-                'date_purchased': date_purchased,
-                'date_received': date_received,
-                'duration': f"{duration} days" if duration else '0',
-                'qty': first_handling.qty if first_handling else 'Invalid',
-                'purchase_price': inventory.purchase_price,
-                'expiration': expiration_date
+            # Append data to the inventory_data list
+            inventory_data.append({
+                'inventory_item_id': inventory.inventory_item_id,
+                'current_qty': inventory.qty,
+                'expiration_date': expiration_date,
+                'last_updated_date': last_updated_date,
+                'last_updated_by': last_updated_by,
+                'date_created': date_created
             })
-    
-    context = {
-        'item': item,
-        'itemType_name': item_type.itemType_name if item_type else None,
-        'laboratory_name': lab.name if lab else None,
-        'item_inventories': item_inventories,
-        'total_qty': total_qty,
-        'add_cols_data': add_cols_data,
-        'is_edit_mode': False,  # Not in edit mode
-        'qr_code_data': qr_code_data_item_only,
-        'date_today': date_today,
 
-        'lab_name': lab.name,
-        'supplier_data': supplier_data,
 
-        'inventory_data': inventory_data,
-    }
+        # Prefetch item_handling related to item_inventory, ordered by timestamp in descending order
+        item_handling_prefetch = Prefetch('item_handling_set', queryset=item_handling.objects.all().order_by('-timestamp'))
 
-    return render(request, 'mod_inventory/inventory_itemDetails.html', context)
+        item_inventories = item_inventory.objects.filter(item=item)\
+            .select_related('supplier')\
+            .prefetch_related(item_handling_prefetch)\
+            .annotate(latest_handling_timestamp=Max('item_handling__timestamp'))\
+            .order_by('-latest_handling_timestamp')  # Use the annotated field for ordering
+
+        print(item_inventories)
+
+        # Calculate the total quantity
+        total_qty = item_inventories.aggregate(Sum('qty'))['qty__sum'] or 0
+
+        # Generate QR codes
+        qr_data = f"{item.item_id}"
+        qr_details = f"{item.item_name}"
+        qr_code_data_item_only = generate_qr_code(qr_data, qr_details)
+
+        if item.rec_expiration | item.rec_per_inv:
+            for item_inv in item_inventories:
+                qr_data = f"{item_inv.item.item_id}, {item_inv.inventory_item_id}"
+                qr_details = f"{item.item_name}\nInvID: {item_inv.inventory_item_id}"
+                qr_code_data = generate_qr_code(qr_data, qr_details)
+                item_inv.qr_code = qr_code_data
+
+        # Fetch expiration data and attach it to each inventory item if applicable
+        if item.rec_expiration:
+            expirations = item_expirations.objects.filter(inventory_item__in=item_inventories)
+            expiration_data = {exp.inventory_item.inventory_item_id: exp.expired_date for exp in expirations}
+            
+            # Attach expiration_date directly to each inventory instance
+            for inventory in item_inventories:
+                latest_handling = inventory.item_handling_set.first()  # Access related item_handling
+                inventory.expiration_date = expiration_data.get(inventory.inventory_item_id)
+        else:
+            # If no expirations are recorded, set expiration_date to None for consistency
+            for inventory in item_inventories:
+                latest_handling = inventory.item_handling_set.first()  # Access related item_handling
+                inventory.expiration_date = None
+
+        # suppliers table
+        supplier_data = []
+        for inventory in item_inventories:
+            if inventory.supplier_id != None:
+                first_handling = (
+                    item_handling.objects.filter(inventory_item=inventory)
+                    .order_by('timestamp')
+                    .first()
+                )
+                
+                date_purchased = inventory.date_purchased
+                date_received = inventory.date_received
+                duration = (date_received - date_purchased).days if date_purchased and date_received else None
+                expiration_date = expiration_data.get(inventory.inventory_item_id, 'None')
+
+                supplier_data.append({
+                    'inventory_id': inventory.inventory_item_id,
+                    'supplier_name': inventory.supplier.supplier_name if inventory.supplier else 'N/A',
+                    'date_purchased': date_purchased,
+                    'date_received': date_received,
+                    'duration': f"{duration} days" if duration else '0',
+                    'qty': first_handling.qty if first_handling else 'Invalid',
+                    'purchase_price': inventory.purchase_price,
+                    'expiration': expiration_date
+                })
+        
+        logger.debug(f"Fetched {len(item_inventories)} inventory items for item {item_id}.")
+
+        context = {
+            'item': item,
+            'itemType_name': item_type.itemType_name if item_type else None,
+            'laboratory_name': lab.name if lab else None,
+            'item_inventories': item_inventories,
+            'total_qty': total_qty,
+            'add_cols_data': add_cols_data,
+            'is_edit_mode': False,  # Not in edit mode
+            'qr_code_data': qr_code_data_item_only,
+            'date_today': date_today,
+
+            'lab_name': lab.name,
+            'supplier_data': supplier_data,
+
+            'inventory_data': inventory_data,
+        }
+
+        return render(request, 'mod_inventory/inventory_itemDetails.html', context)
+    except Exception as e:
+        logger.error(f"Error fetching inventory item details: {e}", exc_info=True)
+        messages.error(request, "An error occurred while fetching item details.")
+        return redirect('home')
 
 @login_required
 @lab_permission_required('add_new_item')
 def inventory_addNewItem_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
-    
+
     selected_lab = request.session.get('selected_lab')
+
+    
     if selected_lab:
         item_types_list = item_types.objects.filter(laboratory_id=selected_lab)
     else:
@@ -776,42 +764,53 @@ def inventory_addNewItem_view(request):
         alert_qty = request.POST.get('alert_qty')
         rec_per_inv = request.POST.get('rec_per_inv') == 'on'
 
-        # Dynamic fields from additional columns (based on the selected item_type)
-        item_type = item_types.objects.get(itemType_id=item_type_id)
-        add_cols_dict = {}
-        if item_type.add_cols:
-            add_cols = json.loads(item_type.add_cols)
-            for col in add_cols:
-                # Replace spaces with underscores to match how they are generated in HTML
-                field_name = f'add_col_{col.replace(" ", "_").lower()}'
-                field_value = request.POST.get(field_name)
-                add_cols_dict[col] = field_value if field_value else None  # Handle None values for empty inputs
+        logger.info(f"User {request.user} attempting to add a new item: {item_name}, type: {item_type_id}")
 
-        # Convert the additional columns to a JSON string
-        add_cols_json = json.dumps(add_cols_dict)
+        try:
+            # Dynamic fields from additional columns (based on the selected item_type)
+            item_type = item_types.objects.get(itemType_id=item_type_id)
+            add_cols_dict = {}
+            if item_type.add_cols:
+                add_cols = json.loads(item_type.add_cols)
+                for col in add_cols:
+                    # Replace spaces with underscores to match how they are generated in HTML
+                    field_name = f'add_col_{col.replace(" ", "_").lower()}'
+                    field_value = request.POST.get(field_name)
+                    add_cols_dict[col] = field_value if field_value else None  # Handle None values for empty inputs
+
+            # Convert the additional columns to a JSON string
+            add_cols_json = json.dumps(add_cols_dict)
 
 
-        # Save the data to the database
-        new_item = item_description(
-            laboratory_id=selected_lab,
-            item_name=item_name,
-            itemType_id=item_type_id,
-            add_cols=add_cols_json,
-            alert_qty=alert_qty,
-            rec_expiration = rec_expiration,
-            rec_per_inv=rec_per_inv
-        )
-        new_item.save()
+            # Save the data to the database
+            new_item = item_description(
+                laboratory_id=selected_lab,
+                item_name=item_name,
+                itemType_id=item_type_id,
+                add_cols=add_cols_json,
+                alert_qty=alert_qty,
+                rec_expiration = rec_expiration,
+                rec_per_inv=rec_per_inv
+            )
+            new_item.save()
 
-        qr_details=f"{item_name}"
-        qr_code_data = generate_qr_code(new_item.item_id, qr_details)
-        # Render the page with QR code and modal trigger
-        return render(request, 'mod_inventory/inventory_addNewItem.html', {
-            'item_types': item_types_list,
-            'qr_code_data': qr_code_data,
-            'new_item': new_item,  # Pass new item details for modal
-            'show_modal': True,    # Flag to show the modal
-        })
+            qr_details=f"{item_name}"
+            qr_code_data = generate_qr_code(new_item.item_id, qr_details)
+            # Render the page with QR code and modal trigger
+            return render(request, 'mod_inventory/inventory_addNewItem.html', {
+                'item_types': item_types_list,
+                'qr_code_data': qr_code_data,
+                'new_item': new_item,  # Pass new item details for modal
+                'show_modal': True,    # Flag to show the modal
+            })
+
+        except item_types.DoesNotExist:
+            logger.error(f"Item type {item_type_id} does not exist. User: {request.user}")
+            messages.error(request, "Invalid item type selected.")
+        
+        except Exception as e:
+            logger.error(f"Failed to add item: {str(e)}", exc_info=True)
+            messages.error(request, "An error occurred while adding the item. Please try again.")
 
     return render(request, 'mod_inventory/inventory_addNewItem.html', {
         'item_types': item_types_list,
@@ -827,7 +826,6 @@ def inventory_updateItem_view(request):
     if request.method == 'POST':
         selected_laboratory_id = request.session.get('selected_lab')
         current_user = request.user
-
         action_type = request.POST.get('action_type')
         item_id = request.POST.get('item_name') 
         if not item_id:
@@ -836,155 +834,161 @@ def inventory_updateItem_view(request):
         
         inventory_item_id = request.POST.get('inventory_item_id') 
         remarks = request.POST.get('remarks', '')
-
         remaining_qty=0
         
+        try:
+            # Fetch item and supplier
+            item_instance = get_object_or_404(item_description, item_id=item_id)
+            
+            # Add or remove inventory logic
+            if action_type == 'add':
+                qty_add = request.POST.get('amount')
+                if not qty_add:
+                    messages.error(request, 'Invalid Quantity Input')
+                    return redirect('inventory_updateItem')
+                qty_add = int(request.POST.get('amount', 0))
 
-        # Fetch item and supplier
-        item_instance = get_object_or_404(item_description, item_id=item_id)
-        
-        # Add or remove inventory logic
-        if action_type == 'add':
-            qty_add = request.POST.get('amount')
-            if not qty_add:
-                messages.error(request, 'Invalid Quantity Input')
-                return redirect('inventory_updateItem')
-            qty_add = int(request.POST.get('amount', 0))
+                supplier_id = request.POST.get('item_supplier') or None
+                date_purchased = request.POST.get('item_date_purchased', None) or None
+                date_received = request.POST.get('item_date_received', None) or None
+                purchase_price = request.POST.get('item_price', 0.0) or 0.0
+                expiration_date = request.POST.get('expiration_date') if item_instance.rec_expiration else None
 
-            supplier_id = request.POST.get('item_supplier') or None
-            date_purchased = request.POST.get('item_date_purchased', None) or None
-            date_received = request.POST.get('item_date_received', None) or None
-            purchase_price = request.POST.get('item_price', 0.0) or 0.0
-            expiration_date = request.POST.get('expiration_date') if item_instance.rec_expiration else None
-
-            new_inventory_item = item_inventory.objects.create(
-                item=item_instance,
-                supplier_id=supplier_id,
-                date_purchased=date_purchased,
-                date_received=date_received,
-                purchase_price=purchase_price,
-                qty=qty_add
-            )
-
-            item_handling.objects.create(
-                inventory_item=new_inventory_item,
-                updated_by=current_user,
-                changes='A',
-                qty=qty_add,
-                remarks='Add to Inventory'
-            )
-            # If expiration date is provided, save it
-            if expiration_date:
-                item_expirations.objects.create(
-                    inventory_item=new_inventory_item,
-                    expired_date=expiration_date
+                new_inventory_item = item_inventory.objects.create(
+                    item=item_instance,
+                    supplier_id=supplier_id,
+                    date_purchased=date_purchased,
+                    date_received=date_received,
+                    purchase_price=purchase_price,
+                    qty=qty_add
                 )
 
-            # Inside the 'add' action block in your view
-            if item_instance.rec_expiration | item_instance.rec_per_inv:
-                qr_data = f"{item_id}, {new_inventory_item.inventory_item_id}"
-            else:
-                qr_data = f"{item_id}, 0"
+                item_handling.objects.create(
+                    inventory_item=new_inventory_item,
+                    updated_by=current_user,
+                    changes='A',
+                    qty=qty_add,
+                    remarks='Add to Inventory'
+                )
+                # If expiration date is provided, save it
+                if expiration_date:
+                    item_expirations.objects.create(
+                        inventory_item=new_inventory_item,
+                        expired_date=expiration_date
+                    )
 
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=4,
-            )
-            qr.add_data(qr_data)
-            qr.make(fit=True)
+                # Inside the 'add' action block in your view
+                if item_instance.rec_expiration | item_instance.rec_per_inv:
+                    qr_data = f"{item_id}, {new_inventory_item.inventory_item_id}"
+                else:
+                    qr_data = f"{item_id}, 0"
 
-            # Save the QR code as a base64 image
-            img = qr.make_image(fill_color="black", back_color="white")
-            buffered = BytesIO()
-            img.save(buffered, format="PNG")
-            qr_base64 = base64.b64encode(buffered.getvalue()).decode()
-            qr_code = f"data:image/png;base64,{qr_base64}"
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=10,
+                    border=4,
+                )
+                qr.add_data(qr_data)
+                qr.make(fit=True)
 
-            print(item_instance.item_name)
+                # Save the QR code as a base64 image
+                img = qr.make_image(fill_color="black", back_color="white")
+                buffered = BytesIO()
+                img.save(buffered, format="PNG")
+                qr_base64 = base64.b64encode(buffered.getvalue()).decode()
+                qr_code = f"data:image/png;base64,{qr_base64}"
 
-            return JsonResponse({
-                'success': True,
-                'new_inventory_item_id': new_inventory_item.inventory_item_id,
-                'item_qrcode': qr_code,  # Include the QR code in the response
-                'item_name': item_instance.item_name,
-                'action_type': action_type
-            })
-        
-        elif action_type in ['remove', 'report']:# Handle remove & report from inventory
-            if action_type=='remove':
-                qty_remove = int(request.POST.get('quantity_removed', 0))
-            else:
-                qty_damaged = int(request.POST.get('quantity_damaged', 0))
+                logger.info(f"User {current_user} added {qty_add} of {item_instance.item_name} (Item ID: {item_id}) to inventory.")
 
-            quantity = qty_remove if action_type == 'remove' else qty_damaged
-            if inventory_item_id:
-                # Fetch specific inventory item for expiration-controlled items
-                inventory_item = get_object_or_404(item_inventory, inventory_item_id=inventory_item_id)
-                if quantity > inventory_item.qty:
-                    messages.error(request, "The quantity to remove/report exceeds the available stock.")
-                    # return redirect('inventory_updateItem')
+                return JsonResponse({
+                    'success': True,
+                    'new_inventory_item_id': new_inventory_item.inventory_item_id,
+                    'item_qrcode': qr_code,  # Include the QR code in the response
+                    'item_name': item_instance.item_name,
+                    'action_type': action_type
+                })
+            
+            elif action_type in ['remove', 'report']:# Handle remove & report from inventory
+                if action_type=='remove':
+                    qty_remove = int(request.POST.get('quantity_removed', 0))
+                else:
+                    qty_damaged = int(request.POST.get('quantity_damaged', 0))
+
+                quantity = qty_remove if action_type == 'remove' else qty_damaged
+                if inventory_item_id:
+                    # Fetch specific inventory item for expiration-controlled items
+                    inventory_item = get_object_or_404(item_inventory, inventory_item_id=inventory_item_id)
+                    if quantity > inventory_item.qty:
+                        messages.error(request, "The quantity to remove/report exceeds the available stock.")
+                        # return redirect('inventory_updateItem')
+                        return JsonResponse({'success': True})
+                    else:
+                        # Deduct quantity and save the item handling action
+                        inventory_item.qty -= quantity
+                        inventory_item.save()
+                        item_handling.objects.create(
+                            inventory_item=inventory_item,
+                            timestamp=timezone.localtime(),
+                            updated_by=current_user,
+                            changes='R' if action_type == 'remove' else 'D',
+                            qty=0-quantity,
+                            remarks= 'Remove from inventory' if action_type == 'remove' else remarks
+                        )
+                else:
+                    item_totalqty = item_inventory.objects.filter(item=item_instance).aggregate(total_qty=Sum('qty'))
+                    total_qty = item_totalqty['total_qty'] or 0  # Use 0 if total_qty is None
+                    print(quantity, '>', total_qty)
+                    if quantity > total_qty:
+                        messages.error(request, "The quantity to remove/report exceeds the available stock.")
+                        return JsonResponse({'success': True})
+
+                    remaining_qty = quantity
+                    inventory_qs = item_inventory.objects.filter(item=item_instance, qty__gt=0).order_by('date_received')
+                    for inventory_item in inventory_qs:
+                        if remaining_qty <= 0:
+                            break
+                        if inventory_item.qty >= remaining_qty:
+                            inventory_item.qty -= remaining_qty
+                            inventory_item.save()
+                            item_handling.objects.create(
+                                inventory_item=inventory_item,
+                                timestamp=timezone.localtime(),
+                                updated_by=current_user,
+                                changes='R' if action_type == 'remove' else 'D',
+                                qty=0-remaining_qty,
+                                remarks= 'Remove from inventory' if action_type == 'remove' else remarks
+                            )
+                            remaining_qty = 0
+                        else:
+                            handled_qty = inventory_item.qty
+                            remaining_qty -= handled_qty
+                            inventory_item.qty = 0
+                            inventory_item.save()
+                            item_handling.objects.create(
+                                inventory_item=inventory_item,
+                                timestamp=timezone.localtime(),
+                                updated_by=current_user,
+                                changes='R' if action_type == 'remove' else 'D',
+                                qty=0-handled_qty,
+                                remarks= 'Remove from inventory' if action_type == 'remove' else remarks
+                            )
+
+                if remaining_qty > 0:
+                    messages.error(request, f"Unable to fully remove requested quantity. Remaining: {remaining_qty}")
+                    logger.warning(f"User {current_user} attempted to remove more than available stock for {item_instance.item_name} (ID: {item_id}).")
                     return JsonResponse({'success': True})
                 else:
-                    # Deduct quantity and save the item handling action
-                    inventory_item.qty -= quantity
-                    inventory_item.save()
-                    item_handling.objects.create(
-                        inventory_item=inventory_item,
-                        timestamp=timezone.localtime(),
-                        updated_by=current_user,
-                        changes='R' if action_type == 'remove' else 'D',
-                        qty=0-quantity,
-                        remarks= 'Remove from inventory' if action_type == 'remove' else remarks
-                    )
-            else:
-                item_totalqty = item_inventory.objects.filter(item=item_instance).aggregate(total_qty=Sum('qty'))
-                total_qty = item_totalqty['total_qty'] or 0  # Use 0 if total_qty is None
-                print(quantity, '>', total_qty)
-                if quantity > total_qty:
-                    messages.error(request, "The quantity to remove/report exceeds the available stock.")
+                    messages.success(request, f"{action_type.capitalize()} action completed successfully.")
+                    logger.info(f"User {current_user} {action_type}d {qty} of {item_instance.item_name} (ID: {item_id}) from inventory.")
                     return JsonResponse({'success': True})
 
-                remaining_qty = quantity
-                inventory_qs = item_inventory.objects.filter(item=item_instance, qty__gt=0).order_by('date_received')
-                for inventory_item in inventory_qs:
-                    if remaining_qty <= 0:
-                        break
-                    if inventory_item.qty >= remaining_qty:
-                        inventory_item.qty -= remaining_qty
-                        inventory_item.save()
-                        item_handling.objects.create(
-                            inventory_item=inventory_item,
-                            timestamp=timezone.localtime(),
-                            updated_by=current_user,
-                            changes='R' if action_type == 'remove' else 'D',
-                            qty=0-remaining_qty,
-                            remarks= 'Remove from inventory' if action_type == 'remove' else remarks
-                        )
-                        remaining_qty = 0
-                    else:
-                        handled_qty = inventory_item.qty
-                        remaining_qty -= handled_qty
-                        inventory_item.qty = 0
-                        inventory_item.save()
-                        item_handling.objects.create(
-                            inventory_item=inventory_item,
-                            timestamp=timezone.localtime(),
-                            updated_by=current_user,
-                            changes='R' if action_type == 'remove' else 'D',
-                            qty=0-handled_qty,
-                            remarks= 'Remove from inventory' if action_type == 'remove' else remarks
-                        )
-
-            if remaining_qty > 0:
-                messages.error(request, f"Unable to fully remove requested quantity. Remaining: {remaining_qty}")
-                return JsonResponse({'success': True})
-            else:
-                messages.success(request, f"{action_type.capitalize()} action completed successfully.")
-                return JsonResponse({'success': True})
-
-        return render(request, 'mod_inventory/inventory_updateItem.html')
+            return render(request, 'mod_inventory/inventory_updateItem.html')
+        
+        except Exception as e:
+            logger.error(f"Error in inventory_updateItem_view: {str(e)}", exc_info=True)
+            messages.error(request, "An error occurred while updating inventory.")
+            return JsonResponse({'success': False})
 
     return render(request, 'mod_inventory/inventory_updateItem.html')
 
@@ -992,6 +996,7 @@ def inventory_updateItem_view(request):
 @lab_permission_required('view_inventory')
 def inventory_itemEdit_view(request, item_id):
     if not request.user.is_authenticated:
+        logger.warning(f"Unauthorized access attempt to edit inventory item {item_id} by {request.user}")
         return redirect('userlogin')
 
     # Get the selected laboratory from the session
@@ -1040,17 +1045,19 @@ def inventory_itemEdit_view(request, item_id):
             item.alert_qty = 0 if alert_qty_disabled else request.POST.get('alert_qty', item.alert_qty)
 
             # Force save with update_fields to ensure data is saved
-            print("Saving item instance with forced update...")
             item.save(update_fields=['add_cols', 'rec_per_inv', 'rec_expiration', 'alert_qty'])
+            logger.info(f"User {request.user} updated item {item.item_name} (ID: {item.item_id}) with new attributes.")
 
             # Verify save by reloading the item
             item.refresh_from_db()
-            print("Reloaded item from DB:", item.add_cols)
+            # print("Reloaded item from DB:", item.add_cols)
 
             # Redirect after saving
             return redirect('inventory_itemDetails_view', item_id=item_id)
         else:
-            print("Form is not valid. Errors:", form.errors)
+            # print("Form is not valid. Errors:", form.errors)
+            logger.warning(f"User {request.user} failed to update item {item.item_name}. Errors: {form.errors}")
+
     else:
         form = ItemEditForm(instance=item, selected_laboratory_id=selected_laboratory_id)
 
@@ -1075,188 +1082,221 @@ def inventory_itemEdit_view(request, item_id):
 @lab_permission_required('view_inventory')
 def inventory_itemDelete_view(request, item_id):
     if not request.user.is_authenticated:
+        logger.warning(f"Unauthorized access attempt to delete item {item_id} by {request.user}")
         return redirect('userlogin')
     
-    item = get_object_or_404(item_description, item_id=item_id)
-
-      # Redirect to view inventory after disabling
-    if request.method == 'POST':
-        item.is_disabled = 1  # Mark item as disabled
-        item.save()
-        return redirect('inventory_view')
-
-    # Prepare context for rendering the confirmation template
-    item_type = item.itemType
-    lab = get_object_or_404(laboratory, laboratory_id=item.laboratory_id)
-    context = {
-        'item': item,
-        'itemType_name': item_type.itemType_name if item_type else None,
-        'laboratory_name': lab.name if lab else None,
-    }
-
+    try:
     
+        item = get_object_or_404(item_description, item_id=item_id)
 
-    return render(request, 'mod_inventory/inventory_itemDelete.html', context)
+        # Redirect to view inventory after disabling
+        if request.method == 'POST':
+            item.is_disabled = 1  # Mark item as disabled
+            item.save()
+            logger.info(f"User {request.user} disabled item '{item.item_name}' (Item ID: {item_id}) in lab {item.laboratory_id}.")
+            return redirect('inventory_view')
+
+        # Prepare context for rendering the confirmation template
+        item_type = item.itemType
+        lab = get_object_or_404(laboratory, laboratory_id=item.laboratory_id)
+        context = {
+            'item': item,
+            'itemType_name': item_type.itemType_name if item_type else None,
+            'laboratory_name': lab.name if lab else None,
+        }
+
+        return render(request, 'mod_inventory/inventory_itemDelete.html', context)
+
+    except Exception as e:
+        logger.error(f"Error while deleting item {item_id} by {request.user}: {str(e)}", exc_info=True)
+        messages.error(request, "An error occurred while deleting the item.")
+        return redirect('home')
+
 
 @login_required
 @lab_permission_required('view_inventory')
 def get_item_type_add_cols(request, itemType_id):
     if not request.user.is_authenticated:
+        logger.warning(f"Unauthorized API call to get_item_type_add_cols for itemType {itemType_id} by {request.user}")
         return JsonResponse({'error': 'Unauthorized'}, status=401)
     
     try:
         item_type = item_types.objects.get(itemType_id=itemType_id)
         add_cols = json.loads(item_type.add_cols) if item_type.add_cols else []
+        logger.info(f"User {request.user} fetched additional columns for itemType {itemType_id}: {add_cols}")
         return JsonResponse({'add_cols': add_cols})
+    
     except item_types.DoesNotExist:
+        logger.error(f"ItemType {itemType_id} not found. Requested by {request.user}", exc_info=True)
         return JsonResponse({'error': 'Item type not found'}, status=404)
+
+    except Exception as e:
+        logger.error(f"Unexpected error while fetching itemType {itemType_id} for {request.user}: {str(e)}", exc_info=True)
+        return JsonResponse({'error': 'Internal Server Error'}, status=500)
     
 @login_required
 @lab_permission_required('physical_count')
 def inventory_physicalCount_view(request):
-    # Get the selected laboratory from the session
-    selected_laboratory_id = request.session.get('selected_lab')
-    item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
-    selected_item_type = request.GET.get('item_type')
-    current_user = request.user
+    if not request.user.is_authenticated:
+        logger.warning(f"Unauthorized attempt to access inventory_view by {request.user}")
+        return redirect('userlogin')
+    
+    try:
+        # Get the selected laboratory from the session
+        selected_laboratory_id = request.session.get('selected_lab')
+        item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
+        selected_item_type = request.GET.get('item_type')
+        current_user = request.user
 
-    # Filter items by laboratory and selected item type
-    if selected_item_type:
-        inventory_items = item_description.objects.filter(
-            laboratory_id=selected_laboratory_id, 
-            itemType_id=selected_item_type, 
-            is_disabled=0
-        ).annotate(total_qty=Sum('item_inventory__qty'))
-    else:
-        inventory_items = item_description.objects.filter(
-            laboratory_id=selected_laboratory_id, 
-            is_disabled=0
-        ).annotate(total_qty=Sum('item_inventory__qty'))
-        
-    # Parse add_cols JSON and fetch individual inventory records if necessary
-    for item in inventory_items:
-        # Parse additional columns if available
-        item.parsed_add_cols = json.loads(item.add_cols) if item.add_cols else {}
-        
-        # If item tracks expiration or per-inventory quantity, fetch individual inventories
-        if item.rec_expiration or item.rec_per_inv:
-            item.individual_inventories = item_inventory.objects.filter(item=item, qty__gt=0).order_by('inventory_item_id')
+        # Filter items by laboratory and selected item type
+        if selected_item_type:
+            inventory_items = item_description.objects.filter(
+                laboratory_id=selected_laboratory_id, 
+                itemType_id=selected_item_type, 
+                is_disabled=0
+            ).annotate(total_qty=Sum('item_inventory__qty'))
         else:
-            # Total quantity for items without inventory-level tracking
-            item.total_qty = item_inventory.objects.filter(item=item).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
-
-    # Check if the form is submitted
-    if request.method == "POST":
+            inventory_items = item_description.objects.filter(
+                laboratory_id=selected_laboratory_id, 
+                is_disabled=0
+            ).annotate(total_qty=Sum('item_inventory__qty'))
+            
+        # Parse add_cols JSON and fetch individual inventory records if necessary
         for item in inventory_items:
+            # Parse additional columns if available
+            item.parsed_add_cols = json.loads(item.add_cols) if item.add_cols else {}
+            
+            # If item tracks expiration or per-inventory quantity, fetch individual inventories
             if item.rec_expiration or item.rec_per_inv:
-                # Handle item_inventory updates individually
-                for inventory in item.individual_inventories:
-                    count_qty = request.POST.get(f'count_qty_{inventory.inventory_item_id}')
-                    print(f'Item ID: {item.item_name}, Count Qty: {count_qty}')  # For debugging
-                    if count_qty is not None and count_qty != '':
-                        count_qty = int(count_qty)
-                    else:
-                        count_qty = inventory.qty
-
-                    discrepancy_qty = count_qty - inventory.qty
-
-                    # Add or remove discrepancy from inventory
-                    if discrepancy_qty != 0:
-                        adjust_inventory_item('inv',inventory, discrepancy_qty, current_user, "P", "Physical count adjustment")
+                item.individual_inventories = item_inventory.objects.filter(item=item, qty__gt=0).order_by('inventory_item_id')
             else:
-                count_qty = request.POST.get(f'count_qty_{item.item_id}')
-                print(f'Item ID: {item.item_name}, Count Qty: {count_qty}')  # For debugging
-                if count_qty is not None and count_qty != '':
-                    count_qty = int(count_qty)
+                # Total quantity for items without inventory-level tracking
+                item.total_qty = item_inventory.objects.filter(item=item).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
+
+        # Check if the form is submitted
+        if request.method == "POST":
+            for item in inventory_items:
+                if item.rec_expiration or item.rec_per_inv:
+                    # Handle item_inventory updates individually
+                    for inventory in item.individual_inventories:
+                        try:
+                            count_qty = request.POST.get(f'count_qty_{inventory.inventory_item_id}')
+                            print(f'Item ID: {item.item_name}, Count Qty: {count_qty}')  # For debugging
+                            if count_qty is not None and count_qty != '':
+                                count_qty = int(count_qty)
+                            else:
+                                count_qty = inventory.qty
+
+                            discrepancy_qty = count_qty - inventory.qty
+
+                            # Add or remove discrepancy from inventory
+                            if discrepancy_qty != 0:
+                                adjust_inventory_item('inv',inventory, discrepancy_qty, current_user, "P", "Physical count adjustment")
+                        except Exception as e:
+                            logger.error(f"Error processing inventory {inventory.inventory_item_id} during physical count: {e}", exc_info=True)
+                            messages.error(request, f"Error updating item {inventory.inventory_item_id}")
+
                 else:
-                    count_qty = item.total_qty
-                
-                discrepancy_qty = count_qty - item.total_qty
-                if discrepancy_qty != 0:
-                    adjust_inventory_item('item',item, discrepancy_qty, current_user, "P", "Physical count adjustment")
+                    try:
+                        count_qty = request.POST.get(f'count_qty_{item.item_id}')
+                        print(f'Item ID: {item.item_name}, Count Qty: {count_qty}')  # For debugging
+                        if count_qty is not None and count_qty != '':
+                            count_qty = int(count_qty)
+                        else:
+                            count_qty = item.total_qty
+                        
+                        discrepancy_qty = count_qty - item.total_qty
+                        if discrepancy_qty != 0:
+                            adjust_inventory_item('item',item, discrepancy_qty, current_user, "P", "Physical count adjustment")
+                    except Exception as e:
+                        logger.error(f"Error processing item {item.item_id} during physical count: {e}", exc_info=True)
+                        messages.error(request, f"Error updating item {item.item_id}")
 
-        messages.success(request, 'Physical count saved successfully!')
-        return redirect('inventory_physicalCount')
+            messages.success(request, 'Physical count saved successfully!')
+            return redirect('inventory_physicalCount')
 
-    return render(request, 'mod_inventory/inventory_physicalCount.html', {
-        'inventory_items': inventory_items,
-        'item_types': item_types_list,
-        'selected_item_type': int(selected_item_type) if selected_item_type else None,
-    })
+        return render(request, 'mod_inventory/inventory_physicalCount.html', {
+            'inventory_items': inventory_items,
+            'item_types': item_types_list,
+            'selected_item_type': int(selected_item_type) if selected_item_type else None,
+        })
+    except Exception as e:
+        logger.error(f"Critical error in inventory_physicalCount_view: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred. Please try again.")
+        return redirect('home')
 
 def adjust_inventory_item(status, inventory, discrepancy_qty, user, change_type, remark):
-    if discrepancy_qty > 0:
-        if status=='item':
-            item_inventory_instance = item_inventory.objects.create(
-                item=inventory,
-                qty=discrepancy_qty,
-                date_purchased=timezone.localtime(),
-                date_received=timezone.localtime(),
-                supplier=None  # Supplier can be left as None for physical adjustments
-            )
-            item_handling.objects.create(
-                inventory_item=item_inventory_instance,
-                updated_by=user,
-                changes=change_type,
-                qty=discrepancy_qty,
-                remarks=remark
-            )
-        else:
-            item_handling.objects.create(
-                inventory_item=inventory,
-                updated_by=user,
-                changes=change_type,
-                qty=discrepancy_qty,
-                remarks=remark
-            )
-            inventory.qty += discrepancy_qty
-            inventory.save()
+    try:
+        if discrepancy_qty > 0:
+            if status=='item':
+                item_inventory_instance = item_inventory.objects.create(
+                    item=inventory,
+                    qty=discrepancy_qty,
+                    date_purchased=timezone.localtime(),
+                    date_received=timezone.localtime(),
+                    supplier=None  # Supplier can be left as None for physical adjustments
+                )
+                item_handling.objects.create(
+                    inventory_item=item_inventory_instance,
+                    updated_by=user,
+                    changes=change_type,
+                    qty=discrepancy_qty,
+                    remarks=remark
+                )
+                logger.info(f"Added {discrepancy_qty} to item {inventory.item_name} by {user}")
 
-    elif discrepancy_qty < 0:
-        
-        remaining_amount = abs(discrepancy_qty)
-        if status=='item':
-            # item_inventory_queryset = item_inventory.objects.filter(
-            #     item=inventory,
-            #     qty__gt=0
-            # ).annotate(
-            #     expired_date=F('item_expirations__expired_date')
-            # ).order_by('expired_date')
-            print('pass', inventory)
-            item_description_instance = get_object_or_404(item_description, item_id=inventory.item_id)
-            if item_description_instance.rec_expiration == 1:
-                item_inventory_queryset = item_inventory.objects.filter(
+            else:
+                item_handling.objects.create(
+                    inventory_item=inventory,
+                    updated_by=user,
+                    changes=change_type,
+                    qty=discrepancy_qty,
+                    remarks=remark
+                )
+                inventory.qty += discrepancy_qty
+                inventory.save()
+                logger.info(f"Added {discrepancy_qty} to inventory {inventory.inventory_item_id} by {user}")
+
+        elif discrepancy_qty < 0:
+            remaining_amount = abs(discrepancy_qty)
+            if status=='item':
+                print('pass', inventory)
+                item_description_instance = get_object_or_404(item_description, item_id=inventory.item_id)
+                if item_description_instance.rec_expiration == 1:
+                    item_inventory_queryset = item_inventory.objects.filter(
+                            item=item_description_instance,
+                            qty__gt=0
+                        ).annotate(
+                            expired_date=F('item_expirations__expired_date')
+                        ).order_by('expired_date')
+                else:
+                    item_inventory_queryset = item_inventory.objects.filter(
                         item=item_description_instance,
                         qty__gt=0
-                    ).annotate(
-                        expired_date=F('item_expirations__expired_date')
-                    ).order_by('expired_date')
-            else:
-                item_inventory_queryset = item_inventory.objects.filter(
-                    item=item_description_instance,
-                    qty__gt=0
-                ).order_by('date_received')
-            
-            for item_inventory_instance in item_inventory_queryset:
-                if remaining_amount <= 0:
-                    break
+                    ).order_by('date_received')
+                
+                for item_inventory_instance in item_inventory_queryset:
+                    if remaining_amount <= 0:
+                        break
 
-                if item_inventory_instance.qty >= remaining_amount:
-                    try:
-                        remove_item_from_inventory(item_inventory_instance, remaining_amount, user, 'P', 'Physical Count Adjustment')
-                        remaining_amount = 0
-                    except ValueError as e:
-                        print(e)
-                        break
-                else:
-                    try:
-                        remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, user, 'P', 'Physical Count Adjustment')
-                        remaining_amount -= item_inventory_instance.qty
-                    except ValueError as e:
-                        print(e)
-                        break
-        else:
-            remove_item_from_inventory(inventory, remaining_amount, user, change_type, remark)
+                    if item_inventory_instance.qty >= remaining_amount:
+                        try:
+                            remove_item_from_inventory(item_inventory_instance, remaining_amount, user, 'P', 'Physical Count Adjustment')
+                            remaining_amount = 0
+                        except ValueError as e:
+                            print(e)
+                            break
+                    else:
+                        try:
+                            remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, user, 'P', 'Physical Count Adjustment')
+                            remaining_amount -= item_inventory_instance.qty
+                        except ValueError as e:
+                            logger.error(f"Error removing inventory item {item_inventory_instance.inventory_item_id}: {e}", exc_info=True)
+                            break
+            else:
+                remove_item_from_inventory(inventory, remaining_amount, user, change_type, remark)
+    except Exception as e:
+        logger.error(f"Unexpected error adjusting inventory {inventory}: {e}", exc_info=True)
 
 @login_required
 @lab_permission_required('manage_suppliers')
@@ -1264,36 +1304,40 @@ def inventory_manageSuppliers_view(request):
     if not request.user.is_authenticated:
         return redirect('userlogin')
 
-    selected_laboratory_id = request.session.get('selected_lab')
-    
-    # Annotate suppliers with the count of items supplied in item_inventory
-    lab_suppliers = suppliers.objects.filter(laboratory=selected_laboratory_id, is_disabled=0).annotate(
-        supplied_items_count=models.Count('item_inventory')
-    )
-
-    if request.method == "POST":
-        supplier_name = request.POST.get("supplier_name")
-        contact_person = request.POST.get("contact_person")
-        contact_number = request.POST.get("contact_number") or None
-        supplier_desc = request.POST.get("description")
-        email = request.POST.get("email")
-
-        new_supplier = suppliers(
-            laboratory_id=selected_laboratory_id,
-            supplier_name=supplier_name,
-            contact_person=contact_person,
-            contact_number=contact_number,
-            description=supplier_desc,
-            email=email
+    try:
+        selected_laboratory_id = request.session.get('selected_lab')
+        
+        # Annotate suppliers with the count of items supplied in item_inventory
+        lab_suppliers = suppliers.objects.filter(laboratory=selected_laboratory_id, is_disabled=0).annotate(
+            supplied_items_count=models.Count('item_inventory')
         )
-        new_supplier.save()
-        messages.success(request, 'Supplier added successfully.')
-        return redirect('inventory_manageSuppliers')
 
-    return render(request, 'mod_inventory/inventory_manageSuppliers.html', {
-        'suppliers': lab_suppliers,
-    })
+        if request.method == "POST":
+            supplier_name = request.POST.get("supplier_name")
+            contact_person = request.POST.get("contact_person")
+            contact_number = request.POST.get("contact_number") or None
+            supplier_desc = request.POST.get("description")
+            email = request.POST.get("email")
 
+            new_supplier = suppliers(
+                laboratory_id=selected_laboratory_id,
+                supplier_name=supplier_name,
+                contact_person=contact_person,
+                contact_number=contact_number,
+                description=supplier_desc,
+                email=email
+            )
+            new_supplier.save()
+            messages.success(request, 'Supplier added successfully.')
+            return redirect('inventory_manageSuppliers')
+
+        return render(request, 'mod_inventory/inventory_manageSuppliers.html', {
+            'suppliers': lab_suppliers,
+        })
+    except Exception as e:
+        logger.error(f"Unexpected error in inventory_manageSuppliers_view: {e}", exc_info=True)
+        messages.error(request, "An error occurred. Please try again.")
+        return redirect('home')
 
 @lab_permission_required('manage_suppliers')
 def inventory_supplierDetails_view(request, supplier_id):

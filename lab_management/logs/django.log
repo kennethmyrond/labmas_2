@@ -1,0 +1,11 @@
+WARNING 2025-02-02 14:04:05,502 log Not Found: /favicon.ico
+WARNING 2025-02-02 14:04:05,502 basehttp "GET /favicon.ico HTTP/1.1" 404 36588
+WARNING 2025-02-02 14:13:53,566 views Warning log
+ERROR 2025-02-02 14:13:53,566 views Error log
+WARNING 2025-02-02 14:15:36,780 views Warning log
+ERROR 2025-02-02 14:15:36,780 views Error log
+WARNING 2025-02-02 14:17:01,986 views Warning log
+ERROR 2025-02-02 14:17:01,986 views Error log
+WARNING 2025-02-02 14:17:23,576 views Warning log
+ERROR 2025-02-02 14:17:23,576 views Error log
+WARNING 2025-02-02 14:20:05,651 decorators Unauthorized attempt to access borrow_items by ken uy

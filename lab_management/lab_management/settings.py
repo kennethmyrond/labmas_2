@@ -255,28 +255,56 @@ MESSAGE_TAGS = {
 
 AUTH_USER_MODEL = 'core.user'
 
-# ACCOUNT_LOGOUT_REDIRECT_URL = '/userlogin/'
-# ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # Since you're using custom user model
-# ACCOUNT_EMAIL_REQUIRED = True
-# ACCOUNT_USERNAME_REQUIRED = False
-# ACCOUNT_AUTHENTICATION_METHOD = 'email'
-# ACCOUNT_EMAIL_VERIFICATION = 'none'
-# SOCIALACCOUNT_AUTO_SIGNUP = False
+import os
 
-# ACCOUNT_EMAIL_VERIFICATION = "none"
-# ACCOUNT_EMAIL_REQUIRED = True
-# ACCOUNT_UNIQUE_EMAIL = True
-# SOCIALACCOUNT_LOGIN_ON_GET=True
-
-
-# ACCOUNT_AUTHENTICATION_METHOD = "email" # Defaults to username_email
-# SOCIALACCOUNT_QUERY_EMAIL = ACCOUNT_EMAIL_REQUIRED
-# SOCIALACCOUNT_AUTO_SIGNUP = True
-# SOCIALACCOUNT_EMAIL_REQUIRED = False
-# ACCOUNT_ADAPTER = "core.adapters.MyLoginAccountAdapter"
-# SOCIALACCOUNT_ADAPTER = 'core.adapters.MySocialAccountAdapter'
-
-
-# settings.py
-# SOCIALACCOUNT_ADAPTER = 'core.adapters.MySocialAccountAdapter'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/django.log'),
+            'formatter': 'verbose',
+        },
+        'error_file': {  # Dedicated error log
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/errors.log'),
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console', 'error_file'],
+            'level': 'WARNING',
+            'propagate': True,
+        },
+        'django.security': {
+            'handlers': ['file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'custom_logger': {
+            'handlers': ['file', 'console', 'error_file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 
