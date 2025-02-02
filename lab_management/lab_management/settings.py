@@ -256,6 +256,9 @@ MESSAGE_TAGS = {
 AUTH_USER_MODEL = 'core.user'
 
 import os
+from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
+
+from logging.handlers import TimedRotatingFileHandler  # Import the TimedRotatingFileHandler
 
 LOGGING = {
     'version': 1,
@@ -273,14 +276,20 @@ LOGGING = {
     'handlers': {
         'file': {
             'level': 'WARNING',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.TimedRotatingFileHandler',  # Use TimedRotatingFileHandler
             'filename': os.path.join(BASE_DIR, 'logs/django.log'),
+            'when': 'midnight',  # Rotate daily at midnight
+            'interval': 1,  # Rotate every day
+            'backupCount': 7,  # Keep logs for 7 days
             'formatter': 'verbose',
         },
-        'error_file': {  # Dedicated error log
+        'error_file': {  # Dedicated error log with time-based rotation
             'level': 'ERROR',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.TimedRotatingFileHandler',  # Use TimedRotatingFileHandler
             'filename': os.path.join(BASE_DIR, 'logs/errors.log'),
+            'when': 'midnight',  # Rotate daily at midnight
+            'interval': 1,  # Rotate every day
+            'backupCount': 7,  # Keep logs for 7 days
             'formatter': 'verbose',
         },
         'console': {

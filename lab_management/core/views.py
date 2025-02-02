@@ -601,6 +601,10 @@ def inventory_view(request):
 @login_required
 @lab_permission_required('view_inventory')
 def inventory_itemDetails_view(request, item_id):
+    if not request.user.is_authenticated:
+        logger.warning(f"Unauthorized access attempt to inventory_itemDetails_view by {request.user}")
+        return redirect('userlogin')
+    
     selected_laboratory_id = request.session.get('selected_lab')
 
     logger.info(f"User {request.user.email} is viewing details for item ID: {item_id} in lab {selected_laboratory_id}")
@@ -821,6 +825,7 @@ def inventory_addNewItem_view(request):
 @lab_permission_required('update_item_inventory')
 def inventory_updateItem_view(request):
     if not request.user.is_authenticated:
+        logger.warning(f"Unauthorized access attempt to inventory_updateItem_view by {request.user}")
         return redirect('userlogin')
     
     if request.method == 'POST':
@@ -1117,8 +1122,8 @@ def inventory_itemDelete_view(request, item_id):
 @lab_permission_required('view_inventory')
 def get_item_type_add_cols(request, itemType_id):
     if not request.user.is_authenticated:
-        logger.warning(f"Unauthorized API call to get_item_type_add_cols for itemType {itemType_id} by {request.user}")
-        return JsonResponse({'error': 'Unauthorized'}, status=401)
+        logger.warning(f"Unauthorized attempt to access get_item_type_add_cols by {request.user}")
+        return redirect('userlogin')
     
     try:
         item_type = item_types.objects.get(itemType_id=itemType_id)
@@ -1138,7 +1143,7 @@ def get_item_type_add_cols(request, itemType_id):
 @lab_permission_required('physical_count')
 def inventory_physicalCount_view(request):
     if not request.user.is_authenticated:
-        logger.warning(f"Unauthorized attempt to access inventory_view by {request.user}")
+        logger.warning(f"Unauthorized attempt to access inventory_physicalCount_view by {request.user}")
         return redirect('userlogin')
     
     try:
@@ -1302,6 +1307,7 @@ def adjust_inventory_item(status, inventory, discrepancy_qty, user, change_type,
 @lab_permission_required('manage_suppliers')
 def inventory_manageSuppliers_view(request):
     if not request.user.is_authenticated:
+        logger.warning(f"Unauthorized attempt to access inventory_manageSuppliers_view by {request.user}")
         return redirect('userlogin')
 
     try:
@@ -1341,205 +1347,276 @@ def inventory_manageSuppliers_view(request):
 
 @lab_permission_required('manage_suppliers')
 def inventory_supplierDetails_view(request, supplier_id):
-    if not request.user.is_authenticated:
-        return redirect('userlogin')
+    try:
+        if not request.user.is_authenticated:
+            logger.warning(f"Unauthorized attempt to access inventory_supplierDetails_view by {request.user}")
+            return redirect('userlogin')
 
-    # Get the supplier details using the supplier_id
-    supplier = get_object_or_404(suppliers, suppliers_id=supplier_id)
+        # Get the supplier details using the supplier_id
+        supplier = get_object_or_404(suppliers, suppliers_id=supplier_id)
 
-    # Get item handling entries associated with the supplier
-    item_handling_entries = item_handling.objects.filter(
-        inventory_item__supplier=supplier,
-        changes='A'
-    ).select_related('inventory_item')
+        # Get item handling entries associated with the supplier
+        item_handling_entries = item_handling.objects.filter(
+            inventory_item__supplier=supplier,
+            changes='A'
+        ).select_related('inventory_item')
 
-    if request.method == "POST":
-        if 'edit_supplier' in request.POST:
-            # Handle supplier edit
-            supplier.supplier_name = request.POST.get("supplier_name")
-            supplier.contact_person = request.POST.get("contact_person") or None
-            supplier.contact_number = request.POST.get("contact_number") or None
-            supplier.description = request.POST.get("description") or None
-            supplier.email = request.POST.get("email") or None
-            supplier.save()
-            messages.success(request, 'Supplier details edited successfully.')
-            return redirect('inventory_supplierDetails', supplier_id=supplier.suppliers_id)
-        
-        elif 'disable_supplier' in request.POST:
-            # Handle supplier disable
-            supplier.is_disabled = True
-            supplier.save()
-            messages.success(request, 'Supplier deleted successfully.')
-            return redirect('inventory_manageSuppliers')
+        if request.method == "POST":
+            if 'edit_supplier' in request.POST:
+                try:
+                    # Handle supplier edit
+                    supplier.supplier_name = request.POST.get("supplier_name")
+                    supplier.contact_person = request.POST.get("contact_person") or None
+                    supplier.contact_number = request.POST.get("contact_number") or None
+                    supplier.description = request.POST.get("description") or None
+                    supplier.email = request.POST.get("email") or None
+                    supplier.save()
+                    messages.success(request, 'Supplier details edited successfully.')
+                    return redirect('inventory_supplierDetails', supplier_id=supplier.suppliers_id)
+                except Exception as e:
+                        logger.error(f"Error updating supplier {supplier.supplier_name}: {e}", exc_info=True)
+                        messages.error(request, "Error updating supplier. Please try again.")
 
-    return render(request, 'mod_inventory/inventory_supplierDetails.html', {
-        'supplier': supplier,
-        'item_handling_entries': item_handling_entries,
-    })
+            elif 'disable_supplier' in request.POST:
+                # Handle supplier disable
+                try:
+                    supplier.is_disabled = True
+                    supplier.save()
+                    messages.success(request, 'Supplier deleted successfully.')
+                    return redirect('inventory_manageSuppliers')
+                except Exception as e:
+                        logger.error(f"Error disabling supplier {supplier.supplier_name}: {e}", exc_info=True)
+                        messages.error(request, "Error disabling supplier. Please try again.")
 
+        return render(request, 'mod_inventory/inventory_supplierDetails.html', {
+            'supplier': supplier,
+            'item_handling_entries': item_handling_entries,
+        })
+    except Exception as e:
+        logger.error(f"Unexpected error in inventory_supplierDetails_view: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred. Please try again.")
+        return redirect('inventory_manageSuppliers')
+    
 @login_required
 @lab_permission_required('configure_inventory')
 def inventory_config_view(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
+    try:
+        if not request.user.is_authenticated:
+            logger.warning(f"Unauthorized attempt to access inventory_config_view by {request.user}")
+            return redirect('userlogin')
 
-    # Retrieve the selected laboratory ID from the session
-    selected_lab = request.session.get('selected_lab')
+
+        # Retrieve the selected laboratory ID from the session
+        selected_lab = request.session.get('selected_lab')
+        
+        # Query categories based on the selected laboratory ID
+        if selected_lab:
+            categories = item_types.objects.filter(laboratory_id=selected_lab)
+        else:
+            categories = item_types.objects.none()  # No categories if no lab is selected
+
+        # Get attributes for the first category if it exists
+        attributes = json.loads(categories[0].add_cols) if categories.exists() else []
+
+        # Prepare the context for rendering the template
+        context = {
+            'categories': categories,
+            'attributes': attributes
+        }
+
+        return render(request, 'mod_inventory/inventory_config.html', context)
+    except Exception as e:
+        logger.error(f"Error loading inventory config: {e}", exc_info=True)
+        messages.error(request, "Error loading inventory configuration. Please try again.")
+        return redirect('dashboard')
     
-    # Query categories based on the selected laboratory ID
-    if selected_lab:
-        categories = item_types.objects.filter(laboratory_id=selected_lab)
-    else:
-        categories = item_types.objects.none()  # No categories if no lab is selected
-
-    # Get attributes for the first category if it exists
-    attributes = json.loads(categories[0].add_cols) if categories.exists() else []
-
-    # Prepare the context for rendering the template
-    context = {
-        'categories': categories,
-        'attributes': attributes
-    }
-
-    return render(request, 'mod_inventory/inventory_config.html', context)
-
 @login_required
 @lab_permission_required('configure_inventory')
 def add_category(request):
-    if not request.user.is_authenticated:
-        return redirect('userlogin')
+    try:
+        if not request.user.is_authenticated:
+            logger.warning(f"Unauthorized attempt to access add_category by {request.user}")
+            return redirect('userlogin')
 
-    # Get laboratory_id from the session
-    laboratory_id = request.session.get('selected_lab')
+        # Get laboratory_id from the session
+        laboratory_id = request.session.get('selected_lab')
 
-    if not laboratory_id:
-        messages.error(request, "No laboratory selected.")
-        return redirect('inventory_config')
-
-    if request.method == 'POST':
-        category_name = request.POST.get('category')  # Change 'category_name' to 'category'
-        add_cols = request.POST.get('add_cols')  # Ensure you have this input field in your form
-
-        # Debugging output to check what is received
-        print(f"Received category_name: {category_name}, add_cols: {add_cols}")  
-
-        if not category_name:  # Check if category_name is empty
-            messages.error(request, "Category name cannot be empty.")
+        if not laboratory_id:
+            messages.error(request, "No laboratory selected.")
             return redirect('inventory_config')
 
-        new_category = item_types(
-            laboratory_id=laboratory_id,
-            itemType_name=category_name,
-            # add_cols=add_cols
-        )
-        new_category.save()
+        if request.method == 'POST':
+            category_name = request.POST.get('category')  # Change 'category_name' to 'category'
+            add_cols = request.POST.get('add_cols')  # Ensure you have this input field in your form
 
-        messages.success(request, 'Category added successfully!')
+            # Debugging output to check what is received
+            print(f"Received category_name: {category_name}, add_cols: {add_cols}")  
+
+            if not category_name:  # Check if category_name is empty
+                messages.error(request, "Category name cannot be empty.")
+                return redirect('inventory_config')
+
+            new_category = item_types(
+                laboratory_id=laboratory_id,
+                itemType_name=category_name,
+                # add_cols=add_cols
+            )
+            new_category.save()
+
+            messages.success(request, 'Category added successfully!')
+            return redirect('inventory_config')
+
+        return render(request, 'mod_inventory/add_category.html')
+    except Exception as e:
+        logger.critical(f"Unexpected error in add_category: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred. Please try again.")
         return redirect('inventory_config')
-
-    return render(request, 'mod_inventory/add_category.html')
 
 @login_required
 @lab_permission_required('configure_inventory')
 def delete_category(request, category_id):
-    if request.method == 'POST':
-        category = get_object_or_404(item_types, pk=category_id)
+    try:
+        if not request.user.is_authenticated:
+            logger.warning(f"Unauthorized attempt to access delete_category by {request.user}")
+            return redirect('userlogin')
+    
+        if request.method == 'POST':
+            category = get_object_or_404(item_types, pk=category_id)
 
-        # Optional: Ensure that the category belongs to the selected laboratory
-        selected_lab = request.session.get('selected_lab')
-        if category.laboratory_id != selected_lab:
-            return JsonResponse({'success': False, 'message': "Category does not belong to the selected laboratory."}, status=400)
+            # Optional: Ensure that the category belongs to the selected laboratory
+            selected_lab = request.session.get('selected_lab')
+            if category.laboratory_id != selected_lab:
+                logger.warning(f"Unauthorized attempt to delete category {category_id} by {request.user}")
+                return JsonResponse({'success': False, 'message': "Category does not belong to the selected laboratory."}, status=400)
 
-        category.delete()  # Delete the category from item_types
-        messages.success(request, 'Category deleted successfully!')
-        return JsonResponse({'success': True})
+            category.delete()  # Delete the category from item_types
+            logger.info(f"Category {category_id} deleted by {request.user}")
+            messages.success(request, 'Category deleted successfully!')
+            return JsonResponse({'success': True})
 
-    return JsonResponse({'success': False}, status=400)
+        return JsonResponse({'success': False}, status=400)
+    except Exception as e:
+        logger.error(f"Error deleting category {category_id}: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': "An error occurred while deleting the category."}, status=500)
 
 @login_required
 @lab_permission_required('configure_inventory')
 def add_attributes(request):
-    if request.method == 'POST':
-        category_id = request.POST['category']
-        attribute_name = request.POST['attributeName']
+    try:
+        if not request.user.is_authenticated:
+            logger.warning(f"Unauthorized attempt to access add_attributes by {request.user}")
+            return redirect('userlogin')
         
-        # Gather all fixed values from the inputs
-        fixed_values = request.POST.getlist('fixedValues')
+        if request.method == 'POST':
+            category_id = request.POST['category']
+            attribute_name = request.POST['attributeName']
+            fixed_values = request.POST.getlist('fixedValues')
 
-        category = get_object_or_404(item_types, pk=category_id)
+            category = get_object_or_404(item_types, pk=category_id)
 
-        # Check if the category belongs to the selected laboratory
-        selected_lab = request.session.get('selected_lab')
-        if category.laboratory_id != selected_lab:
-            return JsonResponse({'success': False, 'message': "Category does not belong to the selected laboratory."}, status=400)
+            # Check if the category belongs to the selected laboratory
+            selected_lab = request.session.get('selected_lab')
+            if category.laboratory_id != selected_lab:
+                logger.warning(f"Unauthorized attempt to add attribute to category {category_id} by {request.user}")
+                return JsonResponse({'success': False, 'message': "Category does not belong to the selected laboratory."}, status=400)
 
-        # Initialize add_cols if necessary
-        if category.add_cols is None:
-            add_cols = []  # Initialize to empty list
-        else:
-            add_cols = json.loads(category.add_cols)
+            # Initialize add_cols if necessary
+            if category.add_cols is None:
+                add_cols = []  # Initialize to empty list
+            else:
+                add_cols = json.loads(category.add_cols)
 
-        # Create a combined attribute string with fixed values if any
-        if fixed_values:
-            combined_attribute = f"{attribute_name} ({', '.join(fixed_values)})"
-        else:
-            combined_attribute = attribute_name
+            # Create a combined attribute string with fixed values if any
+            combined_attribute = f"{attribute_name} ({', '.join(fixed_values)})" if fixed_values else attribute_name
 
-        if combined_attribute not in add_cols:  # Prevent duplicate attributes
-            add_cols.append(combined_attribute)
-            category.add_cols = json.dumps(add_cols)
-            category.save()
-            return JsonResponse({'success': True, 'attribute': combined_attribute})
-        else:
-            return JsonResponse({'success': False, 'message': "Attribute already exists."})
+            if combined_attribute not in add_cols:  # Prevent duplicate attributes
+                add_cols.append(combined_attribute)
+                category.add_cols = json.dumps(add_cols)
+                category.save()
+                logger.info(f"Attribute '{combined_attribute}' added to category {category_id} by {request.user}")
+                return JsonResponse({'success': True, 'attribute': combined_attribute})
+            else:
+                return JsonResponse({'success': False, 'message': "Attribute already exists."})
 
-    return JsonResponse({'success': False, 'message': "Invalid request."})
+        return JsonResponse({'success': False, 'message': "Invalid request."})
+    except Exception as e:
+        logger.error(f"Error adding attribute to category {category_id}: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': "An error occurred while adding the attribute."}, status=500)
 
 @login_required
 @lab_permission_required('configure_inventory')
 def get_fixed_choices(request, category_id):
-    category = get_object_or_404(item_types, pk=category_id)
-    return JsonResponse({'fixed_choices': category.fixed_choices})
+    try:
+        if not request.user.is_authenticated:
+            logger.warning(f"Unauthorized attempt to access get_fixed_choices by {request.user}")
+            return redirect('userlogin')
+        
+        category = get_object_or_404(item_types, pk=category_id)
+        return JsonResponse({'fixed_choices': category.fixed_choices})
+    
+    except Exception as e:
+        logger.error(f"Error retrieving fixed choices for category {category_id}: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': "An error occurred while fetching fixed choices."}, status=500)
 
 @login_required
 @lab_permission_required('configure_inventory')
 def delete_attribute(request, category_id, attribute_name):
-    if request.method == 'POST':
-        category = get_object_or_404(item_types, pk=category_id)
+    try:
+        if request.method == 'POST':
+            category = get_object_or_404(item_types, pk=category_id)
 
-        # Check if the category belongs to the selected laboratory
-        selected_lab = request.session.get('selected_lab')
-        if category.laboratory_id != selected_lab:
-            return JsonResponse({'success': False, 'message': "Category does not belong to the selected laboratory."}, status=400)
+            selected_lab = request.session.get('selected_lab')
+            if category.laboratory_id != selected_lab:
+                logger.warning(f"Unauthorized attempt by {request.user} to delete attribute '{attribute_name}' from category {category_id}")
+                return JsonResponse({'success': False, 'message': "Category does not belong to the selected laboratory."}, status=400)
 
-        # Load the current add_cols and ensure it is a valid list
-        try:
-            add_cols = json.loads(category.add_cols) if category.add_cols else []
-        except json.JSONDecodeError:
-            add_cols = []  # Handle case where add_cols might not be valid JSON
-        
-        # Remove the attribute if it exists
-        if attribute_name in add_cols:
-            add_cols.remove(attribute_name)
-            category.add_cols = json.dumps(add_cols)
-            category.save()
-            return JsonResponse({'success': True})
-        else:
-            return JsonResponse({'success': False, 'message': 'Attribute not found.'}, status=404)
+            try:
+                add_cols = json.loads(category.add_cols) if category.add_cols else []
+            except json.JSONDecodeError:
+                add_cols = []
 
-    return JsonResponse({'success': False}, status=400)
+            if attribute_name in add_cols:
+                add_cols.remove(attribute_name)
+                category.add_cols = json.dumps(add_cols)
+                category.save()
+                logger.info(f"Attribute '{attribute_name}' removed from category {category_id} by {request.user}")
+                return JsonResponse({'success': True})
+            else:
+                return JsonResponse({'success': False, 'message': 'Attribute not found.'}, status=404)
+
+        return JsonResponse({'success': False}, status=400)
+
+    except Exception as e:
+        logger.error(f"Error deleting attribute '{attribute_name}' from category {category_id}: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': "An error occurred while deleting the attribute."}, status=500)
 
 @login_required   
 @lab_permission_required('configure_inventory')
 def get_add_cols(request, category_id):
-    category = get_object_or_404(item_types, pk=category_id)
-    add_cols = json.loads(category.add_cols) if category.add_cols else []
-    return JsonResponse({'add_cols': add_cols})
+    try:
+        category = get_object_or_404(item_types, pk=category_id)
+
+        selected_lab = request.session.get('selected_lab')
+        if category.laboratory_id != selected_lab:
+            logger.warning(f"Unauthorized attempt by {request.user} to access add_cols for category {category_id}")
+            return JsonResponse({'success': False, 'message': "Category does not belong to the selected laboratory."}, status=400)
+
+        add_cols = json.loads(category.add_cols) if category.add_cols else []
+        return JsonResponse({'add_cols': add_cols})
+    
+    except Exception as e:
+        logger.error(f"Error retrieving add_cols for category {category_id}: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': "An error occurred while retrieving add_cols."}, status=500)
 
 @login_required
 def inventory_tobuyList(request):
-    return render(request, 'mod_inventory/inventory_tobuyList.html')
-
+    try:
+        return render(request, 'mod_inventory/inventory_tobuyList.html')
+    
+    except Exception as e:
+        logger.error(f"Error rendering to-buy list: {e}", exc_info=True)
+        messages.error(request, "An error occurred while loading the to-buy list.")
+        return redirect('home')  # Redirect user to a safe page if error occurs
 
 
 # =====================================================
@@ -1559,6 +1636,7 @@ def borrowing_student_prebookview(request):
 
         # Check if pre-booking is allowed
         if not lab.allow_prebook:
+            logger.warning(f"Unauthorized prebook attempt by {request.user} in lab {laboratory_id}")
             return render(request, 'error_page.html', {'message': 'Pre-booking is not allowed for this laboratory.'})
 
         # Fetch the prebook-specific questions
@@ -1714,7 +1792,11 @@ def borrowing_student_prebookview(request):
 
 
     except Http404:
+        logger.error(f"Lab not found for user {request.user}")
         return render(request, 'error_page.html', {'message': 'The laboratory was not found.'})
+    except Exception as e:
+        logger.error(f"Unexpected error in borrowing_student_prebookview: {e}", exc_info=True)
+        return render(request, 'error_page.html', {'message': 'An unexpected error occurred. Please try again.'})
 
     return render(request, 'mod_borrowing/borrowing_studentPrebook.html', {
         'current_date': current_date,
@@ -1731,290 +1813,294 @@ def get_items_by_type(request, item_type_id):
         item_list = []
 
         for item in items:
-            # Calculate total quantity for each item
             total_qty = item_inventory.objects.filter(item_id=item.item_id).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
-            
             item_list.append({
                 'item_id': item.item_id,
                 'item_name': item.item_name,
-                'total_qty': total_qty  # Include total quantity in the response
+                'total_qty': total_qty
             })
 
         return JsonResponse(item_list, safe=False)
     except Exception as e:
-        # Log the exception for debugging
-        print(f"Error fetching items: {e}")
-        return JsonResponse({'error': str(e)}, status=500)
+        logger.error(f"Error fetching items for type {item_type_id}: {e}", exc_info=True)
+        return JsonResponse({'error': "Failed to fetch items"}, status=500)
 
 @login_required
-@lab_permission_required('borrow_items') 
+@lab_permission_required('borrow_items')
 def get_quantity_for_item(request, item_id):
     try:
-        # Fetch the total quantity for the specified item_id
         total_quantity = item_inventory.objects.filter(item_id=item_id).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
         return JsonResponse({'total_qty': total_quantity})
     except Exception as e:
-        print(f"Error fetching quantity: {e}")
-        return JsonResponse({'error': str(e)}, status=500)
+        logger.error(f"Error fetching quantity for item {item_id}: {e}", exc_info=True)
+        return JsonResponse({'error': "Failed to fetch quantity"}, status=500)
+
 
 @login_required
 @lab_permission_required('borrow_items')
 def borrowing_student_walkinview(request):
-         
-    current_time = timezone.localtime()  
+    try:
+        current_time = timezone.localtime()  
 
-    # Get session details
-    laboratory_id = request.session.get('selected_lab')
-    user_id = request.user
+        # Get session details
+        laboratory_id = request.session.get('selected_lab')
+        user_id = request.user
 
-    # Fetch the lab's borrowing configuration
-    lab = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
+        # Fetch the lab's borrowing configuration
+        lab = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
 
-    # Check if walk-ins are allowed
-    if not lab.allow_walkin:
-        return render(request, 'error_page.html', {'message': 'Walk-ins are not allowed for this laboratory.'})
+        # Check if walk-ins are allowed
+        if not lab.allow_walkin:
+            return render(request, 'error_page.html', {'message': 'Walk-ins are not allowed for this laboratory.'})
 
-    # Fetch the walk-in-specific questions
-    walkin_questions = lab.get_questions(mode='walkin')
+        # Fetch the walk-in-specific questions
+        walkin_questions = lab.get_questions(mode='walkin')
 
-    # Fetch all inventory items
-    inventory_items = item_description.objects.filter(
-        laboratory_id=laboratory_id,
-        is_disabled=0,
-        allow_borrow=1  # Only get items that can be borrowed
-     ).select_related('itemType').annotate(total_qty=Sum('item_inventory__qty'))
-    
-    # Group items by their itemType
-    items_by_type = {}
-    for item in inventory_items:
-            item_type = item.itemType.itemType_name
-            # Parse add_cols if it exists and is a JSON string
-            add_cols = {}
-            if item.add_cols:
-                try:
-                    add_cols = json.loads(item.add_cols)  # Parse JSON string into a dictionary
-                except ValueError:
-                    add_cols = {}
-            item.add_cols = add_cols  # Attach parsed add_cols to the item object
-
-            if item_type not in items_by_type:
-                items_by_type[item_type] = []
-            items_by_type[item_type].append(item)
-
-    if request.method == 'POST':
-        # request_date = timezone.localtime()
-        # Format the date as "Month DD, YYYY"
-        request_date = current_time.strftime('%Y-%m-%d')
-
-        borrow_date = request_date
-        due_date = request_date
-
-        # Collect responses to the custom walk-in questions
-        custom_question_responses = {}
-        for question in walkin_questions:
-            response = request.POST.get(question['question_text'])
-            custom_question_responses[question['question_text']] = response
-
-        # Insert into core_borrow_info
-        borrow_entry = borrow_info.objects.create(
+        # Fetch all inventory items
+        inventory_items = item_description.objects.filter(
             laboratory_id=laboratory_id,
-            user=user_id,
-            request_date=request_date,
-            borrow_date=borrow_date,
-            due_date=due_date,
-            status='A',  # Set initial status to 'Pending'
-            questions_responses=custom_question_responses  # Save the user's responses to the questions
-        )
-
-        # Process equipment details
-        equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
-        quantities = request.POST.getlist('quantities[]')       # Corresponding quantities
-        units = request.POST.getlist('units[]')
-
-        # Validate equipment quantities and items
-        error_message = None
-        if not equipment_rows:  # If no equipment is selected
-            error_message = 'Please select at least one equipment item to borrow.'
-            return render(request, 'mod_borrowing/borrowing_studentWalkIn.html', {
-                'current_date': request_date,
-                'equipment_list': item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1),
-                'error_message': error_message,
-                'inventory_items': inventory_items,
-                'walkin_questions': walkin_questions,  # Pass walk-in questions back to the template
-                'items_by_type': items_by_type,  # Pass grouped items to the template
-                'lab_config': lab
-            })
-
-       
+            is_disabled=0,
+            allow_borrow=1  # Only get items that can be borrowed
+        ).select_related('itemType').annotate(total_qty=Sum('item_inventory__qty'))
         
-        for i, item_id in enumerate(equipment_rows):
-            try:
-                quantity = int(quantities[i])
-                if quantity <= 0:
-                    error_message = 'Quantity must be greater than 0 for each item.'
-                    break
+        # Group items by their itemType
+        items_by_type = {}
+        for item in inventory_items:
+                item_type = item.itemType.itemType_name
+                # Parse add_cols if it exists and is a JSON string
+                add_cols = {}
+                if item.add_cols:
+                    try:
+                        add_cols = json.loads(item.add_cols)  # Parse JSON string into a dictionary
+                    except ValueError:
+                        add_cols = {}
+                item.add_cols = add_cols  # Attach parsed add_cols to the item object
 
-                # Check if item exists and is borrowable
-                item = item_description.objects.filter(item_id=item_id, is_disabled=0, allow_borrow=1).first()
-                if not item:
-                    error_message = f'Item with ID {item_id} is not available for borrowing.'
-                    break
-            # Check if requested quantity exceeds the qty_limit of the item
-                if item.qty_limit is not None and quantity > item.qty_limit:
-                    error_message = f'Quantity requested for {item.item_name} exceeds the available limit ({item.qty_limit}).'
-                    break
-            except (ValueError, IndexError) as e:
-                error_message = 'Invalid quantity or item ID.'
-                break
+                if item_type not in items_by_type:
+                    items_by_type[item_type] = []
+                items_by_type[item_type].append(item)
 
-        if error_message:
-            return render(request, 'mod_borrowing/borrowing_studentWalkIn.html', {
-                'current_date': request_date,
-                'equipment_list': item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1),
-                'error_message': error_message,
-                'inventory_items': inventory_items,
-                'walkin_questions': walkin_questions,  # Pass walk-in questions back to the template
-                'items_by_type': items_by_type,  # Pass grouped items to the template
-                'lab_config': lab
-            })
+        if request.method == 'POST':
+            # request_date = timezone.localtime()
+            # Format the date as "Month DD, YYYY"
+            request_date = current_time.strftime('%Y-%m-%d')
 
-        # If validation passes, insert items into borrowed_items
-        for i, item_id in enumerate(equipment_rows):
-            quantity = int(quantities[i])
-            unit = units[i]
-            if quantity <= 0:
-                continue  # Skip if quantity is invalid
+            borrow_date = request_date
+            due_date = request_date
 
-            item = item_description.objects.get(item_id=item_id)
+            # Collect responses to the custom walk-in questions
+            custom_question_responses = {}
+            for question in walkin_questions:
+                response = request.POST.get(question['question_text'])
+                custom_question_responses[question['question_text']] = response
 
-            # Check if item already exists in borrowed_items
-            existing_borrowed_item = borrowed_items.objects.filter(borrow=borrow_entry, item=item).first()
-            if existing_borrowed_item:
-                continue  # Skip insertion if it already exists
-
-            # Insert the item into borrowed_items table
-            borrowed_item = borrowed_items.objects.create(
-                borrow=borrow_entry,
-                item=item,
-                qty=quantity,
-                unit=unit
+            # Insert into core_borrow_info
+            borrow_entry = borrow_info.objects.create(
+                laboratory_id=laboratory_id,
+                user=user_id,
+                request_date=request_date,
+                borrow_date=borrow_date,
+                due_date=due_date,
+                status='A',  # Set initial status to 'Pending'
+                questions_responses=custom_question_responses  # Save the user's responses to the questions
             )
 
-        return redirect('borrowing_studentviewPreBookRequests')
+            # Process equipment details
+            equipment_rows = request.POST.getlist('equipment_ids[]')  # List of equipment items
+            quantities = request.POST.getlist('quantities[]')       # Corresponding quantities
+            units = request.POST.getlist('units[]')
 
-    # Fetch the current date and all equipment items including chemicals
-    # current_date = current_time.strftime('%B %d, %Y')
-    current_date = current_time.strftime('%Y-%m-%d')
+            # Validate equipment quantities and items
+            error_message = None
+            if not equipment_rows:  # If no equipment is selected
+                error_message = 'Please select at least one equipment item to borrow.'
+                return render(request, 'mod_borrowing/borrowing_studentWalkIn.html', {
+                    'current_date': request_date,
+                    'equipment_list': item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1),
+                    'error_message': error_message,
+                    'inventory_items': inventory_items,
+                    'walkin_questions': walkin_questions,  # Pass walk-in questions back to the template
+                    'items_by_type': items_by_type,  # Pass grouped items to the template
+                    'lab_config': lab
+                })
 
-    # Get unique item types for dropdown filtering
-    item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
+        
+            
+            for i, item_id in enumerate(equipment_rows):
+                try:
+                    quantity = int(quantities[i])
+                    if quantity <= 0:
+                        error_message = 'Quantity must be greater than 0 for each item.'
+                        break
 
-    # Fetch all equipment items including their total quantities
-    equipment_list = item_description.objects.filter(
-        laboratory_id=laboratory_id,
-        is_disabled=0,
-        allow_borrow=1  # Only include items that can be borrowed
-    ).annotate(total_qty=Sum('item_inventory__qty'))  # Annotate with total quantity
+                    # Check if item exists and is borrowable
+                    item = item_description.objects.filter(item_id=item_id, is_disabled=0, allow_borrow=1).first()
+                    if not item:
+                        error_message = f'Item with ID {item_id} is not available for borrowing.'
+                        break
+                # Check if requested quantity exceeds the qty_limit of the item
+                    if item.qty_limit is not None and quantity > item.qty_limit:
+                        error_message = f'Quantity requested for {item.item_name} exceeds the available limit ({item.qty_limit}).'
+                        break
+                except (ValueError, IndexError) as e:
+                    error_message = 'Invalid quantity or item ID.'
+                    break
 
-    # Get all item types for the selected laboratory
-    item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
+            if error_message:
+                return render(request, 'mod_borrowing/borrowing_studentWalkIn.html', {
+                    'current_date': request_date,
+                    'equipment_list': item_description.objects.filter(laboratory_id=laboratory_id, is_disabled=0, allow_borrow=1),
+                    'error_message': error_message,
+                    'inventory_items': inventory_items,
+                    'walkin_questions': walkin_questions,  # Pass walk-in questions back to the template
+                    'items_by_type': items_by_type,  # Pass grouped items to the template
+                    'lab_config': lab
+                })
 
-    # Fetch inventory items and order them by item type name
-    inventory_items = item_description.objects.filter(
-        laboratory_id=laboratory_id,
-        is_disabled=0,  # Only get items that are enabled
-        allow_borrow=1  # Only get items that can be borrowed
-    ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
-    inventory_items = inventory_items.select_related('itemType').order_by('itemType__itemType_name')  # Order by itemType name
+            # If validation passes, insert items into borrowed_items
+            for i, item_id in enumerate(equipment_rows):
+                quantity = int(quantities[i])
+                unit = units[i]
+                if quantity <= 0:
+                    continue  # Skip if quantity is invalid
 
-    return render(request, 'mod_borrowing/borrowing_studentWalkIn.html', {
-        'current_date': current_date,
-        'equipment_list': equipment_list,
-        'item_types': item_types_list,  # Pass item types to the template
-        'inventory_items': inventory_items,
-        'walkin_questions': walkin_questions,  # Pass the walk-in questions to the template
-        'items_by_type': items_by_type,  # Pass grouped items to the template
-    })
+                item = item_description.objects.get(item_id=item_id)
+
+                # Check if item already exists in borrowed_items
+                existing_borrowed_item = borrowed_items.objects.filter(borrow=borrow_entry, item=item).first()
+                if existing_borrowed_item:
+                    continue  # Skip insertion if it already exists
+
+                # Insert the item into borrowed_items table
+                borrowed_item = borrowed_items.objects.create(
+                    borrow=borrow_entry,
+                    item=item,
+                    qty=quantity,
+                    unit=unit
+                )
+            logger.info(f"Walk-in request created successfully by {request.user} in lab {laboratory_id}")
+            return redirect('borrowing_studentviewPreBookRequests')
+
+        # Fetch the current date and all equipment items including chemicals
+        # current_date = current_time.strftime('%B %d, %Y')
+        current_date = current_time.strftime('%Y-%m-%d')
+
+        # Get unique item types for dropdown filtering
+        item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
+
+        # Fetch all equipment items including their total quantities
+        equipment_list = item_description.objects.filter(
+            laboratory_id=laboratory_id,
+            is_disabled=0,
+            allow_borrow=1  # Only include items that can be borrowed
+        ).annotate(total_qty=Sum('item_inventory__qty'))  # Annotate with total quantity
+
+        # Get all item types for the selected laboratory
+        item_types_list = item_types.objects.filter(laboratory_id=laboratory_id)
+
+        # Fetch inventory items and order them by item type name
+        inventory_items = item_description.objects.filter(
+            laboratory_id=laboratory_id,
+            is_disabled=0,  # Only get items that are enabled
+            allow_borrow=1  # Only get items that can be borrowed
+        ).annotate(total_qty=Sum('item_inventory__qty'))  # Calculate total quantity
+        inventory_items = inventory_items.select_related('itemType').order_by('itemType__itemType_name')  # Order by itemType name
+
+        return render(request, 'mod_borrowing/borrowing_studentWalkIn.html', {
+            'current_date': current_date,
+            'equipment_list': equipment_list,
+            'item_types': item_types_list,  # Pass item types to the template
+            'inventory_items': inventory_items,
+            'walkin_questions': walkin_questions,  # Pass the walk-in questions to the template
+            'items_by_type': items_by_type,  # Pass grouped items to the template
+        })
+    except Exception as e:
+        logger.error(f"Unexpected error in borrowing_student_walkinview: {e}", exc_info=True)
+        return render(request, 'error_page.html', {'message': 'An unexpected error occurred. Please try again.'})
 
 @login_required
 @lab_permission_required('borrow_items')
 def borrowing_student_viewPreBookRequestsview(request):
-    if not request.user.is_authenticated:
-        return redirect('userlogin')
+    try:
+        if not request.user.is_authenticated:
+            logger.warning(f"Unauthorized access attempt to Pre-Book Requests by {request.user}")
+            return redirect('userlogin')
 
-    current_user = request.user
+        current_user = request.user
 
-    # Get the borrowing configuration for the laboratory
-    laboratory_id = request.session.get('selected_lab')
-    lab_config = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
+        # Get the borrowing configuration for the laboratory
+        laboratory_id = request.session.get('selected_lab')
+        lab_config = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
 
-    # Filter borrow_info based on statuses
-    prebook_requests = borrow_info.objects.annotate(
-        truncated_request_date=TruncDate('request_date')
-    ).filter(
-        user=current_user,
-        request_date__isnull=False,
-        borrow_date__isnull=False
-    ).exclude(
-        truncated_request_date=F('borrow_date')  # Exclude same-day requests (walk-ins)
-    ).order_by('-request_date')
+        # Filter borrow_info based on statuses
+        prebook_requests = borrow_info.objects.annotate(
+            truncated_request_date=TruncDate('request_date')
+        ).filter(
+            user=current_user,
+            request_date__isnull=False,
+            borrow_date__isnull=False
+        ).exclude(
+            truncated_request_date=F('borrow_date')  # Exclude same-day requests (walk-ins)
+        ).order_by('-request_date')
 
-    # Walk-in requests: where request_date == borrow_date
-    walkin_requests = borrow_info.objects.annotate(
-        request_date_only=TruncDate('request_date'),
-        borrow_date_only=TruncDate('borrow_date')
-    ).filter(
-        user=current_user,
-        request_date_only=F('borrow_date_only'),
-        request_date__isnull=False,
-        borrow_date__isnull=False
-    ).order_by('-request_date')
+        # Walk-in requests: where request_date == borrow_date
+        walkin_requests = borrow_info.objects.annotate(
+            request_date_only=TruncDate('request_date'),
+            borrow_date_only=TruncDate('borrow_date')
+        ).filter(
+            user=current_user,
+            request_date_only=F('borrow_date_only'),
+            request_date__isnull=False,
+            borrow_date__isnull=False
+        ).order_by('-request_date')
 
-    walkin_requests = borrow_info.objects.extra(
-        select={
-            'request_date_only': "DATE(request_date)",
-            'borrow_date_only': "DATE(borrow_date)"
-        },
-        where=["DATE(request_date) = DATE(borrow_date)"]
-    ).filter(
-        user=current_user,
-        request_date__isnull=False,
-        borrow_date__isnull=False
-    ).order_by('-request_date')
+        walkin_requests = borrow_info.objects.extra(
+            select={
+                'request_date_only': "DATE(request_date)",
+                'borrow_date_only': "DATE(borrow_date)"
+            },
+            where=["DATE(request_date) = DATE(borrow_date)"]
+        ).filter(
+            user=current_user,
+            request_date__isnull=False,
+            borrow_date__isnull=False
+        ).order_by('-request_date')
 
-    # Filter pre-book requests by status
-    pending_requests = prebook_requests.filter(status='P')
-    accepted_requests = prebook_requests.filter(status='A')
-    declined_requests = prebook_requests.filter(status='D')
-    borrowed_requests = prebook_requests.filter(status='B')
-    cancelled_requests = prebook_requests.filter(status='C')
-    completed_requests = prebook_requests.filter(status='X')
+        # Filter pre-book requests by status
+        pending_requests = prebook_requests.filter(status='P')
+        accepted_requests = prebook_requests.filter(status='A')
+        declined_requests = prebook_requests.filter(status='D')
+        borrowed_requests = prebook_requests.filter(status='B')
+        cancelled_requests = prebook_requests.filter(status='C')
+        completed_requests = prebook_requests.filter(status='X')
 
-    # Walk-in request statuses
-    walkin_pending_requests = walkin_requests.filter(status='P')
-    walkin_accepted_requests = walkin_requests.filter(status='A')
-    walkin_declined_requests = walkin_requests.filter(status='D')
-    walkin_borrowed_requests = walkin_requests.filter(status='B')
-    walkin_cancelled_requests = walkin_requests.filter(status='C')
-    walkin_completed_requests = walkin_requests.filter(status='X')
+        # Walk-in request statuses
+        walkin_pending_requests = walkin_requests.filter(status='P')
+        walkin_accepted_requests = walkin_requests.filter(status='A')
+        walkin_declined_requests = walkin_requests.filter(status='D')
+        walkin_borrowed_requests = walkin_requests.filter(status='B')
+        walkin_cancelled_requests = walkin_requests.filter(status='C')
+        walkin_completed_requests = walkin_requests.filter(status='X')
 
-    return render(request, 'mod_borrowing/borrowing_studentViewPreBookRequests.html', {
-        'pending_requests': pending_requests,
-        'accepted_requests': accepted_requests,
-        'declined_requests': declined_requests,
-        'borrowed_requests': borrowed_requests,
-        'cancelled_requests': cancelled_requests,
-        'completed_requests': completed_requests,
-        'walkin_pending_requests': walkin_pending_requests,
-        'walkin_accepted_requests': walkin_accepted_requests,
-        'walkin_declined_requests': walkin_declined_requests,
-        'walkin_borrowed_requests': walkin_borrowed_requests,
-        'walkin_cancelled_requests': walkin_cancelled_requests,
-        'walkin_completed_requests': walkin_completed_requests,
-        'lab_config': lab_config,  # Pass borrowing config to template
-        'prebook_requests_all': prebook_requests,
-    })
-# @require_POST
+        return render(request, 'mod_borrowing/borrowing_studentViewPreBookRequests.html', {
+            'pending_requests': pending_requests,
+            'accepted_requests': accepted_requests,
+            'declined_requests': declined_requests,
+            'borrowed_requests': borrowed_requests,
+            'cancelled_requests': cancelled_requests,
+            'completed_requests': completed_requests,
+            'walkin_pending_requests': walkin_pending_requests,
+            'walkin_accepted_requests': walkin_accepted_requests,
+            'walkin_declined_requests': walkin_declined_requests,
+            'walkin_borrowed_requests': walkin_borrowed_requests,
+            'walkin_cancelled_requests': walkin_cancelled_requests,
+            'walkin_completed_requests': walkin_completed_requests,
+            'lab_config': lab_config,  # Pass borrowing config to template
+            'prebook_requests_all': prebook_requests,
+        })
+    except Exception as e:
+        logger.error(f"Unexpected error in borrowing_student_viewPreBookRequestsview: {e}", exc_info=True)
+        return render(request, 'error_page.html', {'message': 'An unexpected error occurred. Please try again.'})
 
 @login_required
 @lab_permission_required('borrow_items')
@@ -2028,78 +2114,113 @@ def cancel_borrow_request(request):
         if borrow_entry.status == 'P':
             borrow_entry.status = 'C'  # Canceled
             borrow_entry.save()
+            logger.info(f"Borrow request {borrow_id} canceled by {request.user}")
             return JsonResponse({'success': True, 'message': 'Request successfully canceled.'})
         return JsonResponse({'success': False, 'message': 'Only pending requests can be canceled.'})
     except borrow_info.DoesNotExist:
+        logger.error(f"Attempt to cancel non-existent borrow request {borrow_id} by {request.user}", exc_info=True)
         return JsonResponse({'success': False, 'message': 'Request not found.'})
+
+    except Exception as e:
+        logger.error(f"Unexpected error in cancel_borrow_request: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': 'An unexpected error occurred.'})
 
 @login_required
 @lab_permission_required('borrow_items')
 def borrowing_student_WalkInRequestsview(request):
-    if not request.user.is_authenticated:
-        return redirect('userlogin')
+    try:
+        if not request.user.is_authenticated:
+            return redirect('userlogin')
 
-    current_user = request.user
+        current_user = request.user
 
-    # Annotate the request date as truncated date (without time) and exclude records where dates match
-    prebook_requests = borrow_info.objects.annotate(
-        truncated_request_date=TruncDate('request_date')
-    ).filter(
-        user=current_user,
-        request_date__isnull=False,
-        borrow_date__isnull=False
-    ).exclude(
-        truncated_request_date=F('borrow_date')
-    ).order_by('-request_date')
+        # Annotate the request date as truncated date (without time) and exclude records where dates match
+        prebook_requests = borrow_info.objects.annotate(
+            truncated_request_date=TruncDate('request_date')
+        ).filter(
+            user=current_user,
+            request_date__isnull=False,
+            borrow_date__isnull=False
+        ).exclude(
+            truncated_request_date=F('borrow_date')
+        ).order_by('-request_date')
 
-    return render(request, 'mod_borrowing/borrowing_studentViewWalkInRequests.html', {
-        'prebook_requests': prebook_requests,
-    })
+        return render(request, 'mod_borrowing/borrowing_studentViewWalkInRequests.html', {
+            'prebook_requests': prebook_requests,
+        })
+    except Exception as e:
+        logger.error(f"Error fetching walk-in requests for {request.user}: {e}", exc_info=True)
+        return render(request, 'error_page.html', {'message': 'An unexpected error occurred.'})
 
 @login_required
 @lab_permission_required('borrow_items')
 def borrowing_student_detailedPreBookRequestsview(request, borrow_id):
-    if not request.user.is_authenticated:
-        return redirect('userlogin')
+    try:
+        if not request.user.is_authenticated:
+            return redirect('userlogin')
 
-    # Get the borrow_info instance using the borrow_id
-    borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id)
+        # Get the borrow_info instance using the borrow_id
+        borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id)
 
-    # Get all the items that were borrowed under this request
-    borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_request)
-    qr_data = f"{borrow_id}"
-    qr_details = f"{borrow_id}"
-    qr_code_data_borrowid = generate_qr_code(qr_data, qr_details)
+        # Get all the items that were borrowed under this request
+        borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_request)
+        qr_data = f"{borrow_id}"
+        qr_details = f"{borrow_id}"
+        qr_code_data_borrowid = generate_qr_code(qr_data, qr_details)
 
-    return render(request, 'mod_borrowing/borrowing_studentDetailedPreBookRequests.html', {
-        'borrow_request': borrow_request,
-        'borrowed_items': borrowed_items_list,
-        'qrcode': qr_code_data_borrowid,
-    })
+        return render(request, 'mod_borrowing/borrowing_studentDetailedPreBookRequests.html', {
+            'borrow_request': borrow_request,
+            'borrowed_items': borrowed_items_list,
+            'qrcode': qr_code_data_borrowid,
+        })
+    except Http404:
+        logger.warning(f"User {request.user} tried to access non-existent borrow ID {borrow_id}")
+        return render(request, 'error_page.html', {'message': 'Borrow request not found.'})
 
+    except Exception as e:
+        logger.error(f"Error in borrowing_student_detailedPreBookRequestsview for {request.user}: {e}", exc_info=True)
+        return render(request, 'error_page.html', {'message': 'An unexpected error occurred.'})
+
+    
 @login_required
 @lab_permission_required('borrow_items')
 def borrowing_student_detailedWalkInRequestsview(request):
-    if not request.user.is_authenticated:
-        return redirect('userlogin')
+    try: 
+        if not request.user.is_authenticated:
+            return redirect('userlogin')
 
-    # Get the borrow_info instance using the borrow_id
-    borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id)
+        # Get the borrow_info instance using the borrow_id
+        borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id)
 
-    # Get all the items that were borrowed under this request
-    borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_request)
+        # Get all the items that were borrowed under this request
+        borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_request)
 
-    return render(request, 'mod_borrowing/borrowing_studentDetailedWalkInRequests.html', {
-        'borrow_request': borrow_request,
-        'borrowed_items': borrowed_items_list,
-    })
+        return render(request, 'mod_borrowing/borrowing_studentDetailedWalkInRequests.html', {
+            'borrow_request': borrow_request,
+            'borrowed_items': borrowed_items_list,
+        })
+    except Http404:
+        logger.warning(f"User {request.user} tried to access non-existent walk-in request {borrow_id}")
+        return render(request, 'error_page.html', {'message': 'Walk-in request not found.'})
 
+    except Exception as e:
+        logger.error(f"Error in borrowing_student_detailedWalkInRequestsview for {request.user}: {e}", exc_info=True)
+        return render(request, 'error_page.html', {'message': 'An unexpected error occurred.'})
+
+    
 def create_notification(user, message):
-    Notification.objects.create(user=user, message=message)
+    try:
+        Notification.objects.create(user=user, message=message)
+        logger.info(f"Notification created for {user}: {message}")
+    except Exception as e:
+        logger.error(f"Failed to create notification for {user}: {e}", exc_info=True)
     
 def get_notifications(request):
-    # Only get unread notifications for the user
-    return Notification.objects.filter(user=request.user, is_read=False)
+    try:
+        return Notification.objects.filter(user=request.user, is_read=False)
+    except Exception as e:
+        logger.error(f"Error fetching notifications for {request.user}: {e}", exc_info=True)
+        return Notification.objects.none()
 
 
 # View to mark all notifications as read
@@ -2117,273 +2238,290 @@ def mark_all_notifications_read(request):
 @login_required
 @lab_permission_required('view_booking_requests')
 def borrowing_labcoord_prebookrequests(request):
-    selected_laboratory_id = request.session.get('selected_lab')
-    if not request.user.is_authenticated:
-        return redirect('userlogin')
+    try:
+        selected_laboratory_id = request.session.get('selected_lab')
+        if not request.user.is_authenticated:
+            logger.warning(f"Unauthorized attempt to access borrowing_labcoord_prebookrequests by {request.user}")
+            return redirect('userlogin')
 
-    # Get selected status from the GET request, default to 'P' (Pending)
-    selected_status = request.GET.get('status', 'P')
+        # Get selected status from the GET request, default to 'P' (Pending)
+        selected_status = request.GET.get('status', 'P')
 
-    # Filter borrowing requests based on the selected status
-    if selected_status == 'all':
-        borrowing_requests = borrow_info.objects.filter(laboratory_id=selected_laboratory_id).order_by('request_date')
-    else:
-        borrowing_requests = borrow_info.objects.filter(laboratory_id=selected_laboratory_id, status=selected_status).order_by('request_date')
+        # Filter borrowing requests based on the selected status
+        if selected_status == 'all':
+            borrowing_requests = borrow_info.objects.filter(laboratory_id=selected_laboratory_id).order_by('request_date')
+        else:
+            borrowing_requests = borrow_info.objects.filter(laboratory_id=selected_laboratory_id, status=selected_status).order_by('request_date')
 
-    # Check if there are new requests that have not yet been notified
-    new_requests = borrow_info.objects.filter(
-        laboratory_id=selected_laboratory_id, 
-        status='P', 
-        request_date__gte=timezone.now()-timezone.timedelta(minutes=5), 
-        notification_sent=False
-    )
+        # Check if there are new requests that have not yet been notified
+        new_requests = borrow_info.objects.filter(
+            laboratory_id=selected_laboratory_id, 
+            status='P', 
+            request_date__gte=timezone.now()-timezone.timedelta(minutes=5), 
+            notification_sent=False
+        )
 
-    # Send notifications for new borrow requests
-    for borrow_request in new_requests:
-        message = f"New borrow request for borrow ID: {borrow_request.borrow_id}"
-        create_notification(request.user, message)
+        # Send notifications for new borrow requests
+        for borrow_request in new_requests:
+            message = f"New borrow request for borrow ID: {borrow_request.borrow_id}"
+            create_notification(request.user, message)
 
-        # Mark the borrow request as having been notified
-        borrow_request.notification_sent = True
-        borrow_request.save()
-
-    # Handle POST request for approval or rejection of borrow requests
-    if request.method == 'POST':
-        # Get borrow_id and action from form submission
-        borrow_id = request.POST.get('borrow_id')
-        action = request.POST.get('action')
-
-        # Retrieve the borrow_info object
-        borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id)
-
-        # Update status based on the action
-        if action == 'approve':
-            borrow_request.status = 'A'
-            borrow_request.approved_by = request.user  # Set the approving lab coordinator
+            # Mark the borrow request as having been notified
+            borrow_request.notification_sent = True
             borrow_request.save()
-            messages.success(request, f"Borrow request {borrow_id} has been approved.")
-        elif action == 'reject':
-            borrow_request.status = 'D'
-            borrow_request.approved_by = request.user
-            borrow_request.save()
-            messages.success(request, f"Borrow request {borrow_id} has been declined.")
 
-        return redirect('borrowing_labcoord_prebookrequests')
+        # Handle POST request for approval or rejection of borrow requests
+        if request.method == 'POST':
+            # Get borrow_id and action from form submission
+            borrow_id = request.POST.get('borrow_id')
+            action = request.POST.get('action')
 
-    # Get updated notifications count and list
-    notifications = get_notifications(request)
+            # Retrieve the borrow_info object
+            borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id)
 
-    return render(request, 'mod_borrowing/borrowing_labcoord_prebookrequests.html', {
-        'borrowing_requests': borrowing_requests,
-        'selected_status': selected_status,  # Pass the selected status to the template
-        'notifications': notifications,
-    })
+            # Update status based on the action
+            if action == 'approve':
+                borrow_request.status = 'A'
+                borrow_request.approved_by = request.user  # Set the approving lab coordinator
+                borrow_request.save()
+                messages.success(request, f"Borrow request {borrow_id} has been approved.")
+            elif action == 'reject':
+                borrow_request.status = 'D'
+                borrow_request.approved_by = request.user
+                borrow_request.save()
+                messages.success(request, f"Borrow request {borrow_id} has been declined.")
+
+            return redirect('borrowing_labcoord_prebookrequests')
+
+        # Get updated notifications count and list
+        notifications = get_notifications(request)
+
+        return render(request, 'mod_borrowing/borrowing_labcoord_prebookrequests.html', {
+            'borrowing_requests': borrowing_requests,
+            'selected_status': selected_status,  # Pass the selected status to the template
+            'notifications': notifications,
+        })
+    
+    except Exception as e:
+        logger.error(f"Error in borrowing_labcoord_prebookrequests for {request.user}: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred while fetching booking requests.")
+        return redirect('home')
 
 @login_required
 @lab_permission_required('configure_borrowing')
 def borrowing_labcoord_borrowconfig(request):
-    selected_laboratory_id = request.session.get('selected_lab')
-    items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
+    try: 
+        selected_laboratory_id = request.session.get('selected_lab')
+        items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
 
-    # Fetch the current total quantity from item_inventory for each item
-    items_with_qty = []
-    for item in items:
-        # Retrieve and sum all qty values for each item from item_inventory
-        total_qty = item_inventory.objects.filter(item_id=item.item_id).aggregate(total_qty=models.Sum('qty'))['total_qty']
-        current_quantity = total_qty if total_qty else 0  # Default to 0 if no inventory entry exists
+        # Fetch the current total quantity from item_inventory for each item
+        items_with_qty = []
+        for item in items:
+            # Retrieve and sum all qty values for each item from item_inventory
+            total_qty = item_inventory.objects.filter(item_id=item.item_id).aggregate(total_qty=models.Sum('qty'))['total_qty']
+            current_quantity = total_qty if total_qty else 0  # Default to 0 if no inventory entry exists
 
-        item.current_quantity = current_quantity  # Attach current quantity to item
-        items_with_qty.append(item)
+            item.current_quantity = current_quantity  # Attach current quantity to item
+            items_with_qty.append(item)
 
-    item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
-    
-    lab, created = borrowing_config.objects.get_or_create(laboratory_id=selected_laboratory_id)
-
-    # Annotate each item type to check if all items under it are borrowable
-    # for type in item_types_list:
-    #     type.all_items_borrowable = item_description.objects.filter(itemType_id=type.itemType_id, allow_borrow=False).count() == 0
-    #     type.all_items_consumable = item_description.objects.filter(itemType_id=type.itemType_id, is_consumable=False).count() == 0
-
-    if request.method == 'POST':
-        if 'lab_config_form' in request.POST:
-            lab.allow_walkin = 'allow_walkin' in request.POST
-            lab.allow_prebook = 'allow_prebook' in request.POST
-            lab.prebook_lead_time = request.POST.get('prebook_lead_time') or 0
-            lab.allow_shortterm = 'allow_shortterm' in request.POST
-            lab.allow_longterm = 'allow_longterm' in request.POST
-            lab.save()
-            messages.success(request, 'Borrowing configurations updated successfully!')
-            return redirect('borrowing_labcoord_borrowconfig')
-
-        elif 'borrow_config_form' in request.POST:
-            borrowMode = request.POST.get('borrowMode')
-            if borrowMode == 'item':
-                allowed_items = request.POST.getlist('borrow_item')  # Items explicitly checked
-                is_consumable_list = request.POST.getlist('is_consumable')
-                
-                # Update logic
-                items.update(allow_borrow=0, is_consumable=0)
-
-                # Handle individual items: Set allow_borrow=True and is_consumable=True for explicitly checked items
-                if allowed_items:
-                    item_description.objects.filter(item_id__in=allowed_items).update(allow_borrow=True)
-                if is_consumable_list:
-                    item_description.objects.filter(item_id__in=is_consumable_list).update(is_consumable=True)
-
-                # Validate and update qty_limit for each item
-                for item in items_with_qty:
-                    qty_limit = request.POST.get(f'qty_limit_{item.item_id}')
-                    if qty_limit is not None:
-                        qty_limit = int(qty_limit) if qty_limit else None
-                        
-                        # Check if qty_limit exceeds the current quantity
-                        if qty_limit and qty_limit > item.current_quantity:
-                            messages.error(request, f"Quantity limit for item '{item.item_name}' exceeds the available quantity of {item.current_quantity}.")
-                            return redirect('borrowing_labcoord_borrowconfig')  # Redirect with error
-                        # Save the qty_limit
-                        # item.qty_limit = qty_limit
-                        # item.save()
-
-                        item_description.objects.filter(item_id=item.item_id).update(qty_limit=qty_limit)
-
-            else:
-                allowed_item_types = request.POST.getlist('borrow_item_type')  # Item types explicitly checked
-                is_consumable_type_list = request.POST.getlist('is_consumable_type')
-
-                print(allowed_item_types)
-                print(is_consumable_type_list)
-                
-                # Handle item types: Set allow_borrow=True for all items under the checked item types
-                if allowed_item_types:
-                    item_description.objects.filter(itemType_id__in=allowed_item_types).update(allow_borrow=True)
-                    for type in item_types_list:
-                        # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
-                        if str(type.itemType_id) in allowed_item_types:
-                            item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=True)
-                        # else:
-                        #     # If unchecked, ensure items under this type are set to allow_borrow=False and is_consumable=False
-                        #     item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=False)
-                
-                if is_consumable_type_list:
-                    item_description.objects.filter(itemType_id__in=is_consumable_type_list).update(is_consumable=True)
-                    for type in item_types_list:
-                        # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
-                        if str(type.itemType_id) in is_consumable_type_list:
-                            item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=True)
-                        # else:
-                        #     item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=False)
-                    
-            messages.success(request, "Borrowing configuration updated successfully!")
-            return redirect('borrowing_labcoord_borrowconfig')
+        item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
         
-        elif 'add_question_form' in request.POST:
-            question_text = request.POST.get('question_text')
-            input_type = request.POST.get('input_type')
-            borrowing_mode = request.POST.get('borrowing_mode')  # New: borrow mode (walk-in, pre-book, both)
-            dropdown_choices = request.POST.get('dropdown_choices', '').split(',') if input_type == 'dropdown' else None
+        lab, created = borrowing_config.objects.get_or_create(laboratory_id=selected_laboratory_id)
 
-            lab.add_question(question_text, input_type, borrowing_mode, dropdown_choices)
-            messages.success(request, 'Question added successfully!')
-            return redirect('borrowing_labcoord_borrowconfig')
+        # Annotate each item type to check if all items under it are borrowable
+        # for type in item_types_list:
+        #     type.all_items_borrowable = item_description.objects.filter(itemType_id=type.itemType_id, allow_borrow=False).count() == 0
+        #     type.all_items_consumable = item_description.objects.filter(itemType_id=type.itemType_id, is_consumable=False).count() == 0
 
-        elif 'update_question_form' in request.POST:
-            index = int(request.POST.get('question_index'))
-            question_text = request.POST.get('question_text')
-            input_type = request.POST.get('input_type')
-            borrowing_mode = request.POST.get('borrowing_mode')  # New: borrow mode (walk-in, pre-book, both)
-            dropdown_choices = request.POST.get('dropdown_choices', '').split(',') if input_type == 'dropdown' else None
+        if request.method == 'POST':
+            if 'lab_config_form' in request.POST:
+                lab.allow_walkin = 'allow_walkin' in request.POST
+                lab.allow_prebook = 'allow_prebook' in request.POST
+                lab.prebook_lead_time = request.POST.get('prebook_lead_time') or 0
+                lab.allow_shortterm = 'allow_shortterm' in request.POST
+                lab.allow_longterm = 'allow_longterm' in request.POST
+                lab.save()
+                messages.success(request, 'Borrowing configurations updated successfully!')
+                return redirect('borrowing_labcoord_borrowconfig')
 
-            lab.update_question(index, question_text, input_type, borrowing_mode, dropdown_choices)
-            messages.success(request, 'Question updated successfully!')
-            return redirect('borrowing_labcoord_borrowconfig')
+            elif 'borrow_config_form' in request.POST:
+                borrowMode = request.POST.get('borrowMode')
+                if borrowMode == 'item':
+                    allowed_items = request.POST.getlist('borrow_item')  # Items explicitly checked
+                    is_consumable_list = request.POST.getlist('is_consumable')
+                    
+                    # Update logic
+                    items.update(allow_borrow=0, is_consumable=0)
 
-        elif 'remove_question_form' in request.POST:
-            index = int(request.POST.get('question_index'))
+                    # Handle individual items: Set allow_borrow=True and is_consumable=True for explicitly checked items
+                    if allowed_items:
+                        item_description.objects.filter(item_id__in=allowed_items).update(allow_borrow=True)
+                    if is_consumable_list:
+                        item_description.objects.filter(item_id__in=is_consumable_list).update(is_consumable=True)
 
-            lab.remove_question(index)
-            messages.success(request, 'Question removed successfully!')
-            return redirect('borrowing_labcoord_borrowconfig')
+                    # Validate and update qty_limit for each item
+                    for item in items_with_qty:
+                        qty_limit = request.POST.get(f'qty_limit_{item.item_id}')
+                        if qty_limit is not None:
+                            qty_limit = int(qty_limit) if qty_limit else None
+                            
+                            # Check if qty_limit exceeds the current quantity
+                            if qty_limit and qty_limit > item.current_quantity:
+                                messages.error(request, f"Quantity limit for item '{item.item_name}' exceeds the available quantity of {item.current_quantity}.")
+                                return redirect('borrowing_labcoord_borrowconfig')  # Redirect with error
+                            # Save the qty_limit
+                            # item.qty_limit = qty_limit
+                            # item.save()
 
-    return render(request, 'mod_borrowing/borrowing_labcoord_borrowconfig.html', {
-        'items': items_with_qty,
-        'item_types_list': item_types_list,
-        'lab': lab,
-        'questions': lab.get_questions()  # Get the questions to display them
-    })
+                            item_description.objects.filter(item_id=item.item_id).update(qty_limit=qty_limit)
 
+                else:
+                    allowed_item_types = request.POST.getlist('borrow_item_type')  # Item types explicitly checked
+                    is_consumable_type_list = request.POST.getlist('is_consumable_type')
+
+                    print(allowed_item_types)
+                    print(is_consumable_type_list)
+                    
+                    # Handle item types: Set allow_borrow=True for all items under the checked item types
+                    if allowed_item_types:
+                        item_description.objects.filter(itemType_id__in=allowed_item_types).update(allow_borrow=True)
+                        for type in item_types_list:
+                            # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
+                            if str(type.itemType_id) in allowed_item_types:
+                                item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=True)
+                            # else:
+                            #     # If unchecked, ensure items under this type are set to allow_borrow=False and is_consumable=False
+                            #     item_description.objects.filter(itemType_id=type.itemType_id).update(allow_borrow=False)
+                    
+                    if is_consumable_type_list:
+                        item_description.objects.filter(itemType_id__in=is_consumable_type_list).update(is_consumable=True)
+                        for type in item_types_list:
+                            # If the item type is checked in the form, mark all items under this type as borrowable and update consumable status
+                            if str(type.itemType_id) in is_consumable_type_list:
+                                item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=True)
+                            # else:
+                            #     item_description.objects.filter(itemType_id=type.itemType_id).update(is_consumable=False)
+                        
+                messages.success(request, "Borrowing configuration updated successfully!")
+                return redirect('borrowing_labcoord_borrowconfig')
+            
+            elif 'add_question_form' in request.POST:
+                question_text = request.POST.get('question_text')
+                input_type = request.POST.get('input_type')
+                borrowing_mode = request.POST.get('borrowing_mode')  # New: borrow mode (walk-in, pre-book, both)
+                dropdown_choices = request.POST.get('dropdown_choices', '').split(',') if input_type == 'dropdown' else None
+
+                lab.add_question(question_text, input_type, borrowing_mode, dropdown_choices)
+                messages.success(request, 'Question added successfully!')
+                return redirect('borrowing_labcoord_borrowconfig')
+
+            elif 'update_question_form' in request.POST:
+                index = int(request.POST.get('question_index'))
+                question_text = request.POST.get('question_text')
+                input_type = request.POST.get('input_type')
+                borrowing_mode = request.POST.get('borrowing_mode')  # New: borrow mode (walk-in, pre-book, both)
+                dropdown_choices = request.POST.get('dropdown_choices', '').split(',') if input_type == 'dropdown' else None
+
+                lab.update_question(index, question_text, input_type, borrowing_mode, dropdown_choices)
+                messages.success(request, 'Question updated successfully!')
+                return redirect('borrowing_labcoord_borrowconfig')
+
+            elif 'remove_question_form' in request.POST:
+                index = int(request.POST.get('question_index'))
+
+                lab.remove_question(index)
+                messages.success(request, 'Question removed successfully!')
+                return redirect('borrowing_labcoord_borrowconfig')
+
+        return render(request, 'mod_borrowing/borrowing_labcoord_borrowconfig.html', {
+            'items': items_with_qty,
+            'item_types_list': item_types_list,
+            'lab': lab,
+            'questions': lab.get_questions()  # Get the questions to display them
+        })
+    except Exception as e:
+        logger.error(f"Error in borrowing_labcoord_borrowconfig for {request.user}: {e}", exc_info=True)
+        messages.error(request, "An error occurred while updating borrowing configurations.")
+        return redirect('home')
 
 
 @login_required
 @lab_permission_required('view_booking_requests')
 def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
     # Fetch the borrow request and associated borrowed items
-    selected_laboratory_id = request.session.get('selected_lab')
-    borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id, laboratory_id=selected_laboratory_id)
-    borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_request)
-    
-    # Prepare original quantities in JSON format for JavaScript
-    borrowed_items_json = json.dumps(
-        [{'id': item.id, 'qty': item.qty} for item in borrowed_items_list],
-        cls=DjangoJSONEncoder
-    )
+    try:
+        selected_laboratory_id = request.session.get('selected_lab')
+        borrow_request = get_object_or_404(borrow_info, borrow_id=borrow_id, laboratory_id=selected_laboratory_id)
+        borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_request)
+        
+        # Prepare original quantities in JSON format for JavaScript
+        borrowed_items_json = json.dumps(
+            [{'id': item.id, 'qty': item.qty} for item in borrowed_items_list],
+            cls=DjangoJSONEncoder
+        )
 
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        edited = request.POST.get('edited')  # Check if any edits were made by checking 'edited' input
+        if request.method == 'POST':
+            action = request.POST.get('action')
+            edited = request.POST.get('edited')  # Check if any edits were made by checking 'edited' input
 
-        # Decline action
-        if action == 'decline':
-            decline_reason = request.POST.get('decline_reason')
-            if decline_reason:
-                borrow_request.status = 'D'  # Declined
-                borrow_request.remarks = decline_reason
+            # Decline action
+            if action == 'decline':
+                decline_reason = request.POST.get('decline_reason')
+                if decline_reason:
+                    borrow_request.status = 'D'  # Declined
+                    borrow_request.remarks = decline_reason
+                    borrow_request.approved_by = request.user
+                    borrow_request.save()
+                    messages.success(request, 'The request has been declined.')
+                    logger.info(f"Borrow request {borrow_id} declined by {request.user}")
+                else:
+                    messages.error(request, 'Please provide a reason for declining.')
+
+            # Accept action
+            elif action == 'accept':
+                # Check if any quantities were edited
+                print('pass')
+                if edited == '1':
+                    # Require an edit reason if quantities were modified
+                    edit_reason = request.POST.get('edit_reason')
+                    if not edit_reason:
+                        messages.error(request, 'Please provide a reason for the quantity update.')
+                        return redirect('borrowing_labcoord_detailedPrebookrequests', borrow_id=borrow_id)
+                    
+                    # Update each item's quantity if it was changed
+                    for item in borrowed_items_list:
+                        new_qty = int(request.POST.get(f'qty_{item.id}', item.qty))  # Retrieve new quantity
+                        if new_qty != item.qty:  # Check if quantity was updated
+                            item.qty = new_qty  # Update quantity in the database
+                            item.save()
+                    
+                    borrow_request.remarks = edit_reason  # Save the edit reason
+                    messages.success(request, 'The request was accepted with updated quantities.')
+
+                else:
+                    borrow_request.remarks = "Accepted"
+                    messages.success(request, 'The request has been accepted without quantity updates.')
+                
                 borrow_request.approved_by = request.user
+                borrow_request.status = 'A'  # Set status to Accepted
                 borrow_request.save()
-                messages.success(request, 'The request has been declined.')
-            else:
-                messages.error(request, 'Please provide a reason for declining.')
 
-        # Accept action
-        elif action == 'accept':
-            # Check if any quantities were edited
-            print('pass')
-            if edited == '1':
-                # Require an edit reason if quantities were modified
-                edit_reason = request.POST.get('edit_reason')
-                if not edit_reason:
-                    messages.error(request, 'Please provide a reason for the quantity update.')
-                    return redirect('borrowing_labcoord_detailedPrebookrequests', borrow_id=borrow_id)
-                
-                # Update each item's quantity if it was changed
-                for item in borrowed_items_list:
-                    new_qty = int(request.POST.get(f'qty_{item.id}', item.qty))  # Retrieve new quantity
-                    if new_qty != item.qty:  # Check if quantity was updated
-                        item.qty = new_qty  # Update quantity in the database
-                        item.save()
-                
-                borrow_request.remarks = edit_reason  # Save the edit reason
-                messages.success(request, 'The request was accepted with updated quantities.')
+            return redirect('borrowing_labcoord_detailedPrebookrequests', borrow_id=borrow_id)
 
-            else:
-                borrow_request.remarks = "Accepted"
-                messages.success(request, 'The request has been accepted without quantity updates.')
-            
-            borrow_request.approved_by = request.user
-            borrow_request.status = 'A'  # Set status to Accepted
-            borrow_request.save()
+        # Only show action buttons if the request is pending, accepted, or declined (to allow modifications)
+        show_action_buttons = borrow_request.status in ['P', 'A', 'D']
 
-        return redirect('borrowing_labcoord_detailedPrebookrequests', borrow_id=borrow_id)
-
-    # Only show action buttons if the request is pending, accepted, or declined (to allow modifications)
-    show_action_buttons = borrow_request.status in ['P', 'A', 'D']
-
-    return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html', {
-        'borrow_request': borrow_request,
-        'borrowed_items_list': borrowed_items_list,
-        'borrowed_items_json': borrowed_items_json,
-        'show_action_buttons': show_action_buttons,
-    })
-
+        return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html', {
+            'borrow_request': borrow_request,
+            'borrowed_items_list': borrowed_items_list,
+            'borrowed_items_json': borrowed_items_json,
+            'show_action_buttons': show_action_buttons,
+        })
+    
+    except Exception as e:
+        logger.error(f"Error in borrowing_labcoord_detailedPrebookrequests for {request.user}: {e}", exc_info=True)
+        messages.error(request, "An error occurred while processing the request.")
+        return redirect('borrowing_labcoord_prebookrequests')
 
 
 @login_required
@@ -2413,44 +2551,49 @@ def return_borrowed_items(request):
 
         except borrow_info.DoesNotExist:
             messages.error(request, "Invalid Borrow ID.")
+            logger.error(f"Invalid Borrow ID entered: {borrow_id}")
             return redirect('return_borrowed_items')
 
     if request.method == 'POST' and 'return_items' in request.POST and borrow_entry and borrow_entry.status == 'B':
-        for item in borrowed_items_list:
-            returned_all = request.POST.get(f'returned_all_{item.item.item_id}', False) == 'on'
-            qty_returned = int(request.POST.get(f'return_qty_{item.item.item_id}', 0))
-            hold_clearance = request.POST.get(f'hold_clearance_{item.item.item_id}', False) == 'on'
-            remarks = request.POST.get(f'remarks_{item.item.item_id}', '').strip()
-            amount_to_pay = request.POST.get(f'amount_to_pay_{item.item.item_id}', 0)
+        try:
+            for item in borrowed_items_list:
+                returned_all = request.POST.get(f'returned_all_{item.item.item_id}', False) == 'on'
+                qty_returned = int(request.POST.get(f'return_qty_{item.item.item_id}', 0))
+                hold_clearance = request.POST.get(f'hold_clearance_{item.item.item_id}', False) == 'on'
+                remarks = request.POST.get(f'remarks_{item.item.item_id}', '').strip()
+                amount_to_pay = request.POST.get(f'amount_to_pay_{item.item.item_id}', 0)
 
-            if returned_all:
-                item.returned_qty = item.qty
-            else:
-                item.returned_qty = qty_returned
-            item.save()
+                if returned_all:
+                    item.returned_qty = item.qty
+                else:
+                    item.returned_qty = qty_returned
+                item.save()
 
-            if hold_clearance and remarks:
-                reported_items.objects.create(
-                    borrow=borrow_entry,
-                    item=item.item,
-                    qty_reported=item.qty - item.returned_qty,
-                    report_reason=remarks,
-                    amount_to_pay=amount_to_pay or 0,
-                    laboratory_id=selected_laboratory_id,
-                    user=user_borrowed
-                )
+                if hold_clearance and remarks:
+                    reported_items.objects.create(
+                        borrow=borrow_entry,
+                        item=item.item,
+                        qty_reported=item.qty - item.returned_qty,
+                        report_reason=remarks,
+                        amount_to_pay=amount_to_pay or 0,
+                        laboratory_id=selected_laboratory_id,
+                        user=user_borrowed
+                    )
 
-        for consumed_item in consumed_items_list:
-            consumed_item.returned_qty = consumed_item.qty
-            consumed_item.save()
+            for consumed_item in consumed_items_list:
+                consumed_item.returned_qty = consumed_item.qty
+                consumed_item.save()
 
-        if all(item.qty == item.returned_qty for item in borrowed_items_list) and \
-           all(item.qty == item.returned_qty for item in consumed_items_list):
-            borrow_entry.status = 'X'
-            borrow_entry.save()
+            if all(item.qty == item.returned_qty for item in borrowed_items_list) and \
+            all(item.qty == item.returned_qty for item in consumed_items_list):
+                borrow_entry.status = 'X'
+                borrow_entry.save()
 
-        messages.success(request, 'Successfully Returned an Item')
-        return redirect('return_borrowed_items')
+            messages.success(request, 'Successfully Returned an Item')
+            return redirect('return_borrowed_items')
+        except Exception as e:
+            logger.error(f"Error while returning items for Borrow ID {borrow_id}: {e}", exc_info=True)
+            messages.error(request, "An error occurred while returning items.")
 
     return render(request, 'mod_borrowing/borrowing_return_borrowed_items.html', {
         'borrow_entry': borrow_entry,
@@ -2462,44 +2605,50 @@ def return_borrowed_items(request):
 @login_required
 @lab_permission_required('view_borrowed_items')
 def borrowing_labtech_prebookrequests(request):
-    selected_laboratory_id = request.session.get('selected_lab')
-    
-    today = date.today()
-    
-    # Fetch borrowing requests based on their borrow_date
-    today_borrows = borrow_info.objects.filter(borrow_date=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
-    future_borrows = borrow_info.objects.filter(borrow_date__gt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
-    past_borrows = borrow_info.objects.filter(borrow_date__lt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
-    
-    cancelled_borrows = borrow_info.objects.filter(status='L', laboratory_id=selected_laboratory_id).select_related('user')
-    borrowed_borrows = borrow_info.objects.filter(status='B', laboratory_id=selected_laboratory_id).select_related('user')
-    accepted_borrows = borrow_info.objects.filter(status__in=['A', 'B', 'L', 'X', 'Y'], laboratory_id=selected_laboratory_id).order_by('-request_date').select_related('user')
+    try:
 
-    if request.method == 'POST':
-        borrow_id = request.POST.get('borrow_id')
-        action = request.POST.get('action')
-        remarks = request.POST.get('remarks', '')
-
-        # Update borrow_info status
-        borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id)
+        selected_laboratory_id = request.session.get('selected_lab')
         
-        if action == 'borrowed':
-            borrow_entry.status = 'B'  # Mark as Borrowed
-        elif action == 'cancel':
-            borrow_entry.status = 'L'  # Mark as Cancelled
-            borrow_entry.remarks = remarks  # Save cancellation remarks
-        borrow_entry.save()
+        today = date.today()
+        
+        # Fetch borrowing requests based on their borrow_date
+        today_borrows = borrow_info.objects.filter(borrow_date=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
+        future_borrows = borrow_info.objects.filter(borrow_date__gt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
+        past_borrows = borrow_info.objects.filter(borrow_date__lt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
+        
+        cancelled_borrows = borrow_info.objects.filter(status='L', laboratory_id=selected_laboratory_id).select_related('user')
+        borrowed_borrows = borrow_info.objects.filter(status='B', laboratory_id=selected_laboratory_id).select_related('user')
+        accepted_borrows = borrow_info.objects.filter(status__in=['A', 'B', 'L', 'X', 'Y'], laboratory_id=selected_laboratory_id).order_by('-request_date').select_related('user')
 
-        return redirect('borrowing_labtech_prebookrequests')
+        if request.method == 'POST':
+            borrow_id = request.POST.get('borrow_id')
+            action = request.POST.get('action')
+            remarks = request.POST.get('remarks', '')
 
-    return render(request, 'mod_borrowing/borrowing_labtech_prebookrequests.html', {
-        'today_borrows': today_borrows,
-        'future_borrows': future_borrows,
-        'past_borrows': past_borrows,
-        'cancelled_borrows': cancelled_borrows,
-        'accepted_borrows': accepted_borrows,
-        'borrowed_borrows': borrowed_borrows
-    })
+            # Update borrow_info status
+            borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id)
+            
+            if action == 'borrowed':
+                borrow_entry.status = 'B'  # Mark as Borrowed
+            elif action == 'cancel':
+                borrow_entry.status = 'L'  # Mark as Cancelled
+                borrow_entry.remarks = remarks  # Save cancellation remarks
+            borrow_entry.save()
+
+            return redirect('borrowing_labtech_prebookrequests')
+
+        return render(request, 'mod_borrowing/borrowing_labtech_prebookrequests.html', {
+            'today_borrows': today_borrows,
+            'future_borrows': future_borrows,
+            'past_borrows': past_borrows,
+            'cancelled_borrows': cancelled_borrows,
+            'accepted_borrows': accepted_borrows,
+            'borrowed_borrows': borrowed_borrows
+        })
+    except Exception as e:
+        logger.error(f"Error fetching borrowing requests for {request.user}: {e}", exc_info=True)
+        messages.error(request, "An error occurred while fetching borrow requests.")
+        return redirect('home')
 
 @login_required
 @lab_permission_required('view_borrowed_items')
@@ -2514,39 +2663,45 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
     )
 
     if request.method == 'POST':
-        action = request.POST.get('action')
-        edited = request.POST.get('edited')
-        print('pass', )
+        try:
+            action = request.POST.get('action')
+            edited = request.POST.get('edited')
+            print('pass', )
 
-        if action == 'borrowed':
-            if edited == '1':  # Check if any edits were made
-                edit_reason = request.POST.get('edit_reason')
-                if not edit_reason:
-                    messages.error(request, 'Please provide a reason for the quantity update.')
-                    return redirect('borrowing_labtech_detailedprebookrequests', borrow_id=borrow_id)
+            if action == 'borrowed':
+                if edited == '1':  # Check if any edits were made
+                    edit_reason = request.POST.get('edit_reason')
+                    if not edit_reason:
+                        messages.error(request, 'Please provide a reason for the quantity update.')
+                        return redirect('borrowing_labtech_detailedprebookrequests', borrow_id=borrow_id)
+                    
+                    for item in borrowed_items1:
+                        new_qty = request.POST.get(f'qty_{item.id}')
+                        if new_qty and int(new_qty) != item.qty:
+                            item.qty = int(new_qty)
+                            item.save()
+                    borrow_entry.remarks = edit_reason
+                    messages.success(request, 'The borrow request has been marked as borrowed with updated quantities.')
+                else:
+                    messages.success(request, 'The borrow request has been marked as borrowed.')
                 
-                for item in borrowed_items1:
-                    new_qty = request.POST.get(f'qty_{item.id}')
-                    if new_qty and int(new_qty) != item.qty:
-                        item.qty = int(new_qty)
-                        item.save()
-                borrow_entry.remarks = edit_reason
-                messages.success(request, 'The borrow request has been marked as borrowed with updated quantities.')
-            else:
-                messages.success(request, 'The borrow request has been marked as borrowed.')
-            
-            borrow_entry.status = 'B'  # Mark as borrowed
-            borrow_entry.save()
-            
-        elif action == 'cancel':
-            cancel_reason = request.POST.get('cancel_reason')
-            borrow_entry.status = 'L'  # Mark as cancelled
-            borrow_entry.remarks = cancel_reason
-            borrow_entry.save()
-            messages.success(request, 'The borrow request has been cancelled.')
+                borrow_entry.status = 'B'  # Mark as borrowed
+                borrow_entry.save()
+                
+            elif action == 'cancel':
+                cancel_reason = request.POST.get('cancel_reason')
+                borrow_entry.status = 'L'  # Mark as cancelled
+                borrow_entry.remarks = cancel_reason
+                borrow_entry.save()
+                messages.success(request, 'The borrow request has been cancelled.')
 
-        return redirect('borrowing_labtech_prebookrequests')
-
+            return redirect('borrowing_labtech_prebookrequests')
+        
+        except Exception as e:
+            logger.error(f"Error processing Borrow ID {borrow_id}: {e}", exc_info=True)
+            messages.error(request, 'An error occurred while processing your request.')
+            return redirect('borrowing_labtech_detailedprebookrequests', borrow_id=borrow_id)
+        
     return render(request, 'mod_borrowing/borrowing_labtech_detailedprebookrequests.html', {
         'borrow_entry': borrow_entry,
         'borrowed_items': borrowed_items1,
@@ -2555,12 +2710,16 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
     })
 
 def validate_borrow_id(request):
-    borrow_id = request.GET.get('borrow_id', '').strip()
-    if borrow_id:
-        is_valid = borrow_info.objects.filter(borrow_id=borrow_id).exists()
-        messages.error(request, 'Invalid Borrow ID')
-        return JsonResponse({'valid': is_valid})
-    return JsonResponse({'valid': False})
+    try:
+        borrow_id = request.GET.get('borrow_id', '').strip()
+        if borrow_id:
+            is_valid = borrow_info.objects.filter(borrow_id=borrow_id).exists()
+            messages.error(request, 'Invalid Borrow ID')
+            return JsonResponse({'valid': is_valid})
+        return JsonResponse({'valid': False})
+    except Exception as e:
+        logger.error(f"Error validating borrow ID: {e}", exc_info=True)
+        return JsonResponse({'valid': False, 'error': str(e)}, status=500)
 
 
 #CLEARANCE
