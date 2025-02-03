@@ -11,3 +11,35 @@ ERROR 2025-02-02 14:17:23,576 views Error log
 WARNING 2025-02-02 14:20:05,651 decorators Unauthorized attempt to access borrow_items by ken uy
 WARNING 2025-02-02 23:57:41,661 log Not Found: /favicon.ico
 WARNING 2025-02-02 23:57:41,664 basehttp "GET /favicon.ico HTTP/1.1" 404 36588
+ERROR 2025-02-03 01:26:25,124 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:26:25,128 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:34:17,481 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:34:17,488 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:34:22,236 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:34:22,242 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:35:30,816 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:35:30,821 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:36:29,927 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:36:29,927 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:36:36,511 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:36:36,511 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:37:43,946 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:37:43,946 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:40:56,921 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:40:56,924 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:04,791 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:04,796 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:11,754 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:11,754 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:11,754 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:11,754 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:14,921 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:14,936 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+WARNING 2025-02-03 01:41:38,096 log Not Found: /favicon.ico
+WARNING 2025-02-03 01:41:38,098 basehttp "GET /favicon.ico HTTP/1.1" 404 36588
+WARNING 2025-02-03 01:44:50,882 log Not Found: /favicon.ico
+WARNING 2025-02-03 01:44:50,882 basehttp "GET /favicon.ico HTTP/1.1" 404 36588
+WARNING 2025-02-03 01:50:20,166 log Not Found: /favicon.ico
+WARNING 2025-02-03 01:50:20,166 basehttp "GET /favicon.ico HTTP/1.1" 404 36588
+WARNING 2025-02-03 12:05:50,746 log Not Found: /favicon.ico
+WARNING 2025-02-03 12:05:50,746 basehttp "GET /favicon.ico HTTP/1.1" 404 36588

@@ -2,3 +2,27 @@ ERROR 2025-02-02 14:13:53,566 views Error log
 ERROR 2025-02-02 14:15:36,780 views Error log
 ERROR 2025-02-02 14:17:01,986 views Error log
 ERROR 2025-02-02 14:17:23,576 views Error log
+ERROR 2025-02-03 01:26:25,124 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:26:25,128 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:34:17,481 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:34:17,488 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:34:22,236 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:34:22,242 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:35:30,816 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:35:30,821 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:36:29,927 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:36:29,927 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:36:36,511 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:36:36,511 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:37:43,946 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:37:43,946 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:40:56,921 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:40:56,924 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:04,791 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:04,796 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:11,754 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:11,754 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:11,754 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:11,754 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:14,921 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-03 01:41:14,936 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.

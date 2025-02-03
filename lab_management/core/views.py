@@ -36,6 +36,8 @@ from calendar import monthrange
 from pyzbar.pyzbar import decode
 from PIL import Image, ImageDraw, ImageFont 
 from io import BytesIO
+# from ratelimit.exceptions import Ratelimited
+# from ratelimit.decorators import ratelimit
 
 # python image library pillow
 
@@ -377,7 +379,9 @@ def custom_login(request):
         return redirect(reverse('userlogin'))
     return redirect(reverse('userlogin'))
 
+# @ratelimit(key='post:email', rate='5/m', block=True)
 def userlogin(request):
+    # try:
     if request.method == "POST":
         email = request.POST.get('email')
         password = request.POST.get('password')
@@ -400,6 +404,9 @@ def userlogin(request):
     
     # Render the login template
     return render(request, "user_login.html")
+    # except Ratelimited:
+    #     messages.error(request, "Too many login attempts. Please try again later.")
+    #     return redirect('login')  # Redirect to the login page
 
 @login_required(login_url='/login')
 def home(request):
@@ -2731,61 +2738,70 @@ def clearance_view(request):
 @login_required
 @lab_permission_required('view_own_clearance')
 def clearance_student_viewClearance(request):
-    # Get the currently logged-in user
-    user = request.user
-
-    # Debugging output to verify the user instance
-    if not user.is_authenticated:
-        return render(request, 'mod_clearance/student_viewClearance.html', {'error': 'User is not authenticated.'})
-
-    # Use the user instance's ID for querying
-    selected_laboratory_id = request.session.get('selected_lab')
-
     try:
-        # Retrieve the borrow_info entries for the current user
-        user_borrows = borrow_info.objects.filter(user=user, laboratory_id=selected_laboratory_id)
+        # Get the currently logged-in user
+        user = request.user
+        # Debugging output to verify the user instance
+        if not user.is_authenticated:
+            return render(request, 'mod_clearance/student_viewClearance.html', {'error': 'User is not authenticated.'})
 
-        # Check if the user has any borrows
-        if user_borrows.exists():
-            reports = reported_items.objects.filter(borrow__in=user_borrows)
+        # Use the user instance's ID for querying
+        selected_laboratory_id = request.session.get('selected_lab')
 
-            # Handle the filter by status
-            status = request.GET.get('status', 'All')
-            if status != 'All':
-                if status == 'Cleared':
-                    reports = reports.filter(status=0)  # Clear status
-                elif status == 'Pending':
-                    reports = reports.filter(status=1)  # Pending status
-        else:
-            reports = reported_items.objects.none()  # No reports if no borrows
+        try:
+            # Retrieve the borrow_info entries for the current user
+            user_borrows = borrow_info.objects.filter(user=user, laboratory_id=selected_laboratory_id)
 
-    except Exception as e: 
-        reports = reported_items.objects.none()  # If there's an error, return no reports
-        print(f"Error fetching reports: {e}")  # Debugging output for error tracking
+            # Check if the user has any borrows
+            if user_borrows.exists():
+                reports = reported_items.objects.filter(borrow__in=user_borrows)
 
-    context = {
-        'reports': reports,
-    }
-    return render(request, 'mod_clearance/student_viewClearance.html', context)
+                # Handle the filter by status
+                status = request.GET.get('status', 'All')
+                if status != 'All':
+                    if status == 'Cleared':
+                        reports = reports.filter(status=0)  # Clear status
+                    elif status == 'Pending':
+                        reports = reports.filter(status=1)  # Pending status
+            else:
+                reports = reported_items.objects.none()  # No reports if no borrows
+
+        except Exception as e: 
+            reports = reported_items.objects.none()  # If there's an error, return no reports
+            print(f"Error fetching reports: {e}")  # Debugging output for error tracking
+
+        context = {
+            'reports': reports,
+        }
+        return render(request, 'mod_clearance/student_viewClearance.html', context)
+    except Exception as e:
+        reports = reported_items.objects.none()
+        logger.error(f"Error fetching reports for {user}: {e}", exc_info=True)
+
 
 @login_required
 @lab_permission_required('view_own_clearance')
 def clearance_student_viewClearanceDetailed(request, report_id):
     # Get the currently logged-in user
-    user = request.user
-    report = get_object_or_404(reported_items, report_id=report_id, user=user)
-    borrow = report.borrow  # Access related borrow_info directly from report
+    try:
+        user = request.user
+        report = get_object_or_404(reported_items, report_id=report_id, user=user)
+        borrow = report.borrow  # Access related borrow_info directly from report
 
-    # Retrieve all reported items for the specific borrow entry
-    report_details = reported_items.objects.filter(borrow=borrow, user=user)
+        # Retrieve all reported items for the specific borrow entry
+        report_details = reported_items.objects.filter(borrow=borrow, user=user)
 
-    # Context for rendering details of borrow and reports
-    context = {
-        'report': report,                  # Main report entry
-        'borrow_details': borrow,          # Borrow details
-        'report_details': report_details   # All reported items for this borrow
-    }
-    return render(request, 'mod_clearance/student_viewClearanceDetailed.html', context)
+        # Context for rendering details of borrow and reports
+        context = {
+            'report': report,                  # Main report entry
+            'borrow_details': borrow,          # Borrow details
+            'report_details': report_details   # All reported items for this borrow
+        }
+        return render(request, 'mod_clearance/student_viewClearanceDetailed.html', context)
+    except Exception as e:
+        logger.error(f"Error fetching detailed report {report_id} for {user}: {e}", exc_info=True)
+        messages.error(request, "An error occurred while retrieving report details.")
+        return redirect('clearance_student_viewClearance')
 
 
 @login_required
@@ -2821,6 +2837,7 @@ def clearance_labtech_viewclearance(request):
             messages.success(request, "Manual clearance added successfully!")
         except Exception as e:
             messages.error(request, f"Error adding clearance: {e}")
+            logger.error(f"Error adding clearance: {e}", exc_info=True)
     
     reports = reported_items.objects.filter(
        laboratory_id=selected_laboratory_id
@@ -2832,72 +2849,86 @@ def clearance_labtech_viewclearance(request):
         reports = reports.filter(status=1)
 
     report_data = []
-    for report in reports:
-            borrow_info_obj = report.borrow
-            user_obj = borrow_info_obj.user if borrow_info_obj else report.user
 
-            report_data.append({
-                'report_id': report.report_id,
-                'borrow_id': borrow_info_obj.borrow_id if borrow_info_obj else "Manual Entry",
-                'user_name': f"{user_obj.firstname} {user_obj.lastname}" if user_obj else "Unknown",
-                'id_number': user_obj.personal_id if user_obj else "N/A",
-                'item_name': report.item.item_name,
-                'reason': report.report_reason,
-                'amount_due': report.amount_to_pay,
-                'status': 'Pending' if report.status == 1 else 'Cleared',
-                'quantity': report.qty_reported,
-            })
+    try:
+        for report in reports:
+                borrow_info_obj = report.borrow
+                user_obj = borrow_info_obj.user if borrow_info_obj else report.user
+
+                report_data.append({
+                    'report_id': report.report_id,
+                    'borrow_id': borrow_info_obj.borrow_id if borrow_info_obj else "Manual Entry",
+                    'user_name': f"{user_obj.firstname} {user_obj.lastname}" if user_obj else "Unknown",
+                    'id_number': user_obj.personal_id if user_obj else "N/A",
+                    'item_name': report.item.item_name,
+                    'reason': report.report_reason,
+                    'amount_due': report.amount_to_pay,
+                    'status': 'Pending' if report.status == 1 else 'Cleared',
+                    'quantity': report.qty_reported,
+                })
 
 
-    context = {
-        'reports': report_data,
-        'users': users,
-        'items': items,
-    }
-    return render(request, 'mod_clearance/labtech_viewclearance.html', context)
+        context = {
+            'reports': report_data,
+            'users': users,
+            'items': items,
+        }
+        
+        return render(request, 'mod_clearance/labtech_viewclearance.html', context)
 
+    except Exception as e:
+        logger.error(f"Error processing report data: {e}", exc_info=True)
+        messages.error(request, "Error processing report data.")
+
+   
 @login_required
 @lab_permission_required('view_student_clearance')
 def clearance_labtech_viewclearanceDetailed(request, report_id):
-    # Get the reported item by ID
-    report = get_object_or_404(reported_items, report_id=report_id)
+    try:
+        # Get the reported item by ID
+        report = get_object_or_404(reported_items, report_id=report_id)
 
-    # Prepare report data in a similar structure as in 'clearance_labtech_viewclearance'
-    borrow_info_obj = report.borrow
-    user_obj = borrow_info_obj.user if borrow_info_obj else report.user
+        # Prepare report data in a similar structure as in 'clearance_labtech_viewclearance'
+        borrow_info_obj = report.borrow
+        user_obj = borrow_info_obj.user if borrow_info_obj else report.user
 
-    report_data = {
-        'report_id': report.report_id,
-        'borrow_id': borrow_info_obj.borrow_id if borrow_info_obj else "Manual Entry",
-        'user_name': f"{user_obj.firstname} {user_obj.lastname}" if user_obj else "Unknown",
-        'id_number': user_obj.personal_id if user_obj else "N/A",
-        'item_name': report.item.item_name,
-        'reason': report.report_reason,
-        'amount_due': report.amount_to_pay,
-        'status': 'Pending' if report.status == 1 else 'Cleared',
-        'quantity': report.qty_reported,
-        'remarks': report.remarks if report.remarks else '',
-    }
+        report_data = {
+            'report_id': report.report_id,
+            'borrow_id': borrow_info_obj.borrow_id if borrow_info_obj else "Manual Entry",
+            'user_name': f"{user_obj.firstname} {user_obj.lastname}" if user_obj else "Unknown",
+            'id_number': user_obj.personal_id if user_obj else "N/A",
+            'item_name': report.item.item_name,
+            'reason': report.report_reason,
+            'amount_due': report.amount_to_pay,
+            'status': 'Pending' if report.status == 1 else 'Cleared',
+            'quantity': report.qty_reported,
+            'remarks': report.remarks if report.remarks else '',
+        }
 
-    if request.method == 'POST':
-        # Handle remarks submission and marking as cleared
-        remarks = request.POST.get('remarks', '').strip()
-        if remarks:
-            report.remarks = remarks
-        
-        # Update the status to Cleared
-        report.status = 0  # Assuming status 0 means Cleared
-        report.save()
+        if request.method == 'POST':
+            # Handle remarks submission and marking as cleared
+            remarks = request.POST.get('remarks', '').strip()
+            if remarks:
+                report.remarks = remarks
+            
+            # Update the status to Cleared
+            report.status = 0  # Assuming status 0 means Cleared
+            report.save()
 
-        # Redirect to the same page or to the view clearance page
-        return HttpResponseRedirect(request.path_info)
+            # Redirect to the same page or to the view clearance page
+            logger.info(f"Labtech cleared report {report_id} with remarks: {remarks}")
+            return HttpResponseRedirect(request.path_info)
 
-    # Pass the report_data to the context for rendering
-    context = {
-        'report_data': report_data,
-    }
+        # Pass the report_data to the context for rendering
+        context = {
+            'report_data': report_data,
+        }
 
-    return render(request, 'mod_clearance/labtech_viewclearanceDetailed.html', context)
+        return render(request, 'mod_clearance/labtech_viewclearanceDetailed.html', context)
+    except Exception as e:
+        logger.error(f"Error fetching detailed clearance report {report_id}: {e}", exc_info=True)
+        messages.error(request, "Error fetching report details.")
+        return redirect('clearance_labtech_viewclearance')
 
 
 

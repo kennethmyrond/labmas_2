@@ -11,6 +11,7 @@ from PIL import Image, ImageDraw
 from django.contrib.postgres.fields import JSONField
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.core.validators import FileExtensionValidator
 
 ''' 
 convention for pks
@@ -477,7 +478,7 @@ class laboratory_reservations(models.Model):
     num_people = models.IntegerField(null=True, blank=True)
     contact_email = models.EmailField(null=True, blank=True)
     contact_name = models.CharField(max_length=255, null=True, blank=True)
-    filled_approval_form = models.FileField(upload_to='filled_approval_forms/', null=True, blank=True)
+    filled_approval_form = models.FileField(upload_to='filled_approval_forms/', null=True, blank=True, validators=[FileExtensionValidator(allowed_extensions=['pdf'])])
 
     def save(self, *args, **kwargs):
         if not self.reservation_id:
@@ -509,7 +510,7 @@ class reservation_config(models.Model):
     end_time = models.TimeField(null=True, blank=True)  # For hourly reservation
     require_approval = models.BooleanField(default=False)
     require_payment = models.BooleanField(default=False)
-    approval_form = models.FileField(upload_to='approval_forms/', null=True, blank=True)  # Optional PDF upload
+    approval_form = models.FileField(upload_to='approval_forms/', null=True, blank=True, validators=[FileExtensionValidator(allowed_extensions=['pdf'])])  # Optional PDF upload
     tc_description = models.TextField(null=True, blank=True)  # Description for terms and conditions
     leadtime = models.PositiveIntegerField(default=0)
 

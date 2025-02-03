@@ -31,6 +31,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+SESSION_COOKIE_SECURE = True  # Only send session cookies over HTTPS
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookies
 
 # Application definition
 
@@ -55,6 +57,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
 
     'qr_code',
+    # 'ratelimit',
 ]
 
 SOCIALACCOUNT_PROVIDERS = {
@@ -103,6 +106,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'lab_management.urls'
@@ -258,8 +262,6 @@ AUTH_USER_MODEL = 'core.user'
 import os
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 
-from logging.handlers import TimedRotatingFileHandler  # Import the TimedRotatingFileHandler
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -276,20 +278,14 @@ LOGGING = {
     'handlers': {
         'file': {
             'level': 'WARNING',
-            'class': 'logging.handlers.TimedRotatingFileHandler',  # Use TimedRotatingFileHandler
+            'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'logs/django.log'),
-            'when': 'midnight',  # Rotate daily at midnight
-            'interval': 1,  # Rotate every day
-            'backupCount': 7,  # Keep logs for 7 days
             'formatter': 'verbose',
         },
-        'error_file': {  # Dedicated error log with time-based rotation
+        'error_file': {  # Dedicated error log
             'level': 'ERROR',
-            'class': 'logging.handlers.TimedRotatingFileHandler',  # Use TimedRotatingFileHandler
+            'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'logs/errors.log'),
-            'when': 'midnight',  # Rotate daily at midnight
-            'interval': 1,  # Rotate every day
-            'backupCount': 7,  # Keep logs for 7 days
             'formatter': 'verbose',
         },
         'console': {
