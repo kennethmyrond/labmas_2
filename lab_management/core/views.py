@@ -13,7 +13,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear, Abs
 from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField, Max, Min
-from django.db import connection, models, DatabaseError
+from django.db import connection, models, DatabaseError, IntegrityError
 from django.utils import timezone
 from django.utils.dateformat import DateFormat
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
@@ -4968,15 +4968,19 @@ def admin_reports_view(request):
 #lab setup
 @user_passes_test(lambda u: u.is_superuser)
 def superuser_manage_labs(request):
-    if not request.user.is_superuser:
-        return render(request, 'error_page.html', {'message': 'Module is allowed for this laboratory.'})
+    try:
+        if not request.user.is_superuser:
+            return render(request, 'error_page.html', {'message': 'Module is allowed for this laboratory.'})
 
-    labs = laboratory.objects.exclude(Q(laboratory_id=0) | Q(is_available=0)).annotate(user_count=Count('laboratory_users'))   # Retrieve all laboratory records
-    context = {
-        'labs': labs,
-    }
-    return render(request, 'superuser/superuser_manageLabs.html', context)
-
+        labs = laboratory.objects.exclude(Q(laboratory_id=0) | Q(is_available=0)).annotate(user_count=Count('laboratory_users'))   # Retrieve all laboratory records
+        context = {
+            'labs': labs,
+        }
+        return render(request, 'superuser/superuser_manageLabs.html', context)
+    except Exception as e:
+        logger.error(f"Unexpected error in superuser_lab_info: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred. Please try again.")
+        return redirect('home')
 
 # lab info
 @superuser_or_lab_permission_required('configure_laboratory')
@@ -4984,150 +4988,156 @@ def superuser_lab_info(request, laboratory_id):
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
     lab_rooms = rooms.objects.filter(laboratory_id=lab.laboratory_id, is_disabled=False)
 
-    if request.method == "POST":
-        if 'save_rooms' in request.POST:
-            # Update is_reservable field for rooms
-            for room in rooms.objects.filter(laboratory_id=lab):
-                room.is_reservable = f'room_{room.room_id}_enabled' in request.POST
+    try:
+        if request.method == "POST":
+            if 'save_rooms' in request.POST:
+                # Update is_reservable field for rooms
+                for room in rooms.objects.filter(laboratory_id=lab):
+                    room.is_reservable = f'room_{room.room_id}_enabled' in request.POST
+                    room.save()
+                messages.success(request, 'Successfully saved room configuration')
+
+            elif 'delete_room' in request.POST:
+                delete_room_id = request.POST.get('delete_room')
+                room = get_object_or_404(rooms, room_id=delete_room_id)
+                room.is_disabled = True
                 room.save()
-            messages.success(request, 'Successfully saved room configuration')
+                messages.success(request,  'Successfully deleted a room')
 
-        elif 'delete_room' in request.POST:
-            delete_room_id = request.POST.get('delete_room')
-            room = get_object_or_404(rooms, room_id=delete_room_id)
-            room.is_disabled = True
-            room.save()
-            messages.success(request,  'Successfully deleted a room')
+            elif 'add_room' in request.POST:
+                room_name = request.POST.get('room_name')
+                room_capacity = request.POST.get('room_capacity')
+                room_description = request.POST.get('room_description')
 
-        elif 'add_room' in request.POST:
-            room_name = request.POST.get('room_name')
-            room_capacity = request.POST.get('room_capacity')
-            room_description = request.POST.get('room_description')
+                if room_name and room_capacity:
+                    new_room = rooms(
+                        laboratory=lab,
+                        name=room_name,
+                        capacity=room_capacity,
+                        description=room_description
+                    )
+                    new_room.save()
+                messages.success( request, f'Successfully added Room: {room_name}')
+            elif 'edit_room' in request.POST:
+                room_id = request.POST.get('edit_room')
+                room = get_object_or_404(rooms, room_id=room_id)
+                room.name = request.POST.get('room_name')
+                room.capacity = request.POST.get('room_capacity')
+                room.description = request.POST.get('room_description')
+                room.save()
+                messages.success(request, 'Successfully updated the room')
+                
+            elif 'add_role' in request.POST:
+                role_name = request.POST.get('role_name')
+                if role_name:
+                    new_role = laboratory_roles(
+                        laboratory=lab,
+                        name=role_name,
+                    )
+                    new_role.save()
+                messages.success( request, f'Successfully added Role: {role_name}')
+            elif 'edit_role' in request.POST:
+                role_name = request.POST.get('role_name')
+                role_id = request.POST.get('edit_role')
+                role = get_object_or_404(laboratory_roles, roles_id=role_id)
+                role.name = role_name
+                role.save()
+                messages.success( request, f'Successfully Edited Role: {role_name}')
+            elif 'delete_role' in request.POST:
+                role_id = request.POST.get('delete_role')
+                role = get_object_or_404(laboratory_roles, roles_id=role_id)
+                role.delete()
+                messages.success(request,  'Successfully deleted a role')
 
-            if room_name and room_capacity:
-                new_room = rooms(
-                    laboratory=lab,
-                    name=room_name,
-                    capacity=room_capacity,
-                    description=room_description
-                )
-                new_room.save()
-            messages.success( request, f'Successfully added Room: {room_name}')
-        elif 'edit_room' in request.POST:
-            room_id = request.POST.get('edit_room')
-            room = get_object_or_404(rooms, room_id=room_id)
-            room.name = request.POST.get('room_name')
-            room.capacity = request.POST.get('room_capacity')
-            room.description = request.POST.get('room_description')
-            room.save()
-            messages.success(request, 'Successfully updated the room')
+            elif 'accept_user' in request.POST:
+                user_id = request.POST.get("user_id")
+                lab_user = laboratory_users.objects.filter(user_id=user_id, laboratory_id=laboratory_id, status='P').first()
+                if lab_user:
+                    lab_user.status = 'A'  # Accepted
+                    lab_user.save()
+                    messages.success(request, f"User {lab_user.user.get_fullname()} accepted successfully.")
+
+            elif 'decline_user' in request.POST:
+                user_id = request.POST.get("user_id")
+                lab_user = laboratory_users.objects.filter(user_id=user_id, laboratory_id=laboratory_id, status='P').first()
+                if lab_user:
+                    lab_user.status = 'D'  # Declined
+                    lab_user.is_active = False  # Declined
+                    lab_user.save()
+                    messages.success(request, f"User {lab_user.user.get_fullname()} declined.")
             
-        elif 'add_role' in request.POST:
-            role_name = request.POST.get('role_name')
-            if role_name:
-                new_role = laboratory_roles(
-                    laboratory=lab,
-                    name=role_name,
-                )
-                new_role.save()
-            messages.success( request, f'Successfully added Role: {role_name}')
-        elif 'edit_role' in request.POST:
-            role_name = request.POST.get('role_name')
-            role_id = request.POST.get('edit_role')
-            role = get_object_or_404(laboratory_roles, roles_id=role_id)
-            role.name = role_name
-            role.save()
-            messages.success( request, f'Successfully Edited Role: {role_name}')
-        elif 'delete_role' in request.POST:
-            role_id = request.POST.get('delete_role')
-            role = get_object_or_404(laboratory_roles, roles_id=role_id)
-            role.delete()
-            messages.success(request,  'Successfully deleted a role')
-
-        elif 'accept_user' in request.POST:
-            user_id = request.POST.get("user_id")
-            lab_user = laboratory_users.objects.filter(user_id=user_id, laboratory_id=laboratory_id, status='P').first()
-            if lab_user:
-                lab_user.status = 'A'  # Accepted
+            elif 'toggle_user_status' in request.POST:
+                user_id = request.POST.get('user_id')
+                lab_user = get_object_or_404(laboratory_users, user_id=user_id, laboratory_id=laboratory_id, is_active=1)
+                lab_user.is_active = not lab_user.is_active
                 lab_user.save()
-                messages.success(request, f"User {lab_user.user.get_fullname()} accepted successfully.")
+                
+                # Add feedback message based on new status
+                status_message = "activated" if lab_user.is_active else "deactivated"
+                messages.success(request, f"User {lab_user.user.get_fullname()} successfully {status_message}.")
 
-        elif 'decline_user' in request.POST:
-            user_id = request.POST.get("user_id")
-            lab_user = laboratory_users.objects.filter(user_id=user_id, laboratory_id=laboratory_id, status='P').first()
-            if lab_user:
-                lab_user.status = 'D'  # Declined
-                lab_user.is_active = False  # Declined
-                lab_user.save()
-                messages.success(request, f"User {lab_user.user.get_fullname()} declined.")
+            # Existing code for room and role operations goes here...
+
+    
         
-        elif 'toggle_user_status' in request.POST:
-            user_id = request.POST.get('user_id')
-            lab_user = get_object_or_404(laboratory_users, user_id=user_id, laboratory_id=laboratory_id, is_active=1)
-            lab_user.is_active = not lab_user.is_active
-            lab_user.save()
-            
-            # Add feedback message based on new status
-            status_message = "activated" if lab_user.is_active else "deactivated"
-            messages.success(request, f"User {lab_user.user.get_fullname()} successfully {status_message}.")
+        # Get modules active in the lab
+        active_module_ids = lab.modules
+        modules = Module.objects.filter(id__in=active_module_ids)
+        
+        # Filter permissions by active modules
+        permissions_by_module = {}
+        for module in modules:
+            permissions_by_module[module.id] = permissions.objects.filter(module=module)
 
-        # Existing code for room and role operations goes here...
+        all_modules = Module.objects.all()  # All available modules
 
-   
-    
-    # Get modules active in the lab
-    active_module_ids = lab.modules
-    modules = Module.objects.filter(id__in=active_module_ids)
-    
-    # Filter permissions by active modules
-    permissions_by_module = {}
-    for module in modules:
-        permissions_by_module[module.id] = permissions.objects.filter(module=module)
+        # Retrieve all lab users and roles
+        lab_users = laboratory_users.objects.filter(laboratory_id=lab.laboratory_id, is_active=1, status__in=['A', 'I']).select_related('user', 'role').annotate(
+            username=F('user__username'),
+            user_email=F('user__email'),
+            full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
+            role_name=F('role__name')
+        )
+        lab_roles = laboratory_roles.objects.filter(Q(laboratory_id=0) | Q(laboratory_id=lab.laboratory_id)).annotate(
+            usercount=Count('users', filter=Q(users__laboratory_id=laboratory_id))
+        )
 
-    all_modules = Module.objects.all()  # All available modules
+        print(lab_roles)
 
-    # Retrieve all lab users and roles
-    lab_users = laboratory_users.objects.filter(laboratory_id=lab.laboratory_id, is_active=1, status__in=['A', 'I']).select_related('user', 'role').annotate(
-        username=F('user__username'),
-        user_email=F('user__email'),
-        full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
-        role_name=F('role__name')
-    )
-    lab_roles = laboratory_roles.objects.filter(Q(laboratory_id=0) | Q(laboratory_id=lab.laboratory_id)).annotate(
-        usercount=Count('users', filter=Q(users__laboratory_id=laboratory_id))
-    )
+        # Retrieve pending users for display in the "Share" tab
+        pending_users = laboratory_users.objects.filter(
+            laboratory_id=laboratory_id, status='P'
+        ).select_related('user', 'role').annotate(
+            full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
+            user_email=F('user__email'),
+            personal_id=F('user__personal_id')
+        )
+        
+        # Current permissions for each role in the lab
+        role_permissions = {(perm.role.roles_id, perm.permissions.codename): True 
+                            for perm in laboratory_permissions.objects.filter(laboratory=lab)}
+        # print(role_permissions)
+        
+        context = {
+            'laboratory_id': laboratory_id,
+            'lab': lab,
+            'modules': modules,
+            'all_modules': all_modules,
+            'lab_rooms': lab_rooms,
+            'lab_users': lab_users,
+            'lab_roles': lab_roles,
+            'permissions_by_module': permissions_by_module,
+            'role_permissions': role_permissions,
+            'pending_users': pending_users
+        }
 
-    print(lab_roles)
+        return render(request, 'superuser/superuser_labInfo.html', context)
 
-     # Retrieve pending users for display in the "Share" tab
-    pending_users = laboratory_users.objects.filter(
-        laboratory_id=laboratory_id, status='P'
-    ).select_related('user', 'role').annotate(
-        full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
-        user_email=F('user__email'),
-        personal_id=F('user__personal_id')
-    )
-    
-    # Current permissions for each role in the lab
-    role_permissions = {(perm.role.roles_id, perm.permissions.codename): True 
-                        for perm in laboratory_permissions.objects.filter(laboratory=lab)}
-    # print(role_permissions)
-    
+    except Exception as e:
+        logger.error(f"Unexpected error in superuser_lab_info: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred. Please try again.")
+        return redirect('home')
 
-    context = {
-        'laboratory_id': laboratory_id,
-        'lab': lab,
-        'modules': modules,
-        'all_modules': all_modules,
-        'lab_rooms': lab_rooms,
-        'lab_users': lab_users,
-        'lab_roles': lab_roles,
-        'permissions_by_module': permissions_by_module,
-        'role_permissions': role_permissions,
-        'pending_users': pending_users
-    }
-
-    return render(request, 'superuser/superuser_labInfo.html', context)
 
 # @login_required()
 # @superuser_or_lab_permission_required('configure_laboratory')
@@ -5152,84 +5162,108 @@ def superuser_lab_info(request, laboratory_id):
 @login_required()
 @superuser_or_lab_permission_required('configure_laboratory')
 def toggle_module_status(request, laboratory_id):
-    if request.method == 'POST':
-        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-        module_ids = []
+    try:
+        if request.method == 'POST':
+            lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+            module_ids = []
 
-        for module in Module.objects.all():
-            if request.POST.get(f'module_{module.id}'):
-                module_ids.append(module.id)
+            for module in Module.objects.all():
+                if request.POST.get(f'module_{module.id}'):
+                    module_ids.append(module.id)
 
-        lab.modules = module_ids
-        lab.save()
+            lab.modules = module_ids
+            lab.save()
 
-        messages.success(request, "Module statuses updated successfully.")
+            messages.success(request, "Module statuses updated successfully.")
+            return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+    except Exception as e:
+        logger.error(f"Error updating module statuses for Lab {laboratory_id}: {e}", exc_info=True)
+        messages.error(request, "Failed to update module statuses. Please try again.")
         return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 @login_required()
 @superuser_or_lab_permission_required('configure_laboratory')
 def edit_lab_info(request, laboratory_id):
-    if request.method == 'POST':
-        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-        lab.name = request.POST.get('name')
-        lab.description = request.POST.get('description')
-        lab.department = request.POST.get('department')
-        lab.save()
-        return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'fail'}, status=400)
+    try:
+        if request.method == 'POST':
+            lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+            lab.name = request.POST.get('name')
+            lab.description = request.POST.get('description')
+            lab.department = request.POST.get('department')
+
+            if not lab.name:
+                return JsonResponse({'status': 'fail', 'message': 'Lab name is required'}, status=400)
+
+            lab.save()
+            return JsonResponse({'status': 'success'})
+        return JsonResponse({'status': 'fail'}, status=400)
+    except Exception as e:
+        logger.error(f"Error updating lab info for Lab {laboratory_id}: {e}", exc_info=True)
+        return JsonResponse({'status': 'fail', 'message': 'An error occurred while updating lab info'}, status=500)
 
 @login_required()
 @superuser_or_lab_permission_required('configure_laboratory')
 def deactivate_lab(request, laboratory_id):
-    lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-    lab.is_available = False  # Set is_available to 0 (inactive)
-    lab.save()  # Save the changes to the database
-    messages.success(request, "Laboratory deactivated successfully.")  # Optional success message
+    try:
+        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+        lab.is_available = False  # Set is_available to 0 (inactive)
+        lab.save()  # Save the changes to the database
+        messages.success(request, "Laboratory deactivated successfully.")  # Optional success message
+    except Exception as e:
+        logger.error(f"Error deactivating Lab {laboratory_id}: {e}", exc_info=True)
+        messages.error(request, "Failed to deactivate laboratory. Please try again.")
+    
     return redirect('superuser_manage_labs')
+
 
 @login_required()
 @superuser_or_lab_permission_required('configure_laboratory')
 def update_permissions(request, laboratory_id):
-    if request.method == 'POST':
-        lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+    try:
+        if request.method == 'POST':
+            lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
 
-        # Store permissions that were checked in the form submission
-        permissions_data = {}
-        for key, value in request.POST.items():
-            if key.startswith('permissions'):
-                role_id = int(key.split('[')[1].split(']')[0])
-                perm_codename = key.split('[')[2].split(']')[0]
-                
-                if role_id not in permissions_data:
-                    permissions_data[role_id] = {}
-                permissions_data[role_id][perm_codename] = value == 'on'
+            # Store permissions that were checked in the form submission
+            permissions_data = {}
+            for key, value in request.POST.items():
+                if key.startswith('permissions'):
+                    role_id = int(key.split('[')[1].split(']')[0])
+                    perm_codename = key.split('[')[2].split(']')[0]
+                    
+                    if role_id not in permissions_data:
+                        permissions_data[role_id] = {}
+                    permissions_data[role_id][perm_codename] = value == 'on'
 
-        # Query all existing permissions for this lab and role
-        existing_permissions = laboratory_permissions.objects.filter(laboratory=lab)
-        
-        # Determine which permissions to keep and which to delete
-        for perm_entry in existing_permissions:
-            role_id = perm_entry.role.roles_id
-            perm_codename = perm_entry.permissions.codename
+            # Query all existing permissions for this lab and role
+            existing_permissions = laboratory_permissions.objects.filter(laboratory=lab)
+            
+            # Determine which permissions to keep and which to delete
+            for perm_entry in existing_permissions:
+                role_id = perm_entry.role.roles_id
+                perm_codename = perm_entry.permissions.codename
 
-            # If the permission is missing from permissions_data, delete it
-            if not permissions_data.get(role_id, {}).get(perm_codename, False):
-                perm_entry.delete()
+                # If the permission is missing from permissions_data, delete it
+                if not permissions_data.get(role_id, {}).get(perm_codename, False):
+                    perm_entry.delete()
 
-        # Add or update permissions based on the form data
-        for role_id, perms in permissions_data.items():
-            role = laboratory_roles.objects.get(roles_id=role_id)
-            for perm_codename, is_selected in perms.items():
-                perm_obj = permissions.objects.get(codename=perm_codename)
+            # Add or update permissions based on the form data
+            for role_id, perms in permissions_data.items():
+                role = laboratory_roles.objects.get(roles_id=role_id)
+                for perm_codename, is_selected in perms.items():
+                    perm_obj = permissions.objects.get(codename=perm_codename)
 
-                if is_selected:
-                    # Create or update permission if it’s checked
-                    laboratory_permissions.objects.update_or_create(
-                        role=role, laboratory=lab, permissions=perm_obj
-                    )
+                    if is_selected:
+                        # Create or update permission if it’s checked
+                        laboratory_permissions.objects.update_or_create(
+                            role=role, laboratory=lab, permissions=perm_obj
+                        )
 
-        messages.success(request, "Permissions updated successfully.")
-    return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+            messages.success(request, "Permissions updated successfully.")
+        return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+    except Exception as e:
+        logger.error(f"Error updating permissions for Lab {laboratory_id}: {e}", exc_info=True)
+        messages.error(request, "Failed to update permissions. Please try again.")
+        return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 
 # users
@@ -5237,28 +5271,49 @@ def update_permissions(request, laboratory_id):
 @require_POST
 @superuser_or_lab_permission_required('configure_laboratory')
 def edit_user_role(request, laboratory_id):
-    user_id = request.POST.get('user_id')
-    new_role_id = request.POST.get('role_id')
-    new_status = request.POST.get('Status')
-    lab_user = get_object_or_404(laboratory_users, user_id=user_id, laboratory_id=laboratory_id, is_active=1)
-    lab_user.role_id = new_role_id
-    lab_user.status = new_status
-    lab_user.save()
-    messages.success(request, "User role updated successfully.")
+    try: 
+        user_id = request.POST.get('user_id')
+        new_role_id = request.POST.get('role_id')
+        new_status = request.POST.get('Status')
+        if not all([user_id, new_role_id, new_status]):
+                messages.error(request, "Missing required fields.")
+                return redirect('superuser_lab_info', laboratory_id)
+                
+        lab_user = get_object_or_404(laboratory_users, user_id=user_id, laboratory_id=laboratory_id, is_active=1)
+        lab_user.role_id = new_role_id
+        lab_user.status = new_status
+        lab_user.save()
+        messages.success(request, "User role updated successfully.")
+    except Exception as e:
+        logger.error(f"Error updating user role - edit_user_role: {e}", exc_info=True)
+        messages.error(request, f"Error updating user role: {e}")
+        print(f"Error updating user role: {e}")
+
     return redirect ('superuser_lab_info', laboratory_id)
 
 @login_required
 @require_POST
 @superuser_or_lab_permission_required('configure_laboratory')
 def toggle_user_status(request):
-    data = json.loads(request.body)
-    user_id = data.get('user_id')
-    lab_user = get_object_or_404(laboratory_users, user_id=user_id)
-    lab_user.is_active = not lab_user.is_active
-    lab_user.save()
-    messages.success(request, "User status updated successfully.")
-    return JsonResponse({'success': True, 'is_active': lab_user.is_active})
+    try:
+        data = json.loads(request.body)
+        user_id = data.get('user_id')
 
+        if not user_id:
+            return JsonResponse({'success': False, 'message': "Invalid user ID"}, status=400)
+
+        lab_user = get_object_or_404(laboratory_users, user_id=user_id)
+        lab_user.is_active = not lab_user.is_active
+        lab_user.save()
+        messages.success(request, "User status updated successfully.")
+        return JsonResponse({'success': True, 'is_active': lab_user.is_active})
+    except json.JSONDecodeError:
+        logger.error(f"Error json decoder - toggle_user_status: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'message': "Invalid JSON format"}, status=400)
+    except Exception as e:
+        logger.error(f"Error toggling user status - toggle_user_status: {e}", exc_info=True)
+        print(f"Error toggling user status: {e}")
+        return JsonResponse({'success': False, 'message': "An error occurred"}, status=500)
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
@@ -5336,55 +5391,64 @@ def bulk_upload_users_to_lab(request, laboratory_id):
         except openpyxl.utils.exceptions.InvalidFileException:
             messages.error(request, "Invalid file format. Please upload a valid Excel file.")
         except Exception as e:
+            logger.error(f"Error processing the file - bulk_upload_users_to_lab: {e}", exc_info=True)
             messages.error(request, f"Error processing the file: {e}")
             print(f"Error processing the file: {e}")
 
     return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 
-
-
-
 @superuser_or_lab_permission_required('configure_laboratory')
 def add_user_laboratory(request, laboratory_id):
-    if request.method == "POST":
-        user_id = request.POST['user']
-        role_id = request.POST['role']
-        status = request.POST['Status']
+    try:
+        if request.method == "POST":
+            user_id = request.POST['user']
+            role_id = request.POST['role']
+            status = request.POST['Status']
 
-        # lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-        # user_instance = get_object_or_404(user, user_id=user_id)
-        # role_instance = get_object_or_404(laboratory_roles, roles_id=role_id)
-        
-        user_assigned = laboratory_users.objects.filter(
-            user_id=user_id,
-            laboratory_id=laboratory_id,
-            is_active=1
-        ).exists()
-
-        if not user_assigned:
-            # Add user to laboratory if not already assigned
-            laboratory_users.objects.create(
+            # lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+            # user_instance = get_object_or_404(user, user_id=user_id)
+            # role_instance = get_object_or_404(laboratory_roles, roles_id=role_id)
+            
+            user_assigned = laboratory_users.objects.filter(
                 user_id=user_id,
                 laboratory_id=laboratory_id,
-                role_id=role_id,
-                is_active=1,
-                status=status,
-            )
-            messages.success(request, 'User  added successfully')
-        else:
-            messages.error(request, 'User  is already assigned to this laboratory and is active.')
+                is_active=1
+            ).exists()
 
-    return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+            if not user_assigned:
+                # Add user to laboratory if not already assigned
+                laboratory_users.objects.create(
+                    user_id=user_id,
+                    laboratory_id=laboratory_id,
+                    role_id=role_id,
+                    is_active=1,
+                    status=status,
+                )
+                messages.success(request, 'User  added successfully')
+            else:
+                messages.error(request, 'User  is already assigned to this laboratory and is active.')
+
+        return redirect('superuser_lab_info', laboratory_id=laboratory_id)
+    except Exception as e:
+        logger.error(f"Error adding user to laboratory to laboratory - add_user_laboratory: {e}", exc_info=True)
+        messages.error(request, f"Error adding user to laboratory: {e}")
+        print(f"Error adding user to laboratory: {e}")
+        return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def superuser_manage_users(request):
-    users = user.objects.all()
-    context = {
-        'users': users,
-    }
-    return render(request, 'superuser/superuser_manageusers.html', context)
+    try:
+        users = user.objects.all()
+        context = {
+            'users': users,
+        }
+        return render(request, 'superuser/superuser_manageusers.html', context)
+    except Exception as e:
+        logger.error(f"Unexpected error in superuser_manage_users: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred. Please try again.")
+        return redirect('home')
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
@@ -5446,6 +5510,7 @@ def bulk_upload_users(request):
 
             messages.success(request, "Bulk user upload completed successfully.")
         except Exception as e:
+            logger.error(f"Error processing the file: {e}")
             messages.error(request, f"Error processing the file: {e}")
 
     return redirect('superuser_manage_users')
@@ -5453,106 +5518,165 @@ def bulk_upload_users(request):
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def add_user(request):
-    if request.method == 'POST':
-        firstname = request.POST.get('firstname')
-        lastname = request.POST.get('lastname')
-        idnum = request.POST.get('idnum')
-        email = request.POST.get('email')
-        username = request.POST.get('email')
-        password = request.POST.get('password')
-        is_superuser = request.POST.get('is_superuser') == 'on'
-        
-        if email and firstname and lastname and password:
-            if User.objects.filter(email=email).exists():
-                messages.error(request, "Email is already registered.")
-            elif User.objects.filter(username=username).exists():
-                messages.error(request, "Username is already taken.")
+    try:
+        if request.method == 'POST':
+            firstname = request.POST.get('firstname')
+            lastname = request.POST.get('lastname')
+            idnum = request.POST.get('idnum')
+            email = request.POST.get('email')
+            username = request.POST.get('email')
+            password = request.POST.get('password')
+            is_superuser = request.POST.get('is_superuser') == 'on'
+            
+            if email and firstname and lastname and password:
+                if User.objects.filter(email=email).exists():
+                    messages.error(request, "Email is already registered.")
+                elif User.objects.filter(username=username).exists():
+                    messages.error(request, "Username is already taken.")
+                else:
+                    try:
+                        User.objects.create_user(
+                            email=email, 
+                            firstname=firstname, 
+                            lastname=lastname, 
+                            password=password, 
+                            personal_id=idnum, 
+                            username=username, 
+                            is_superuser=is_superuser
+                        )
+                        messages.success(request, "User added successfully.")
+                    except Exception as e:
+                        messages.error(request, f"Error creating user: {e}")
             else:
-                try:
-                    User.objects.create_user(
-                        email=email, 
-                        firstname=firstname, 
-                        lastname=lastname, 
-                        password=password, 
-                        personal_id=idnum, 
-                        username=username, 
-                        is_superuser=is_superuser
-                    )
-                    messages.success(request, "User added successfully.")
-                except Exception as e:
-                    messages.error(request, f"Error creating user: {e}")
-        else:
-            messages.error(request, "Missing required fields.")
-    
+                messages.error(request, "Missing required fields.")
+    except Exception as e:
+        logger.error(f"Unexpected error in adding user: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred. Please try again.")
+
     return redirect('superuser_manage_users')
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def superuser_user_info(request, user_id):
-    user1 = get_object_or_404(user, user_id=user_id)
-    lab_users = laboratory_users.objects.filter(user=user1, is_active=True, laboratory_id__is_available=1)
-    assigned_laboratories = lab_users.values_list('laboratory', flat=True)
+    try:
+        try:
+            user1 = get_object_or_404(user, user_id=user_id)
+        except Exception as e:
+            logger.error(f"User with ID {user_id} not found: {e}")
+            messages.error(request, "User not found.")
+            return redirect('superuser_manage_users')
+        lab_users = laboratory_users.objects.filter(user=user1, is_active=True, laboratory_id__is_available=1)
+        assigned_laboratories = lab_users.values_list('laboratory', flat=True)
 
-    all_laboratories = laboratory.objects.filter(is_available=1).exclude(laboratory_id__in=assigned_laboratories)
-    all_roles = laboratory_roles.objects.filter()
-    context = {
-        'user': user1,
-        'lab_users': lab_users,
-        'all_laboratories': all_laboratories,
-        'all_roles': all_roles,
-    }
-    return render(request, 'superuser/superuser_userinfo.html', context)
+        all_laboratories = laboratory.objects.filter(is_available=1).exclude(laboratory_id__in=assigned_laboratories)
+        all_roles = laboratory_roles.objects.filter()
+        context = {
+            'user': user1,
+            'lab_users': lab_users,
+            'all_laboratories': all_laboratories,
+            'all_roles': all_roles,
+        }
+        return render(request, 'superuser/superuser_userinfo.html', context)
+    except Exception as e:
+        logger.error(f"Unexpected error in adding user: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred. Please try again.")
+        return redirect('superuser_manage_users')
+
+
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def get_roles(request, laboratory_id):
-    roles = laboratory_roles.objects.filter(Q(laboratory_id=laboratory_id) | Q(laboratory_id=0)).values('roles_id', 'name')
-    return JsonResponse({'roles': list(roles)})
+    try:
+        roles = laboratory_roles.objects.filter(Q(laboratory_id=laboratory_id) | Q(laboratory_id=0)).values('roles_id', 'name')
+        return JsonResponse({'roles': list(roles)})
+    except Exception as e:
+        logger.error(f"Error fetching roles for lab {laboratory_id}: {e}")
+        return JsonResponse({'error': 'Failed to fetch roles'}, status=500)
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def remove_lab_user(request, lab_user_id):
-    lab_user = get_object_or_404(laboratory_users, id=lab_user_id)
+    try:
+        lab_user = get_object_or_404(laboratory_users, id=lab_user_id)
 
-    lab_user.is_active = False
-    lab_user.save()
+        lab_user.is_active = False
+        lab_user.save()
 
-    messages.success(request, 'User  has been successfully removed from the laboratory.')
+        messages.success(request, 'User has been successfully removed from the laboratory.')
+    except Exception as e:
+        logger.error(f"Error removing user {lab_user_id}: {e}")
+        messages.error(request, "Failed to remove user.")
     return redirect('superuser_manage_users')  # Redirect to an appropriate page
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def edit_user(request, user_id):
-    user1 = get_object_or_404(user, user_id=user_id)
-    if request.method == 'POST':
-        user1.firstname = request.POST['firstname']
-        user1.lastname = request.POST['lastname']
-        user1.username = request.POST['username']
-        user1.email = request.POST['email']
-        user1.personal_id = request.POST['personal_id']
-        user1.save()
-        messages.success(request, 'User details updated successfully.')
+    try:
+        user1 = get_object_or_404(user, user_id=user_id)
+        if request.method == 'POST':
+            user1.firstname = request.POST['firstname']
+            user1.lastname = request.POST['lastname']
+            user1.username = request.POST['username']
+            user1.email = request.POST['email']
+            user1.personal_id = request.POST['personal_id']
+            user1.save()
+            messages.success(request, 'User details updated successfully.')
+    except ValidationError as e:
+        logger.error(f"Validation error updating user {user_id}: {e}")
+        messages.error(request, f"Error updating user: {e}")
+
+    except Exception as e:
+        logger.error(f"Unexpected error updating user {user_id}: {e}")
+        messages.error(request, "Failed to update user.")
     return redirect('superuser_user_info', user_id=user_id)
+    
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def deactivate_user(request, user_id):
-    user1 = get_object_or_404(user, user_id=user_id)
-    user1.is_deactivated = True
-    user1.save()
-    messages.success(request, 'User deactivated successfully.')
+    try:
+        user1 = get_object_or_404(user, user_id=user_id)
+        user1.is_deactivated = True
+        user1.save()
+        messages.success(request, 'User deactivated successfully.')
+    except Exception as e:
+        logger.error(f"Error deactivating user {user_id}: {e}")
+        messages.error(request, "Failed to deactivate user.")
     return redirect('superuser_user_info', user_id=user_id)
 
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def assign_lab(request, user_id):
     if request.method == 'POST':
-        laboratory_id = request.POST['laboratory_id']
-        role_id = request.POST['role_id']
-        user_laboratory = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-        role = get_object_or_404(laboratory_roles, roles_id=role_id)
-        laboratory_users.objects.create(user_id=user_id, laboratory=user_laboratory, role=role)
-        messages.success(request, 'Laboratory assigned successfully.')
+        try:
+            laboratory_id = request.POST['laboratory_id']
+            role_id = request.POST['role_id']
+
+            if not laboratory_id or not role_id:
+                messages.error(request, "Invalid data provided.")
+                return redirect('superuser_user_info', user_id=user_id)
+
+            user_laboratory = get_object_or_404(laboratory, laboratory_id=laboratory_id)
+            role = get_object_or_404(laboratory_roles, roles_id=role_id)
+            
+            # # Check if user is already assigned to this lab
+            # if laboratory_users.objects.filter(user_id=user_id, laboratory=user_laboratory, ).exists():
+            #     messages.warning(request, "User is already assigned to this laboratory.")
+            #     return redirect('superuser_user_info', user_id=user_id)
+
+            laboratory_users.objects.create(user_id=user_id, laboratory=user_laboratory, role=role)
+            messages.success(request, 'Laboratory assigned successfully.')
+            logger.info(f"User {user_id} assigned to lab {laboratory_id} with role {role_id}.")
+
+        except IntegrityError:
+            logger.error(f"Integrity error while assigning user {user_id} to lab {laboratory_id}.")
+            messages.error(request, "Assignment failed due to a database error.")
+
+        except Exception as e:
+            logger.error(f"Unexpected error assigning user {user_id} to lab {laboratory_id}: {e}")
+            messages.error(request, "Failed to assign user to laboratory.")
+
     return redirect('superuser_user_info', user_id=user_id)
 
 
@@ -5561,29 +5685,33 @@ def assign_lab(request, user_id):
 @user_passes_test(lambda u: u.is_superuser)
 def add_room(request, laboratory_id):
     if request.method == "POST":
-        room_name = request.POST.get('room_name')
-        room_description = request.POST.get('room_description')
-        room_capacity = request.POST.get('room_capacity')
+        try:
+            room_name = request.POST.get('room_name')
+            room_description = request.POST.get('room_description')
+            room_capacity = request.POST.get('room_capacity')
 
-        # Validate input data
-        if room_name and room_description and room_capacity.isdigit():  # Ensure capacity is an integer
-            room_capacity = int(room_capacity)  # Convert to integer
-            
-            # Create a new room instance
-            room = rooms.objects.create(
-                laboratory_id=laboratory_id,  # Associate room with laboratory
-                name=room_name,
-                capacity=room_capacity,
-                description=room_description
-            )
-            messages.success(request, "Room added successfully.")
-        else:
-            messages.error(request, "All fields are required and capacity must be a number.")
+            # Validate input data
+            if room_name and room_description and room_capacity.isdigit():  # Ensure capacity is an integer
+                room_capacity = int(room_capacity)  # Convert to integer
+                
+                # Create a new room instance
+                room = rooms.objects.create(
+                    laboratory_id=laboratory_id,  # Associate room with laboratory
+                    name=room_name,
+                    capacity=room_capacity,
+                    description=room_description
+                )
+                messages.success(request, "Room added successfully.")
+            else:
+                messages.error(request, "All fields are required and capacity must be a number.")
+        except Exception as e:
+            logger.error(f"Error adding room to lab {laboratory_id}: {e}")
+            messages.error(request, "Failed to add room.")
 
         return redirect('superuser_lab_info', laboratory_id=laboratory_id)
-    else:
-        # Handle GET request if necessary (optional)
-        return render(request, 'superuser/superuser_labInfo.html')  # Adjust to your actual template name
+ 
+    # Handle GET request if necessary (optional)
+    return render(request, 'superuser/superuser_labInfo.html')  # Adjust to your actual template name
 
 #def setup_editLab(request, laboratory_id):
     # Retrieve the lab to edit
@@ -5596,88 +5724,93 @@ def setup_createlab(request):
         return render(request, 'error_page.html', {'message': 'Access restricted.'})
     
     if request.method == 'POST':
-        lab_name = request.POST.get('labname')
-        description = request.POST.get('description')
-        department = request.POST.get('department')
+        try:
+            lab_name = request.POST.get('labname')
+            description = request.POST.get('description')
+            department = request.POST.get('department')
 
-        # Create the new lab
-        new_lab = laboratory.objects.create(
-            name=lab_name,
-            description=description,
-            department=department,
-            is_available=True,
-            date_created=timezone.localtime()
-        )
-
-        # Convert selected module IDs to integers
-        selected_modules = [int(module_id) for module_id in request.POST.getlist('modules[]')]
-        new_lab.modules = selected_modules
-        new_lab.save()
-        
-        # Check if module ID 2 is selected and create a borrowing config
-        if 2 in selected_modules:
-            borrowing_config.objects.create(
-                laboratory=new_lab,
-                allow_walkin=False,  # Set default values or customize as needed
-                allow_prebook=False,
-                prebook_lead_time=1,
-                allow_shortterm=False,
-                allow_longterm=False,
-                questions_config=[]
+            # Create the new lab
+            new_lab = laboratory.objects.create(
+                name=lab_name,
+                description=description,
+                department=department,
+                is_available=True,
+                date_created=timezone.localtime()
             )
 
-        # Check if module ID 4 is selected and create a reservation config
-        if 4 in selected_modules:
-            reservation_config.objects.create(
-                laboratory=new_lab,
-                reservation_type='class',  # Set default values or customize as needed
-                start_time=None,
-                end_time=None,
-                require_approval=False,
-                require_payment=False,
-                approval_form=None,
-                tc_description='',
-                leadtime=0
-            )
+            # Convert selected module IDs to integers
+            selected_modules = [int(module_id) for module_id in request.POST.getlist('modules[]')]
+            new_lab.modules = selected_modules
+            new_lab.save()
+            
+            # Check if module ID 2 is selected and create a borrowing config
+            if 2 in selected_modules:
+                borrowing_config.objects.create(
+                    laboratory=new_lab,
+                    allow_walkin=False,  # Set default values or customize as needed
+                    allow_prebook=False,
+                    prebook_lead_time=1,
+                    allow_shortterm=False,
+                    allow_longterm=False,
+                    questions_config=[]
+                )
+
+            # Check if module ID 4 is selected and create a reservation config
+            if 4 in selected_modules:
+                reservation_config.objects.create(
+                    laboratory=new_lab,
+                    reservation_type='class',  # Set default values or customize as needed
+                    start_time=None,
+                    end_time=None,
+                    require_approval=False,
+                    require_payment=False,
+                    approval_form=None,
+                    tc_description='',
+                    leadtime=0
+                )
 
 
-        # Initialize permissions_data dictionary
-        permissions_data = {}
+            # Initialize permissions_data dictionary
+            permissions_data = {}
 
-        # Regular expression pattern for extracting role_id and perm_codename
-        pattern = r"permissions\[(\d+)\]\[(\w+)\]"
+            # Regular expression pattern for extracting role_id and perm_codename
+            pattern = r"permissions\[(\d+)\]\[(\w+)\]"
 
-        # Extract permissions data from POST
-        for key, value in request.POST.items():
-            match = re.match(pattern, key)
-            if match:
-                role_id, perm_codename = match.groups()
-                role_id = int(role_id)
-                print(f"Parsed role_id: {role_id}, perm_codename: {perm_codename}")  # Debugging print if match found
+            # Extract permissions data from POST
+            for key, value in request.POST.items():
+                match = re.match(pattern, key)
+                if match:
+                    role_id, perm_codename = match.groups()
+                    role_id = int(role_id)
+                    print(f"Parsed role_id: {role_id}, perm_codename: {perm_codename}")  # Debugging print if match found
 
-                # Organize data into permissions_data dictionary
-                if role_id not in permissions_data:
-                    permissions_data[role_id] = {}
-                permissions_data[role_id][perm_codename] = value
+                    # Organize data into permissions_data dictionary
+                    if role_id not in permissions_data:
+                        permissions_data[role_id] = {}
+                    permissions_data[role_id][perm_codename] = value
 
-        # Save permissions per role per module
-        for role_id, perms in permissions_data.items():
-            role = laboratory_roles.objects.get(roles_id=role_id)
-            for perm_codename, is_selected in perms.items():
-                perm_obj = permissions.objects.get(codename=perm_codename)
-                
-                if is_selected == 'on':  # Save if checkbox was checked
-                    laboratory_permissions.objects.update_or_create(
-                        role=role, laboratory=new_lab, permissions=perm_obj
-                    )
-                else:
-                    # Remove the permission if unchecked
-                    laboratory_permissions.objects.filter(
-                        role=role, laboratory=new_lab, permissions=perm_obj
-                    ).delete()
+            # Save permissions per role per module
+            for role_id, perms in permissions_data.items():
+                role = laboratory_roles.objects.get(roles_id=role_id)
+                for perm_codename, is_selected in perms.items():
+                    perm_obj = permissions.objects.get(codename=perm_codename)
+                    
+                    if is_selected == 'on':  # Save if checkbox was checked
+                        laboratory_permissions.objects.update_or_create(
+                            role=role, laboratory=new_lab, permissions=perm_obj
+                        )
+                    else:
+                        # Remove the permission if unchecked
+                        laboratory_permissions.objects.filter(
+                            role=role, laboratory=new_lab, permissions=perm_obj
+                        ).delete()
 
-        messages.success(request, "Laboratory and permissions saved successfully.")
-        return redirect('superuser_lab_info', new_lab.laboratory_id)
+            messages.success(request, "Laboratory and permissions saved successfully.")
+            logger.info(f"Laboratory '{lab_name}' created successfully.")
+            return redirect('superuser_lab_info', new_lab.laboratory_id)
+        except Exception as e:
+            logger.error(f"Error creating lab: {e}")
+            messages.error(request, "Failed to create laboratory.")
 
     # Prepare data for rendering
     roles = laboratory_roles.objects.filter(laboratory=0)
@@ -5713,61 +5846,77 @@ def setup_createlab(request):
 @user_passes_test(lambda u: u.is_superuser)
 def add_role(request):
     if request.method == 'POST':
-        role_name = request.POST.get('roleName')
-        lab_id = request.POST.get('laboratory')  # Ensure lab_id is provided or set up
-        
-        # Capture permissions for each module from the form
-        permissions = {
-            "inventory": {
-                "view_inventory": request.POST.get("inventory_view_inventory") == "on",
-                "add_new_item": request.POST.get("inventory_add_new_item") == "on",
-                "update_item_inventory": request.POST.get("inventory_update_item_inventory") == "on",
-                "physical_count": request.POST.get("inventory_physical_count") == "on",
-                "manage_suppliers": request.POST.get("inventory_manage_suppliers") == "on",
-                "configure_inventory": request.POST.get("inventory_configure_inventory") == "on",
-            },
-            "borrowing": {
-                "borrow_items": request.POST.get("borrowing_borrow_items") == "on",
-                "view_borrowed_items": request.POST.get("borrowing_view_borrowed_items") == "on",
-                "view_booking_requests": request.POST.get("borrowing_view_booking_requests") == "on",
-                "return_item": request.POST.get("borrowing_return_item") == "on",
-                "configure_borrowing": request.POST.get("borrowing_configure_borrowing") == "on",
-            },
-            "clearance": {
-                "view_own_clearance": request.POST.get("clearance_view_own_clearance") == "on",
-                "view_student_clearance": request.POST.get("clearance_view_student_clearance") == "on",
-            },
-            "lab_reservation": {
-                "reserve_laboratory": request.POST.get("reservation_reserve_laboratory") == "on",
-                "view_reservations": request.POST.get("reservation_view_reservations") == "on",
-                "approve_deny_reservations": request.POST.get("reservation_approve_deny_reservations") == "on",
-                "configure_lab_reservation": request.POST.get("reservation_configure_lab_reservation") == "on",
-            },
-            "reports": {
-                "view_reports": request.POST.get("reports_view_reports") == "on",
-            },
-        }
+        try:
+            role_name = request.POST.get('roleName')
+            lab_id = request.POST.get('laboratory')  # Ensure lab_id is provided or set up
 
-        # Create the role and save permissions
-        new_role = laboratory_roles.objects.create(
-            laboratory_id=lab_id,
-            name=role_name,
-            permissions=permissions
-        )
+            if not role_name or not lab_id:
+                messages.error(request, "Role name and laboratory must be provided.")
+                return redirect('add_role')
+            
+            # Capture permissions for each module from the form
+            permissions = {
+                "inventory": {
+                    "view_inventory": request.POST.get("inventory_view_inventory") == "on",
+                    "add_new_item": request.POST.get("inventory_add_new_item") == "on",
+                    "update_item_inventory": request.POST.get("inventory_update_item_inventory") == "on",
+                    "physical_count": request.POST.get("inventory_physical_count") == "on",
+                    "manage_suppliers": request.POST.get("inventory_manage_suppliers") == "on",
+                    "configure_inventory": request.POST.get("inventory_configure_inventory") == "on",
+                },
+                "borrowing": {
+                    "borrow_items": request.POST.get("borrowing_borrow_items") == "on",
+                    "view_borrowed_items": request.POST.get("borrowing_view_borrowed_items") == "on",
+                    "view_booking_requests": request.POST.get("borrowing_view_booking_requests") == "on",
+                    "return_item": request.POST.get("borrowing_return_item") == "on",
+                    "configure_borrowing": request.POST.get("borrowing_configure_borrowing") == "on",
+                },
+                "clearance": {
+                    "view_own_clearance": request.POST.get("clearance_view_own_clearance") == "on",
+                    "view_student_clearance": request.POST.get("clearance_view_student_clearance") == "on",
+                },
+                "lab_reservation": {
+                    "reserve_laboratory": request.POST.get("reservation_reserve_laboratory") == "on",
+                    "view_reservations": request.POST.get("reservation_view_reservations") == "on",
+                    "approve_deny_reservations": request.POST.get("reservation_approve_deny_reservations") == "on",
+                    "configure_lab_reservation": request.POST.get("reservation_configure_lab_reservation") == "on",
+                },
+                "reports": {
+                    "view_reports": request.POST.get("reports_view_reports") == "on",
+                },
+            }
 
-        messages.success(request, "Role created successfully.")
-        return redirect('role_list')  # Redirect to role list or another page
+            # Create the role and save permissions
+            new_role = laboratory_roles.objects.create(
+                laboratory_id=lab_id,
+                name=role_name,
+                permissions=permissions
+            )
 
+            messages.success(request, "Role created successfully.")
+            logger.info(f"New role '{role_name}' created in lab {lab_id}.")
+            return redirect('role_list')  # Redirect to role list or another page
+        except IntegrityError:
+            messages.error(request, "Role already exists.")
+            logger.warning(f"Duplicate role creation attempted: {role_name}")
+
+        except Exception as e:
+            logger.error(f"Error creating role: {e}")
+            messages.error(request, "Failed to create role.")
     return render(request, 'core/add_role.html')
 
 @user_passes_test(lambda u: u.is_superuser)
 def superuser_login(request):
     if request.method == 'POST':
-        form = LoginForm(request, data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            auth_login(request, user)
-            return redirect('superuser_setup')
+        try:
+            form = LoginForm(request, data=request.POST)
+            if form.is_valid():
+                user = form.get_user()
+                auth_login(request, user)
+                return redirect('superuser_setup')
+        except Exception as e:
+            logger.error(f"Error during superuser login: {e}")
+            messages.error(request, "Login failed.")
     else:
         form = LoginForm()
     return render(request, 'superuser/superuser_login.html', {'form': form})
