@@ -13,7 +13,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear, Abs
 from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField, Max, Min
-from django.db import connection, models
+from django.db import connection, models, DatabaseError
 from django.utils import timezone
 from django.utils.dateformat import DateFormat
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
@@ -4148,738 +4148,820 @@ def get_room_configuration(request, room_id):
 @lab_permission_required('view_reports')
 def reports_view(request):
     selected_laboratory_id = request.session.get('selected_lab')
-    # ==== user reports
-    lab_info = get_object_or_404(
-        laboratory.objects.annotate(user_count=Count('laboratory_users')),
-        laboratory_id=selected_laboratory_id
-    )
-
-    # Get all roles that are either default or specific to the selected laboratory
-    all_roles = laboratory_roles.objects.filter(
-        Q(laboratory_id=0) | Q(laboratory_id=selected_laboratory_id)
-    )
-
-    # Annotate each role with the count of users
-    role_user_counts = all_roles.annotate(
-        user_count=Count('users', filter=Q(users__laboratory_id=selected_laboratory_id))
-    )
-    role_user_data = {
-        'labels': [role.name for role in role_user_counts],
-        'series': [role.user_count for role in role_user_counts]
-    }
-    
-
-    lab_users = laboratory_users.objects.filter(laboratory_id=selected_laboratory_id, is_active=1).select_related('user', 'role').annotate(
-        username=F('user__username'),
-        user_email=F('user__email'),
-        full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
-        role_name=F('role__name'),
-        personal_id=F('user__personal_id'),
-    )
-    
-    context = {
-        'lab_info': lab_info,
-        'role_user_data': role_user_data,
-
-        'lab_users': lab_users
-    }
-
-    return render(request, 'mod_reports/reports.html', context)
-
-def inventory_reports(request):
-    selected_laboratory_id = request.session.get('selected_lab')
-    current_date = date.today()
-    purchased_filter_type = request.GET.get('purchased_filter', 'this_week')
-    used_filter_type = request.GET.get('used_filter', 'this_week')
-
-    print(purchased_filter_type, '---',used_filter_type )
-
-    total_purchased = item_handling.objects.filter(
-            inventory_item__item__laboratory_id=selected_laboratory_id,
-            qty__gt=0,
-            timestamp__date__range = calculate_date_range(request, purchased_filter_type)
-        ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
-
-    total_used = item_handling.objects.filter(
-        inventory_item__item__laboratory_id=selected_laboratory_id,
-        qty__lt=0,
-        timestamp__date__range = calculate_date_range(request, used_filter_type)
-    ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
-
-    print(total_purchased,' --- ', total_used)
-    
-    # total qty of expired items
-    expired_items_qty = item_inventory.objects.filter(
-        item_expirations__expired_date__lt=current_date
-    ).aggregate(total_qty=Sum('qty'))['total_qty']
-
-    # If there are no expired items, set the quantity to 0
-    if expired_items_qty is None:
-        expired_items_qty = 0
-
-    # inventory items table
-    inventory_items = item_description.objects.filter(
-        laboratory_id=selected_laboratory_id,
-        is_disabled=False  # Only get items that are enabled
-    ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
-    inventory_qty_data = {
-        'categories': [item.item_name for item in inventory_items],
-        'series': [item.total_qty for item in inventory_items]
-    }
-
-    
-    
-
-    item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
-    item_id = request.GET.get('item_id')
-
-    end_date = timezone.localtime().date()
-    start_date = end_date - timedelta(days=365)
-
-    daily_data = {}
-    current_day = start_date  # Changed from 'date' to 'current_day'
-    while current_day <= end_date:
-        daily_data[current_day] = {"added_qty": 0, "removed_qty": 0}
-        current_day += timedelta(days=1)
-
-    if item_id:
-        added_quantities = item_handling.objects.filter(
-            inventory_item__item__laboratory_id=selected_laboratory_id,
-            inventory_item__item_id=item_id,
-            qty__gt=0,
-            timestamp__date__range=(start_date, end_date)
-        ).annotate(date=TruncDay('timestamp')).values('date').annotate(total_qty=Sum('qty')).order_by('date')
-
-        removed_quantities = item_handling.objects.filter(
-            inventory_item__item__laboratory_id=selected_laboratory_id,
-            inventory_item__item_id=item_id,
-            qty__lt=0,
-            timestamp__date__range=(start_date, end_date)
-        ).annotate(date=TruncDay('timestamp')).values('date').annotate(total_qty=Abs(Sum('qty'))).order_by('date')
-
-        for entry in added_quantities:
-            entry_date = entry['date'].date()  # Renamed to entry_date to avoid conflict
-            daily_data[entry_date]["added_qty"] = entry['total_qty']
-
-        for entry in removed_quantities:
-            entry_date = entry['date'].date()
-            daily_data[entry_date]["removed_qty"] = entry['total_qty']
-
-    trend_data_added = [
-        {"date": day.strftime('%Y-%m-%d'), "total_qty": data["added_qty"]}
-        for day, data in daily_data.items()
-    ]
-    trend_data_removed = [
-        {"date": day.strftime('%Y-%m-%d'), "total_qty": data["removed_qty"]}
-        for day, data in daily_data.items()
-    ]
-    
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return JsonResponse({
-            'total_purchased': total_purchased,
-            'total_used': abs(total_used)  # Convert to positive number
-        })
-    
-    items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
-
-    selected_laboratory_id = request.session.get('selected_lab')
-    current_date = date.today()
-    supplier_filter_type = request.GET.get('supplier_reports_filter', 'this_week')
-    supplier_item_id = request.GET.get('item_id')
-    start_date, end_date = calculate_date_range(request, supplier_filter_type)
-
-    # Filter supplier data based on the selected item and date range
-    supplier_data = []
-    if supplier_item_id:
-        inventory_items = item_inventory.objects.filter(item_id=supplier_item_id).exclude(supplier_id=None)
-        for inventory in inventory_items:
-            # Filter based on date range
-            first_handling = item_handling.objects.filter(inventory_item=inventory, timestamp__date__range=calculate_date_range(request, supplier_filter_type)).order_by('timestamp').first()
-            expiration_date = item_expirations.objects.filter(inventory_item=inventory).first()
-            duration = (inventory.date_received - inventory.date_purchased).days if inventory.date_purchased and inventory.date_received else 'N/A'
-            
-            if first_handling:
-                supplier_data.append({
-                    'supplier_name': inventory.supplier.supplier_name if inventory.supplier else 'N/A',
-                    'inventory_item_id': inventory.inventory_item_id,
-                    'timestamp': first_handling.timestamp,
-                    'date_purchased': inventory.date_purchased,
-                    'date_received': inventory.date_received,
-                    'duration': duration,
-                    'qty': first_handling.qty,
-                    'purchase_price': inventory.purchase_price,
-                    'expiration': expiration_date.expired_date if expiration_date else 'None'
-                })
-
-
-    loss_filter_type = request.GET.get('loss_reports_filter', 'this_week')
-    loss_start_date, loss_end_date= calculate_date_range(request, loss_filter_type)
-
-    # Query the loss data
-    loss_data_query = item_handling.objects.filter(
-        changes='D',
-        inventory_item__item__laboratory_id=selected_laboratory_id,
-        inventory_item__item__is_disabled=0
-    ).select_related(
-        'inventory_item__item', 'inventory_item__item__itemType', 'updated_by'
-    )
-
-    # Apply date filtering
-    if loss_start_date and loss_end_date:
-        loss_data_query = loss_data_query.filter(
-            timestamp__date__range=(loss_start_date, loss_end_date)
+    try:
+        lab_info = get_object_or_404(
+            laboratory.objects.annotate(user_count=Count('laboratory_users')),
+            laboratory_id=selected_laboratory_id
         )
 
-    # Prepare data for the template
-    loss_data = [
-        {
-            'item_name': record.inventory_item.item.item_name,
-            'item_type': record.inventory_item.item.itemType.itemType_name,
-            'inventory_item_id': record.inventory_item.inventory_item_id,
-            'qty': record.qty,
-            'timestamp': record.timestamp,
-            'remarks': record.remarks,
-            'updated_by': record.updated_by if record.updated_by else 'Unknown'
+        # Get all roles that are either default or specific to the selected laboratory
+        all_roles = laboratory_roles.objects.filter(
+            Q(laboratory_id=0) | Q(laboratory_id=selected_laboratory_id)
+        )
+
+        # Annotate each role with the count of users
+        role_user_counts = all_roles.annotate(
+            user_count=Count('users', filter=Q(users__laboratory_id=selected_laboratory_id))
+        )
+        role_user_data = {
+            'labels': [role.name for role in role_user_counts],
+            'series': [role.user_count for role in role_user_counts]
         }
-        for record in loss_data_query
-    ]
+        
+
+        lab_users = laboratory_users.objects.filter(laboratory_id=selected_laboratory_id, is_active=1).select_related('user', 'role').annotate(
+            username=F('user__username'),
+            user_email=F('user__email'),
+            full_name=Concat(F('user__firstname'), Value(' '), F('user__lastname'), output_field=CharField()),
+            role_name=F('role__name'),
+            personal_id=F('user__personal_id'),
+        )
+        
+        context = {
+            'lab_info': lab_info,
+            'role_user_data': role_user_data,
+
+            'lab_users': lab_users
+        }
+
+        return render(request, 'mod_reports/reports.html', context)
+    except laboratory.DoesNotExist:
+        logger.error(f"Laboratory with ID {selected_laboratory_id} does not exist.")
+        messages.error(request, "Selected laboratory does not exist.")
+        return redirect('home')  # Redirect to a safe page
+
+    except Exception as e:
+        logger.error(f"Unexpected error in reports_view: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred while loading the reports.")
+        return redirect('home')  # Redirect to a safe page
+
+def inventory_reports(request):
+    try:
+        selected_laboratory_id = request.session.get('selected_lab')
+        current_date = date.today()
+        purchased_filter_type = request.GET.get('purchased_filter', 'this_week')
+        used_filter_type = request.GET.get('used_filter', 'this_week')
+
+        print(purchased_filter_type, '---',used_filter_type )
+
+        total_purchased = item_handling.objects.filter(
+                inventory_item__item__laboratory_id=selected_laboratory_id,
+                qty__gt=0,
+                timestamp__date__range = calculate_date_range(request, purchased_filter_type)
+            ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
+
+        total_used = item_handling.objects.filter(
+            inventory_item__item__laboratory_id=selected_laboratory_id,
+            qty__lt=0,
+            timestamp__date__range = calculate_date_range(request, used_filter_type)
+        ).aggregate(total_qty=Sum('qty'))['total_qty'] or 0
+
+        print(total_purchased,' --- ', total_used)
+        
+        # total qty of expired items
+        expired_items_qty = item_inventory.objects.filter(
+            item_expirations__expired_date__lt=current_date
+        ).aggregate(total_qty=Sum('qty'))['total_qty']
+
+        # If there are no expired items, set the quantity to 0
+        if expired_items_qty is None:
+            expired_items_qty = 0
+
+        # inventory items table
+        inventory_items = item_description.objects.filter(
+            laboratory_id=selected_laboratory_id,
+            is_disabled=False  # Only get items that are enabled
+        ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
+        inventory_qty_data = {
+            'categories': [item.item_name for item in inventory_items],
+            'series': [item.total_qty for item in inventory_items]
+        }
+
+        
+        
+
+        item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
+        item_id = request.GET.get('item_id')
+
+        end_date = timezone.localtime().date()
+        start_date = end_date - timedelta(days=365)
+
+        daily_data = {}
+        current_day = start_date  # Changed from 'date' to 'current_day'
+        while current_day <= end_date:
+            daily_data[current_day] = {"added_qty": 0, "removed_qty": 0}
+            current_day += timedelta(days=1)
+
+        if item_id:
+            added_quantities = item_handling.objects.filter(
+                inventory_item__item__laboratory_id=selected_laboratory_id,
+                inventory_item__item_id=item_id,
+                qty__gt=0,
+                timestamp__date__range=(start_date, end_date)
+            ).annotate(date=TruncDay('timestamp')).values('date').annotate(total_qty=Sum('qty')).order_by('date')
+
+            removed_quantities = item_handling.objects.filter(
+                inventory_item__item__laboratory_id=selected_laboratory_id,
+                inventory_item__item_id=item_id,
+                qty__lt=0,
+                timestamp__date__range=(start_date, end_date)
+            ).annotate(date=TruncDay('timestamp')).values('date').annotate(total_qty=Abs(Sum('qty'))).order_by('date')
+
+            for entry in added_quantities:
+                entry_date = entry['date'].date()  # Renamed to entry_date to avoid conflict
+                daily_data[entry_date]["added_qty"] = entry['total_qty']
+
+            for entry in removed_quantities:
+                entry_date = entry['date'].date()
+                daily_data[entry_date]["removed_qty"] = entry['total_qty']
+
+        trend_data_added = [
+            {"date": day.strftime('%Y-%m-%d'), "total_qty": data["added_qty"]}
+            for day, data in daily_data.items()
+        ]
+        trend_data_removed = [
+            {"date": day.strftime('%Y-%m-%d'), "total_qty": data["removed_qty"]}
+            for day, data in daily_data.items()
+        ]
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'total_purchased': total_purchased,
+                'total_used': abs(total_used)  # Convert to positive number
+            })
+        
+        items = item_description.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False)
+
+        selected_laboratory_id = request.session.get('selected_lab')
+        current_date = date.today()
+        supplier_filter_type = request.GET.get('supplier_reports_filter', 'this_week')
+        supplier_item_id = request.GET.get('item_id')
+        start_date, end_date = calculate_date_range(request, supplier_filter_type)
+
+        # Filter supplier data based on the selected item and date range
+        supplier_data = []
+        if supplier_item_id:
+            inventory_items = item_inventory.objects.filter(item_id=supplier_item_id).exclude(supplier_id=None)
+            for inventory in inventory_items:
+                # Filter based on date range
+                first_handling = item_handling.objects.filter(inventory_item=inventory, timestamp__date__range=calculate_date_range(request, supplier_filter_type)).order_by('timestamp').first()
+                expiration_date = item_expirations.objects.filter(inventory_item=inventory).first()
+                duration = (inventory.date_received - inventory.date_purchased).days if inventory.date_purchased and inventory.date_received else 'N/A'
+                
+                if first_handling:
+                    supplier_data.append({
+                        'supplier_name': inventory.supplier.supplier_name if inventory.supplier else 'N/A',
+                        'inventory_item_id': inventory.inventory_item_id,
+                        'timestamp': first_handling.timestamp,
+                        'date_purchased': inventory.date_purchased,
+                        'date_received': inventory.date_received,
+                        'duration': duration,
+                        'qty': first_handling.qty,
+                        'purchase_price': inventory.purchase_price,
+                        'expiration': expiration_date.expired_date if expiration_date else 'None'
+                    })
 
 
-    context = {
-        'inventory_qty_data': inventory_qty_data,
-        'item_types_list': item_types_list,
-        'laboratory_id': selected_laboratory_id,
+        loss_filter_type = request.GET.get('loss_reports_filter', 'this_week')
+        loss_start_date, loss_end_date= calculate_date_range(request, loss_filter_type)
 
-        'trend_data_added': json.dumps(trend_data_added),
-        'trend_data_removed': json.dumps(trend_data_removed),
-        'items': items,
-        'selected_item_id': item_id,
+        # Query the loss data
+        loss_data_query = item_handling.objects.filter(
+            changes='D',
+            inventory_item__item__laboratory_id=selected_laboratory_id,
+            inventory_item__item__is_disabled=0
+        ).select_related(
+            'inventory_item__item', 'inventory_item__item__itemType', 'updated_by'
+        )
+
+        # Apply date filtering
+        if loss_start_date and loss_end_date:
+            loss_data_query = loss_data_query.filter(
+                timestamp__date__range=(loss_start_date, loss_end_date)
+            )
+
+        # Prepare data for the template
+        loss_data = [
+            {
+                'item_name': record.inventory_item.item.item_name,
+                'item_type': record.inventory_item.item.itemType.itemType_name,
+                'inventory_item_id': record.inventory_item.inventory_item_id,
+                'qty': record.qty,
+                'timestamp': record.timestamp,
+                'remarks': record.remarks,
+                'updated_by': record.updated_by if record.updated_by else 'Unknown'
+            }
+            for record in loss_data_query
+        ]
 
 
-        'total_purchased': total_purchased,
-        'total_used': abs(total_used),  # Convert to positive number
-        'purchased_filter_display': purchased_filter_type.replace("_", " ").title(),
-        'used_filter_display': used_filter_type.replace("_", " ").title(),
-        'expired_items_qty': expired_items_qty,
+        context = {
+            'inventory_qty_data': inventory_qty_data,
+            'item_types_list': item_types_list,
+            'laboratory_id': selected_laboratory_id,
 
-        'supplier_data': supplier_data,
-        'supplier_item_id': supplier_item_id,
-        'start_date': start_date,
-        'end_date': end_date,
-        'filter_type': supplier_filter_type,
+            'trend_data_added': json.dumps(trend_data_added),
+            'trend_data_removed': json.dumps(trend_data_removed),
+            'items': items,
+            'selected_item_id': item_id,
 
-        'loss_data': loss_data,
-        'loss_filter_type': loss_filter_type,
-        'loss_start_date': loss_start_date,
-        'loss_end_date': loss_end_date,
-    }
 
-    return render(request, 'mod_reports/inventory_reports.html', context)
+            'total_purchased': total_purchased,
+            'total_used': abs(total_used),  # Convert to positive number
+            'purchased_filter_display': purchased_filter_type.replace("_", " ").title(),
+            'used_filter_display': used_filter_type.replace("_", " ").title(),
+            'expired_items_qty': expired_items_qty,
+
+            'supplier_data': supplier_data,
+            'supplier_item_id': supplier_item_id,
+            'start_date': start_date,
+            'end_date': end_date,
+            'filter_type': supplier_filter_type,
+
+            'loss_data': loss_data,
+            'loss_filter_type': loss_filter_type,
+            'loss_start_date': loss_start_date,
+            'loss_end_date': loss_end_date,
+        }
+
+        return render(request, 'mod_reports/inventory_reports.html', context)
+    except ValueError as e:
+        logger.error(f"Value error in inventory_reports: {e}")
+        messages.error(request, str(e))
+        return redirect('home')
+
+    except DatabaseError as e:
+        logger.error(f"Database error in inventory_reports: {e}", exc_info=True)
+        messages.error(request, "Database error occurred. Please try again later.")
+        return redirect('home')
+
+    except Exception as e:
+        logger.error(f"Unexpected error in inventory_reports: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred while loading inventory reports.")
+        return redirect('home')
 
 def borrowing_reports(request):
-    selected_laboratory_id = request.session.get('selected_lab')
-    current_date = date.today()
-    one_year_ago = current_date - timedelta(days=365)
+    try:
+        selected_laboratory_id = request.session.get('selected_lab')
+        current_date = date.today()
+        one_year_ago = current_date - timedelta(days=365)
 
-    # Query to get the total number of borrows per day with status 'B', 'X', 'Y' in the last year
-    borrows_per_day = borrow_info.objects.filter(
-        status__in=['B', 'X', 'Y'],
-        borrow_date__range=[one_year_ago, current_date],
-        laboratory_id=selected_laboratory_id
-    ).values('borrow_date').annotate(total_borrows=Count('borrow_id')).order_by('borrow_date')
+        # Query to get the total number of borrows per day with status 'B', 'X', 'Y' in the last year
+        borrows_per_day = borrow_info.objects.filter(
+            status__in=['B', 'X', 'Y'],
+            borrow_date__range=[one_year_ago, current_date],
+            laboratory_id=selected_laboratory_id
+        ).values('borrow_date').annotate(total_borrows=Count('borrow_id')).order_by('borrow_date')
 
-    # Prepare data for the chart
-    if borrows_per_day:
-        start_date = one_year_ago
-        end_date = current_date
-        date_range = (end_date - start_date).days + 1
-        all_dates = {start_date + timedelta(days=i): 0 for i in range(date_range)}
+        # Prepare data for the chart
+        if borrows_per_day:
+            start_date = one_year_ago
+            end_date = current_date
+            date_range = (end_date - start_date).days + 1
+            all_dates = {start_date + timedelta(days=i): 0 for i in range(date_range)}
 
-        # Update the dictionary with actual counts
-        for entry in borrows_per_day:
-            all_dates[entry['borrow_date']] = entry['total_borrows']
+            # Update the dictionary with actual counts
+            for entry in borrows_per_day:
+                all_dates[entry['borrow_date']] = entry['total_borrows']
 
-        # Convert data to JSON format for ApexCharts
-        # day_borrowing_data = {
-        #     'dates': [date.strftime('%Y-%m-%d') for date in all_dates.keys()],
-        #     'counts': list(all_dates.values())
-        # }
-        # day_borrowing_data = {
-        #     'dates': [date.isoformat() for date in all_dates.keys()],
-        #     'counts': list(all_dates.values())
-        # }
-        day_borrowing_data = {
-            'dates': [date.strftime('%Y-%m-%d') for date in all_dates.keys()],
-            'counts': list(all_dates.values())
+            # Convert data to JSON format for ApexCharts
+            # day_borrowing_data = {
+            #     'dates': [date.strftime('%Y-%m-%d') for date in all_dates.keys()],
+            #     'counts': list(all_dates.values())
+            # }
+            # day_borrowing_data = {
+            #     'dates': [date.isoformat() for date in all_dates.keys()],
+            #     'counts': list(all_dates.values())
+            # }
+            day_borrowing_data = {
+                'dates': [date.strftime('%Y-%m-%d') for date in all_dates.keys()],
+                'counts': list(all_dates.values())
+            }
+
+        else:
+            day_borrowing_data = {
+                'dates': [],
+                'counts': []
+            }
+        
+        # print(day_borrowing_data)
+
+        # borrow table ============================
+        # Get filter parameters from request
+        filter_type = request.GET.get('filter_type', 'today')
+        start_date, end_date = calculate_date_range(request, filter_type)
+
+        # Get the current date
+        current_date = date.today()
+
+        # Query to get the total quantity of items borrowed for each item in a specific laboratory
+        borrowed_items_data = borrowed_items.objects.filter(
+            borrow__status__in=['B', 'X', 'Y'],
+            borrow__borrow_date__range= (start_date, end_date),
+            borrow__laboratory_id=selected_laboratory_id
+        ).values('item__item_id','item__item_name', 'item__itemType__itemType_name').annotate(total_qty=Sum('qty')).order_by('item__item_name')
+
+        
+        # New Query for borrow_info (borrowing requests)
+        borrowreq_filter_type = request.GET.get('borrowreq_filter_type', 'today')
+        borrowreq_start_date, borrowreq_end_date = calculate_date_range(request, borrowreq_filter_type)
+
+        borrow_requests_data = borrow_info.objects.filter(
+            borrow_date__range=(borrowreq_start_date, borrowreq_end_date),
+            laboratory_id=selected_laboratory_id
+        ).order_by('borrow_date')
+
+        context = {
+            'day_borrowing_data': json.dumps(day_borrowing_data),
+
+            'borrowed_items_data': borrowed_items_data,
+            'filter_type': filter_type,
+            'start_date': start_date,
+            'end_date': end_date,
+
+            'borrowreq_filter_type': borrowreq_filter_type,
+            'borrowreq_start_date': borrowreq_start_date,
+            'borrowreq_end_date': borrowreq_end_date,
+
+            'borrow_requests_data': borrow_requests_data
         }
 
-    else:
-        day_borrowing_data = {
-            'dates': [],
-            'counts': []
-        }
-    
-    # print(day_borrowing_data)
+        return render(request, 'mod_reports/borrowing_reports.html', context)
+    except ValueError as e:
+        logger.error(f"Value error in borrowing_reports: {e}")
+        messages.error(request, str(e))
+        return redirect('home')
 
-    # borrow table ============================
-    # Get filter parameters from request
-    filter_type = request.GET.get('filter_type', 'today')
-    start_date, end_date = calculate_date_range(request, filter_type)
+    except DatabaseError as e:
+        logger.error(f"Database error in borrowing_reports: {e}", exc_info=True)
+        messages.error(request, "Database error occurred. Please try again later.")
+        return redirect('home')
 
-    # Get the current date
-    current_date = date.today()
-
-    # Query to get the total quantity of items borrowed for each item in a specific laboratory
-    borrowed_items_data = borrowed_items.objects.filter(
-        borrow__status__in=['B', 'X', 'Y'],
-        borrow__borrow_date__range= (start_date, end_date),
-        borrow__laboratory_id=selected_laboratory_id
-    ).values('item__item_id','item__item_name', 'item__itemType__itemType_name').annotate(total_qty=Sum('qty')).order_by('item__item_name')
-
-    
-    # New Query for borrow_info (borrowing requests)
-    borrowreq_filter_type = request.GET.get('borrowreq_filter_type', 'today')
-    borrowreq_start_date, borrowreq_end_date = calculate_date_range(request, borrowreq_filter_type)
-
-    borrow_requests_data = borrow_info.objects.filter(
-        borrow_date__range=(borrowreq_start_date, borrowreq_end_date),
-        laboratory_id=selected_laboratory_id
-    ).order_by('borrow_date')
-
-    context = {
-        'day_borrowing_data': json.dumps(day_borrowing_data),
-
-        'borrowed_items_data': borrowed_items_data,
-        'filter_type': filter_type,
-        'start_date': start_date,
-        'end_date': end_date,
-
-        'borrowreq_filter_type': borrowreq_filter_type,
-        'borrowreq_start_date': borrowreq_start_date,
-        'borrowreq_end_date': borrowreq_end_date,
-
-        'borrow_requests_data': borrow_requests_data
-    }
-
-    return render(request, 'mod_reports/borrowing_reports.html', context)
+    except Exception as e:
+        logger.error(f"Unexpected error in borrowing_reports: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred while loading borrowing reports.")
+        return redirect('home')
 
 def clearance_reports(request):
-    # Get filter type from GET parameters, defaulting to 'today'
-    selected_laboratory_id = request.session.get('selected_lab')
-    filter_type = request.GET.get('filter_type', 'today')
-    reports_filter = request.GET.get('reports_filter', 'today')
-    start_date = end_date = None
-    today = timezone.localtime().date()
-    
-    if filter_type == 'today':
-        start_date = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
-        end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
-    elif filter_type == 'this_week':
-        start_date = today - timedelta(days=today.weekday())  # Start of the week
-        end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
-    elif filter_type == 'this_month':
-        start_date = today.replace(day=1)
-        end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
-    elif filter_type == 'this_year':
-        start_date = today.replace(month=1, day=1)
-        end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
-    elif filter_type == 'custom':
-        start_date = request.GET.get('start_date')
-        end_date = request.GET.get('end_date')
+    try:
+        # Get filter type from GET parameters, defaulting to 'today'
+        selected_laboratory_id = request.session.get('selected_lab')
+        filter_type = request.GET.get('filter_type', 'today')
+        reports_filter = request.GET.get('reports_filter', 'today')
+        start_date = end_date = None
+        today = timezone.localtime().date()
+        
+        if filter_type == 'today':
+            start_date = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
+        elif filter_type == 'this_week':
+            start_date = today - timedelta(days=today.weekday())  # Start of the week
+            end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
+        elif filter_type == 'this_month':
+            start_date = today.replace(day=1)
+            end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
+        elif filter_type == 'this_year':
+            start_date = today.replace(month=1, day=1)
+            end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
+        elif filter_type == 'custom':
+            start_date = request.GET.get('start_date')
+            end_date = request.GET.get('end_date')
 
-        if start_date:
-            start_date = timezone.make_aware(datetime.strptime(start_date, '%Y-%m-%d')).replace(hour=0, minute=0, second=0, microsecond=0)
-        if end_date:
-            end_date = timezone.make_aware(datetime.strptime(end_date, '%Y-%m-%d')).replace(hour=23, minute=59, second=59, microsecond=999999)
+            if start_date:
+                start_date = timezone.make_aware(datetime.strptime(start_date, '%Y-%m-%d')).replace(hour=0, minute=0, second=0, microsecond=0)
+            if end_date:
+                end_date = timezone.make_aware(datetime.strptime(end_date, '%Y-%m-%d')).replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    date_range = [start_date, end_date]
-    # print(start_date, ' - ', end_date)
+        date_range = [start_date, end_date]
+        # print(start_date, ' - ', end_date)
 
-    # Calculate the on-hold user count within the laboratory and date range
-    on_hold_users_count = reported_items.objects.filter(
-        laboratory_id=selected_laboratory_id,
-        status=1,  # Only include pending reports
-        user_id__isnull=False
-    ).values('user_id').distinct().count()
+        # Calculate the on-hold user count within the laboratory and date range
+        on_hold_users_count = reported_items.objects.filter(
+            laboratory_id=selected_laboratory_id,
+            status=1,  # Only include pending reports
+            user_id__isnull=False
+        ).values('user_id').distinct().count()
 
-    # Set incidents_start_date based on reports_filter
-    if reports_filter == 'today':
-        incidents_start_date = today
-    elif reports_filter == 'this_week':
-        incidents_start_date = today - timedelta(days=today.weekday())
-    elif reports_filter == 'this_month':
-        incidents_start_date = today.replace(day=1)
-    elif reports_filter == 'this_year':
-        incidents_start_date = today.replace(month=1, day=1)
-    else:
-        incidents_start_date = None
+        # Set incidents_start_date based on reports_filter
+        if reports_filter == 'today':
+            incidents_start_date = today
+        elif reports_filter == 'this_week':
+            incidents_start_date = today - timedelta(days=today.weekday())
+        elif reports_filter == 'this_month':
+            incidents_start_date = today.replace(day=1)
+        elif reports_filter == 'this_year':
+            incidents_start_date = today.replace(month=1, day=1)
+        else:
+            incidents_start_date = None
 
-    # Calculate total reports count in the lab based on incidents_start_date
-    total_reports_count = reported_items.objects.filter(
-        laboratory_id=selected_laboratory_id,
-        reported_date__date__gte=incidents_start_date if incidents_start_date else None
-    ).count()
+        # Calculate total reports count in the lab based on incidents_start_date
+        total_reports_count = reported_items.objects.filter(
+            laboratory_id=selected_laboratory_id,
+            reported_date__date__gte=incidents_start_date if incidents_start_date else None
+        ).count()
 
-    # If the request is AJAX, return JSON with total_reports_count and filter display
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return JsonResponse({
+        # If the request is AJAX, return JSON with total_reports_count and filter display
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'total_reports_count': total_reports_count,
+                'reports_filter_display': reports_filter.replace("_", " ").title()
+            })
+
+
+
+        # Filter reported_items within the date range and specific laboratory
+        clearance_data = reported_items.objects.filter(
+            laboratory_id=selected_laboratory_id,
+            reported_date__range=date_range,
+        ).values(
+            reported_user_id=F('user__user_id'),
+            user_name=Concat(F('user__firstname'), Value(' '), F('user__lastname')),
+            personal_id=F('user__personal_id')
+        ).annotate(
+            total_amount_due=Sum('amount_to_pay'),
+            reported_items_count=Count('report_id'),
+            status=Sum('status'),
+        )
+
+        # Add clearance status for each user
+        for record in clearance_data:
+            record['clearance_status'] = 'Cleared' if record['status'] == 0 else 'On Hold'
+
+        
+        # Fetch reported items data for the specified laboratory and filter criteria
+        # Filters for Reported Items Count
+        item_filter_type = request.GET.get('item_filter_type', 'today')
+        item_start_date = item_end_date = None
+        today = timezone.localtime().date()
+        
+        if item_filter_type == 'today':
+            item_start_date = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+            item_end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
+        elif item_filter_type == 'this_week':
+            item_start_date = today - timedelta(days=today.weekday())
+            item_end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
+        elif item_filter_type == 'this_month':
+            item_start_date = today.replace(day=1)
+            item_end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
+        elif item_filter_type == 'this_year':
+            item_start_date = today.replace(month=1, day=1)
+            item_end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
+        elif item_filter_type == 'custom':
+            item_start_date = request.GET.get('item_start_date')
+            item_end_date = request.GET.get('item_end_date')
+            if item_start_date:
+                item_start_date = timezone.make_aware(datetime.strptime(item_start_date, '%Y-%m-%d')).replace(
+                    hour=0, minute=0, second=0, microsecond=0)
+            if item_end_date:
+                item_end_date = timezone.make_aware(datetime.strptime(item_end_date, '%Y-%m-%d')).replace(
+                    hour=23, minute=59, second=59, microsecond=999999)
+
+        item_date_range = [item_start_date, item_end_date]
+
+        # Fetch Reported Items Count data
+        reported_items_summary = reported_items.objects.filter(
+            laboratory_id=selected_laboratory_id,
+            reported_date__range=item_date_range if item_start_date and item_end_date else None
+        ).values(
+            reported_item_id=F('item__item_id'),
+            item_name=F('item__item_name')
+        ).annotate(
+            report_count=Count('report_id'),
+            total_qty_reported=Sum('qty_reported')
+        )
+
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'total_reports_count': total_reports_count,
+                'reports_filter_display': context['reports_filter_display']
+            })    
+
+        context = {
+            'reported_items_data': clearance_data,
+
+            'filter_type': filter_type,
+            'start_date': start_date,
+            'end_date': end_date,
+
+            'total_on_hold_users': on_hold_users_count,
             'total_reports_count': total_reports_count,
-            'reports_filter_display': reports_filter.replace("_", " ").title()
-        })
+            'reports_filter_display': reports_filter.replace("_", " ").title(),
 
+            'reported_items_summary': reported_items_summary,
+            'item_filter_type': item_filter_type,
+            'item_start_date': item_start_date,
+            'item_end_date': item_end_date,
 
+        }
 
-    # Filter reported_items within the date range and specific laboratory
-    clearance_data = reported_items.objects.filter(
-        laboratory_id=selected_laboratory_id,
-        reported_date__range=date_range,
-    ).values(
-        reported_user_id=F('user__user_id'),
-        user_name=Concat(F('user__firstname'), Value(' '), F('user__lastname')),
-        personal_id=F('user__personal_id')
-    ).annotate(
-        total_amount_due=Sum('amount_to_pay'),
-        reported_items_count=Count('report_id'),
-        status=Sum('status'),
-    )
-
-    # Add clearance status for each user
-    for record in clearance_data:
-        record['clearance_status'] = 'Cleared' if record['status'] == 0 else 'On Hold'
-
-    
-    # Fetch reported items data for the specified laboratory and filter criteria
-    # Filters for Reported Items Count
-    item_filter_type = request.GET.get('item_filter_type', 'today')
-    item_start_date = item_end_date = None
-    today = timezone.localtime().date()
-    
-    if item_filter_type == 'today':
-        item_start_date = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
-        item_end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
-    elif item_filter_type == 'this_week':
-        item_start_date = today - timedelta(days=today.weekday())
-        item_end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
-    elif item_filter_type == 'this_month':
-        item_start_date = today.replace(day=1)
-        item_end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
-    elif item_filter_type == 'this_year':
-        item_start_date = today.replace(month=1, day=1)
-        item_end_date = timezone.localtime().replace(hour=23, minute=59, second=59, microsecond=999999)
-    elif item_filter_type == 'custom':
-        item_start_date = request.GET.get('item_start_date')
-        item_end_date = request.GET.get('item_end_date')
-        if item_start_date:
-            item_start_date = timezone.make_aware(datetime.strptime(item_start_date, '%Y-%m-%d')).replace(
-                hour=0, minute=0, second=0, microsecond=0)
-        if item_end_date:
-            item_end_date = timezone.make_aware(datetime.strptime(item_end_date, '%Y-%m-%d')).replace(
-                hour=23, minute=59, second=59, microsecond=999999)
-
-    item_date_range = [item_start_date, item_end_date]
-
-    # Fetch Reported Items Count data
-    reported_items_summary = reported_items.objects.filter(
-        laboratory_id=selected_laboratory_id,
-        reported_date__range=item_date_range if item_start_date and item_end_date else None
-    ).values(
-        reported_item_id=F('item__item_id'),
-        item_name=F('item__item_name')
-    ).annotate(
-        report_count=Count('report_id'),
-        total_qty_reported=Sum('qty_reported')
-    )
-
-
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return JsonResponse({
-            'total_reports_count': total_reports_count,
-            'reports_filter_display': context['reports_filter_display']
-        })    
-
-    context = {
-        'reported_items_data': clearance_data,
-
-        'filter_type': filter_type,
-        'start_date': start_date,
-        'end_date': end_date,
-
-        'total_on_hold_users': on_hold_users_count,
-        'total_reports_count': total_reports_count,
-        'reports_filter_display': reports_filter.replace("_", " ").title(),
-
-        'reported_items_summary': reported_items_summary,
-        'item_filter_type': item_filter_type,
-        'item_start_date': item_start_date,
-        'item_end_date': item_end_date,
-
-    }
-
-    return render(request, 'mod_reports/clearance_reports.html', context)
+        return render(request, 'mod_reports/clearance_reports.html', context)
+    except Exception as e:
+        logger.error(f"Unexpected error in clearance_reports: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred while loading clearance reports.")
+        return redirect('home')
 
 def labres_reports(request):
-    selected_laboratory_id = request.session.get('selected_lab')
-    reservations_filter = request.GET.get('reservations_filter', 'today')
-    today = timezone.localtime().date()
+    try:
+        selected_laboratory_id = request.session.get('selected_lab')
+        reservations_filter = request.GET.get('reservations_filter', 'today')
+        today = timezone.localtime().date()
 
-    # Get total rooms for the selected laboratory
-    total_rooms = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=0).count()
-    reservable_rooms = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_reservable=1, is_disabled=0).count()
+        # Get total rooms for the selected laboratory
+        total_rooms = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=0).count()
+        reservable_rooms = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_reservable=1, is_disabled=0).count()
 
-    # Set start_date based on filter type
-    if reservations_filter == 'today':
-        start_date = today
-    elif reservations_filter == 'this_week':
-        start_date = today - timedelta(days=today.weekday())  # Start of the week
-    elif reservations_filter == 'this_month':
-        start_date = today.replace(day=1)  # Start of the month
-    elif reservations_filter == 'this_year':
-        start_date = today.replace(month=1, day=1)  # Start of the year
-    else:
-        start_date = None  # No filter applied
+        # Set start_date based on filter type
+        if reservations_filter == 'today':
+            start_date = today
+        elif reservations_filter == 'this_week':
+            start_date = today - timedelta(days=today.weekday())  # Start of the week
+        elif reservations_filter == 'this_month':
+            start_date = today.replace(day=1)  # Start of the month
+        elif reservations_filter == 'this_year':
+            start_date = today.replace(month=1, day=1)  # Start of the year
+        else:
+            start_date = None  # No filter applied
 
-    # Total number of reservations for selected laboratory with optional filtering
-    lab_reservations_qs = laboratory_reservations.objects.filter(
-        room__laboratory_id=selected_laboratory_id
-    )
-    if start_date:
-        lab_reservations_qs = lab_reservations_qs.filter(start_date__gte=start_date)
-    total_reservations = lab_reservations_qs.count()
-
-
-    reservation_filter_type = request.GET.get('reservation_filter_type', 'today')
-    start_date = end_date = None
-    start_date, end_date = calculate_date_range(request, reservation_filter_type)
-    lab_reservations_qs = laboratory_reservations.objects.filter(
-        laboratory_id=selected_laboratory_id,
-        status='R'
-    )
-    if start_date and end_date:
-        lab_reservations_qs = lab_reservations_qs.filter(start_date__range=(start_date, end_date))
+        # Total number of reservations for selected laboratory with optional filtering
+        lab_reservations_qs = laboratory_reservations.objects.filter(
+            room__laboratory_id=selected_laboratory_id
+        )
+        if start_date:
+            lab_reservations_qs = lab_reservations_qs.filter(start_date__gte=start_date)
+        total_reservations = lab_reservations_qs.count()
 
 
-    # Room Reservation Filter
-    room_filter_type = request.GET.get('room_filter_type', 'today')
-    room_start_date, room_end_date = calculate_date_range(request, room_filter_type)
+        reservation_filter_type = request.GET.get('reservation_filter_type', 'today')
+        start_date = end_date = None
+        start_date, end_date = calculate_date_range(request, reservation_filter_type)
+        lab_reservations_qs = laboratory_reservations.objects.filter(
+            laboratory_id=selected_laboratory_id,
+            status='R'
+        )
+        if start_date and end_date:
+            lab_reservations_qs = lab_reservations_qs.filter(start_date__range=(start_date, end_date))
 
-    # Query for room reservation summary with filter
-    room_data = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False).annotate(
-        total_reservations=Count(
-            'reservations', 
-            filter=Q(reservations__start_date__range=(room_start_date, room_end_date))
-        ),
-        cumulative_time=Sum(
-            ExpressionWrapper(
-                (F('reservations__end_time__hour') * 60 + F('reservations__end_time__minute')) -
-                (F('reservations__start_time__hour') * 60 + F('reservations__start_time__minute')),
-                output_field=IntegerField()
+
+        # Room Reservation Filter
+        room_filter_type = request.GET.get('room_filter_type', 'today')
+        room_start_date, room_end_date = calculate_date_range(request, room_filter_type)
+
+        # Query for room reservation summary with filter
+        room_data = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False).annotate(
+            total_reservations=Count(
+                'reservations', 
+                filter=Q(reservations__start_date__range=(room_start_date, room_end_date))
             ),
-            filter=Q(reservations__start_date__range=(room_start_date, room_end_date))
-        ) / 60.0  # Convert minutes to hours
-    )
+            cumulative_time=Sum(
+                ExpressionWrapper(
+                    (F('reservations__end_time__hour') * 60 + F('reservations__end_time__minute')) -
+                    (F('reservations__start_time__hour') * 60 + F('reservations__start_time__minute')),
+                    output_field=IntegerField()
+                ),
+                filter=Q(reservations__start_date__range=(room_start_date, room_end_date))
+            ) / 60.0  # Convert minutes to hours
+        )
 
-    # Replace None with 0 for cumulative_time
-    for room in room_data:
-        if room.cumulative_time is None:
-            room.cumulative_time = 0
+        # Replace None with 0 for cumulative_time
+        for room in room_data:
+            if room.cumulative_time is None:
+                room.cumulative_time = 0
 
-    context = {
-        'total_rooms': total_rooms,
-        'reservable_rooms': reservable_rooms,
-        'total_reservations': total_reservations,
-        'reports_filter_display': reservations_filter.replace("_", " ").title(),
-
-        'laboratory_reservations': lab_reservations_qs,
-        'reservation_filter_type': reservation_filter_type,
-        'start_date': start_date,
-        'end_date': end_date,
-
-        'room_data': room_data,
-        'room_filter_type': room_filter_type,
-        'room_start_date': room_start_date,
-        'room_end_date': room_end_date,
-    }
-
-    # If AJAX request, return JSON response for dynamic filter update
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return JsonResponse({
+        context = {
+            'total_rooms': total_rooms,
+            'reservable_rooms': reservable_rooms,
             'total_reservations': total_reservations,
-            'reports_filter_display': context['reports_filter_display']
-        })
+            'reports_filter_display': reservations_filter.replace("_", " ").title(),
 
-    return render(request, 'mod_reports/labres_reports.html', context)
+            'laboratory_reservations': lab_reservations_qs,
+            'reservation_filter_type': reservation_filter_type,
+            'start_date': start_date,
+            'end_date': end_date,
+
+            'room_data': room_data,
+            'room_filter_type': room_filter_type,
+            'room_start_date': room_start_date,
+            'room_end_date': room_end_date,
+        }
+
+        # If AJAX request, return JSON response for dynamic filter update
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'total_reservations': total_reservations,
+                'reports_filter_display': context['reports_filter_display']
+            })
+
+        return render(request, 'mod_reports/labres_reports.html', context)
+    except ValueError as e:
+        logger.error(f"Value error in labres_reports: {e}")
+        messages.error(request, str(e))
+        return redirect('home')
+
+    except DatabaseError as e:
+        logger.error(f"Database error in labres_reports: {e}", exc_info=True)
+        messages.error(request, "Database error occurred. Please try again later.")
+        return redirect('home')
+
+    except Exception as e:
+        logger.error(f"Unexpected error in labres_reports: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred while loading laboratory reservation reports.")
+        return redirect('home')
 
 def inventory_data(request, item_type_id, laboratory_id):
-    item_type = item_types.objects.get(pk=item_type_id)
-    items = item_description.objects.filter(
-        itemType_id=item_type_id,
-        laboratory_id=laboratory_id,
-        is_disabled=False  # Only get items that are enabled
-    ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
+    try:
+        item_type = item_types.objects.get(pk=item_type_id)
+        items = item_description.objects.filter(
+            itemType_id=item_type_id,
+            laboratory_id=laboratory_id,
+            is_disabled=False  # Only get items that are enabled
+        ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
 
-    add_cols = json.loads(item_type.add_cols)
+        add_cols = json.loads(item_type.add_cols)
 
-    items_data = []
-    for item in items:
-        item_data = {
-            'item_id': item.item_id,
-            'item_name': item.item_name,
-            'alert_qty': item.alert_qty,
-            'rec_expiration': item.rec_expiration,
-            'allow_borrow': item.allow_borrow,
-            'is_consumable': item.is_consumable,
-            'total_qty': item.total_qty,
-            'add_cols': json.loads(item.add_cols) if item.add_cols else {}
-        }
-        items_data.append(item_data)
+        items_data = []
+        for item in items:
+            item_data = {
+                'item_id': item.item_id,
+                'item_name': item.item_name,
+                'alert_qty': item.alert_qty,
+                'rec_expiration': item.rec_expiration,
+                'allow_borrow': item.allow_borrow,
+                'is_consumable': item.is_consumable,
+                'total_qty': item.total_qty,
+                'add_cols': json.loads(item.add_cols) if item.add_cols else {}
+            }
+            items_data.append(item_data)
 
-    return JsonResponse({
-        'items': items_data,
-        'add_cols': add_cols
-    })
+        return JsonResponse({
+            'items': items_data,
+            'add_cols': add_cols
+        })
+
+    except DatabaseError as e:
+        logger.error(f"Database error in inventory_data: {e}", exc_info=True)
+        return JsonResponse({'error': "Database error occurred. Please try again."}, status=500)
+
+    except Exception as e:
+        logger.error(f"Unexpected error in inventory_data: {e}", exc_info=True)
+        return JsonResponse({'error': "An unexpected error occurred while fetching inventory data."}, status=500)
 
 def calculate_date_range(request, filter_type):
     """ Helper function to determine start and end dates based on the filter type """
-    today = timezone.localtime().date()
-    if filter_type == 'today':
-        return today, today
-    elif filter_type == 'this_week':
-        start_date = today - timedelta(days=today.weekday())
-        return start_date, today
-    elif filter_type == 'this_month':
-        start_date = today.replace(day=1)
-        return start_date, today
-    elif filter_type == 'this_year':
-        start_date = today.replace(month=1, day=1)
-        return start_date, today
-    elif filter_type == 'custom':
-        start_date = request.GET.get('start_date')
-        end_date = request.GET.get('end_date')
-        if start_date:
-            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-        if end_date:
-            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-        return start_date, end_date
-    return None, None
+    try:
+        today = timezone.localtime().date()
+        if filter_type == 'today':
+            return today, today
+        elif filter_type == 'this_week':
+            start_date = today - timedelta(days=today.weekday())
+            return start_date, today
+        elif filter_type == 'this_month':
+            start_date = today.replace(day=1)
+            return start_date, today
+        elif filter_type == 'this_year':
+            start_date = today.replace(month=1, day=1)
+            return start_date, today
+        elif filter_type == 'custom':
+            start_date = request.GET.get('start_date')
+            end_date = request.GET.get('end_date')
+            if start_date:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            if end_date:
+                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            return start_date, end_date
+        return None, None
+        
+    except Exception as e:
+        logger.error(f"Unexpected error in calculate_date_range: {e}", exc_info=True)
+        return today, today  # Default to today on unexpected error
 
 @user_passes_test(lambda u: u.is_superuser)
 def admin_reports_view(request):
+    try:
+        # Get separate filters for each card from GET parameters
+        total_users_filter = request.GET.get('total_users_filter', 'this_year')
+        new_users_filter = request.GET.get('new_users_filter', 'today')
+        reports_filter = request.GET.get('reports_filter', 'this_week')
 
-    # Get separate filters for each card from GET parameters
-    total_users_filter = request.GET.get('total_users_filter', 'this_year')
-    new_users_filter = request.GET.get('new_users_filter', 'today')
-    reports_filter = request.GET.get('reports_filter', 'this_week')
+        today = timezone.localtime().date()
+        # # Total Users Filter Setup
+        # if total_users_filter == 'today':
+        #     total_start_date = today
+        # elif total_users_filter == 'this_month':
+        #     total_start_date = today.replace(day=1)
+        # elif total_users_filter == 'this_year':
+        #     total_start_date = today.replace(month=1, day=1)
+        # else:
+        #     total_start_date = today - timedelta(weeks=1)
 
-    today = timezone.localtime().date()
-    # # Total Users Filter Setup
-    # if total_users_filter == 'today':
-    #     total_start_date = today
-    # elif total_users_filter == 'this_month':
-    #     total_start_date = today.replace(day=1)
-    # elif total_users_filter == 'this_year':
-    #     total_start_date = today.replace(month=1, day=1)
-    # else:
-    #     total_start_date = today - timedelta(weeks=1)
+        # Active Users Count
+        total_active_users = user.objects.filter(is_deactivated=False).count()
+        total_active_labs = laboratory.objects.filter(is_available=True).count()
 
-    # Active Users Count
-    total_active_users = user.objects.filter(is_deactivated=False).count()
-    total_active_labs = laboratory.objects.filter(is_available=True).count()
-
-    # New Users Filter Setup (default to 'today' for new users card)
-    if new_users_filter == 'today':
-        new_users_filter = 'Today'
-        new_start_date = today
-    elif new_users_filter == 'this_month':
-        new_users_filter = 'This Month'
-        new_start_date = today.replace(day=1)
-    elif new_users_filter == 'this_year':
-        new_users_filter = 'This Year'
-        new_start_date = today.replace(month=1, day=1)
-    else:
-        new_users_filter = 'This Week'
-        new_start_date = today - timedelta(weeks=1)
-
-    # New Users Count
-    new_users = user.objects.filter(date_joined__date__gte=new_start_date).count()
-
-    # Reports Filter Setup
-    if reports_filter == 'this_week':
-        reports_filter_display = 'This Week'
-        reports_start_date = today - timedelta(days=today.weekday())  # Start of the current week
-        date_range = [reports_start_date + timedelta(days=i) for i in range(7)]
-        date_format = "%Y-%m-%d"
-    elif reports_filter == 'this_month':
-        reports_filter_display = 'This Month'
-        reports_start_date = today.replace(day=1)
-        last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
-        date_range = [reports_start_date + timedelta(days=i) for i in range((last_day - reports_start_date).days + 1)]
-        date_format = "%Y-%m-%d"
-    else:  # 'this_year'
-        reports_filter_display = 'This Year'
-        reports_start_date = today.replace(month=1, day=1)
-        date_range = [datetime(today.year, month, 1).date() for month in range(1, 13)]
-        date_format = "%Y-%m"
-
-    # Count New Users for Each Date in Range (for Reports Card Line Chart)
-    reports_data = []
-    for date in date_range:
-        if reports_filter == 'this_year':
-            user_count = user.objects.filter(
-                date_joined__year=date.year,
-                date_joined__month=date.month
-            ).count()
+        # New Users Filter Setup (default to 'today' for new users card)
+        if new_users_filter == 'today':
+            new_users_filter = 'Today'
+            new_start_date = today
+        elif new_users_filter == 'this_month':
+            new_users_filter = 'This Month'
+            new_start_date = today.replace(day=1)
+        elif new_users_filter == 'this_year':
+            new_users_filter = 'This Year'
+            new_start_date = today.replace(month=1, day=1)
         else:
-            user_count = user.objects.filter(date_joined__date=date).count()
-        reports_data.append({'date': date.strftime(date_format), 'count': user_count})
+            new_users_filter = 'This Week'
+            new_start_date = today - timedelta(weeks=1)
 
-    print(reports_data)
+        # New Users Count
+        new_users = user.objects.filter(date_joined__date__gte=new_start_date).count()
 
-    # Retrieve data for roles (separating default and others)
-    default_roles = laboratory_roles.objects.filter(laboratory_id=0).values('roles_id', 'name').exclude(roles_id=0)
-    default_role_ids = [role['roles_id'] for role in default_roles]
+        # Reports Filter Setup
+        if reports_filter == 'this_week':
+            reports_filter_display = 'This Week'
+            reports_start_date = today - timedelta(days=today.weekday())  # Start of the current week
+            date_range = [reports_start_date + timedelta(days=i) for i in range(7)]
+            date_format = "%Y-%m-%d"
+        elif reports_filter == 'this_month':
+            reports_filter_display = 'This Month'
+            reports_start_date = today.replace(day=1)
+            last_day = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+            date_range = [reports_start_date + timedelta(days=i) for i in range((last_day - reports_start_date).days + 1)]
+            date_format = "%Y-%m-%d"
+        else:  # 'this_year'
+            reports_filter_display = 'This Year'
+            reports_start_date = today.replace(month=1, day=1)
+            date_range = [datetime(today.year, month, 1).date() for month in range(1, 13)]
+            date_format = "%Y-%m"
 
-    # Retrieve labs and user counts per role for stacked chart
-    user_labs_data = []
-    labs = laboratory.objects.exclude(Q(laboratory_id=0) | Q(is_available=0)).annotate(user_count=Count('laboratory_users'))
-    for lab in labs:
-        lab_roles_data = {'lab_name': lab.name}
+        # Count New Users for Each Date in Range (for Reports Card Line Chart)
+        reports_data = []
+        for date in date_range:
+            if reports_filter == 'this_year':
+                user_count = user.objects.filter(
+                    date_joined__year=date.year,
+                    date_joined__month=date.month
+                ).count()
+            else:
+                user_count = user.objects.filter(date_joined__date=date).count()
+            reports_data.append({'date': date.strftime(date_format), 'count': user_count})
+
+        print(reports_data)
+
+        # Retrieve data for roles (separating default and others)
+        default_roles = laboratory_roles.objects.filter(laboratory_id=0).values('roles_id', 'name').exclude(roles_id=0)
+        default_role_ids = [role['roles_id'] for role in default_roles]
+
+        # Retrieve labs and user counts per role for stacked chart
+        user_labs_data = []
+        labs = laboratory.objects.exclude(Q(laboratory_id=0) | Q(is_available=0)).annotate(user_count=Count('laboratory_users'))
+        for lab in labs:
+            lab_roles_data = {'lab_name': lab.name}
+            
+            # Count users for each default role in this laboratory
+            for role in default_roles:
+                role_count = laboratory_users.objects.filter(
+                    laboratory=lab, role_id=role['roles_id'], is_active=True
+                ).count()
+                lab_roles_data[role['name']] = role_count
+            
+            # Count users with roles not in the default roles as "Others"
+            others_count = laboratory_users.objects.filter(
+                laboratory=lab, is_active=True
+            ).exclude(role_id__in=default_role_ids).count()
+            lab_roles_data['Others'] = others_count
+            
+            user_labs_data.append(lab_roles_data)
+            
         
-        # Count users for each default role in this laboratory
-        for role in default_roles:
-            role_count = laboratory_users.objects.filter(
-                laboratory=lab, role_id=role['roles_id'], is_active=True
-            ).count()
-            lab_roles_data[role['name']] = role_count
-        
-        # Count users with roles not in the default roles as "Others"
-        others_count = laboratory_users.objects.filter(
-            laboratory=lab, is_active=True
-        ).exclude(role_id__in=default_role_ids).count()
-        lab_roles_data['Others'] = others_count
-        
-        user_labs_data.append(lab_roles_data)
-        
-    
 
 
-    context = {
-        'total_active_users': total_active_users,
-        'total_active_labs': total_active_labs,
-        'new_users': new_users,
-        'filter_type': {
-            'total_users': total_users_filter,
-            'new_users': new_users_filter,
-            'reports': reports_filter
-        },
-        'reports_data': reports_data,
-        'reports_filter_display': reports_filter_display,
-        
-        'user_labs_data': user_labs_data,
-        'default_roles': default_roles,
+        context = {
+            'total_active_users': total_active_users,
+            'total_active_labs': total_active_labs,
+            'new_users': new_users,
+            'filter_type': {
+                'total_users': total_users_filter,
+                'new_users': new_users_filter,
+                'reports': reports_filter
+            },
+            'reports_data': reports_data,
+            'reports_filter_display': reports_filter_display,
+            
+            'user_labs_data': user_labs_data,
+            'default_roles': default_roles,
 
-        'labs': labs
-    }
-    return render(request, 'mod_reports/admin_reports.html', context)
+            'labs': labs
+        }
+        return render(request, 'mod_reports/admin_reports.html', context)
+    except DatabaseError as e:
+        logger.error(f"Database error in admin_reports_view: {e}", exc_info=True)
+        messages.error(request, "Database error occurred. Please try again later.")
+        return redirect('home')
+
+    except Exception as e:
+        logger.error(f"Unexpected error in admin_reports_view: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred while loading admin reports.")
+        return redirect('home')
 
 
 #  ================================================================= 
