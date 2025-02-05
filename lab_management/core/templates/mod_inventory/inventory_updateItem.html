@@ -54,6 +54,7 @@
                                         </select>
                                     </div>
                                 </div>
+                                <hr>
 
                                 <!-- Toggle Selection: Item Name or Inventory Item ID -->
                             <!-- <div id="selectionTypeRow" style="display: none;">
@@ -129,7 +130,7 @@
                                         </div>
                                     </div>
 
-                                    <br>
+                                    <hr>
                                     <h6>Delivery Details</h6>
                                     <div class="row mb-3">
                                         <label for="itemSupplier" class="col-sm-2 col-form-label">Supplier:</label>
@@ -161,10 +162,20 @@
                                             <input type="number" class="form-control" name="item_price" id="unit_price" step="0.01">
                                         </div>
                                     </div>
+                                    
                                     <div class="row mb-3" id="expirationDateRow" style="display:none;">
+                                        <hr>
                                         <label for="expirationDate" class="col-sm-2 col-form-label">Expiration Date:</label>
                                         <div class="col-sm-10">
                                             <input type="date" class="form-control" name="expiration_date" id="expirationDate">
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3" id="maintenanceDateRow" style="display:none;">
+                                        <hr>
+                                        <label for="maintenanceDate" class="col-sm-2 col-form-label">Next Maintenance Date:</label>
+                                        <div class="col-sm-10">
+                                            <input type="date" class="form-control" name="maintenance_date" id="maintenanceDate">
                                         </div>
                                     </div>
                                 </div>
@@ -603,12 +614,13 @@
     });
 }
 
-    function checkItemExpiration() {
+function checkItemExpiration() {
     const itemId = $('#itemName').val();
     const actionType = document.getElementById('actionType').value;
 
     if (!itemId) {
         $('#expirationDateRow').hide();
+        $('#maintenanceDateRow').hide();
         $('#inventoryItemIDSection').hide();
         return;
     }
@@ -618,7 +630,7 @@
         url: `/check_item_expiration/${itemId}/`,
         method: 'GET',
         success: function(response) {
-            if (response.rec_expiration || response.rec_per_inv) {
+            if (response.rec_expiration!=="" || response.rec_per_inv) {
                 if (actionType === 'remove' || actionType === 'report') {
                     $('#inventoryItemIDSection').show();
 
@@ -632,9 +644,13 @@
                             let formattedText;
                             data.forEach(item => {
                                 // Format: <inventory_item_id> \ exp:<expiration_date> , qty: <qty>
-                                if(item.expiration_date !== 'None'){
+                                if(item.expiry_type === 'Date'){
                                     formattedText = `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`;
-                                }else{
+                                } else if(item.expiry_type === 'Usage'){
+                                    formattedText = `${item.inventory_item_id} | remain use: ${item.expiration_date}, qty: ${item.qty}`;
+                                } else if(item.expiry_type === 'Maintenance'){
+                                    formattedText = `${item.inventory_item_id} | maintenance: ${item.expiration_date}, qty: ${item.qty}`;
+                                } else{
                                     formattedText = `${item.inventory_item_id} | qty: ${item.qty}`;
                                 }
                                 inventoryDropdown.append(new Option(formattedText, item.inventory_item_id));
@@ -648,12 +664,16 @@
                         }
                     });
                 } else {
-                    if(response.rec_expiration){
+                    if(response.rec_expiration==='Date'){
                         $('#expirationDateRow').show();
+                    }
+                    if(response.rec_expiration==='Maintenance'){
+                        $('#maintenanceDateRow').show();
                     }
                 }
             } else {
                 $('#expirationDateRow').hide();
+                $('#maintenanceDateRow').hide();
                 $('#inventoryItemIDSection').hide();
             }
         }

@@ -36,8 +36,8 @@ from calendar import monthrange
 from pyzbar.pyzbar import decode
 from PIL import Image, ImageDraw, ImageFont 
 from io import BytesIO
-# from ratelimit.exceptions import Ratelimited
-# from ratelimit.decorators import ratelimit
+# from ratelimit.decorators import ratelimit 
+
 
 # python image library pillow
 
@@ -127,7 +127,7 @@ def check_item_expiration(request, item_id):
     item = get_object_or_404(item_description, item_id=item_id)
     # Return JSON response with rec_expiration value
     return JsonResponse({
-        'rec_expiration': item.rec_expiration,
+        'rec_expiration': item.expiry_type,
         'rec_per_inv': item.rec_per_inv
     })
 
@@ -164,7 +164,7 @@ def suggest_items(request):
         item_data = {
             'item_id': item.item_id,
             'item_name': item.item_name,
-            'rec_expiration': item.rec_expiration,
+            'rec_expiration': item.expiry_type,
             'add_cols': add_cols_str  # Send formatted string
         }
         
@@ -173,18 +173,27 @@ def suggest_items(request):
 
 def suggest_inventory_items(request, item_id):
     # Fetch inventory items associated with the given item_id that have quantity > 0
+    item = get_object_or_404(item_description, item_id=item_id)
     inventory_items = item_inventory.objects.filter(item__item_id=item_id).exclude(qty=0)
 
     data = []
     for inventory_item in inventory_items:
         # Get expiration date if it exists, else set to None
         expiration = item_expirations.objects.filter(inventory_item=inventory_item).first()
-        expiration_date = DateFormat(expiration.expired_date).format('Y-m-d') if expiration else "None"
+        if item.expiry_type == 'Date':
+            expiration_data = DateFormat(expiration.expired_date).format('Y-m-d') if expiration else "None"
+        elif item.expiry_type == 'Usage':
+            expiration_data = expiration.remaining_uses if expiration else "None"
+        elif item.expiry_type == 'Maintenance':
+            expiration_data = expiration.next_maintenance_date if expiration else "None"
+        else:
+            expiration_data = "N/A"
         
         # Format item data for response
         data.append({
             'inventory_item_id': inventory_item.inventory_item_id,
-            'expiration_date': expiration_date,
+            'expiry_type': item.expiry_type,
+            'expiration_date': expiration_data,
             'qty': inventory_item.qty
         })
 
@@ -589,9 +598,10 @@ def inventory_view(request):
             expirations = item_expirations.objects.filter(inventory_item__item=item)
             expiration_warnings = []
             for exp in expirations:
-                if exp.expired_date <= current_date + timedelta(days=7):  # Threshold of 7 days
-                    if exp.inventory_item.qty > 0:  # Check if the item_inventory still has quantity
-                        expiration_warnings.append(exp)
+                if item.expiry_type == 'Date':
+                    if exp.expired_date <= current_date + timedelta(days=7):  # Threshold of 7 days
+                        if exp.inventory_item.qty > 0:  # Check if the item_inventory still has quantity
+                            expiration_warnings.append(exp)
             item.expiration_warning = len(expiration_warnings) > 0  # Set expiration_warning  
 
         return render(request, 'mod_inventory/view_inventory.html', {
@@ -628,9 +638,14 @@ def inventory_itemDetails_view(request, item_id):
 
         # Gather expiration data for each inventory item if item records expiration
         expiration_data = {}
-        if item.rec_expiration:
+        if item.expiry_type!=None:
             expirations = item_expirations.objects.filter(inventory_item__in=item_inventories)
-            expiration_data = {exp.inventory_item.inventory_item_id: exp.expired_date for exp in expirations}
+            if item.expiry_type=='Date':
+                expiration_data = {exp.inventory_item.inventory_item_id: exp.expired_date for exp in expirations}
+            elif item.expiry_type=='Usage':
+                expiration_data = {exp.inventory_item.inventory_item_id: exp.remaining_uses for exp in expirations}
+            elif item.expiry_type=='Date':
+                expiration_data = {exp.inventory_item.inventory_item_id: exp.next_maintenance_date for exp in expirations}
 
 
         # inventory items
@@ -642,8 +657,9 @@ def inventory_itemDetails_view(request, item_id):
             # Get the latest handling record for each inventory item
             last_handling = inventory.item_handling_set.order_by('-timestamp').first()
             first_handling = inventory.item_handling_set.order_by('timestamp').first()
+                
+            expiration_date = expiration_data.get(inventory.inventory_item_id, 'None') if item.expiry_type!=None else 'N/A'
             
-            expiration_date = expiration_data.get(inventory.inventory_item_id, 'None') if item.rec_expiration else 'N/A'
             last_updated_date = last_handling.timestamp if last_handling else 'N/A'
             last_updated_by = last_handling.updated_by if last_handling and last_handling.updated_by else 'N/A'
             date_created = first_handling.timestamp if first_handling else 'N/A'
@@ -658,7 +674,6 @@ def inventory_itemDetails_view(request, item_id):
                 'date_created': date_created
             })
 
-
         # Prefetch item_handling related to item_inventory, ordered by timestamp in descending order
         item_handling_prefetch = Prefetch('item_handling_set', queryset=item_handling.objects.all().order_by('-timestamp'))
 
@@ -668,7 +683,7 @@ def inventory_itemDetails_view(request, item_id):
             .annotate(latest_handling_timestamp=Max('item_handling__timestamp'))\
             .order_by('-latest_handling_timestamp')  # Use the annotated field for ordering
 
-        print(item_inventories)
+        # print(item_inventories)
 
         # Calculate the total quantity
         total_qty = item_inventories.aggregate(Sum('qty'))['qty__sum'] or 0
@@ -678,7 +693,7 @@ def inventory_itemDetails_view(request, item_id):
         qr_details = f"{item.item_name}"
         qr_code_data_item_only = generate_qr_code(qr_data, qr_details)
 
-        if item.rec_expiration | item.rec_per_inv:
+        if item.expiry_type != None or item.rec_per_inv == True:
             for item_inv in item_inventories:
                 qr_data = f"{item_inv.item.item_id}, {item_inv.inventory_item_id}"
                 qr_details = f"{item.item_name}\nInvID: {item_inv.inventory_item_id}"
@@ -686,10 +701,16 @@ def inventory_itemDetails_view(request, item_id):
                 item_inv.qr_code = qr_code_data
 
         # Fetch expiration data and attach it to each inventory item if applicable
-        if item.rec_expiration:
+        if item.expiry_type != None :
             expirations = item_expirations.objects.filter(inventory_item__in=item_inventories)
-            expiration_data = {exp.inventory_item.inventory_item_id: exp.expired_date for exp in expirations}
-            
+            # expiration_data = {exp.inventory_item.inventory_item_id: exp.expired_date for exp in expirations}
+            if item.expiry_type=='Date':
+                expiration_data = {exp.inventory_item.inventory_item_id: exp.expired_date for exp in expirations}
+            elif item.expiry_type=='Usage':
+                expiration_data = {exp.inventory_item.inventory_item_id: exp.remaining_uses for exp in expirations}
+            elif item.expiry_type=='Maintenance':
+                expiration_data = {exp.inventory_item.inventory_item_id: exp.next_maintenance_date for exp in expirations}
+
             # Attach expiration_date directly to each inventory instance
             for inventory in item_inventories:
                 latest_handling = inventory.item_handling_set.first()  # Access related item_handling
@@ -771,9 +792,15 @@ def inventory_addNewItem_view(request):
         # Extract form data
         item_name = request.POST.get('item_name')
         item_type_id = request.POST.get('item_type')
-        rec_expiration = request.POST.get('rec_expiration') == 'on'
         alert_qty = request.POST.get('alert_qty')
         rec_per_inv = request.POST.get('rec_per_inv') == 'on'
+
+        # Handle expiration type
+        expiry_type = request.POST.get('expiration_type')  # 'date', 'usage', or 'maintenance'
+        if expiry_type == "null":
+            expiry_type = None
+        max_uses = request.POST.get('max_uses', None) if expiry_type == 'Usage' else None
+        maintenance_interval = request.POST.get('maintenance_interval', None) if expiry_type == 'Maintenance' else None
 
         logger.info(f"User {request.user} attempting to add a new item: {item_name}, type: {item_type_id}")
 
@@ -800,8 +827,10 @@ def inventory_addNewItem_view(request):
                 itemType_id=item_type_id,
                 add_cols=add_cols_json,
                 alert_qty=alert_qty,
-                rec_expiration = rec_expiration,
-                rec_per_inv=rec_per_inv
+                rec_per_inv=rec_per_inv,
+                expiry_type=expiry_type,
+                max_uses = max_uses,
+                maintenance_interval = maintenance_interval,
             )
             new_item.save()
 
@@ -864,8 +893,8 @@ def inventory_updateItem_view(request):
                 date_purchased = request.POST.get('item_date_purchased', None) or None
                 date_received = request.POST.get('item_date_received', None) or None
                 purchase_price = request.POST.get('item_price', 0.0) or 0.0
-                expiration_date = request.POST.get('expiration_date') if item_instance.rec_expiration else None
-
+                expiration_date = request.POST.get('expiration_date') if item_instance.expiry_type == 'Date' else None
+                maintenance_date = request.POST.get('maintenance_date') if item_instance.expiry_type == 'Maintenance' else None
                 new_inventory_item = item_inventory.objects.create(
                     item=item_instance,
                     supplier_id=supplier_id,
@@ -883,14 +912,19 @@ def inventory_updateItem_view(request):
                     remarks='Add to Inventory'
                 )
                 # If expiration date is provided, save it
-                if expiration_date:
+                
+                if item_instance.expiry_type != None:
+                    max_usage = item_instance.max_uses
                     item_expirations.objects.create(
                         inventory_item=new_inventory_item,
-                        expired_date=expiration_date
+                        expired_date=expiration_date if item_instance.expiry_type == 'Date' else None,
+                        next_maintenance_date = maintenance_date if item_instance.expiry_type == 'Maintenance' else None,
+                        remaining_uses = max_usage if item_instance.expiry_type == 'Usage' else None,
                     )
+                
 
                 # Inside the 'add' action block in your view
-                if item_instance.rec_expiration | item_instance.rec_per_inv:
+                if item_instance.expiry_type=='Date' or item_instance.rec_per_inv == True:
                     qr_data = f"{item_id}, {new_inventory_item.inventory_item_id}"
                 else:
                     qr_data = f"{item_id}, 0"
@@ -992,7 +1026,7 @@ def inventory_updateItem_view(request):
                     return JsonResponse({'success': True})
                 else:
                     messages.success(request, f"{action_type.capitalize()} action completed successfully.")
-                    logger.info(f"User {current_user} {action_type}d {qty} of {item_instance.item_name} (ID: {item_id}) from inventory.")
+                    logger.info(f"User {current_user} {action_type}d {quantity} of {item_instance.item_name} (ID: {item_id}) from inventory.")
                     return JsonResponse({'success': True})
 
             return render(request, 'mod_inventory/inventory_updateItem.html')
@@ -1001,6 +1035,7 @@ def inventory_updateItem_view(request):
             logger.error(f"Error in inventory_updateItem_view: {str(e)}", exc_info=True)
             messages.error(request, "An error occurred while updating inventory.")
             return JsonResponse({'success': False})
+
 
     return render(request, 'mod_inventory/inventory_updateItem.html')
 
@@ -1028,16 +1063,20 @@ def inventory_itemEdit_view(request, item_id):
         form = ItemEditForm(request.POST, instance=item, selected_laboratory_id=selected_laboratory_id)
 
         # Handle additional form fields (rec_expiration, alert_qty)
-        rec_expiration = request.POST.get('rec_expiration', 'off') == 'on'
+        expiry_type = request.POST.get('expiration_type', None)
+        if expiry_type == "null":
+            expiry_type = None
+
         alert_qty_disabled = request.POST.get('disable_alert_qty', 'off') == 'on'
         rec_per_inv = request.POST.get('rec_per_inv', 'off') == 'on'
 
+        max_uses = int(request.POST.get('max_uses', None)) if expiry_type == 'Usage' else None
+        maintenance_interval = int(request.POST.get('maintenance_interval', None)) if expiry_type == 'Maintenance' else None
+        
         if form.is_valid():
             print("Form is valid. Saving data...")
-            
             # Save form fields
             form.save()
-
             # Fetch additional columns based on the selected (or unchanged) itemType
             selected_item_type = form.cleaned_data.get('itemType') or item.itemType
             new_add_cols = json.loads(selected_item_type.add_cols) if selected_item_type and selected_item_type.add_cols else {}
@@ -1053,11 +1092,13 @@ def inventory_itemEdit_view(request, item_id):
             # Update the item attributes
             item.add_cols = json.dumps(updated_add_cols)
             item.rec_per_inv = rec_per_inv
-            item.rec_expiration = rec_expiration
+            item.expiry_type = expiry_type
+            item.max_uses = max_uses
+            item.maintenance_interval = maintenance_interval
             item.alert_qty = 0 if alert_qty_disabled else request.POST.get('alert_qty', item.alert_qty)
 
             # Force save with update_fields to ensure data is saved
-            item.save(update_fields=['add_cols', 'rec_per_inv', 'rec_expiration', 'alert_qty'])
+            item.save(update_fields=['add_cols', 'rec_per_inv', 'expiry_type', 'alert_qty', 'max_uses', 'maintenance_interval'])
             logger.info(f"User {request.user} updated item {item.item_name} (ID: {item.item_id}) with new attributes.")
 
             # Verify save by reloading the item
@@ -1179,7 +1220,7 @@ def inventory_physicalCount_view(request):
             item.parsed_add_cols = json.loads(item.add_cols) if item.add_cols else {}
             
             # If item tracks expiration or per-inventory quantity, fetch individual inventories
-            if item.rec_expiration or item.rec_per_inv:
+            if item.expiry_type != None or item.rec_per_inv:
                 item.individual_inventories = item_inventory.objects.filter(item=item, qty__gt=0).order_by('inventory_item_id')
             else:
                 # Total quantity for items without inventory-level tracking
@@ -1188,7 +1229,7 @@ def inventory_physicalCount_view(request):
         # Check if the form is submitted
         if request.method == "POST":
             for item in inventory_items:
-                if item.rec_expiration or item.rec_per_inv:
+                if item.expiry_type != None or item.rec_per_inv:
                     # Handle item_inventory updates individually
                     for inventory in item.individual_inventories:
                         try:
@@ -1274,7 +1315,7 @@ def adjust_inventory_item(status, inventory, discrepancy_qty, user, change_type,
             if status=='item':
                 print('pass', inventory)
                 item_description_instance = get_object_or_404(item_description, item_id=inventory.item_id)
-                if item_description_instance.rec_expiration == 1:
+                if item_description_instance.expiry_type != None:
                     item_inventory_queryset = item_inventory.objects.filter(
                             item=item_description_instance,
                             qty__gt=0
@@ -1704,11 +1745,10 @@ def borrowing_student_prebookview(request):
             if borrowing_type == 'oneday':
                 borrow_date = one_day_date
                 due_date = one_day_date
-
+                type_status = 'A'
                 # Validate that the borrowing date is not in the past
                 if one_day_date < request_date.strftime('%Y-%m-%d'):
                     error_message = 'The borrowing date cannot be earlier than today for one-day borrowing.'
-
                 # Validate the one-day borrowing: must be at least 3 days from the request date
                 min_borrow_date = request_date + timedelta(days=int(lab.prebook_lead_time))
                 if one_day_date <= min_borrow_date.strftime('%Y-%m-%d'):
@@ -1716,7 +1756,7 @@ def borrowing_student_prebookview(request):
             else:
                 borrow_date = from_date
                 due_date = to_date
-
+                type_status = 'P'
                 # Validate the long-term borrowing
                 min_from_date = request_date + timedelta(days=int(lab.prebook_lead_time))
                 if from_date < min_from_date.strftime('%Y-%m-%d'):
@@ -1767,7 +1807,7 @@ def borrowing_student_prebookview(request):
                 request_date=timezone.localtime(),  # Use current timestamp
                 borrow_date=borrow_date,
                 due_date=due_date,
-                status='P',  # Set initial status to 'Pending'
+                status=type_status,  # Set initial status to 'Pending'
                 questions_responses=custom_question_responses
             )
 
@@ -4785,7 +4825,7 @@ def inventory_data(request, item_type_id, laboratory_id):
                 'item_id': item.item_id,
                 'item_name': item.item_name,
                 'alert_qty': item.alert_qty,
-                'rec_expiration': item.rec_expiration,
+                'rec_expiration': item.expiry_type,
                 'allow_borrow': item.allow_borrow,
                 'is_consumable': item.is_consumable,
                 'total_qty': item.total_qty,

@@ -218,11 +218,18 @@ class item_description(models.Model):
     itemType = models.ForeignKey('item_types', on_delete=models.SET_NULL, null=True, blank=True)
     alert_qty = models.IntegerField(null=True, blank=True)
     add_cols = models.CharField(max_length=255, null=True, blank=True)
-    rec_expiration = models.BooleanField(default=False)
+    
     is_disabled = models.BooleanField(default=False)
+    rec_per_inv = models.BooleanField(default=False)
+
     allow_borrow = models.BooleanField(default=False)
     is_consumable = models.BooleanField(default=False)
-    rec_per_inv = models.BooleanField(default=False)
+
+    rec_expiration = models.BooleanField(default=False)
+    expiry_type = models.CharField(max_length=45, null=True, blank=True, choices=[('Date', 'Date'), ('Usage', 'Usage'), ('Maintenance', 'Maintenance'),  ('Temperature', 'Temperature')]) # Expiry type for the item
+    max_uses = models.IntegerField(null=True, blank=True) # Maximum allowed uses for the item
+    maintenance_interval = models.IntegerField(null=True, blank=True) # Maintenance interval in days
+
     qty_limit = models.IntegerField(null=True, blank=True) #for the borrowing_config, to set qty limit to each item.
     
     def save(self, *args, **kwargs):
@@ -258,6 +265,18 @@ class item_inventory(models.Model):
     remarks = models.CharField(max_length=45, null=True, blank=True)
     qty = models.IntegerField()
 
+    # Storage Monitoring
+    optimal_temperature = models.FloatField(null=True, blank=True)  # Recommended storage temperature
+    current_temperature = models.FloatField(null=True, blank=True)  # Actual temperature
+
+    def check_storage_expiry(self):
+        """Check if item is stored in the correct conditions."""
+        expiration_entry = item_expirations.objects.filter(inventory_item=self).first()
+        if expiration_entry and expiration_entry.optimal_temperature:
+            if self.current_temperature and abs(self.current_temperature - expiration_entry.optimal_temperature) > 5:
+                return True  # Consider item as compromised due to temperature
+        return False
+
     def save(self, *args, **kwargs):
         if not self.inventory_item_id:
             item_id = self.item.item_id  # Use the item_id from item_description
@@ -279,7 +298,7 @@ class item_handling(models.Model):
     inventory_item = models.ForeignKey('item_inventory', on_delete=models.SET_NULL, null=True, blank=True)
     timestamp = models.DateTimeField(null=True, blank=True, auto_now_add=True)
     updated_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
-    changes = models.CharField(max_length=1) # 'A' for add, 'R' for remove
+    changes = models.CharField(max_length=1) # 'A' for add, 'R' for remove, 'U' for use
     qty = models.IntegerField()
     remarks = models.CharField(max_length=45, null=True, blank=True)
     # action = models.CharField(max_length=45, null=True, blank=True)
@@ -287,12 +306,67 @@ class item_handling(models.Model):
     def __str__(self):
         return f"Item Handling {self.item_handling_id}"
     
-class item_expirations(models.Model):
-    inventory_item = models.ForeignKey('item_inventory', on_delete=models.CASCADE, primary_key=True)
-    expired_date = models.DateField()
+    def save(self, *args, **kwargs):
+        """Reduce remaining uses when the item is used."""
+        if self.changes == 'U' and self.inventory_item:
+            expiration_entry = item_expirations.objects.filter(inventory_item=self.inventory_item).first()
+            if expiration_entry and expiration_entry.remaining_uses:
+                expiration_entry.remaining_uses -= self.qty
+                expiration_entry.save()
+        super().save(*args, **kwargs)
+    
+# class item_expirations(models.Model):
+#     inventory_item = models.ForeignKey('item_inventory', on_delete=models.CASCADE, primary_key=True)
+#     expired_date = models.DateField()
 
+#     def __str__(self):
+#         return f"Expiration for Inventory Item {self.inventory_item_id}"
+
+class item_expirations(models.Model):
+    inventory_item = models.OneToOneField('item_inventory', on_delete=models.CASCADE, primary_key=True)    
+    
+    # Expiry by Date
+    expired_date = models.DateField(null=True, blank=True)
+    # Expiry by Number of Uses
+    # max_uses = models.IntegerField(null=True, blank=True) # Maximum allowed uses for the item
+    remaining_uses = models.IntegerField(null=True, blank=True)  # Current remaining uses
+    # Expiry by Calibration/Maintenance
+    next_maintenance_date = models.DateField(null=True, blank=True)
+    # # Expiry by Storage Conditions
+    # optimal_temperature = models.FloatField(null=True, blank=True)  # °C
+    # current_temperature = models.FloatField(null=True, blank=True)  # Track real-time temperature
+    # # Expiry by Condition
+    # condition_status = models.CharField(
+    #     max_length=20,
+    #     choices=[('Good', 'Good'), ('Fair', 'Fair'), ('Poor', 'Poor')],
+    #     default='Good'
+    # )   
+    
     def __str__(self):
         return f"Expiration for Inventory Item {self.inventory_item_id}"
+
+    def is_expired(self):
+        """Check if the item is expired based on any condition."""
+        today = timezone.now().date()
+
+        # Expired by Date
+        if self.expired_date and self.expired_date <= today:
+            return True
+
+        # Expired by Usage
+        if self.remaining_uses is not None and self.remaining_uses <= 0:
+            return True
+
+        # Expired by Calibration/Maintenance
+        if self.next_maintenance_date and self.next_maintenance_date <= today:
+            return True
+
+        # # Expired by Condition
+        # if self.condition_status == "Poor":
+        #     return True
+
+        return False
+
 
 class suppliers(models.Model):
     suppliers_id = models.CharField(max_length=20, unique=True, primary_key=True)

@@ -73,6 +73,17 @@
                     <td>{{ value }}</td>
                   </tr>
                   {% endfor %}
+                  <tr>
+                    <td style="padding-right:10px"><strong>Expiry Type:</strong></td>
+                    <td id="itemType">{{ item.expiry_type }}</td>
+                  </tr>
+
+                  {% if item.expiry_type == 'Usage' %}
+                  <tr>
+                    <td style="padding-right:10px"><strong>Maximum Usage:</strong></td>
+                    <td id="itemType">{{ item.max_uses }}</td>
+                  </tr>
+                  {% endif %}
                   
                   <tr>
                     <td style="padding-right:10px"><strong>Running Quantity:</strong></td>
@@ -173,8 +184,8 @@
                   <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#inventoryDetailsModal{{ inventory.inventory_item_id }}">
                     View More
                   </button>
-                  {% if inventory.expiration_date %}
-                  {% if inventory.expiration_date <= date_today and inventory.qty > 0 %}
+                  {% if item.expiry_type != None %}
+                  {% if item.expiry_type == 'Date' and inventory.expiration_date <= date_today and inventory.qty > 0 or item.expiry_type == 'Usage' and inventory.expiration_date == 0 and inventory.qty > 0 or item.expiry_type == 'Maintenance' and inventory.expiration_date <= date_today and inventory.qty > 0 %}
                       <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
                   {% endif %}
                 {% endif %}
@@ -205,18 +216,24 @@
                         <li><strong>Date Purchased:</strong> {{ inventory.date_purchased|date:"Y-m-d" }}</li>
                         <li><strong>Date Received:</strong> {{ inventory.date_received|date:"Y-m-d" }}</li>
                         <li><strong>Purchase Price:</strong> {{ inventory.purchase_price }}</li>
-                        <li><strong>Remarks:</strong> {{ inventory.remarks }}</li>
+                        <li><strong>Remarks:</strong> {{ inventory.remarks }} </li>
                       </ul>
                       
-                      {% if item.rec_expiration %}
+                      {% if item.expiry_type != ' ' %}
                       <hr>
-                        {% if inventory.expiration_date %}
-                          {% if inventory.expiration_date <= date_today and inventory.qty > 0 %}
-                              <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
+                        {% if item.expiry_type == 'Date' and inventory.expiration_date <= date_today and inventory.qty > 0 or item.expiry_type == 'Usage' and inventory.expiration_date == 0 or item.expiry_type == 'Maintenance' and inventory.expiration_date <= date_today %}
+                            <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
+                        {% endif %}
+                        {% if item.expiry_type == 'Date' %}
+                          {% if inventory.expiration_date %}
+                            <strong>Expiration Date:</strong> {{ inventory.expiration_date|date:"Y-m-d" }}
+                          {% else %}
+                            <strong>Expiration Date:</strong> Not Applicable
                           {% endif %}
-                          <strong>Expiration Date:</strong> {{ inventory.expiration_date|date:"Y-m-d" }}
-                        {% else %}
-                          <strong>Expiration Date:</strong> Not Applicable
+                        {% elif item.expiry_type == 'Usage' %}
+                          <strong>Remaining Uses:</strong> {{ inventory.expiration_date }}
+                        {% elif item.expiry_type == 'Maintenance' %}
+                          <strong>Next Maintenance:</strong> {{ inventory.expiration_date|date:"Y-m-d" }}
                         {% endif %}
                       {%endif%}
                       <hr>

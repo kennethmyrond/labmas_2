@@ -46,17 +46,49 @@
 
                         <!-- Additional columns -->
                         <div id="additional_fields_container"></div>
+                        <hr>
 
-                        <div class="row mb-3">
+                        <!-- <div class="row mb-3">
                           <label for="rec_expiration" class="col-sm-2 col-form-label">Record Expiration Date?</label>
                           <div class="col-sm-10">
                               <input type="checkbox" id="rec_expiration" name="rec_expiration">
+                        </div> -->
+
+                        <div class="row mb-3">
+                            <label class="col-sm-2 col-form-label">Expiration Type:</label>
+                            <div class="col-sm-10">
+                                <select class="form-select" id="expiration_type" name="expiration_type" onchange="toggleExpirationFields()">
+                                    <option value="">None</option>
+                                    <option value="Date">Expiration Date</option>
+                                    <option value="Usage">Number of Uses</option>
+                                    <option value="Maintenance">Maintenance-Based</option>                                
+                                </select>
+                            </div>
                         </div>
+
+                        <!-- Usage-Based Expiration Field -->
+                        <div class="row mb-3 expiration-field" id="max_uses_field" style="display: none;">
+                            <label for="max_uses" class="col-sm-2 col-form-label">Max Number of Uses:</label>
+                            <div class="col-sm-10">
+                                <input type="number" class="form-control" id="max_uses" name="max_uses" min="1">
+                            </div>
+                        </div>
+
+                        <!-- Condition-Based Expiration Field -->
+                        <div class="row mb-3 expiration-field" id="condition_field" style="display: none;">
+                            <label for="maintenance_interval" class="col-sm-2 col-form-label">Maintenance Date Interval:</label>
+                            <div class="col-sm-10">
+                                <input type="number" class="form-control" id="maintenance_interval" name="maintenance_interval">
+                            </div>
+                        </div>
+
+                        <hr>
                         <div class="row mb-3">
                             <label for="inputText" class="col-sm-2 col-form-label">Record Per Batch/Inventory?</label>
                             <div class="col-sm-10">
                                 <input type="checkbox" id="rec_per_inv" name="rec_per_inv">
                         </div>
+                        <hr>
                         <div class="row mb-3">
                           <label for="min_qty" class="col-sm-2 col-form-label">Alert Minimum Quantity?</label>
                           <div class="col-sm-10">
@@ -136,7 +168,8 @@
 {% endif %}
 
 <script>
-    function handleItemTypeChange() {
+
+function handleItemTypeChange() {
     const selectElement = document.getElementById('item_type');
     const selectedOption = selectElement.options[selectElement.selectedIndex];
     const addColsJson = selectedOption.getAttribute('data-add-cols');
@@ -213,13 +246,10 @@
 
 // Initialize the form based on the default selection
 document.addEventListener('DOMContentLoaded', handleItemTypeChange);
+// Initialize the form based on the default selection
+document.addEventListener('DOMContentLoaded', handleItemTypeChange);
 
-
-
-    // Initialize the form based on the default selection
-    document.addEventListener('DOMContentLoaded', handleItemTypeChange);
-
-  function toggleAlertQty() {
+function toggleAlertQty() {
     var minQtyCheckbox = document.getElementById('min_qty');
     var alertQtyContainer = document.getElementById('alert_qty_container');
     var alertQtyInput = document.getElementById('alert_qty');
@@ -230,7 +260,20 @@ document.addEventListener('DOMContentLoaded', handleItemTypeChange);
         alertQtyContainer.style.display = 'none';
         alertQtyInput.value = 0;
     }
-  }
+}
+
+function toggleExpirationFields() {
+    document.querySelectorAll('.expiration-field').forEach(field => field.style.display = 'none');
+
+    const expirationType = document.getElementById('expiration_type').value;
+    if (expirationType === 'Date') {
+        document.getElementById('expiration_date_field').style.display = 'block';
+    } else if (expirationType === 'Usage') {
+        document.getElementById('max_uses_field').style.display = 'block';
+    } else if (expirationType === 'Maintenance') {
+        document.getElementById('condition_field').style.display = 'block';
+    }
+}
 </script>
 
 {% endblock %}

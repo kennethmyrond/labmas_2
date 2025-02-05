@@ -68,6 +68,9 @@
                     <td style="color: {% if item.total_qty > item.alert_qty %}green{% else %}red{% endif %}; text-align:center;">
                       {% if item.total_qty > item.alert_qty %}Available{% else %}Low Stock{% endif %}
                     </td>
+                    <!-- <td>
+                      <span class="badge {% if item.total_qty > item.alert_qty %} badge-success {% else %} badge-danger {% endif %} text-uppercase">{% if item.total_qty > item.alert_qty %}Available{% else %}Low Stock{% endif %}</span>
+                    </td> -->
                     <td style="text-align:left;">
                       <a href="{% url 'inventory_itemDetails_view' item.item_id %}">{{ item.item_name }}</a>
                       {% if item.expiration_warning %}

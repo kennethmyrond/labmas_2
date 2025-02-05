@@ -8,8 +8,12 @@
         <div class="alert alert-{{ message.tags }}">{{ message }}</div>
     {% endfor %}
 {% endif %}
-  
-<h1>Welcome to Labmas, {{ request.user }}</h1>
+
+<div class="jumbotron jumbotron-fluid">
+  <div class="container">
+    <h1 class="display-4">Welcome to Labmas, {{ request.user }}</h1>
+  </div>
+</div>
 
 <!-- Add Laboratory Button -->
 <div class="mt-4">
@@ -24,6 +28,7 @@
         <h5 class="card-title">{{ lab.name }}</h5>
         <p class="card-text"><strong>Lab Head:</strong> {{ lab.coordinator_name }}</p>
         <p class="card-text"><strong>Description:</strong> {{ lab.description }}</p>
+        <p class="card-text"><strong>Role:</strong> {{ lab.description }}</p>
         <div class="mt-auto">
           <a href="{% url 'set_lab' lab.laboratory_id %}" class="btn {% if lab.laboratory_id == selected_lab_id %}btn-primary{% else %}btn-secondary{% endif %} w-100">
             {% if lab.laboratory_id == selected_lab_id %}Selected Laboratory{% else %}Select Laboratory{% endif %}
