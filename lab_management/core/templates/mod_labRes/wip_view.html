@@ -1,0 +1,42 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}View WIP Experiment{% endblock %}
+
+{% block content %}
+<div class="pagetitle">
+    <h1>Work-in-Progress (WIP) Experiments</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="javascript: history.go(-1)">WIP List</a></li>
+        <li class="breadcrumb-item active">View WIP</a></li>
+      </ol>
+    </nav>
+</div>
+
+<section class="section">
+    <!-- Add Manual Clearance Button -->
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">WIP ID: {{ wip.wip_id }}</h5>
+                    <p><strong>Student / Owner:</strong> {{ wip.user}}</p>
+                    <p><strong>Laboratory:</strong> {{ wip.laboratory }}</p>
+                    <p><strong>Room:</strong> {{ wip.room }}</p>
+                    <p><strong>Start Time:</strong> {{ wip.start_time|date:"Y/m/d H:i" }}</p>
+                    <p><strong>End Time:</strong> {{ wip.end_time|date:"Y/m/d H:i" }}</p>
+                    <p><strong>Description:</strong> {{ wip.description }}</p>
+                    <p><strong>Remarks:</strong> {{ wip.remarks }}</p>
+                    <p><strong>Status:</strong> {{ wip.get_status_display }}</p>
+
+                    {% if permissions.can_clear_wip%}
+                    {% if wip.status == 'A' %}
+                        <a href="{% url 'clear_wip' wip.wip_id %}" class="btn btn-warning">Clear WIP</a>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

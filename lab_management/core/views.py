@@ -30,6 +30,7 @@ from .models import RoomTable, laboratory, Module, item_description, item_types,
 from .models import borrow_info, borrowed_items, borrowing_config, reported_items
 from .models import rooms, laboratory_reservations, reservation_config
 from .models import laboratory_users, laboratory_roles, laboratory_permissions, permissions, Notification
+from .models import WorkInProgress
 from .decorators import lab_permission_required, superuser_or_lab_permission_required
 from datetime import timedelta, date, datetime
 from calendar import monthrange
@@ -242,7 +243,7 @@ def suggest_report_users(request):
         status='A', 
         is_active=True  # Ensure this matches the field type
     ).annotate(
-        fullname=Concat(F('user__email'), Value(' | '), F('user__firstname'), Value(' '), F('user__lastname'), 
+        fullname=Concat( F('user__personal_id'), Value(' | '), F('user__firstname'), Value(' '), F('user__lastname'), Value(' | '),F('user__email') ,
         output_field=CharField())
     )
 
@@ -2704,6 +2705,13 @@ def borrowing_labtech_prebookrequests(request):
 def borrowing_labtech_detailedprebookrequests(request, borrow_id):
     borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id)
     borrowed_items1 = borrowed_items.objects.filter(borrow=borrow_entry)
+
+    inventory_items_map = {}
+    for item in borrowed_items1:
+        inventory_items_map[item.id] = item_inventory.objects.filter(item=item.item)
+
+    print(inventory_items_map)
+
     today = date.today()
 
     borrowed_items_json = json.dumps(
@@ -2736,6 +2744,35 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
                 
                 borrow_entry.status = 'B'  # Mark as borrowed
                 borrow_entry.save()
+
+                # ================== Inventory Item Selection ==================
+                if item.unit=="pcs":
+                    for item in borrowed_items1:
+                        
+                        inventory_item_ids = request.POST.getlist(f'inventory_items_{item.id}')  # Get selected inventory item IDs
+
+                        if len(inventory_item_ids) != item.qty:
+                            messages.error(request, f"Must select {item.qty} inventory items for '{item.item.item_name}'")
+                            return redirect('borrowing_labtech_detailedprebookrequests', borrow_id=borrow_id)
+
+                        # Assign selected inventory items
+                        for inv_id in inventory_item_ids:
+                            inv_item = get_object_or_404(item_inventory, inventory_item_id=inv_id)
+                            exp_record = get_object_or_404(item_expirations, inventory_item=inv_item)
+
+                            # Reduce remaining uses
+                            if exp_record.remaining_uses is not None and exp_record.remaining_uses > 0:
+                                exp_record.remaining_uses -= 1
+                                exp_record.save()
+                            else:
+                                messages.error(request, f"Inventory Item {inv_id} has no remaining uses.")
+                                return redirect('borrowing_labtech_detailedprebookrequests', borrow_id=borrow_id)
+
+                            # Store inventory_item in borrowed_items
+                            item.inventory_item = inv_id
+                            item.save()
+
+                    messages.success(request, 'Inventory items recorded successfully.')
                 
             elif action == 'cancel':
                 cancel_reason = request.POST.get('cancel_reason')
@@ -2755,7 +2792,8 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
         'borrow_entry': borrow_entry,
         'borrowed_items': borrowed_items1,
         'borrowed_items_json': borrowed_items_json,
-        'today': today
+        'today': today,
+        'inventory_items_map': inventory_items_map,
     })
 
 def validate_borrow_id(request):
@@ -4182,6 +4220,117 @@ def get_room_configuration(request, room_id):
 
 
 
+# ======================= WIP ============================
+
+@login_required
+@lab_permission_required('view_wip')
+def view_wip(request, wip_id):
+    try:
+        selected_laboratory_id = request.session.get('selected_lab')
+        selected_laboratory = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id)
+
+        current_user = request.user
+        user_roles = laboratory_users.objects.filter(
+            laboratory=selected_laboratory, 
+            user=current_user, 
+            is_active=True, 
+            status='A'
+        ).values_list('role', flat=True)
+        user_permissions = laboratory_permissions.objects.filter(
+            role__in=user_roles, 
+            laboratory=selected_laboratory
+        )
+        permission_ids = user_permissions.values_list('permissions__permission_id', flat=True)
+
+        if 22 in permission_ids:
+            wip = get_object_or_404(WorkInProgress, wip_id=wip_id)
+        elif 23 in permission_ids:
+            wip = get_object_or_404(WorkInProgress, wip_id=wip_id, user=current_user)
+        else:
+            wip = WorkInProgress.objects.none()
+
+        return render(request, 'mod_labRes/wip_view.html', {'wip': wip})
+    except Exception as e:
+        logger.error(f"Error viewing wip: {e}", exc_info=True)
+        messages.error(request, "An error occured unexpectedly.")
+        return redirect('home')
+
+@login_required
+@lab_permission_required('view_wip')
+def list_wip(request):
+    try:
+        selected_laboratory_id = request.session.get('selected_lab')
+        selected_laboratory = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id)
+
+        current_user = request.user
+        user_roles = laboratory_users.objects.filter(
+            laboratory=selected_laboratory, 
+            user=current_user, 
+            is_active=True, 
+            status='A'
+        ).values_list('role', flat=True)
+        user_permissions = laboratory_permissions.objects.filter(
+            role__in=user_roles, 
+            laboratory=selected_laboratory
+        )
+        permission_ids = user_permissions.values_list('permissions__permission_id', flat=True)
+
+        if 22 in permission_ids:
+            wip_experiments = WorkInProgress.objects.filter(laboratory=selected_laboratory_id).order_by('-start_time')
+        elif 23 in permission_ids:
+            wip_experiments = WorkInProgress.objects.filter(laboratory=selected_laboratory_id, user=current_user).order_by('-start_time')
+        else:
+            wip_experiments = WorkInProgress.objects.none()
+
+        rooms_query = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False, is_reservable=True)
+
+        if request.method == 'POST':
+            selected_user_id = request.POST.get('user')
+            room_id = request.POST.get('room')
+            description = request.POST.get('description')
+            remarks = request.POST.get('remarks')
+            selected_user = user.objects.get(user_id=selected_user_id)
+            selected_room = rooms.objects.get(room_id=room_id)
+            start_time = timezone.now()
+
+            WorkInProgress.objects.create(
+                user_id=selected_user.user_id,
+                laboratory=selected_laboratory,
+                room=selected_room,
+                description=description,
+                start_time=start_time,
+                remarks=remarks,
+                status='A'
+            )
+            messages.success(request, "WIP created successfully!")
+            return redirect('list_wip')
+        
+        context = {
+            'wip_experiments': wip_experiments,
+            'rooms': rooms_query,
+        }
+        return render(request, 'mod_labRes/wip_list.html', context )
+    except Exception as e:
+        logger.error(f"Error viewing list wip: {e}", exc_info=True)
+        messages.error(request, "An error occured unexpectedly.")
+        return redirect('home')
+
+@login_required
+@lab_permission_required('clear_wip')
+def clear_wip(request, wip_id):
+    try:
+        wip = get_object_or_404(WorkInProgress, wip_id=wip_id)
+        if request.method == 'POST':
+            wip.end_time = timezone.now()
+            wip.status = 'C'  # Mark as completed
+            wip.save()
+            messages.success(request, 'WIP experiment cleared successfully.')
+            return redirect('list_wip')
+        return render(request, 'mod_labRes/wip_clear.html', {'wip': wip})
+    except Exception as e:
+        logger.error(f"Error clearing wip: {e}", exc_info=True)
+        messages.error(request, "An error occured unexpectedly.")
+        return redirect('home')
 #  ================================================================= 
 
 

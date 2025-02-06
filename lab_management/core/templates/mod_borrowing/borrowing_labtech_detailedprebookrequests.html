@@ -1,5 +1,6 @@
 {% extends 'temp_navbar.html' %}
 {% block title %}Detailed Pre-Book Request{% endblock %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="pagetitle">
@@ -54,6 +55,7 @@
                                     <th>Item Name</th>
                                     <th>Quantity</th>
                                     <th>Unit</th>
+                                    <th>Select Inventory Items (Match Borrowed Quantity)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -64,10 +66,28 @@
                                         {% if borrow_entry.get_status_display == 'Completed' %}
                                         {{ item.qty }}
                                     {% else %}
-                                        <input type="number" class="form-control qty-input" name="qty_{{ item.id }}" value="{{ item.qty }}" min="1">
+                                        <input type="number" class="form-control qty-input" name="qty_{{ item.id }}" value="{{ item.qty }}" min="1" readonly>
                                     {% endif %}
                                     </td>
                                     <td>{{ item.unit }}</td>
+                                    <!-- <td>
+                                        <select class="form-select" name="inventory_item" multiple aria-label="multiple select example" id="inventory_item">
+                                            {% for item in inventory_items %}
+                                                <option value="{{ item.id }}">{{ item.id }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td> -->
+                                    <td>
+                                        <select class="form-select" aria-label="multiple select example" name="inventory_items_{{ item.id }}" multiple>
+                                            {% for inv_item in inventory_items_map|get_item:item.id %}
+                                                {% if inv_item.inventory_item_id|stringformat:"s" in item.inventory_item|default:"" %}
+                                                    <option value="{{ inv_item.inventory_item_id }}">
+                                                        {{ inv_item.inventory_item_id }}
+                                                    </option>
+                                                {% endif %}>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -81,9 +101,6 @@
                         {% if borrow_entry.get_status_display == 'Completed' %}
                         <button class="btn btn-info" id="downloadBtn">Download PDF</button>
                         {% endif %}
-
-                       
-                       
 
                     <!-- Confirm Borrow Modal -->
                     <div class="modal fade" id="confirmBorrowModal" tabindex="-1" aria-labelledby="confirmBorrowModalLabel" aria-hidden="true">
@@ -99,7 +116,7 @@
                                         <p>Are you sure you want to mark this request as "Borrowed"?</p>
                                         <div id="editReasonContainer" class="d-none">
                                             <label for="edit_reason">Reason for Quantity Update:</label>
-                                            <textarea name="edit_reason" id="edit_reason" class="form-control" placeholder="Enter reason for quantity edits" required></textarea>
+                                            <textarea name="edit_reason" id="edit_reason" class="form-control" placeholder="Enter reason for quantity edits"></textarea>
                                         </div>
                                     </div>
                                     <div class="modal-footer">
@@ -137,21 +154,7 @@
                     </div>
 
                 </div>
-            </div>
-
-            <!-- <h5 class="card-title">Borrow ID: {{ borrow_entry.borrow_id }}</h5>
-            <p><strong>Borrow Name:</strong> {{ borrow_entry.user.firstname }} {{ borrow_entry.user.lastname }}</p>
-            <p><strong>Date Requested:</strong> {{ borrow_entry.request_date|date:"Y/m/d" }}</p>
-            <p><strong>Date Needed:</strong> {{ borrow_entry.borrow_date|date:"Y/m/d" }}</p>
-            <p><strong>Due Date:</strong> {{ borrow_entry.due_date|date:"Y/m/d" }}</p>
-            <p><strong>Status:</strong> {{ borrow_entry.get_status_display }}</p>
-            <p><strong>Remarks:</strong> {{ borrow_entry.remarks }}</p>
-            <hr>
-
-            <h5 class="card-title">Borrowed Items</h5> -->
-            
-
-            
+            </div>         
           </div>
         </div>
     </div>

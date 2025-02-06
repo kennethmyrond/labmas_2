@@ -1,0 +1,252 @@
+{% extends 'temp_navbar.html' %}
+{% block title %}List WIP Experiments{% endblock %}
+
+{% block content %}
+
+<!-- Success message -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+
+<div class="pagetitle">
+    <h1>Work-in-Progress (WIP) Experiments</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item active">WIP List</li>
+      </ol>
+    </nav>
+</div>
+
+<section class="section">
+    <div class="row">
+        <div class="col-lg-12">
+            {% if permissions.can_create_wip%}
+            <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addWIPModal">
+                + Create WIP
+            </button>
+            {% endif %}
+                   <!-- Tabs Navigation -->
+                   <ul class="nav nav-tabs" id="wipTabs" role="tablist">
+                
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab">Active</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="cleared-tab" data-bs-toggle="tab" data-bs-target="#cleared" type="button" role="tab">Cleared</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link " id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">All</button>
+                    </li>
+                </ul>
+            <div class="card">
+                
+                <div class="card-body">
+                    
+             
+            
+            <div class="tab-content" id="wipTabsContent">
+                <div class="tab-pane fade show active" id="active" role="tabpanel">
+                    <table class="table datatable">
+                        <thead>
+                            <tr>
+                                <th>WIP ID</th>
+                                <th>User Personal ID</th>
+                                <th>User Full Name</th>
+                                <th>Room</th>
+                                <th>Start Time</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for wip in wip_experiments %}
+                            {% if wip.status == 'A' %}
+                            <tr>
+                                <td>{{ wip.wip_id }}</td>
+                                <td>{{ wip.user.personal_id }}</td>
+                                <td>{{ wip.user.get_fullname }}</td>
+                                <td>{{ wip.room }}</td>
+                                <td>{{ wip.start_time|date:"Y/m/d H:i" }}</td>
+                                <td>{{ wip.get_status_display }}</td>
+                                <td>
+                                    <a href="{% url 'view_wip' wip.wip_id %}" class="btn btn-info"><i class="bi bi-info-square"></i></a>
+                                    {% if permissions.can_clear_wip%}
+                                    <a href="{% url 'clear_wip' wip.wip_id %}" class="btn btn-warning"><i class="bi bi-x-circle"></i></a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-pane fade " id="all" role="tabpanel">
+                    <table class="table datatable">
+                        <thead>
+                            <tr>
+                                <th>WIP ID</th>
+                                <th>User Personal ID</th>
+                                <th>User Full Name</th>
+                                <th>Room</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for wip in wip_experiments %}
+                            <tr>
+                                <td>{{ wip.wip_id }}</td>
+                                <td>{{ wip.user.personal_id }}</td>
+                                <td>{{ wip.user.get_fullname }}</td>
+                                <td>{{ wip.room }}</td>
+                                <td>{{ wip.start_time|date:"Y/m/d H:i" }}</td>
+                                <td>{{ wip.end_time|date:"Y/m/d H:i" }}</td>
+                                <td>{{ wip.get_status_display }}</td>
+                                <td>
+                                    <a href="{% url 'view_wip' wip.wip_id %}" class="btn btn-info"><i class="bi bi-info-square"></i></a>
+                                    {% if permissions.can_clear_wip%}
+                                    {% if wip.status == 'A' %}
+                                    <a href="{% url 'clear_wip' wip.wip_id %}" class="btn btn-warning"><i class="bi bi-x-circle"></i></a>
+                                    {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="tab-pane fade" id="cleared" role="tabpanel">
+                    <table class="table datatable">
+                        <thead>
+                            <tr>
+                                <th>WIP ID</th>
+                                <th>User Personal ID</th>
+                                <th>User Full Name</th>
+                                <th>Room</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for wip in wip_experiments %}
+                            {% if wip.status == 'C' %}
+                            <tr>
+                                <td>{{ wip.wip_id }}</td>
+                                <td>{{ wip.user.personal_id }}</td>
+                                <td>{{ wip.user.get_fullname }}</td>
+                                <td>{{ wip.room }}</td>
+                                <td>{{ wip.start_time|date:"Y/m/d H:i" }}</td>
+                                <td>{{ wip.end_time|date:"Y/m/d H:i" }}</td>
+                                <td>{{ wip.get_status_display }}</td>
+                                <td>
+                                    <a href="{% url 'view_wip' wip.wip_id %}" class="btn btn-info"><i class="bi bi-info-square"></i></a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Modal for Adding WIP -->
+<div class="modal fade" id="addWIPModal" tabindex="-1" aria-labelledby="addWIPModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addWIPModalLabel">Create Work-In-Progress</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form method="POST" action="{% url 'list_wip' %}">
+          {% csrf_token %}
+          <div class="modal-body">
+            <!-- User Dropdown -->
+            <div class="mb-3">
+              <label for="user" class="form-label">Select User</label>
+              <select class="js-example-basic-single form-control" id="user" name="user" required onchange="updateIdNumber()">
+              </select>
+            </div>
+        
+            <div class="mb-3">
+                <label for="room" class="form-label">Room Located</label>
+                <select class="form-control" id="room" name="room" required>
+                    {% for room in rooms %}
+                        <option value="{{ room.room_id }}">{{ room.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="description" class="form-label">Description:</label>
+              <textarea class="form-control" id="description" name="description" required></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="remarks" class="form-label">Remarks</label>
+              <textarea class="form-control" id="remarks" name="remarks" required></textarea>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Save WIP</button>
+          </div>
+        </form>
+      </div>
+    </div>
+</div>
+
+<script>
+function updateIdNumber() {
+    const userSelect = document.getElementById('user');
+    const selectedOption = userSelect.options[userSelect.selectedIndex];
+    const idNumberField = document.getElementById('id_number');
+    idNumberField.value = selectedOption.getAttribute('data-id');
+}
+
+$(document).ready(function() {
+    $('#addWIPModal').on('shown.bs.modal', function () {
+      $('#user').select2({
+        dropdownParent: $('#addWIPModal'),
+        ajax: {
+            url: '/suggest_report_users/',
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+                return {
+                    query: params.term
+                };
+            },
+            processResults: function(data) {
+                console.log("Data received from suggest_users:", data);
+                return {
+                    results: data.map(function(user) {
+                        return {
+                          id: user.user_id,
+                          text: user.fullname
+                        };
+                    })
+                };
+            },
+            placeholder: 'Search for an item',
+            minimumInputLength: 2,
+            width: '100%' 
+        }
+      });
+    });
+});
+</script>
+
+{% endblock %}

@@ -31,14 +31,12 @@
   </nav>
 </div><!-- End Page Title -->
 
-<!-- Success message -->
 {% if messages %}
-  <div class="alert alert-success">
     {% for message in messages %}
-      {{ message }}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
     {% endfor %}
-  </div>
 {% endif %}
+
 
 <section class="section">
   <div class="row">

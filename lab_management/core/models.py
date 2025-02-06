@@ -31,6 +31,9 @@ convention for pks
 
  reservations
  401
+
+ wip
+ 501
 '''
 
 
@@ -459,8 +462,6 @@ class borrow_info(models.Model):
     request_date = models.DateTimeField(null=True, blank=True)
     borrow_date = models.DateField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
-    # class_id = models.ForeignKey('Class', on_delete=models.SET_NULL, null=True, blank=True)
-    # faculty_id = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='faculty')
     status = models.CharField(max_length=1, null=True, blank=True)
     approved_by = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True)
     questions_responses = models.JSONField(default=dict, blank=True)
@@ -475,7 +476,10 @@ class borrow_info(models.Model):
                 self.borrow_id = f"201{current_year}{random_number}"
                 if not borrow_info.objects.filter(borrow_id=self.borrow_id).exists():
                     break
-
+        
+        if not self.request_date:
+            self.request_date = timezone.now()
+        
         if self.user and self.user.personal_id:
             self.b_user_id = self.user.personal_id
         else:
@@ -502,6 +506,7 @@ class borrow_info(models.Model):
 class borrowed_items(models.Model):
     borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE)
     item = models.ForeignKey('item_description', on_delete=models.CASCADE)
+    inventory_item = models.CharField(max_length=255, null=True, blank=True)
     qty = models.IntegerField(null=True, blank=True)
     unit = models.CharField(max_length=20, null=True, blank=True)
     returned_qty = models.IntegerField(default=0)
@@ -604,6 +609,28 @@ class Notification(models.Model):
     def __str__(self):
         return self.message
 
+class WorkInProgress(models.Model):
+    wip_id = models.CharField(max_length=20, primary_key=True, editable=False)
+    user = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True)
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE, related_name='wip_experiments')
+    room = models.ForeignKey('rooms', on_delete=models.SET_NULL, null=True, blank=True, related_name='wip_experiments')
+    start_time = models.DateTimeField(default=timezone.now)  # When the WIP was registered
+    end_time = models.DateTimeField(null=True, blank=True)  # When the WIP was cleared
+    description = models.TextField(help_text="Describe the experiment and items left in the lab.")
+    status = models.CharField(max_length=1, default='A', choices=[('A', 'Active'), ('C', 'Completed')])
+    remarks = models.TextField(null=True, blank=True, help_text="Additional notes or remarks.")
 
+    def save(self, *args, **kwargs):
+        if not self.wip_id:
+            current_year = timezone.now().year
+            while True:
+                random_number = get_random_string(length=4, allowed_chars='0123456789')
+                self.wip_id = f"501{current_year}{random_number}"
+                if not WorkInProgress.objects.filter(wip_id=self.wip_id).exists():
+                    break
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"WIP {self.wip_id} by {self.user_id} in {self.laboratory}"
 
 
