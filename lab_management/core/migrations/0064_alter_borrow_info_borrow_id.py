@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0063_alter_laboratory_reservations_filled_approval_form_and_more'),
+        ('core', '0062_alter_roomtable_blocked_time'),
     ]
 
     operations = [
