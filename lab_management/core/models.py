@@ -453,6 +453,7 @@ class borrowing_config(models.Model):
     
 class borrow_info(models.Model):
     borrow_id = models.CharField(max_length=20, primary_key=True)
+    b_user_id = models.CharField(max_length=20, null=True, blank=True)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
     user = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True, related_name='borrowed_by')
     request_date = models.DateTimeField(null=True, blank=True)
@@ -467,23 +468,20 @@ class borrow_info(models.Model):
     notification_sent = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
-        print(f"Before saving: borrow_id={self.borrow_id}") 
         if not self.borrow_id:
+            current_year = datetime.now().year
+            while True:
+                random_number = get_random_string(length=4, allowed_chars='0123456789')
+                self.borrow_id = f"201{current_year}{random_number}"
+                if not borrow_info.objects.filter(borrow_id=self.borrow_id).exists():
+                    break
 
-        #current_year = datetime.now().year
-        #    while True:
-        #        random_number = get_random_string(length=4, allowed_chars='0123456789')
-        #        self.borrow_id = f"201{current_year}{random_number}"
-        #        if not borrow_info.objects.filter(borrow_id=self.borrow_id).exists():
-        #            break
-
-            if self.user and self.user.personal_id:
-                self.borrow_id = self.user.personal_id
-                print(f"Assigned borrow_id: {self.borrow_id}")
-            else:
-                raise ValueError("User or personal_id is missing.")
+        if self.user and self.user.personal_id:
+            self.b_user_id = self.user.personal_id
+        else:
+            raise ValueError("User or personal_id is missing.")
         super().save(*args, **kwargs)
-        print(f"After saving: borrow_id={self.borrow_id}")
+        print(f"After saving: b_user_id: {self.b_user_id}")
     
     def __str__(self):
         return f"Borrow Info {self.borrow_id}"
