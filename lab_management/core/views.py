@@ -1930,7 +1930,9 @@ def borrowing_student_walkinview(request):
         if request.method == 'POST':
             # request_date = timezone.localtime()
             # Format the date as "Month DD, YYYY"
+            request_datetime = current_time.strftime('%Y-%m-%d %H:%M:%S')
             request_date = current_time.strftime('%Y-%m-%d')
+            print(request_date)
 
             borrow_date = request_date
             due_date = request_date
@@ -1945,7 +1947,7 @@ def borrowing_student_walkinview(request):
             borrow_entry = borrow_info.objects.create(
                 laboratory_id=laboratory_id,
                 user=user_id,
-                request_date=request_date,
+                request_date=request_datetime,
                 borrow_date=borrow_date,
                 due_date=due_date,
                 status='A',  # Set initial status to 'Pending'
