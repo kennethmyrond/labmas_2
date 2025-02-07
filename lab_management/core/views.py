@@ -2656,9 +2656,7 @@ def return_borrowed_items(request):
 @lab_permission_required('view_borrowed_items')
 def borrowing_labtech_prebookrequests(request):
     try:
-
         selected_laboratory_id = request.session.get('selected_lab')
-        
         today = date.today()
         
         # Fetch borrowing requests based on their borrow_date
@@ -2746,21 +2744,19 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
                 borrow_entry.save()
 
                 # ================== Inventory Item Selection ==================
-                if item.unit=="pcs":
-                    for item in borrowed_items1:
-                        
-                        inventory_item_ids = request.POST.getlist(f'inventory_items_{item.id}')  # Get selected inventory item IDs
+                for item in borrowed_items1:
+                    if item.unit == "pcs":
+                        inventory_item_ids = request.POST.getlist(f'inventory_items_{item.id}')
 
                         if len(inventory_item_ids) != item.qty:
                             messages.error(request, f"Must select {item.qty} inventory items for '{item.item.item_name}'")
                             return redirect('borrowing_labtech_detailedprebookrequests', borrow_id=borrow_id)
 
-                        # Assign selected inventory items
+                        selected_inventory_items = []
                         for inv_id in inventory_item_ids:
                             inv_item = get_object_or_404(item_inventory, inventory_item_id=inv_id)
                             exp_record = get_object_or_404(item_expirations, inventory_item=inv_item)
 
-                            # Reduce remaining uses
                             if exp_record.remaining_uses is not None and exp_record.remaining_uses > 0:
                                 exp_record.remaining_uses -= 1
                                 exp_record.save()
@@ -2768,9 +2764,10 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
                                 messages.error(request, f"Inventory Item {inv_id} has no remaining uses.")
                                 return redirect('borrowing_labtech_detailedprebookrequests', borrow_id=borrow_id)
 
-                            # Store inventory_item in borrowed_items
-                            item.inventory_item = inv_id
-                            item.save()
+                            selected_inventory_items.append(inv_id)
+
+                        item.inventory_item = ', '.join(selected_inventory_items)
+                        item.save()
 
                     messages.success(request, 'Inventory items recorded successfully.')
                 

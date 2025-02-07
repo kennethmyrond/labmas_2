@@ -267,10 +267,7 @@ class item_inventory(models.Model):
     purchase_price = models.FloatField(null=True, blank=True)
     remarks = models.CharField(max_length=45, null=True, blank=True)
     qty = models.IntegerField()
-
-    # Storage Monitoring
-    optimal_temperature = models.FloatField(null=True, blank=True)  # Recommended storage temperature
-    current_temperature = models.FloatField(null=True, blank=True)  # Actual temperature
+    uses = models.IntegerField(default=0)  # Current remaining uses
 
     def check_storage_expiry(self):
         """Check if item is stored in the correct conditions."""

@@ -62,17 +62,7 @@
                 </thead>
                 <tbody>
                   {% for item in inventory_items %}
-                    <!-- <tr>
-                      <td style="text-align:left;"><button type="button" class="btn btn-secondary btn-sm" data-toggle="modal" data-target="#detailsModal-{{ item.item_id }}">
-                        <i class="bi bi-info-square"></i>
-                      </button>&emsp;{{ item.item_name }}</td> 
-                      <td >{{ item.total_qty|default:0 }}</td> <
-                      <td>
-                        <input type="number" name="count_qty_{{ item.item_id }}" class="form-control" placeholder="Enter count" min="0" oninput="validity.valid||(value='');" required>
-                      </td>
-                    </tr> -->
-
-                    {% if item.rec_expiration or item.rec_per_inv %}
+                    {% if item.expiry_type != null or item.rec_per_inv %}
                         <!-- Display individual inventory items if per-inventory tracking is enabled -->
                         {% for inventory in item.individual_inventories %}
                             <tr>

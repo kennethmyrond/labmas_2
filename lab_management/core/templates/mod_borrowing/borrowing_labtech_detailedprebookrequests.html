@@ -55,7 +55,9 @@
                                     <th>Item Name</th>
                                     <th>Quantity</th>
                                     <th>Unit</th>
-                                    <th>Select Inventory Items (Match Borrowed Quantity)</th>
+                                    {% if borrow_entry.get_status_display == 'Approved' %}
+                                        <th>Select Inventory Items (Match Borrowed Quantity)</th>
+                                    {% endif %}
                                 </tr>
                             </thead>
                             <tbody>
@@ -70,25 +72,44 @@
                                     {% endif %}
                                     </td>
                                     <td>{{ item.unit }}</td>
-                                    <!-- <td>
-                                        <select class="form-select" name="inventory_item" multiple aria-label="multiple select example" id="inventory_item">
-                                            {% for item in inventory_items %}
-                                                <option value="{{ item.id }}">{{ item.id }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </td> -->
+                                    {% if borrow_entry.get_status_display == 'Approved'%}
                                     <td>
-                                        <select class="form-select" aria-label="multiple select example" name="inventory_items_{{ item.id }}" multiple>
-                                            {% for inv_item in inventory_items_map|get_item:item.id %}
-                                                {% if inv_item.inventory_item_id|stringformat:"s" in item.inventory_item|default:"" %}
-                                                    <option value="{{ inv_item.inventory_item_id }}">
-                                                        {{ inv_item.inventory_item_id }}
-                                                    </option>
-                                                {% endif %}>
-                                            {% endfor %}
-                                        </select>
+                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectInventoryModal{{ item.id }}" {% if borrow_entry.borrow_date > today and item.unit != "pcs" %} disabled{% endif %}>
+                                            Select Inventory Items
+                                        </button>
                                     </td>
+                                    {% endif %}
                                 </tr>
+
+                                <!-- Modal for Selecting Inventory Items -->
+                                <div class="modal fade" id="selectInventoryModal{{ item.id }}" tabindex="-1" aria-labelledby="selectInventoryModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="selectInventoryModalLabel">Select Inventory Items for {{ item.item.item_name }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                {% for i in "x"|rjust:item.qty %}
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Select Inventory Item {{ forloop.counter }}</label>
+                                                        <select class="form-select" name="inventory_items_{{ item.id }}" required>
+                                                            <option value="">-- Select Inventory Item --</option>
+                                                            {% for inv_item in inventory_items_map|get_item:item.id %}
+                                                                <option value="{{ inv_item.inventory_item_id }}">
+                                                                    {{ inv_item.inventory_item_id }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -98,7 +119,7 @@
                             <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal" {% if borrow_entry.status == 'L' or today < borrow_entry.borrow_date %}disabled{% endif %} >Cancel</button>
                         </div>
                         <br>
-                        {% if borrow_entry.get_status_display == 'Completed' %}
+                        {% if borrow_entry.get_status_display == 'Completed'  %}
                         <button class="btn btn-info" id="downloadBtn">Download PDF</button>
                         {% endif %}
 
