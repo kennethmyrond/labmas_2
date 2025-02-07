@@ -134,6 +134,7 @@
                               <th>Item Type</th>
                               <th>Allow Borrowing?</th>
                               <th>Is Consumable?</th>
+                              <th>Lead Time of Preparation (days)</th>
                               <th>Quantity Limit (Per Borrow)</th>
                               <th>Current Quantity</th>
                           </tr>
@@ -151,6 +152,15 @@
                                   <input type="checkbox" name="is_consumable" value="{{ item.item_id }}" 
                                          {% if item.is_consumable %}checked{% endif %}>
                               </td>
+                                <td>
+                                  <div class="input-group">
+                                    <input type="number" name="lead_time_prep_{{ item.item_id }}" value="{{ item.lead_time_prep|default:'' }}"
+                                         min="0" placeholder="Lead Time" class="form-control">
+                                    <button type="button" class="btn btn-danger reset-lead-time" data-item-id="{{ item.item_id }}">Reset</button>
+                                  </div>
+                                </td>
+                          
+                            
                               <td>
                                 <div class="input-group">
                                     <input type="number" name="qty_limit_{{ item.item_id }}" value="{{ item.qty_limit|default:'' }}" 
@@ -366,6 +376,14 @@
           });
       });
   });
+
+  document.querySelectorAll('.reset-lead-time').forEach(button => {
+    button.addEventListener('click', function () {
+        let itemId = this.dataset.itemId;
+        document.querySelector(`input[name="lead_time_prep_${itemId}"]`).value = '';
+    });
+});
+
 </script>
 
 <script>
@@ -409,5 +427,6 @@
         });
       });
   </script>
+
 
 {% endblock %}

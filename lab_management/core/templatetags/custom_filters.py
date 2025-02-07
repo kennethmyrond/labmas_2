@@ -71,7 +71,9 @@ def create_tuple(role_id, perm_codename):
     return (role_id, perm_codename)
 
 
-
+@register.filter
+def dict_get(dictionary, key):
+    return dictionary.get(key, "No Lead Time Required")
 
 
 

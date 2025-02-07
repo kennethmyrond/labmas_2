@@ -233,6 +233,7 @@ class item_description(models.Model):
     max_uses = models.IntegerField(null=True, blank=True) # Maximum allowed uses for the item
     maintenance_interval = models.IntegerField(null=True, blank=True) # Maintenance interval in days
 
+    lead_time_prep = models.IntegerField(null=True, blank=True)  # Lead time in days
     qty_limit = models.IntegerField(null=True, blank=True) #for the borrowing_config, to set qty limit to each item.
     
     def save(self, *args, **kwargs):

@@ -2493,6 +2493,11 @@ def borrowing_labcoord_borrowconfig(request):
 
                     # Validate and update qty_limit for each item
                     for item in items_with_qty:
+                        lead_time_prep = request.POST.get(f'lead_time_prep_{item.item_id}')
+                        if lead_time_prep is not None:
+                            lead_time_prep = int(lead_time_prep) if lead_time_prep else None
+                            item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
+
                         qty_limit = request.POST.get(f'qty_limit_{item.item_id}')
                         if qty_limit is not None:
                             qty_limit = int(qty_limit) if qty_limit else None
@@ -2506,6 +2511,9 @@ def borrowing_labcoord_borrowconfig(request):
                             # item.save()
 
                             item_description.objects.filter(item_id=item.item_id).update(qty_limit=qty_limit)
+
+                
+                        
 
                 else:
                     allowed_item_types = request.POST.getlist('borrow_item_type')  # Item types explicitly checked
@@ -2740,7 +2748,7 @@ def borrowing_labtech_prebookrequests(request):
     try:
         selected_laboratory_id = request.session.get('selected_lab')
         today = date.today()
-        
+
         # Fetch borrowing requests based on their borrow_date
         today_borrows = borrow_info.objects.filter(borrow_date=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
         future_borrows = borrow_info.objects.filter(borrow_date__gt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
@@ -2749,6 +2757,50 @@ def borrowing_labtech_prebookrequests(request):
         cancelled_borrows = borrow_info.objects.filter(status='L', laboratory_id=selected_laboratory_id).select_related('user')
         borrowed_borrows = borrow_info.objects.filter(status='B', laboratory_id=selected_laboratory_id).select_related('user')
         accepted_borrows = borrow_info.objects.filter(status__in=['A', 'B', 'L', 'X', 'Y'], laboratory_id=selected_laboratory_id).order_by('-request_date').select_related('user')
+
+        # Filter only borrow requests that have at least one item with lead time
+        filtered_future_borrows = []
+        borrow_preparation_data = {}
+        borrow_items_data = {}
+        borrow_prep_details = {}  # New dictionary to store detailed prep information
+
+        for borrow in future_borrows:
+            borrowed_items_qs = borrowed_items.objects.filter(borrow=borrow).select_related('item')
+
+            prep_dates = []
+            items_with_lead_time = []
+            has_lead_time = False
+
+            for borrowed_item in borrowed_items_qs:
+                lead_time_days = borrowed_item.item.lead_time_prep
+                if lead_time_days and lead_time_days > 0:
+                    has_lead_time = True
+                    prep_date = borrow.borrow_date - timedelta(days=lead_time_days)
+                    prep_dates.append(prep_date)
+                    items_with_lead_time.append({
+                        'name': borrowed_item.item.item_name,
+                        'prep_date': prep_date,
+                        'lead_time': lead_time_days
+                    })
+
+            if has_lead_time:
+                # Sort prep dates to get the earliest
+                prep_dates.sort()
+                filtered_future_borrows.append(borrow)
+                borrow_preparation_data[borrow.borrow_id] = prep_dates[0]
+                borrow_items_data[borrow.borrow_id] = [item['name'] for item in items_with_lead_time]
+                
+                # Store detailed prep information
+                borrow_prep_details[borrow.borrow_id] = [
+                    f"{item['name']} (Lead Time: {item['lead_time']} days, Prep: {item['prep_date'].strftime('%b. %d, %Y')}, Borrow: {borrow.borrow_date.strftime('%b. %d, %Y')})" 
+                    for item in items_with_lead_time
+                ]
+
+        # Sort filtered_future_borrows by preparation date
+        filtered_future_borrows = sorted(
+            filtered_future_borrows, 
+            key=lambda x: borrow_preparation_data.get(x.borrow_id, date.max)
+        )
 
         if request.method == 'POST':
             borrow_id = request.POST.get('borrow_id')
@@ -2773,12 +2825,17 @@ def borrowing_labtech_prebookrequests(request):
             'past_borrows': past_borrows,
             'cancelled_borrows': cancelled_borrows,
             'accepted_borrows': accepted_borrows,
-            'borrowed_borrows': borrowed_borrows
+            'borrowed_borrows': borrowed_borrows,
+            'borrow_preparation_data': borrow_preparation_data,
+            'future_borrows': filtered_future_borrows,
+            'borrow_items_data': borrow_items_data,  # Pass the item names
+            'borrow_prep_details': borrow_prep_details,
         })
     except Exception as e:
         logger.error(f"Error fetching borrowing requests for {request.user}: {e}", exc_info=True)
         messages.error(request, "An error occurred while fetching borrow requests.")
         return redirect('home')
+
 
 @login_required
 @lab_permission_required('view_borrowed_items')

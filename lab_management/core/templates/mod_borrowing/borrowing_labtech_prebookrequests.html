@@ -1,5 +1,6 @@
 {% extends 'temp_navbar.html' %}
 {% block title %}Pre-Book Requests{% endblock %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="pagetitle">
@@ -50,6 +51,48 @@
       </div>
   </div>
 </div>
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Preparation for Future Borrow</h5>
+    <table class="table table-striped">
+      <thead>
+          <tr>
+              <th>Borrow ID</th>
+              <th>Preparation Details</th>
+              <th>Item Names</th>
+              <th>Status</th>
+          </tr>
+      </thead>
+      <tbody>
+          {% for borrow in future_borrows %}
+          <tr>
+              <td>{{ borrow.borrow_id }}</td>
+              <td>
+                {% if borrow.borrow_id in borrow_prep_details %}
+                    {{ borrow_prep_details|dict_get:borrow.borrow_id|join:"<br>"|safe }}
+                {% else %}
+                    No Lead Time Required
+                {% endif %}
+              </td>
+              <td>
+                {% if borrow.borrow_id in borrow_items_data %}
+                    {{ borrow_items_data|dict_get:borrow.borrow_id|join:", " }}
+                {% else %}
+                    No Items
+                {% endif %}
+              </td>
+              <td>{{ borrow.get_status_display }}</td>
+          </tr>
+          {% endfor %}
+      </tbody>
+  </table>
+  </div>
+</div>
+
+
+
+
 
 
 <!-- Tabs for Today, Future, Past, Cancelled, and Accepted borrows -->
