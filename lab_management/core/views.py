@@ -16,9 +16,11 @@ from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value
 from django.db import connection, models, DatabaseError, IntegrityError
 from django.utils import timezone
 from django.utils.dateformat import DateFormat
+from django.utils.timezone import now
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from django.urls import reverse
 from django import forms
+from django.views.decorators.csrf import csrf_exempt
 from collections import defaultdict
 from functools import wraps
 
@@ -597,13 +599,19 @@ def inventory_view(request):
 
         for item in inventory_items:
             expirations = item_expirations.objects.filter(inventory_item__item=item)
-            expiration_warnings = []
+            expiration_warnings = ''
             for exp in expirations:
                 if item.expiry_type == 'Date':
                     if exp.expired_date <= current_date + timedelta(days=7):  # Threshold of 7 days
                         if exp.inventory_item.qty > 0:  # Check if the item_inventory still has quantity
-                            expiration_warnings.append(exp)
-            item.expiration_warning = len(expiration_warnings) > 0  # Set expiration_warning  
+                            expiration_warnings = 'D'
+                elif item.expiry_type == 'Usage':
+                    if exp.remaining_uses <= 0:
+                        expiration_warnings = 'U'
+                elif item.expiry_type == 'Maintenance':
+                    if exp.next_maintenance_date <= current_date + timedelta(days=7):
+                        expiration_warnings = 'M'
+            item.expiration_warning = expiration_warnings  # Set expiration_warning  
 
         return render(request, 'mod_inventory/view_inventory.html', {
             'inventory_items': inventory_items,
@@ -615,6 +623,27 @@ def inventory_view(request):
         logger.error(f"Error fetching inventory: {e}", exc_info=True)
         messages.error(request, "An error occurred while fetching inventory.")
         return redirect('home')
+
+@login_required
+@lab_permission_required('view_inventory')
+def update_maintenance(request, inventory_item_id):
+    try:
+        inventory_item = get_object_or_404(item_inventory, inventory_item_id=inventory_item_id)
+        expiration_entry = get_object_or_404(item_expirations, inventory_item=inventory_item)
+        
+        maintenance_interval = inventory_item.item.maintenance_interval or 1  # Default 1 year if not set
+        next_maintenance_date = now().date().replace(year=now().year + maintenance_interval)
+        
+        expiration_entry.next_maintenance_date = next_maintenance_date
+        expiration_entry.save()
+        
+        messages.success(request, f"Maintenance updated for {inventory_item_id}! Next maintenance on {next_maintenance_date.strftime('%Y-%m-%d')}")
+    except Exception as e:
+        logger.error(f"Error fetching inventory: {e}", exc_info=True)
+        messages.error(request, "An error occurred while updating maintenance date.")
+
+    return redirect('inventory_itemDetails_view', item_id=inventory_item.item.item_id)
+
 
 @login_required
 @lab_permission_required('view_inventory')

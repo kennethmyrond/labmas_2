@@ -8,6 +8,12 @@
     --bs-btn-color: #353535;
     --bs-btn-bg: #ececec;}
   </style>
+  {% if messages %}
+  {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
   <div class="pagetitle">
     <h1>Inventory</h1>
     <nav>
@@ -73,8 +79,12 @@
                     </td> -->
                     <td style="text-align:left;">
                       <a href="{% url 'inventory_itemDetails_view' item.item_id %}">{{ item.item_name }}</a>
-                      {% if item.expiration_warning %}
-                        <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
+                      {% if item.expiration_warning == 'D' %}
+                          <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-exclamation-triangle-fill"></i></span></span>
+                      {% elif item.expiration_warning == 'U' %}
+                      <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-hand-index-thumb-fill"></i></span></span>
+                      {% elif item.expiration_warning == 'M' %}
+                          <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-tools"></i></span></span>
                       {% endif %}
                     </td>
                     <td class="{% if item.total_qty > 0 %}qty-positive{% else %}qty-negative{% endif %}" style="text-align:right;">

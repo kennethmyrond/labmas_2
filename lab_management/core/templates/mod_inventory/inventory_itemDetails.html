@@ -42,6 +42,12 @@
     }
   </style> {% endcomment %}
 </head>
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
 
 <div class="pagetitle">
   <h1>Inventory</h1>
@@ -185,10 +191,14 @@
                     View More
                   </button>
                   {% if item.expiry_type != None %}
-                  {% if item.expiry_type == 'Date' and inventory.expiration_date <= date_today and inventory.qty > 0 or item.expiry_type == 'Usage' and inventory.expiration_date == 0 and inventory.qty > 0 or item.expiry_type == 'Maintenance' and inventory.expiration_date <= date_today and inventory.qty > 0 %}
-                      <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
+                    {% if inventory.qty > 0 and item.expiry_type == 'Date' and inventory.expiration_date <= date_today %}
+                      <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-exclamation-triangle-fill"></i></span></span>
+                    {% elif inventory.qty > 0 and item.expiry_type == 'Usage' and inventory.expiration_date == 0 %}
+                      <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-hand-index-thumb-fill"></i></span></span>
+                    {% elif inventory.qty > 0 and item.expiry_type == 'Maintenance' and inventory.expiration_date <= date_today %}
+                      <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-tools"></i></span></span>
+                    {% endif %}
                   {% endif %}
-                {% endif %}
                 </td>
                 <td style="display:none"></td>
               </tr>
@@ -221,9 +231,14 @@
                       
                       {% if item.expiry_type != ' ' %}
                       <hr>
-                        {% if item.expiry_type == 'Date' and inventory.expiration_date <= date_today and inventory.qty > 0 or item.expiry_type == 'Usage' and inventory.expiration_date == 0 or item.expiry_type == 'Maintenance' and inventory.expiration_date <= date_today %}
-                            <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;">⚠️</span>
-                        {% endif %}
+                      {% if inventory.qty > 0 and item.expiry_type == 'Date' and inventory.expiration_date <= date_today %}
+                          <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-exclamation-triangle-fill"></i></span></span>
+                      {% elif inventory.qty > 0 and item.expiry_type == 'Usage' and inventory.expiration_date == 0 %}
+                          <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-hand-index-thumb-fill"></i></span></span>
+                      {% elif inventory.qty > 0 and item.expiry_type == 'Maintenance' and inventory.expiration_date <= date_today %}
+                          <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-tools"></i></span></span>
+                      {% endif %}
+
                         {% if item.expiry_type == 'Date' %}
                           {% if inventory.expiration_date %}
                             <strong>Expiration Date:</strong> {{ inventory.expiration_date|date:"Y-m-d" }}
@@ -247,7 +262,15 @@
                       
                     </div>
                     <div class="modal-footer">
-                      {% if item.rec_expiration or item.rec_per_inv %}
+                      {% if inventory.qty > 0 and item.expiry_type == 'Maintenance' and inventory.expiration_date <= date_today %}
+                          <form method="POST" action="{% url 'update_maintenance' inventory.inventory_item_id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning btn-sm">
+                                Confirm Maintenance
+                            </button>
+                        </form>
+                      {%endif%}
+                      {% if item.expiry_type != none or item.rec_per_inv %}
                       <a href="{{ inventory.qr_code }}" class="btn btn-primary" download="QR_{{ inventory.item.item_name }}_{{ inventory.inventory_item_id }}.png">
                         <i class="bi bi-qr-code"></i>
                       </a>
