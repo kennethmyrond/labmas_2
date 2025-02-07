@@ -322,6 +322,33 @@ def generate_qr_code(item_QRize, details):
 
     return qr_code  # Return the base64 encoded string
 
+def create_notification(user, message):
+    try:
+        Notification.objects.create(user=user, message=message)
+        logger.info(f"Notification created for {user}: {message}")
+    except Exception as e:
+        logger.error(f"Failed to create notification for {user}: {e}", exc_info=True)
+    
+def get_notifications(request):
+    try:
+        return Notification.objects.filter(user=request.user, is_read=False)
+    except Exception as e:
+        logger.error(f"Error fetching notifications for {request.user}: {e}", exc_info=True)
+        return Notification.objects.none()
+
+
+def mark_all_notifications_read(request):
+    # Mark all notifications for the current user as read
+    notifications = Notification.objects.filter(user=request.user, is_read=False)
+    notifications.update(is_read=True)  # Update all notifications to read
+
+    # Optionally, add a success message
+    messages.success(request, "All notifications have been marked as read.")
+
+    # Redirect back to the referer (previous page the user was on)
+    referer = request.META.get('HTTP_REFERER', 'default_page')  # Default to 'default_page' if no referer is found
+    return HttpResponseRedirect(referer)
+
 # forms
 class ItemEditForm(forms.ModelForm):
     itemType = forms.ModelChoiceField(
@@ -561,22 +588,19 @@ def inventory_view(request):
         logger.warning(f"Unauthorized attempt to access inventory_view by {request.user}")
         return redirect('userlogin')
     
-    selected_laboratory_id = request.session.get('selected_lab')# Get the selected laboratory from the session
-    item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)# Get all item types for the selected laboratory
-    selected_item_type = request.GET.get('item_type')# Get the selected item_type from the GET parameters
-    current_date = timezone.localtime().date()# Fetch current date for expiration comparison
+    selected_laboratory_id = request.session.get('selected_lab')  # Get the selected laboratory from the session
+    item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)  # Get all item types for the selected laboratory
+    selected_item_type = request.GET.get('item_type')  # Get the selected item_type from the GET parameters
+    current_date = timezone.localtime().date()  # Fetch current date for expiration comparison
 
-    # Filter inventory items by both the selected item_type and the selected laboratory,
-    # and ensure the item is not disabled
-    logger.info(f"User {request.user.email} is viewing inventory for lab {selected_laboratory_id}. Selected Item Type: {selected_item_type}")
-
+    # Fetch inventory items based on item_type and lab
     try:
         if selected_item_type:
             if selected_item_type == '0':
                 inventory_items = item_description.objects.filter(
                     laboratory_id=selected_laboratory_id,
                     is_disabled=0,
-                    itemType_id = None    # Only get items that are enabled
+                    itemType_id=None  # Only get items that are enabled
                 ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
                 add_cols = []
             else:
@@ -584,7 +608,7 @@ def inventory_view(request):
                     itemType_id=selected_item_type,
                     laboratory_id=selected_laboratory_id,
                     is_disabled=0  # Only get items that are enabled
-                ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0)) # Calculate total quantity
+                ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
                 selected_item_type_instance = item_types.objects.get(pk=selected_item_type)
                 add_cols = json.loads(selected_item_type_instance.add_cols)
         else:
@@ -596,33 +620,88 @@ def inventory_view(request):
         
         # Log inventory count
         logger.debug(f"Inventory fetched: {inventory_items.count()} items found.")
+        notifications_sent = False  # Flag to prevent duplicate notifications
+        notified_items = set()  # To track which items have been notified
 
+        # Loop through each inventory item and check conditions
         for item in inventory_items:
             expirations = item_expirations.objects.filter(inventory_item__item=item)
             expiration_warnings = ''
+
+            # Check expiration conditions
             for exp in expirations:
-                if item.expiry_type == 'Date':
-                    if exp.expired_date <= current_date + timedelta(days=7):  # Threshold of 7 days
-                        if exp.inventory_item.qty > 0:  # Check if the item_inventory still has quantity
-                            expiration_warnings = 'D'
-                elif item.expiry_type == 'Usage':
-                    if exp.remaining_uses <= 0:
+                # Date Expiry
+                if item.expiry_type == 'Date' and exp.expired_date <= current_date + timedelta(days=7):
+                    if exp.inventory_item.qty > 0 and item.item_id not in notified_items:
+                        expiration_warnings = 'D'
+                        message = f"Item '{item.item_name}' will expire soon!"
+                        existing_notification = Notification.objects.filter(
+                            user=request.user,
+                            message=message
+                        ).first()
+                        if not existing_notification:
+                            create_notification(request.user, message)
+                            notified_items.add(item.item_id)  # Mark as notified
+
+                # Usage Limit Reached
+                elif item.expiry_type == 'Usage' and exp.remaining_uses <= 0:
+                    if item.item_id not in notified_items:
                         expiration_warnings = 'U'
-                elif item.expiry_type == 'Maintenance':
-                    if exp.next_maintenance_date <= current_date + timedelta(days=7):
+                        message = f"Item '{item.item_name}' usage limit reached!"
+                        existing_notification = Notification.objects.filter(
+                            user=request.user,
+                            message=message
+                        ).first()
+                        if not existing_notification:
+                            create_notification(request.user, message)
+                            notified_items.add(item.item_id)  # Mark as notified
+
+                # Maintenance Due
+                elif item.expiry_type == 'Maintenance' and exp.next_maintenance_date <= current_date + timedelta(days=7):
+                    if item.item_id not in notified_items:
                         expiration_warnings = 'M'
-            item.expiration_warning = expiration_warnings  # Set expiration_warning  
+                        message = f"Item '{item.item_name}' needs maintenance soon!"
+                        existing_notification = Notification.objects.filter(
+                            user=request.user,
+                            message=message
+                        ).first()
+                        if not existing_notification:
+                            create_notification(request.user, message)
+                            notified_items.add(item.item_id)  # Mark as notified
+
+            # Check for low stock (e.g., less than 5 items remaining)
+            if item.total_qty < 5 and item.item_id not in notified_items:
+                message = f"Item '{item.item_name}' is running low on stock!"
+                existing_notification = Notification.objects.filter(
+                    user=request.user,
+                    message=message
+                ).first()
+                if not existing_notification:
+                    create_notification(request.user, message)
+                    notified_items.add(item.item_id)  # Mark as notified
+
+            item.expiration_warning = expiration_warnings  # Set expiration warning
+
+        # Send notifications for any issue detected
+        if notifications_sent:
+            logger.info("Notifications have been sent for inventory items.")
+
+        # Get unread notifications for the user
+        notifications = get_notifications(request)
 
         return render(request, 'mod_inventory/view_inventory.html', {
             'inventory_items': inventory_items,
             'item_types': item_types_list,
             'selected_item_type': int(selected_item_type) if selected_item_type else None,
             'add_cols': add_cols,
+            'notifications': notifications,  # Pass notifications to the template
         })
     except Exception as e:
         logger.error(f"Error fetching inventory: {e}", exc_info=True)
         messages.error(request, "An error occurred while fetching inventory.")
         return redirect('home')
+
+
 
 @login_required
 @lab_permission_required('view_inventory')
@@ -2287,32 +2366,6 @@ def borrowing_student_detailedWalkInRequestsview(request):
         return render(request, 'error_page.html', {'message': 'An unexpected error occurred.'})
 
     
-def create_notification(user, message):
-    try:
-        Notification.objects.create(user=user, message=message)
-        logger.info(f"Notification created for {user}: {message}")
-    except Exception as e:
-        logger.error(f"Failed to create notification for {user}: {e}", exc_info=True)
-    
-def get_notifications(request):
-    try:
-        return Notification.objects.filter(user=request.user, is_read=False)
-    except Exception as e:
-        logger.error(f"Error fetching notifications for {request.user}: {e}", exc_info=True)
-        return Notification.objects.none()
-
-
-# View to mark all notifications as read
-def mark_all_notifications_read(request):
-    # Mark all notifications for the current user as read
-    notifications = Notification.objects.filter(user=request.user, is_read=False)
-    notifications.update(is_read=True)  # Update all notifications to read
-
-    # Optionally, add a success message
-    messages.success(request, "All notifications have been marked as read.")
-
-    # Redirect back to the page where the notifications are displayed
-    return redirect('borrowing_labcoord_prebookrequests')
 
 @login_required
 @lab_permission_required('view_booking_requests')
