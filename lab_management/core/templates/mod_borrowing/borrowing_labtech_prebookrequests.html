@@ -23,6 +23,38 @@
   .items_list{
     text-align: left;
   }
+
+  .highlight {
+    background-color: #0b3d02 !important; /* Very dark green */
+    color: white !important; /* White text for strong contrast */
+    font-weight: bold;
+    transition: background-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.7); /* Stronger shadow effect */
+    border: 2px solid #ffffff; /* White border for extra emphasis */
+}
+
+/* More defined fade effect */
+@keyframes highlightFade {
+    0% {
+        background-color: #0b3d02;
+        color: white;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 1);
+    }
+    100% {
+        background-color: transparent;
+        color: inherit;
+        box-shadow: none;
+    }
+}
+
+tr.highlight {
+    animation: highlightFade 3s ease-out;
+}
+
+
+
+
+
 </style>
 
 <div class="row mb-3">
@@ -59,30 +91,24 @@
       <thead>
           <tr>
               <th>Borrow ID</th>
-              <th>Preparation Details</th>
-              <th>Item Names</th>
+              <th>Preparation Date</th> 
+              <th>Item Name</th> 
+              <th>Borrow Date</th> 
               <th>Status</th>
           </tr>
       </thead>
       <tbody>
-          {% for borrow in future_borrows %}
+          {% for borrow in separated_future_borrows %}
           <tr>
-              <td>{{ borrow.borrow_id }}</td>
               <td>
-                {% if borrow.borrow_id in borrow_prep_details %}
-                    {{ borrow_prep_details|dict_get:borrow.borrow_id|join:"<br>"|safe }}
-                {% else %}
-                    No Lead Time Required
-                {% endif %}
+                  <a href="#future-borrows" class="borrow-link" data-borrow-id="{{ borrow.borrow_id }}">
+                      {{ borrow.borrow_id }}
+                  </a>
               </td>
-              <td>
-                {% if borrow.borrow_id in borrow_items_data %}
-                    {{ borrow_items_data|dict_get:borrow.borrow_id|join:", " }}
-                {% else %}
-                    No Items
-                {% endif %}
-              </td>
-              <td>{{ borrow.get_status_display }}</td>
+              <td>{{ borrow.prep_date }}</td>
+              <td>{{ borrow.item_name }}</td>
+              <td>{{ borrow.borrow_date }}</td>
+              <td>{{ borrow.status }}</td>
           </tr>
           {% endfor %}
       </tbody>
@@ -187,8 +213,10 @@
                 </thead>
                 <tbody>
                   {% for request in future_borrows %}
-                  <tr>
-                    <td><a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a></td>
+                  <tr id="borrow-{{ request.borrow_id }}"> <!-- Move ID here -->
+                    <td>
+                      <a href="{% url 'borrowing_labtech_detailedprebookrequests' request.borrow_id %}">{{ request.borrow_id }}</a>
+                    </td>
                     <td>{{ request.user.firstname }} {{ request.user.lastname }}</td>
                     <td style="text-align: left;">
                       <ul>
@@ -199,15 +227,10 @@
                     </td>
                     <td hidden></td>
                     <td hidden></td>
-                    <!-- <td>
-                      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" data-id="{{ request.borrow_id }}">Mark as Borrowed</button>
-                    </td>
-                    <td>
-                      <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal" data-id="{{ request.borrow_id }}">Cancel</button>
-                    </td> -->
                   </tr>
                   {% endfor %}
                 </tbody>
+                
               </table>
             </div>
           </div>
@@ -439,6 +462,44 @@
   </div>
 </div>
 
+<script>
+ document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".borrow-link").forEach(link => {
+        link.addEventListener("click", function (event) {
+            event.preventDefault();
+            let borrowId = this.dataset.borrowId;
+
+            // Switch to Future Borrows tab
+            let futureTab = document.querySelector("#future-tab");
+            if (futureTab) {
+                let tabInstance = new bootstrap.Tab(futureTab);
+                tabInstance.show();
+            }
+
+            // Wait for the tab transition
+            setTimeout(() => {
+                // Find the row in the future borrows table
+                let targetRow = document.getElementById(`borrow-${borrowId}`);
+                if (targetRow) {
+                    // Add highlight class to entire row
+                    targetRow.classList.add("highlight");
+
+                    // Scroll the row into view
+                    targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
+
+                    // Remove highlight after 2 seconds
+                    setTimeout(() => {
+                        targetRow.classList.remove("highlight");
+                    }, 2000);
+                }
+            }, 300);
+        });
+    });
+});
+
+</script>
+
+
 <script type="module">
   import QrScanner from "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js";
 
@@ -520,7 +581,7 @@
   });
 </script>
 
-
+  
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {

@@ -76,5 +76,12 @@ def dict_get(dictionary, key):
     return dictionary.get(key, "No Lead Time Required")
 
 
-
+@register.filter
+def dict_get(dictionary, key):
+    """
+    Template filter to safely get a value from a dictionary
+    """
+    if dictionary is None:
+        return None
+    return dictionary.get(key)
 

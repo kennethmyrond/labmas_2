@@ -2749,7 +2749,6 @@ def borrowing_labtech_prebookrequests(request):
         selected_laboratory_id = request.session.get('selected_lab')
         today = date.today()
 
-        # Fetch borrowing requests based on their borrow_date
         today_borrows = borrow_info.objects.filter(borrow_date=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
         future_borrows = borrow_info.objects.filter(borrow_date__gt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
         past_borrows = borrow_info.objects.filter(borrow_date__lt=today, status='A', laboratory_id=selected_laboratory_id).select_related('user')
@@ -2758,67 +2757,44 @@ def borrowing_labtech_prebookrequests(request):
         borrowed_borrows = borrow_info.objects.filter(status='B', laboratory_id=selected_laboratory_id).select_related('user')
         accepted_borrows = borrow_info.objects.filter(status__in=['A', 'B', 'L', 'X', 'Y'], laboratory_id=selected_laboratory_id).order_by('-request_date').select_related('user')
 
-        # Filter only borrow requests that have at least one item with lead time
-        filtered_future_borrows = []
-        borrow_preparation_data = {}
-        borrow_items_data = {}
-        borrow_prep_details = {}  # New dictionary to store detailed prep information
+        separated_future_borrows = []
 
         for borrow in future_borrows:
             borrowed_items_qs = borrowed_items.objects.filter(borrow=borrow).select_related('item')
 
-            prep_dates = []
-            items_with_lead_time = []
-            has_lead_time = False
-
             for borrowed_item in borrowed_items_qs:
                 lead_time_days = borrowed_item.item.lead_time_prep
                 if lead_time_days and lead_time_days > 0:
-                    has_lead_time = True
                     prep_date = borrow.borrow_date - timedelta(days=lead_time_days)
-                    prep_dates.append(prep_date)
-                    items_with_lead_time.append({
-                        'name': borrowed_item.item.item_name,
-                        'prep_date': prep_date,
-                        'lead_time': lead_time_days
+
+                    separated_future_borrows.append({
+                        "borrow_id": borrow.borrow_id,
+                        "prep_date": prep_date,
+                        "item_name": borrowed_item.item.item_name,
+                        "borrow_date": borrow.borrow_date,
+                        "status": borrow.get_status_display(),
                     })
 
-            if has_lead_time:
-                # Sort prep dates to get the earliest
-                prep_dates.sort()
-                filtered_future_borrows.append(borrow)
-                borrow_preparation_data[borrow.borrow_id] = prep_dates[0]
-                borrow_items_data[borrow.borrow_id] = [item['name'] for item in items_with_lead_time]
-                
-                # Store detailed prep information
-                borrow_prep_details[borrow.borrow_id] = [
-                    f"{item['name']} (Lead Time: {item['lead_time']} days, Prep: {item['prep_date'].strftime('%b. %d, %Y')}, Borrow: {borrow.borrow_date.strftime('%b. %d, %Y')})" 
-                    for item in items_with_lead_time
-                ]
-
-        # Sort filtered_future_borrows by preparation date
-        filtered_future_borrows = sorted(
-            filtered_future_borrows, 
-            key=lambda x: borrow_preparation_data.get(x.borrow_id, date.max)
-        )
+        separated_future_borrows.sort(key=lambda x: x["prep_date"])
 
         if request.method == 'POST':
             borrow_id = request.POST.get('borrow_id')
             action = request.POST.get('action')
             remarks = request.POST.get('remarks', '')
 
-            # Update borrow_info status
             borrow_entry = get_object_or_404(borrow_info, borrow_id=borrow_id)
             
             if action == 'borrowed':
-                borrow_entry.status = 'B'  # Mark as Borrowed
+                borrow_entry.status = 'B'
             elif action == 'cancel':
-                borrow_entry.status = 'L'  # Mark as Cancelled
-                borrow_entry.remarks = remarks  # Save cancellation remarks
+                borrow_entry.status = 'L'
+                borrow_entry.remarks = remarks  
             borrow_entry.save()
 
             return redirect('borrowing_labtech_prebookrequests')
 
+        highlight_borrow_id = request.GET.get('highlight', '')
+        
         return render(request, 'mod_borrowing/borrowing_labtech_prebookrequests.html', {
             'today_borrows': today_borrows,
             'future_borrows': future_borrows,
@@ -2826,17 +2802,14 @@ def borrowing_labtech_prebookrequests(request):
             'cancelled_borrows': cancelled_borrows,
             'accepted_borrows': accepted_borrows,
             'borrowed_borrows': borrowed_borrows,
-            'borrow_preparation_data': borrow_preparation_data,
-            'future_borrows': filtered_future_borrows,
-            'borrow_items_data': borrow_items_data,  # Pass the item names
-            'borrow_prep_details': borrow_prep_details,
+            'separated_future_borrows': separated_future_borrows,  
         })
     except Exception as e:
         logger.error(f"Error fetching borrowing requests for {request.user}: {e}", exc_info=True)
         messages.error(request, "An error occurred while fetching borrow requests.")
         return redirect('home')
 
-
+        
 @login_required
 @lab_permission_required('view_borrowed_items')
 def borrowing_labtech_detailedprebookrequests(request, borrow_id):
