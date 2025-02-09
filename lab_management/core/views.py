@@ -13,7 +13,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear, Abs
 from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField, Max, Min
-from django.db import connection, models, DatabaseError, IntegrityError
+from django.db import connection, models, DatabaseError, IntegrityError, transaction
 from django.utils import timezone
 from django.utils.dateformat import DateFormat
 from django.utils.timezone import now
@@ -52,10 +52,37 @@ sec_logger = logging.getLogger('django.security')
 
 logger = logging.getLogger('custom_logger')
 
+import pint
+
+def get_unit_choices():
+    ureg = pint.UnitRegistry()
+
+    unit_categories = {
+        "Capacity/Volume": ["milliliter", "liter"],
+        "Mass": ["gram", "kilogram", "milligram", "pound", "ounce"],
+        "Length": ["millimeter", "centimeter", "meter", "inch", "foot", "yard"],
+        # "Pieces": ["set", "unit"]
+    }
+
+    unit_choices = {}
+    for category, units in unit_categories.items():
+        choices = []
+        for unit in units:
+            try:
+                unit_obj = ureg(unit)
+                symbol = f"{unit_obj.units:~P}"  # Correctly get unit symbol
+                choices.append((unit_obj.units, f"{unit_obj.units} ({symbol})"))
+            except pint.errors.UndefinedUnitError:
+                choices.append((unit, unit))  # Fallback if no unit symbol
+        
+        unit_choices[category] = choices
+
+    return unit_choices
 
 
 prev_day = ''
 # thread every midnight query items to check due date if today (for on holding past due date )
+@transaction.atomic
 def late_borrow(request):
     global prev_day
     prev_day = timezone.localtime().day  # Start with the current day
@@ -253,6 +280,8 @@ def suggest_report_users(request):
     
     return JsonResponse(results, safe=False)
 
+@transaction.atomic
+@login_required
 def remove_item_from_inventory(inventory_item, amount, user, change_type, remarks=''):
     if inventory_item.qty < amount:
         raise ValueError("Not enough items in inventory to remove.")
@@ -269,6 +298,7 @@ def remove_item_from_inventory(inventory_item, amount, user, change_type, remark
         remarks=remarks,
     )
 
+@transaction.atomic
 def generate_qr_code(item_QRize, details):
 
     # Create a QR code instance
@@ -541,6 +571,7 @@ def my_profile(request):
     return render(request, 'my_profile.html', {'user': user})
 
 @login_required
+@transaction.atomic
 def deactivate_account(request):
     user = request.user
     user.is_deactivated = True
@@ -549,6 +580,7 @@ def deactivate_account(request):
     return redirect('logout')  # Redirect to logout or another appropriate page
 
 @login_required
+@transaction.atomic
 def edit_profile(request):
     user = request.user
     if request.method == 'POST':
@@ -702,7 +734,7 @@ def inventory_view(request):
         return redirect('home')
 
 
-
+@transaction.atomic
 @login_required
 @lab_permission_required('view_inventory')
 def update_maintenance(request, inventory_item_id):
@@ -881,6 +913,7 @@ def inventory_itemDetails_view(request, item_id):
         messages.error(request, "An error occurred while fetching item details.")
         return redirect('home')
 
+@transaction.atomic
 @login_required
 @lab_permission_required('add_new_item')
 def inventory_addNewItem_view(request):
@@ -966,6 +999,7 @@ def inventory_addNewItem_view(request):
         'selected_lab_name': request.session.get('selected_lab_name'),
     })
 
+@transaction.atomic
 @login_required
 @lab_permission_required('update_item_inventory')
 def inventory_updateItem_view(request):
@@ -1148,6 +1182,7 @@ def inventory_updateItem_view(request):
 
     return render(request, 'mod_inventory/inventory_updateItem.html')
 
+@transaction.atomic
 @login_required
 @lab_permission_required('view_inventory')
 def inventory_itemEdit_view(request, item_id):
@@ -1239,7 +1274,7 @@ def inventory_itemEdit_view(request, item_id):
         'is_alert_disabled': item.alert_qty == 0,
     })
 
-
+@transaction.atomic
 @login_required
 @lab_permission_required('view_inventory')
 def inventory_itemDelete_view(request, item_id):
@@ -1387,6 +1422,8 @@ def inventory_physicalCount_view(request):
         messages.error(request, "An unexpected error occurred. Please try again.")
         return redirect('home')
 
+@transaction.atomic
+@login_required
 def adjust_inventory_item(status, inventory, discrepancy_qty, user, change_type, remark):
     try:
         if discrepancy_qty > 0:
@@ -1460,6 +1497,7 @@ def adjust_inventory_item(status, inventory, discrepancy_qty, user, change_type,
     except Exception as e:
         logger.error(f"Unexpected error adjusting inventory {inventory}: {e}", exc_info=True)
 
+@transaction.atomic
 @login_required
 @lab_permission_required('manage_suppliers')
 def inventory_manageSuppliers_view(request):
@@ -1502,6 +1540,7 @@ def inventory_manageSuppliers_view(request):
         messages.error(request, "An error occurred. Please try again.")
         return redirect('home')
 
+@transaction.atomic
 @lab_permission_required('manage_suppliers')
 def inventory_supplierDetails_view(request, supplier_id):
     try:
@@ -1587,6 +1626,7 @@ def inventory_config_view(request):
         messages.error(request, "Error loading inventory configuration. Please try again.")
         return redirect('home')
     
+@transaction.atomic
 @login_required
 @lab_permission_required('configure_inventory')
 def add_category(request):
@@ -1656,6 +1696,7 @@ def delete_category(request, category_id):
         logger.error(f"Error deleting category {category_id}: {e}", exc_info=True)
         return JsonResponse({'success': False, 'message': "An error occurred while deleting the category."}, status=500)
 
+@transaction.atomic
 @login_required
 @lab_permission_required('configure_inventory')
 def add_attributes(request):
@@ -1715,6 +1756,7 @@ def get_fixed_choices(request, category_id):
         logger.error(f"Error retrieving fixed choices for category {category_id}: {e}", exc_info=True)
         return JsonResponse({'success': False, 'message': "An error occurred while fetching fixed choices."}, status=500)
 
+@transaction.atomic
 @login_required
 @lab_permission_required('configure_inventory')
 def delete_attribute(request, category_id, attribute_name):
@@ -1787,6 +1829,7 @@ def borrowing_view(request):
 @lab_permission_required('borrow_items')
 def borrowing_student_prebookview(request):
     try:
+        unit_choices = get_unit_choices()
         laboratory_id = request.session.get('selected_lab')
         user = request.user
         lab = get_object_or_404(borrowing_config, laboratory_id=laboratory_id)
@@ -1889,6 +1932,7 @@ def borrowing_student_prebookview(request):
                     'current_date': request_date,
                     'items_by_type': items_by_type, 
                     'prebook_questions': prebook_questions, 
+                    'unit_choices':unit_choices
             })
 
     
@@ -1907,6 +1951,7 @@ def borrowing_student_prebookview(request):
                     'error_message': error_message or error_message_qty,
                     'current_date': request_date,
                     'items_by_type': items_by_type,  # Include grouped items here
+                    'unit_choices':unit_choices
                 })
 
             # If validation passes, proceed with insertion
@@ -1958,7 +2003,7 @@ def borrowing_student_prebookview(request):
         'current_date': current_date,
         'items_by_type': items_by_type,  # Pass grouped items to the template
         'prebook_questions': prebook_questions,  # Pass the prebook questions to the template
-        
+        'unit_choices':unit_choices
     })
 
 @login_required
@@ -1997,6 +2042,7 @@ def get_quantity_for_item(request, item_id):
 def borrowing_student_walkinview(request):
     try:
         current_time = timezone.localtime()  
+        unit_choices = get_unit_choices()
 
         # Get session details
         laboratory_id = request.session.get('selected_lab')
@@ -2079,7 +2125,8 @@ def borrowing_student_walkinview(request):
                     'inventory_items': inventory_items,
                     'walkin_questions': walkin_questions,  # Pass walk-in questions back to the template
                     'items_by_type': items_by_type,  # Pass grouped items to the template
-                    'lab_config': lab
+                    'lab_config': lab,
+                    'unit_choices': unit_choices
                 })
 
         
@@ -2112,7 +2159,8 @@ def borrowing_student_walkinview(request):
                     'inventory_items': inventory_items,
                     'walkin_questions': walkin_questions,  # Pass walk-in questions back to the template
                     'items_by_type': items_by_type,  # Pass grouped items to the template
-                    'lab_config': lab
+                    'lab_config': lab,
+                    'unit_choices': unit_choices 
                 })
 
             # If validation passes, insert items into borrowed_items
@@ -2171,6 +2219,7 @@ def borrowing_student_walkinview(request):
             'inventory_items': inventory_items,
             'walkin_questions': walkin_questions,  # Pass the walk-in questions to the template
             'items_by_type': items_by_type,  # Pass grouped items to the template
+            'unit_choices': unit_choices 
         })
     except Exception as e:
         logger.error(f"Unexpected error in borrowing_student_walkinview: {e}", exc_info=True)
@@ -2260,6 +2309,7 @@ def borrowing_student_viewPreBookRequestsview(request):
         logger.error(f"Unexpected error in borrowing_student_viewPreBookRequestsview: {e}", exc_info=True)
         return render(request, 'error_page.html', {'message': 'An unexpected error occurred. Please try again.'})
 
+@transaction.atomic
 @login_required
 @lab_permission_required('borrow_items')
 def cancel_borrow_request(request):
@@ -2366,7 +2416,7 @@ def borrowing_student_detailedWalkInRequestsview(request):
         return render(request, 'error_page.html', {'message': 'An unexpected error occurred.'})
 
     
-
+@transaction.atomic
 @login_required
 @lab_permission_required('view_booking_requests')
 def borrowing_labcoord_prebookrequests(request):
@@ -2439,6 +2489,7 @@ def borrowing_labcoord_prebookrequests(request):
         messages.error(request, "An unexpected error occurred while fetching booking requests.")
         return redirect('home')
 
+@transaction.atomic
 @login_required
 @lab_permission_required('configure_borrowing')
 def borrowing_labcoord_borrowconfig(request):
@@ -2584,7 +2635,7 @@ def borrowing_labcoord_borrowconfig(request):
         messages.error(request, "An error occurred while updating borrowing configurations.")
         return redirect('home')
 
-
+@transaction.atomic
 @login_required
 @lab_permission_required('view_booking_requests')
 def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
@@ -2663,7 +2714,7 @@ def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
         messages.error(request, "An error occurred while processing the request.")
         return redirect('borrowing_labcoord_prebookrequests')
 
-
+@transaction.atomic
 @login_required
 @lab_permission_required('return_item')
 def return_borrowed_items(request):
@@ -2742,6 +2793,7 @@ def return_borrowed_items(request):
         'borrow_id': borrow_id,
     })
 
+@transaction.atomic
 @login_required
 @lab_permission_required('view_borrowed_items')
 def borrowing_labtech_prebookrequests(request):
@@ -2812,7 +2864,7 @@ def borrowing_labtech_prebookrequests(request):
         messages.error(request, "An error occurred while fetching borrow requests.")
         return redirect('home')
 
-        
+@transaction.atomic
 @login_required
 @lab_permission_required('view_borrowed_items')
 def borrowing_labtech_detailedprebookrequests(request, borrow_id):
@@ -3079,7 +3131,7 @@ def clearance_labtech_viewclearance(request):
         messages.error(request, "Error processing report data.")
         return redirect('home')
 
-   
+@transaction.atomic
 @login_required
 @lab_permission_required('view_student_clearance')
 def clearance_labtech_viewclearanceDetailed(request, report_id):
@@ -3481,6 +3533,7 @@ def lab_reservation_student_reserveLabConfirm(request):
         messages.error(request, "An unexpected error occurred. Please try again.")
         return redirect('home')
     
+@transaction.atomic
 @login_required
 @lab_permission_required('reserve_laboratory')
 def lab_reservation_student_reserveLabConfirmDetails(request):
@@ -3657,6 +3710,7 @@ def lab_reservation_student_reserveLabSummary(request):
         messages.error(request, "An unexpected error occurred while fetching reservations.")
         return redirect('home')
 
+@transaction.atomic
 @login_required
 @lab_permission_required('reserve_laboratory')
 def cancel_reservation(request, reservation_id):
@@ -3706,6 +3760,7 @@ def lab_reservation_detail(request, reservation_id):
         messages.error(request, "An unexpected error occurred.")
         return redirect('lab_reservation_student_reserveLabSummary')
 
+@transaction.atomic
 @login_required
 @lab_permission_required('view_reservations')
 def export_schedule_to_excel(request):
@@ -3866,6 +3921,7 @@ def labres_lab_schedule(request):
         messages.error(request, "An unexpected error occurred.")
         return redirect('home')
 
+@transaction.atomic
 @login_required
 @lab_permission_required('approve_deny_reservations')
 def labres_lab_reservationreqs(request):
@@ -3989,6 +4045,7 @@ def labres_lab_reservationreqs(request):
         messages.error(request, "An unexpected error occurred.")
         return redirect('home')
 
+@transaction.atomic
 @login_required
 @lab_permission_required('approve_deny_reservations')
 def labres_lab_reservationreqsDetailed(request, reservation_id):
@@ -4026,7 +4083,8 @@ def labres_lab_reservationreqsDetailed(request, reservation_id):
         logger.error(f"Error fetching reservation details: {e}", exc_info=True)
         messages.error(request, "An error occurred while fetching reservation details.")
         return redirect('labres_lab_reservationreqs')
-    
+
+@transaction.atomic
 @login_required
 @lab_permission_required('configure_lab_reservation')
 def labres_labcoord_configroom(request):
@@ -4173,7 +4231,7 @@ def labres_labcoord_configroom(request):
 
     return render(request, 'mod_labRes/labres_labcoord_configroom.html', context)
 
-
+@transaction.atomic
 @login_required
 @lab_permission_required('configure_lab_reservation')
 def labres_bulk_upload(request):
@@ -4228,6 +4286,7 @@ def labres_bulk_upload(request):
         messages.error(request, f"An error occurred while generating the template: {str(e)}")
         return redirect('labres_labcoord_configroom')
 
+@transaction.atomic
 @login_required
 @lab_permission_required('configure_lab_reservation')
 def labres_bulk_upload_time(request):   
@@ -4372,6 +4431,7 @@ def view_wip(request, wip_id):
         messages.error(request, "An error occured unexpectedly.")
         return redirect('home')
 
+@transaction.atomic
 @login_required
 @lab_permission_required('view_wip')
 def list_wip(request):
@@ -4432,6 +4492,7 @@ def list_wip(request):
         messages.error(request, "An error occured unexpectedly.")
         return redirect('home')
 
+@transaction.atomic
 @login_required
 @lab_permission_required('clear_wip')
 def clear_wip(request, wip_id):
@@ -5291,6 +5352,7 @@ def superuser_manage_labs(request):
         return redirect('home')
 
 # lab info
+@transaction.atomic
 @superuser_or_lab_permission_required('configure_laboratory')
 def superuser_lab_info(request, laboratory_id):
     lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
@@ -5467,6 +5529,7 @@ def superuser_lab_info(request, laboratory_id):
 
 #     return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
+@transaction.atomic
 @login_required()
 @superuser_or_lab_permission_required('configure_laboratory')
 def toggle_module_status(request, laboratory_id):
@@ -5489,6 +5552,7 @@ def toggle_module_status(request, laboratory_id):
         messages.error(request, "Failed to update module statuses. Please try again.")
         return redirect('superuser_lab_info', laboratory_id=laboratory_id)
 
+@transaction.atomic
 @login_required()
 @superuser_or_lab_permission_required('configure_laboratory')
 def edit_lab_info(request, laboratory_id):
@@ -5509,6 +5573,7 @@ def edit_lab_info(request, laboratory_id):
         logger.error(f"Error updating lab info for Lab {laboratory_id}: {e}", exc_info=True)
         return JsonResponse({'status': 'fail', 'message': 'An error occurred while updating lab info'}, status=500)
 
+@transaction.atomic
 @login_required()
 @superuser_or_lab_permission_required('configure_laboratory')
 def deactivate_lab(request, laboratory_id):
@@ -5575,6 +5640,7 @@ def update_permissions(request, laboratory_id):
 
 
 # users
+@transaction.atomic
 @login_required
 @require_POST
 @superuser_or_lab_permission_required('configure_laboratory')
@@ -5599,6 +5665,7 @@ def edit_user_role(request, laboratory_id):
 
     return redirect ('superuser_lab_info', laboratory_id)
 
+@transaction.atomic
 @login_required
 @require_POST
 @superuser_or_lab_permission_required('configure_laboratory')
@@ -5891,7 +5958,7 @@ def superuser_user_info(request, user_id):
         return redirect('superuser_manage_users')
 
 
-
+@transaction.atomic
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def get_roles(request, laboratory_id):
@@ -5902,6 +5969,7 @@ def get_roles(request, laboratory_id):
         logger.error(f"Error fetching roles for lab {laboratory_id}: {e}")
         return JsonResponse({'error': 'Failed to fetch roles'}, status=500)
 
+@transaction.atomic
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def remove_lab_user(request, lab_user_id):
@@ -5917,6 +5985,7 @@ def remove_lab_user(request, lab_user_id):
         messages.error(request, "Failed to remove user.")
     return redirect('superuser_manage_users')  # Redirect to an appropriate page
 
+@transaction.atomic
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def edit_user(request, user_id):
@@ -5939,7 +6008,7 @@ def edit_user(request, user_id):
         messages.error(request, "Failed to update user.")
     return redirect('superuser_user_info', user_id=user_id)
     
-
+@transaction.atomic
 @login_required()
 @user_passes_test(lambda u: u.is_superuser)
 def deactivate_user(request, user_id):
@@ -6026,6 +6095,7 @@ def add_room(request, laboratory_id):
     #lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
     #return render(request, 'superuser/superuser_editLab.html', {'lab': lab})
 
+@transaction.atomic
 @user_passes_test(lambda u: u.is_superuser)
 def setup_createlab(request):
     if not request.user.is_superuser:
@@ -6255,7 +6325,7 @@ def superuser_logout(request):
     logout(request)
     return redirect("/login")
 
-
+@transaction.atomic
 @login_required(login_url='/login/superuser')
 @user_passes_test(lambda u: u.is_superuser)
 def add_laboratory(request):

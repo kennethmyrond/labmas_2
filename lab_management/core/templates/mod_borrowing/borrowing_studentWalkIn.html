@@ -169,7 +169,18 @@
             </div>
             <div class="col-sm-2">
                 <label class="form-label">Unit:</label>
-                <input type="text" name="units[]" class="form-control" placeholder="e.g., pcs, sets" required>
+                <select name="units[]" class="form-select" required>
+        {% for category, units in unit_choices.items %}
+            <optgroup label="{{ category }}">
+                {% for unit in units %}
+                    <option value="{{ unit.0 }}">{{ unit.1 }}</option>
+                {% endfor %}
+            </optgroup>
+        {% endfor %}
+            <optgroup label="Pieces">
+                <option value="pcs">piece/s</option>
+            </optgroup>
+    </select>
             </div>
             <div class="col-sm-2 mt-4">
                 <button type="button" class="btn btn-danger delete-equipment-btn">Delete</button>

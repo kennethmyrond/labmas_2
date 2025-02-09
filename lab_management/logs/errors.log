@@ -4947,3 +4947,218 @@ Traceback (most recent call last):
   File "C:\Python311\Lib\site-packages\django\shortcuts.py", line 88, in get_object_or_404
     raise Http404(
 django.http.response.Http404: No item_inventory matches the given query.
+ERROR 2025-02-10 01:46:49,500 views Unexpected error in borrowing_student_prebookview: 'cubic_meter' is not defined in the unit registry
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 1808, in borrowing_student_prebookview
+    unit_choices = get_unit_choices()
+                   ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 67, in get_unit_choices
+    unit_choices = {
+                   ^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 68, in <dictcomp>
+    category: [(ureg(unit).units, ureg(unit).units) for unit in units]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 68, in <listcomp>
+    category: [(ureg(unit).units, ureg(unit).units) for unit in units]
+                ^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1410, in parse_expression
+    return build_eval_tree(gen).evaluate(_define_op)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\pint_eval.py", line 395, in evaluate
+    return define_op(self.left)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1408, in _define_op
+    return self._eval_token(s, case_sensitive=case_sensitive, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1317, in _eval_token
+    {self.get_name(token_text, case_sensitive=case_sensitive): 1}
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 665, in get_name
+    raise UndefinedUnitError(name_or_alias)
+pint.errors.UndefinedUnitError: 'cubic_meter' is not defined in the unit registry
+ERROR 2025-02-10 01:46:52,056 views Unexpected error in borrowing_student_prebookview: 'cubic_meter' is not defined in the unit registry
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 1808, in borrowing_student_prebookview
+    unit_choices = get_unit_choices()
+                   ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 67, in get_unit_choices
+    unit_choices = {
+                   ^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 68, in <dictcomp>
+    category: [(ureg(unit).units, ureg(unit).units) for unit in units]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 68, in <listcomp>
+    category: [(ureg(unit).units, ureg(unit).units) for unit in units]
+                ^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1410, in parse_expression
+    return build_eval_tree(gen).evaluate(_define_op)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\pint_eval.py", line 395, in evaluate
+    return define_op(self.left)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1408, in _define_op
+    return self._eval_token(s, case_sensitive=case_sensitive, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1317, in _eval_token
+    {self.get_name(token_text, case_sensitive=case_sensitive): 1}
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 665, in get_name
+    raise UndefinedUnitError(name_or_alias)
+pint.errors.UndefinedUnitError: 'cubic_meter' is not defined in the unit registry
+ERROR 2025-02-10 01:47:36,810 views Unexpected error in borrowing_student_prebookview: 'piece' is not defined in the unit registry
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 1808, in borrowing_student_prebookview
+    unit_choices = get_unit_choices()
+                   ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 67, in get_unit_choices
+    unit_choices = {
+                   ^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 68, in <dictcomp>
+    category: [(ureg(unit).units, ureg(unit).units) for unit in units]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 68, in <listcomp>
+    category: [(ureg(unit).units, ureg(unit).units) for unit in units]
+                ^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1410, in parse_expression
+    return build_eval_tree(gen).evaluate(_define_op)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\pint_eval.py", line 395, in evaluate
+    return define_op(self.left)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1408, in _define_op
+    return self._eval_token(s, case_sensitive=case_sensitive, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1317, in _eval_token
+    {self.get_name(token_text, case_sensitive=case_sensitive): 1}
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 665, in get_name
+    raise UndefinedUnitError(name_or_alias)
+pint.errors.UndefinedUnitError: 'piece' is not defined in the unit registry
+ERROR 2025-02-10 01:48:01,056 views Unexpected error in borrowing_student_prebookview: 'set' is not defined in the unit registry
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 1808, in borrowing_student_prebookview
+    unit_choices = get_unit_choices()
+                   ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 67, in get_unit_choices
+    unit_choices = {
+                   ^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 68, in <dictcomp>
+    category: [(ureg(unit).units, ureg(unit).units) for unit in units]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 68, in <listcomp>
+    category: [(ureg(unit).units, ureg(unit).units) for unit in units]
+                ^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1410, in parse_expression
+    return build_eval_tree(gen).evaluate(_define_op)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\pint_eval.py", line 395, in evaluate
+    return define_op(self.left)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1408, in _define_op
+    return self._eval_token(s, case_sensitive=case_sensitive, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1317, in _eval_token
+    {self.get_name(token_text, case_sensitive=case_sensitive): 1}
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 665, in get_name
+    raise UndefinedUnitError(name_or_alias)
+pint.errors.UndefinedUnitError: 'set' is not defined in the unit registry
+ERROR 2025-02-10 01:57:04,454 views Unexpected error in borrowing_student_prebookview: 'fluid' is not defined in the unit registry
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 1808, in borrowing_student_prebookview
+    unit_choices = get_unit_choices()
+                   ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 67, in get_unit_choices
+    unit_choices = {
+                   ^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 68, in <dictcomp>
+    category: [(ureg(unit).units, ureg(unit).units) for unit in units]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 68, in <listcomp>
+    category: [(ureg(unit).units, ureg(unit).units) for unit in units]
+                ^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1410, in parse_expression
+    return build_eval_tree(gen).evaluate(_define_op)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\pint_eval.py", line 383, in evaluate
+    self.left.evaluate(define_op, bin_op, un_op),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\pint_eval.py", line 395, in evaluate
+    return define_op(self.left)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1408, in _define_op
+    return self._eval_token(s, case_sensitive=case_sensitive, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 1317, in _eval_token
+    {self.get_name(token_text, case_sensitive=case_sensitive): 1}
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\registry.py", line 665, in get_name
+    raise UndefinedUnitError(name_or_alias)
+pint.errors.UndefinedUnitError: 'fluid' is not defined in the unit registry
+ERROR 2025-02-10 02:09:23,731 views Unexpected error in borrowing_student_walkinview: Neither Quantity object nor its magnitude (1) has attribute 'symbol'
+Traceback (most recent call last):
+  File "C:\Python311\Lib\site-packages\pint\facets\numpy\quantity.py", line 248, in __getattr__
+    return getattr(self._magnitude, item)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'int' object has no attribute 'symbol'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 2024, in borrowing_student_walkinview
+    unit_choices = get_unit_choices()
+                   ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 67, in get_unit_choices
+    unit_choices = {
+                   ^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 68, in <dictcomp>
+    category: [
+              ^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 69, in <listcomp>
+    (ureg(unit).units, f"{ureg(unit).units} ({ureg(unit).symbol})")  # Full name + symbol
+                                              ^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\numpy\quantity.py", line 250, in __getattr__
+    raise AttributeError(
+AttributeError: Neither Quantity object nor its magnitude (1) has attribute 'symbol'
+ERROR 2025-02-10 02:11:56,794 views Unexpected error in borrowing_student_walkinview: This feature requires Babel. Please install it by running:
+pip install Babel
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 2029, in borrowing_student_walkinview
+    unit_choices = get_unit_choices()
+                   ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 73, in get_unit_choices
+    symbol = unit_obj.format_babel(locale="en")  # Get formatted unit symbol
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\typing_extensions.py", line 2853, in wrapper
+    return arg(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\facets\plain\quantity.py", line 264, in format_babel
+    return self._REGISTRY.formatter.format_quantity_babel(self, spec, **kwspec)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\delegates\formatter\full.py", line 248, in format_quantity_babel
+    return self.format_quantity(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\delegates\formatter\full.py", line 169, in format_quantity
+    return self.get_formatter(spec).format_quantity(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\delegates\formatter\plain.py", line 136, in format_quantity
+    self.format_unit(quantity.unit_items(), uspec, sort_func, **babel_kwds),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\delegates\formatter\plain.py", line 90, in format_unit
+    numerator, denominator = prepare_compount_unit(
+                             ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\delegates\formatter\_compound_unit_helpers.py", line 314, in prepare_compount_unit
+    numerator = sort_func(numerator, registry)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\delegates\formatter\_compound_unit_helpers.py", line 190, in sort_by_unit_name
+    return sorted(items, key=lambda el: el[2])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\delegates\formatter\_compound_unit_helpers.py", line 174, in localize_display_exponent_name
+    localize_unit_name(
+  File "C:\Python311\Lib\site-packages\pint\delegates\formatter\_compound_unit_helpers.py", line 115, in localize_unit_name
+    locale = babel_parse(locale)
+             ^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\pint\compat.py", line 63, in _inner
+    raise Exception(
+Exception: This feature requires Babel. Please install it by running:
+pip install Babel
