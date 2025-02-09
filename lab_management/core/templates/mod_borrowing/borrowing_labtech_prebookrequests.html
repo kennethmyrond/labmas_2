@@ -90,25 +90,27 @@ tr.highlight {
     <table class="table table-striped">
       <thead>
           <tr>
-              <th>Borrow ID</th>
-              <th>Preparation Date</th> 
               <th>Item Name</th> 
+              <th>Quantity & Unit</th> 
+              <th>Preparation Date</th> 
               <th>Borrow Date</th> 
-              <th>Status</th>
+              <!-- <th>Status</th> -->
+              <th>Borrow ID</th>
           </tr>
       </thead>
       <tbody>
           {% for borrow in separated_future_borrows %}
           <tr>
-              <td>
-                  <a href="#future-borrows" class="borrow-link" data-borrow-id="{{ borrow.borrow_id }}">
-                      {{ borrow.borrow_id }}
-                  </a>
-              </td>
-              <td>{{ borrow.prep_date }}</td>
               <td>{{ borrow.item_name }}</td>
+              <td>{{ borrow.qty }} {{ borrow.unit }}</td>
+              <td>{{ borrow.prep_date }} {% if borrow.prep_date == today %}(TODAY){%endif%}</td>
               <td>{{ borrow.borrow_date }}</td>
-              <td>{{ borrow.status }}</td>
+              <!-- <td>{{ borrow.status }}</td> -->
+              <td>
+                <a href="#future-borrows" class="borrow-link" data-borrow-id="{{ borrow.borrow_id }}">
+                    {{ borrow.borrow_id }}
+                </a>
+            </td>
           </tr>
           {% endfor %}
       </tbody>

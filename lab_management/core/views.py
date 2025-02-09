@@ -2773,6 +2773,8 @@ def borrowing_labtech_prebookrequests(request):
                         "item_name": borrowed_item.item.item_name,
                         "borrow_date": borrow.borrow_date,
                         "status": borrow.get_status_display(),
+                        "qty": borrowed_item.qty,
+                        "unit": borrowed_item.unit,
                     })
 
         separated_future_borrows.sort(key=lambda x: x["prep_date"])
@@ -2803,6 +2805,7 @@ def borrowing_labtech_prebookrequests(request):
             'accepted_borrows': accepted_borrows,
             'borrowed_borrows': borrowed_borrows,
             'separated_future_borrows': separated_future_borrows,  
+            'today': today
         })
     except Exception as e:
         logger.error(f"Error fetching borrowing requests for {request.user}: {e}", exc_info=True)
@@ -2857,6 +2860,7 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
 
                 # ================== Inventory Item Selection ==================
                 for item in borrowed_items1:
+                    item_expity_type = item.item.expiry_type
                     if item.unit == "pcs":
                         inventory_item_ids = request.POST.getlist(f'inventory_items_{item.id}')
 
@@ -2866,22 +2870,26 @@ def borrowing_labtech_detailedprebookrequests(request, borrow_id):
 
                         selected_inventory_items = []
                         for inv_id in inventory_item_ids:
-                            inv_item = get_object_or_404(item_inventory, inventory_item_id=inv_id)
-                            exp_record = get_object_or_404(item_expirations, inventory_item=inv_item)
+                            if inv_id:
+                                inv_item = get_object_or_404(item_inventory, inventory_item_id=inv_id)
+                                inv_item.uses += 1
+                                inv_item.save()
 
-                            if exp_record.remaining_uses is not None and exp_record.remaining_uses > 0:
-                                exp_record.remaining_uses -= 1
-                                exp_record.save()
-                            else:
-                                messages.error(request, f"Inventory Item {inv_id} has no remaining uses.")
-                                return redirect('borrowing_labtech_detailedprebookrequests', borrow_id=borrow_id)
+                                if (item_expity_type == 'D'): 
+                                    exp_record = get_object_or_404(item_expirations, inventory_item=inv_item)
+                                    if exp_record.remaining_uses is not None and exp_record.remaining_uses > 0:
+                                        exp_record.remaining_uses -= 1
+                                        exp_record.save()
+                                    else:
+                                        messages.error(request, f"Inventory Item {inv_id} has no remaining uses.")
+                                        return redirect('borrowing_labtech_detailedprebookrequests', borrow_id=borrow_id)
 
-                            selected_inventory_items.append(inv_id)
+                                selected_inventory_items.append(inv_id)
 
                         item.inventory_item = ', '.join(selected_inventory_items)
                         item.save()
 
-                    messages.success(request, 'Inventory items recorded successfully.')
+                    # messages.success(request, 'Inventory items recorded successfully.')
                 
             elif action == 'cancel':
                 cancel_reason = request.POST.get('cancel_reason')

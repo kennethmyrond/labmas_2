@@ -74,7 +74,7 @@
                                     <td>{{ item.unit }}</td>
                                     {% if borrow_entry.get_status_display == 'Approved'%}
                                     <td>
-                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectInventoryModal{{ item.id }}" {% if borrow_entry.borrow_date > today and item.unit != "pcs" %} disabled{% endif %}>
+                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectInventoryModal{{ item.id }}" {%if item.unit != "pcs"%}disabled{%endif%}{% if borrow_entry.borrow_date > today %} disabled{% endif %}>
                                             Select Inventory Items
                                         </button>
                                     </td>
