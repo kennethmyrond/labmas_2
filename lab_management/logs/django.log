@@ -5190,3 +5190,5 @@ Traceback (most recent call last):
     raise Exception(
 Exception: This feature requires Babel. Please install it by running:
 pip install Babel
+WARNING 2025-02-10 13:39:14,223 log Not Found: /favicon.ico
+WARNING 2025-02-10 13:39:14,223 basehttp "GET /favicon.ico HTTP/1.1" 404 37704
