@@ -76,7 +76,8 @@
                                     <li><strong>Due Date:</strong> {{ borrow_entry.due_date }}</li>
                                     <li><strong>Status:</strong> {{ borrow_entry.get_status_display }}</li>
                                 </ul>
-
+                                <input type="hidden" name="borrow_id" value="{{ borrow_entry.borrow_id }}">
+                                
                                 <table class="table table-striped">
                                     <thead>
                                         <tr>

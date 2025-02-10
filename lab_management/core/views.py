@@ -2744,49 +2744,54 @@ def return_borrowed_items(request):
             return redirect('return_borrowed_items')
 
     if request.method == 'POST' and 'return_items' in request.POST:
+        borrow_id = request.POST.get('borrow_id')
         try:
-            for borrow_entry in borrow_entries:
-                borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_entry, item__is_consumable=False)
-                consumed_items_list = borrowed_items.objects.filter(borrow=borrow_entry, item__is_consumable=True)
-
-                for item in borrowed_items_list:
-                    returned_all = request.POST.get(f'returned_all_{item.item.item_id}', False) == 'on'
-                    qty_returned = int(request.POST.get(f'return_qty_{item.item.item_id}', 0))
-                    hold_clearance = request.POST.get(f'hold_clearance_{item.item.item_id}', False) == 'on'
-                    remarks = request.POST.get(f'remarks_{item.item.item_id}', '').strip()
-                    amount_to_pay = request.POST.get(f'amount_to_pay_{item.item.item_id}', 0)
-
-                    if returned_all:
-                        item.returned_qty = item.qty
-                    else:
-                        item.returned_qty = qty_returned
-                    item.save()
-
-                    if hold_clearance and remarks:
-                        reported_items.objects.create(
-                            borrow=borrow_entry,
-                            item=item.item,
-                            qty_reported=item.qty - item.returned_qty,
-                            report_reason=remarks,
-                            amount_to_pay=amount_to_pay or 0,
-                            laboratory_id=selected_laboratory_id,
-                            user=borrow_entry.user
-                        )
-
-                for consumed_item in consumed_items_list:
-                    consumed_item.returned_qty = consumed_item.qty
-                    consumed_item.save()
-
-                # If all borrowed and consumed items are returned, mark as completed
-                if all(item.qty == item.returned_qty for item in borrowed_items_list) and \
-                        all(item.qty == item.returned_qty for item in consumed_items_list):
-                    borrow_entry.status = 'X'
-                    borrow_entry.save()
-
+            # Fetch the specific borrow entry being marked as returned
+            borrow_entry = borrow_info.objects.get(borrow_id=borrow_id, laboratory_id=selected_laboratory_id, status='B')
+            
+            borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_entry, item__is_consumable=False)
+            consumed_items_list = borrowed_items.objects.filter(borrow=borrow_entry, item__is_consumable=True)
+            
+            for item in borrowed_items_list:
+                returned_all = request.POST.get(f'returned_all_{item.item.item_id}', False) == 'on'
+                qty_returned = int(request.POST.get(f'return_qty_{item.item.item_id}', 0))
+                hold_clearance = request.POST.get(f'hold_clearance_{item.item.item_id}', False) == 'on'
+                remarks = request.POST.get(f'remarks_{item.item.item_id}', '').strip()
+                amount_to_pay = request.POST.get(f'amount_to_pay_{item.item.item_id}', 0)
+                
+                if returned_all:
+                    item.returned_qty = item.qty
+                else:
+                    item.returned_qty = qty_returned
+                item.save()
+                
+                if hold_clearance and remarks:
+                    reported_items.objects.create(
+                        borrow=borrow_entry,
+                        item=item.item,
+                        qty_reported=item.qty - item.returned_qty,
+                        report_reason=remarks,
+                        amount_to_pay=amount_to_pay or 0,
+                        laboratory_id=selected_laboratory_id,
+                        user=borrow_entry.user
+                    )
+            
+            for consumed_item in consumed_items_list:
+                consumed_item.returned_qty = consumed_item.qty
+                consumed_item.save()
+            
+            # Check if all items have been returned
+            if all(item.qty == item.returned_qty for item in borrowed_items_list) and \
+                    all(item.qty == item.returned_qty for item in consumed_items_list):
+                borrow_entry.status = 'X'  # Mark borrow entry as completed
+                borrow_entry.save()
+            
             messages.success(request, 'Successfully Returned Items')
             return redirect('return_borrowed_items')
+        except borrow_info.DoesNotExist:
+            messages.error(request, "Invalid borrow entry.")
         except Exception as e:
-            logger.error(f"Error while returning items for Personal ID {b_user_id}: {e}", exc_info=True)
+            logger.error(f"Error while returning items for Borrow ID {borrow_id}: {e}", exc_info=True)
             messages.error(request, "An error occurred while returning items.")
 
 
