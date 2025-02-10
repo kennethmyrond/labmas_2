@@ -86,6 +86,9 @@
             // Borrower details (formatted)
             let borrowerDetails = `
             Request ID: ${borrowId}
+            ID Number: {{ borrow_request.user.personal_id }}
+            First Name: {{ borrow_request.user.firstname }}
+            Last Name: {{ borrow_request.user.lastname }}         
             Date Requested: ${dateRequested}
             Date Needed: ${borrowDate}
             Due Date: ${dueDate}
@@ -95,7 +98,7 @@
             doc.text(borrowerDetails, 10, 10);
   
            
-            doc.autoTable({ html: '#borrowedItemsTable', startY: 50 });
+            doc.autoTable({ html: '#borrowedItemsTable', startY: 70 });
   
             
             const qrImg = new Image();
