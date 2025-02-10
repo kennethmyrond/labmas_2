@@ -5229,3 +5229,231 @@ Traceback (most recent call last):
     raise FieldError(
 django.core.exceptions.FieldError: Cannot resolve keyword 'fullname' into field. Choices are: borrow_info, borrowed_by, date_joined, email, emailaddress, firstname, is_deactivated, is_staff, is_superuser, item_handling, laboratory_users, last_login, lastname, logentry, notification, password, personal_id, reported_items, socialaccount, user, user_id, username, workinprogress
 ERROR 2025-02-10 15:17:52,900 basehttp "GET /suggest_report_users/ HTTP/1.1" 500 126786
+ERROR 2025-02-10 16:08:46,537 views Error fetching reports for Chem Student: type object 'reported_items' has no attribute 'filter'
+Traceback (most recent call last):
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\core\views.py", line 3001, in clearance_student_viewClearance
+    reports = reported_items.filter(
+              ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'reported_items' has no attribute 'filter'
+ERROR 2025-02-10 16:08:51,395 views Error fetching reports for Chem Student: type object 'reported_items' has no attribute 'filter'
+Traceback (most recent call last):
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\core\views.py", line 3001, in clearance_student_viewClearance
+    reports = reported_items.filter(
+              ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'reported_items' has no attribute 'filter'
+ERROR 2025-02-10 16:08:53,214 views Error fetching reports for Chem Student: type object 'reported_items' has no attribute 'filter'
+Traceback (most recent call last):
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\core\views.py", line 3001, in clearance_student_viewClearance
+    reports = reported_items.filter(
+              ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'reported_items' has no attribute 'filter'
+ERROR 2025-02-10 16:09:01,617 views Error fetching reports for Chem Student: type object 'reported_items' has no attribute 'filter'
+Traceback (most recent call last):
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\core\views.py", line 3001, in clearance_student_viewClearance
+    reports = reported_items.filter(
+              ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'reported_items' has no attribute 'filter'
+ERROR 2025-02-10 16:09:09,778 views Error fetching reports for Chem Student: type object 'reported_items' has no attribute 'filter'
+Traceback (most recent call last):
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\core\views.py", line 3001, in clearance_student_viewClearance
+    reports = reported_items.filter(
+              ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'reported_items' has no attribute 'filter'
+ERROR 2025-02-10 16:09:11,425 views Error fetching reports for Chem Student: type object 'reported_items' has no attribute 'filter'
+Traceback (most recent call last):
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\core\views.py", line 3001, in clearance_student_viewClearance
+    reports = reported_items.filter(
+              ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'reported_items' has no attribute 'filter'
+ERROR 2025-02-10 16:09:12,441 views Error fetching reports for Chem Student: type object 'reported_items' has no attribute 'filter'
+Traceback (most recent call last):
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\core\views.py", line 3001, in clearance_student_viewClearance
+    reports = reported_items.filter(
+              ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'reported_items' has no attribute 'filter'
+ERROR 2025-02-10 16:31:14,265 views Error fetching detailed clearance report 30120245342: Could not parse the remainder: ' report_data.status == 'Pending' %' from 'if report_data.status == 'Pending' %'
+Traceback (most recent call last):
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\core\views.py", line 3180, in clearance_labtech_viewclearanceDetailed
+    return render(request, 'mod_clearance/labtech_viewclearanceDetailed.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+           ^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+               ^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loader_tags.py", line 295, in do_extends
+    nodelist = parser.parse()
+               ^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 489, in parse
+    raise self.error(token, e)
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 605, in compile_filter
+    return FilterExpression(token, self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 706, in __init__
+    raise TemplateSyntaxError(
+django.template.exceptions.TemplateSyntaxError: Could not parse the remainder: ' report_data.status == 'Pending' %' from 'if report_data.status == 'Pending' %'
+ERROR 2025-02-10 16:31:16,516 views Error fetching detailed clearance report 30120240140: Could not parse the remainder: ' report_data.status == 'Pending' %' from 'if report_data.status == 'Pending' %'
+Traceback (most recent call last):
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\core\views.py", line 3180, in clearance_labtech_viewclearanceDetailed
+    return render(request, 'mod_clearance/labtech_viewclearanceDetailed.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+           ^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+               ^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loader_tags.py", line 295, in do_extends
+    nodelist = parser.parse()
+               ^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 489, in parse
+    raise self.error(token, e)
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 605, in compile_filter
+    return FilterExpression(token, self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 706, in __init__
+    raise TemplateSyntaxError(
+django.template.exceptions.TemplateSyntaxError: Could not parse the remainder: ' report_data.status == 'Pending' %' from 'if report_data.status == 'Pending' %'
+ERROR 2025-02-10 16:31:56,761 views Error fetching detailed clearance report 30120245342: Could not parse the remainder: '% if report_data.status == 'Pending' %' from '% if report_data.status == 'Pending' %'
+Traceback (most recent call last):
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\core\views.py", line 3180, in clearance_labtech_viewclearanceDetailed
+    return render(request, 'mod_clearance/labtech_viewclearanceDetailed.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loader.py", line 15, in get_template
+    return engine.get_template(template_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\backends\django.py", line 79, in get_template
+    return Template(self.engine.get_template(template_name), self)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\engine.py", line 177, in get_template
+    template, origin = self.find_template(template_name)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\engine.py", line 159, in find_template
+    template = loader.get_template(name, skip=skip)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loaders\cached.py", line 57, in get_template
+    template = super().get_template(template_name, skip)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loaders\base.py", line 28, in get_template
+    return Template(
+           ^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 154, in __init__
+    self.nodelist = self.compile_nodelist()
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 196, in compile_nodelist
+    nodelist = parser.parse()
+               ^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loader_tags.py", line 295, in do_extends
+    nodelist = parser.parse()
+               ^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 518, in parse
+    raise self.error(token, e)
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 516, in parse
+    compiled_result = compile_func(self, token)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\loader_tags.py", line 234, in do_block
+    nodelist = parser.parse(("endblock",))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 489, in parse
+    raise self.error(token, e)
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 487, in parse
+    filter_expression = self.compile_filter(token.contents)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 605, in compile_filter
+    return FilterExpression(token, self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\template\base.py", line 706, in __init__
+    raise TemplateSyntaxError(
+django.template.exceptions.TemplateSyntaxError: Could not parse the remainder: '% if report_data.status == 'Pending' %' from '% if report_data.status == 'Pending' %'

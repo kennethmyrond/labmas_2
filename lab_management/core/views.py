@@ -2996,24 +2996,20 @@ def clearance_student_viewClearance(request):
 
         # Use the user instance's ID for querying
         selected_laboratory_id = request.session.get('selected_lab')
+        current_user = request.user
 
         try:
-            # Retrieve the borrow_info entries for the current user
-            user_borrows = borrow_info.objects.filter(user=user, laboratory_id=selected_laboratory_id)
 
-            # Check if the user has any borrows
-            if user_borrows.exists():
-                reports = reported_items.objects.filter(borrow__in=user_borrows)
+            reports = reported_items.objects.filter(user=current_user, laboratory_id=selected_laboratory_id)
 
                 # Handle the filter by status
-                status = request.GET.get('status', 'All')
-                if status != 'All':
-                    if status == 'Cleared':
-                        reports = reports.filter(status=0)  # Clear status
-                    elif status == 'Pending':
-                        reports = reports.filter(status=1)  # Pending status
-            else:
-                reports = reported_items.objects.none()  # No reports if no borrows
+            status = request.GET.get('status', 'All')
+            if status != 'All':
+                if status == 'Cleared':
+                    reports = reports.filter(status=0)  # Clear status
+                elif status == 'Pending':
+                    reports = reports.filter(status=1)  # Pending status
+       
 
         except Exception as e: 
             reports = reported_items.objects.none()  # If there's an error, return no reports
@@ -3035,6 +3031,8 @@ def clearance_student_viewClearanceDetailed(request, report_id):
     # Get the currently logged-in user
     try:
         user = request.user
+        selected_laboratory_id = request.session.get('selected_lab')
+        lab = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id)
         report = get_object_or_404(reported_items, report_id=report_id, user=user)
         borrow = report.borrow  # Access related borrow_info directly from report
 
@@ -3045,7 +3043,8 @@ def clearance_student_viewClearanceDetailed(request, report_id):
         context = {
             'report': report,                  # Main report entry
             'borrow_details': borrow,          # Borrow details
-            'report_details': report_details   # All reported items for this borrow
+            'report_details': report_details,   # All reported items for this borrow
+            'laboratory_name': lab.name
         }
         return render(request, 'mod_clearance/student_viewClearanceDetailed.html', context)
     except Exception as e:
@@ -3138,6 +3137,8 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
     try:
         # Get the reported item by ID
         report = get_object_or_404(reported_items, report_id=report_id)
+        selected_laboratory_id = request.session.get('selected_lab')
+        lab = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id)
 
         # Prepare report data in a similar structure as in 'clearance_labtech_viewclearance'
         borrow_info_obj = report.borrow
@@ -3154,6 +3155,7 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
             'status': 'Pending' if report.status == 1 else 'Cleared',
             'quantity': report.qty_reported,
             'remarks': report.remarks if report.remarks else '',
+     
         }
 
         if request.method == 'POST':
@@ -3173,6 +3175,7 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
         # Pass the report_data to the context for rendering
         context = {
             'report_data': report_data,
+            'laboratory_name': lab.name,
         }
 
         return render(request, 'mod_clearance/labtech_viewclearanceDetailed.html', context)

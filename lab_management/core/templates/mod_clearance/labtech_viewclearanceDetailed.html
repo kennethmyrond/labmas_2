@@ -126,8 +126,11 @@
               <div class="row mb-3">
                 <label for="status" class="col-sm-2 col-form-label">Status:</label>
                 <div class="col-sm-10">
-                  
+                    {% if report_data.status == 'Pending' %}
+                        <span class="status-pending">{{ report_data.status }}</span>
+                    {% else %}
                         <span class="status-cleared">{{ report_data.status }}</span>
+                    {% endif %}
                     
                 </div>
             </div>
@@ -143,10 +146,11 @@
             
      
             </form>
-  
+            <button class="btn btn-info" id="downloadBtn">Download PDF</button>
           </div>
+          
         </div>
-        <button class="btn btn-info" id="downloadBtn">Download PDF</button>
+        
       </div>
 
     </div>
@@ -159,7 +163,7 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            const labName = '{{ report_id.laboratory.name }}';
+            const labName = '{{ laboratory_name }}';
             doc.setFont("helvetica", "bold"); 
             doc.text(`${labName} Clearance Details`, 105, 20, { align: 'center'});
 
