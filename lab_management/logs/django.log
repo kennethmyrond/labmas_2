@@ -5192,3 +5192,40 @@ Exception: This feature requires Babel. Please install it by running:
 pip install Babel
 WARNING 2025-02-10 13:39:14,223 log Not Found: /favicon.ico
 WARNING 2025-02-10 13:39:14,223 basehttp "GET /favicon.ico HTTP/1.1" 404 37704
+ERROR 2025-02-10 15:17:52,884 log Internal Server Error: /suggest_report_users/
+Traceback (most recent call last):
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\core\views.py", line 266, in suggest_report_users
+    users = User.objects.filter(fullname__icontains=query)[:10]  # Adjust the filter as needed
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\db\models\query.py", line 1476, in filter
+    return self._filter_or_exclude(False, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\db\models\query.py", line 1494, in _filter_or_exclude
+    clone._filter_or_exclude_inplace(negate, args, kwargs)
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\db\models\query.py", line 1501, in _filter_or_exclude_inplace
+    self._query.add_q(Q(*args, **kwargs))
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\db\models\sql\query.py", line 1609, in add_q
+    clause, _ = self._add_q(q_object, self.used_aliases)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\db\models\sql\query.py", line 1641, in _add_q
+    child_clause, needed_inner = self.build_filter(
+                                 ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\db\models\sql\query.py", line 1491, in build_filter
+    lookups, parts, reffed_expression = self.solve_lookup_type(arg, summarize)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\db\models\sql\query.py", line 1303, in solve_lookup_type
+    _, field, _, lookup_parts = self.names_to_path(lookup_splitted, self.get_meta())
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Merylle\Documents\School\S.Y. 2024-2025\Term 1\CAP-IT1\labmas_2\lab_management\.venv\Lib\site-packages\django\db\models\sql\query.py", line 1768, in names_to_path
+    raise FieldError(
+django.core.exceptions.FieldError: Cannot resolve keyword 'fullname' into field. Choices are: borrow_info, borrowed_by, date_joined, email, emailaddress, firstname, is_deactivated, is_staff, is_superuser, item_handling, laboratory_users, last_login, lastname, logentry, notification, password, personal_id, reported_items, socialaccount, user, user_id, username, workinprogress
+ERROR 2025-02-10 15:17:52,900 basehttp "GET /suggest_report_users/ HTTP/1.1" 500 126786

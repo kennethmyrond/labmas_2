@@ -140,13 +140,15 @@
                 </div>
             </div>
             
-            <button class="btn btn-info" id="downloadBtn">Download PDF</button>
+            
      
             </form>
   
           </div>
         </div>
+        <button class="btn btn-info" id="downloadBtn">Download PDF</button>
       </div>
+
     </div>
   </section>
 
@@ -156,6 +158,12 @@
         document.getElementById('downloadBtn').addEventListener('click', function() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+
+            const labName = '{{ report_id.laboratory.name }}';
+            doc.setFont("helvetica", "bold"); 
+            doc.text(`${labName} Clearance Details`, 105, 20, { align: 'center'});
+
+            doc.setFont("helvetica", "normal"); 
 
             const rfNumber = '{{ report_data.borrow_id }}';
             const studentName = '{{report_data.user_name}}';
@@ -179,7 +187,7 @@
           ];
 
             
-            const margin = 10;
+            const margin = 40;
             const lineHeight = 10;
             let yPosition = margin;
 
