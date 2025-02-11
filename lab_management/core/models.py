@@ -550,6 +550,7 @@ class reported_items(models.Model):
 class laboratory_reservations(models.Model):
     reservation_id = models.CharField(max_length=20, unique=True, primary_key=True)
     user = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, related_name='user')
+    r_user_id = models.CharField(max_length=20, null=True, blank=True)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
     room = models.ForeignKey('rooms', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
     table = models.ForeignKey('RoomTable', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
@@ -565,6 +566,10 @@ class laboratory_reservations(models.Model):
     filled_approval_form = models.FileField(upload_to='filled_approval_forms/', null=True, blank=True, validators=[FileExtensionValidator(allowed_extensions=['pdf'])])
 
     def save(self, *args, **kwargs):
+
+        if self.user and not self.r_user_id:
+            self.r_user_id = self.user.personal_id
+
         if not self.reservation_id:
             current_year = datetime.now().year
             while True:

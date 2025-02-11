@@ -5809,3 +5809,9 @@ Traceback (most recent call last):
                              ^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'NoneType' object has no attribute 'query'
 ERROR 2025-02-11 00:16:46,182 basehttp "GET /borrowing/return-items/ HTTP/1.1" 500 87785
+ERROR 2025-02-11 01:05:09,505 views Error while returning items for Borrow ID 20120257075: invalid literal for int() with base 10: ''
+Traceback (most recent call last):
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\core\views.py", line 2757, in return_borrowed_items
+    qty_returned = int(request.POST.get(f'return_qty_{item.item.item_id}', 0))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: ''
