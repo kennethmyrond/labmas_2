@@ -5519,3 +5519,153 @@ Traceback (most recent call last):
   File "C:\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 287, in __set__
     raise ValueError(
 ValueError: Cannot assign "<item_description: Bunsen Burner>": "item_handling.inventory_item" must be a "item_inventory" instance.
+WARNING 2025-02-12 20:26:55,764 log Not Found: /favicon.ico
+WARNING 2025-02-12 20:26:55,766 basehttp "GET /favicon.ico HTTP/1.1" 404 37704
+WARNING 2025-02-12 21:35:54,817 decorators Unauthorized attempt to access return_item by chem labcoord
+WARNING 2025-02-12 21:37:57,615 decorators Unauthorized attempt to access return_item by chem labcoord
+ERROR 2025-02-12 22:12:56,161 views Error rendering to-buy list: Reverse for 'inventory_experiments' not found. 'inventory_experiments' is not a valid view function or pattern name.
+Traceback (most recent call last):
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\core\views.py", line 1822, in inventory_experiments
+    return render(request, 'mod_inventory/inventory_experiments.html')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 1008, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 969, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 1008, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 969, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\defaulttags.py", line 327, in render
+    return nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 1008, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 969, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\defaulttags.py", line 327, in render
+    return nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 1008, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 969, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\defaulttags.py", line 480, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\urls\base.py", line 88, in reverse
+    return resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'inventory_experiments' not found. 'inventory_experiments' is not a valid view function or pattern name.
+ERROR 2025-02-12 22:12:56,580 log Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\core\views.py", line 497, in home
+    return render(request, "home.html", context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\backends\django.py", line 107, in render
+    return self.template.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 171, in render
+    return self._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 1008, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 969, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 163, in _render
+    return self.nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 1008, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 969, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\defaulttags.py", line 327, in render
+    return nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 1008, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 969, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\defaulttags.py", line 327, in render
+    return nodelist.render(context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 1008, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\base.py", line 969, in render_annotated
+    return self.render(context)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\template\defaulttags.py", line 480, in render
+    url = reverse(view_name, args=args, kwargs=kwargs, current_app=current_app)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\urls\base.py", line 88, in reverse
+    return resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\domin\OneDrive\Documents\GitHub\labmas_2\lab_management\venv\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'inventory_experiments' not found. 'inventory_experiments' is not a valid view function or pattern name.
+ERROR 2025-02-12 22:12:56,610 basehttp "GET / HTTP/1.1" 500 183189
+WARNING 2025-02-12 22:15:30,877 log Not Found: /to_buy_list/
+WARNING 2025-02-12 22:15:30,878 basehttp "GET /to_buy_list/ HTTP/1.1" 404 37709
+WARNING 2025-02-12 22:15:33,427 log Not Found: /to_buy_list/
+WARNING 2025-02-12 22:15:33,428 basehttp "GET /to_buy_list/ HTTP/1.1" 404 37709
+WARNING 2025-02-12 22:15:35,869 log Not Found: /to_buy_list/
+WARNING 2025-02-12 22:15:35,870 basehttp "GET /to_buy_list/ HTTP/1.1" 404 37709

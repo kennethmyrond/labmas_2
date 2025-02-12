@@ -1817,9 +1817,9 @@ def get_add_cols(request, category_id):
         return JsonResponse({'success': False, 'message': "An error occurred while retrieving add_cols."}, status=500)
 
 @login_required
-def inventory_tobuyList(request):
+def inventory_experiments(request):
     try:
-        return render(request, 'mod_inventory/inventory_tobuyList.html')
+        return render(request, 'mod_inventory/inventory_experiments.html')
     
     except Exception as e:
         logger.error(f"Error rendering to-buy list: {e}", exc_info=True)
