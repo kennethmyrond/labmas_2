@@ -23,6 +23,7 @@
                 {% if borrow_request.status == 'P' %}
                   <button class="btn btn-danger btn-sm custom-cancel-btn" onclick="cancelRequest('{{ request.borrow_id }}')">Cancel Booking</button>
                 {% endif %}
+                <div id ="borrowerDetails">
                 <h5 class="card-title">Request ID: {{ borrow_request.borrow_id }}</h5>
                 <p><strong>Date Requested:</strong> {{ borrow_request.request_date|date:"Y/m/d" }}</p>
                 <p><strong>Date Needed:</strong> {{ borrow_request.borrow_date|date:"Y/m/d" }}</p>
@@ -31,6 +32,7 @@
                   {{ borrow_request.get_status_display }}
                 </p>
               </div>
+            </div>
               <div class="col text-center">
                 <img src="{{ qrcode }}" alt="QR Code" class="img-thumbnail mt-2 float-end" style="width:50%"><br>
                 <a href="{{qrcode}}" class="btn btn-secondary btn-sm float-end ms-2" download="QR_{{borrow_request.borrow_id}}.png">
@@ -41,7 +43,7 @@
 
             <!-- Borrowed Items List -->
             <h5 class="card-title">Borrowed Items</h5>
-            <table class="table datatable">
+            <table class="table datatable" id="borrowedItemsTable">
               <thead>
                 <tr>
                   <th>Item Name</th>
@@ -59,17 +61,73 @@
                 {% endfor %}
               </tbody>
             </table>
+            
           </div>
+          
         </div>
+        <button class="btn btn-info" id="downloadBtn">Download PDF</button>
       </div>
     </div>
   </section>
   
-  <script>
+
+  <script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+          
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFont("helvetica", "bold"); 
+            const labName = '{{ borrow_request.laboratory.name }}';
+            doc.text(`${labName} Borrow Details`, 105, 20, { align: 'center' });
+
+            doc.setFont("helvetica", "normal"); 
+
+
+            const borrowId = '{{ borrow_request.borrow_id }}';
+            const dateRequested = '{{ borrow_request.request_date|date:"Y/m/d" }}';
+            const borrowDate = '{{ borrow_request.borrow_date|date:"Y/m/d" }}';
+            const dueDate = '{{ borrow_request.due_date|date:"Y/m/d" }}';
+            const status = '{{ borrow_request.get_status_display }}';
+            const fileName = `borrowrequest_${borrowId}_${borrowDate}_to_${dueDate}.pdf`;
+  
+            // Borrower details (formatted)
+            let borrowerDetails = `
+            Request ID: ${borrowId}
+            ID Number: {{ borrow_request.user.personal_id }}
+            First Name: {{ borrow_request.user.firstname }}
+            Last Name: {{ borrow_request.user.lastname }}         
+            Date Requested: ${dateRequested}
+            Date Needed: ${borrowDate}
+            Due Date: ${dueDate}
+            Status: ${status}
+            `;
+            doc.setFontSize(12);
+            doc.text(borrowerDetails, 10, 30);
+  
+           
+            doc.autoTable({ html: '#borrowedItemsTable', startY: 90 });
+  
+            
+            const qrImg = new Image();
+            qrImg.src = "{{ qrcode }}"; 
+            qrImg.crossOrigin = "Anonymous"; // Prevent CORS issues
+  
+            qrImg.onload = function () {
+                
+                doc.addImage(qrImg, 'PNG', 160, 10, 35, 35); 
+  
+           
+                doc.save(fileName);
+            };
+        });
+    });
+  
     function cancelRequest(rfNumber) {
-      // Add your cancellation logic here (e.g., make an AJAX request to cancel the booking)
-      alert('Cancel request for Borrow ID: ' + rfNumber);
+        alert('Cancel request for Borrow ID: ' + rfNumber);
     }
   </script>
+  
 
 {% endblock %}

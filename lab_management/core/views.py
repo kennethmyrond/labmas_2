@@ -2727,48 +2727,53 @@ def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
 @login_required
 @lab_permission_required('return_item')
 def return_borrowed_items(request):
-    borrow_id = request.GET.get('borrow_id', '')  # Fetch borrow_id from GET request
-    borrow_entry = None
-    borrowed_items_list = None
-    consumed_items_list = None
+    b_user_id = request.GET.get('b_user_id', '')  # Fetch b_user_id from GET request
+    borrow_entries = None
     selected_laboratory_id = request.session.get('selected_lab')
 
-    if borrow_id:
+    if b_user_id:
         try:
-            borrow_entry = borrow_info.objects.get(borrow_id=borrow_id, laboratory_id=selected_laboratory_id)
-            user_borrowed = borrow_entry.user
+            borrow_entries = borrow_info.objects.filter(
+                user__personal_id=b_user_id, 
+                laboratory_id=selected_laboratory_id, 
+                status='B'
+            ).select_related('user')
 
-            if borrow_entry.status != 'B':
-                messages.error(request, 'Status of borrowing request is not applicable for returning')
+            #debugging
+            print(f"Personal ID entered: {b_user_id}")
+            print(f"Query Executed: {borrow_entries.query}")
+            print(f"Results Found: {borrow_entries.exists()}")
 
-            borrowed_items_list = borrowed_items.objects.filter(
-                borrow=borrow_entry, item__is_consumable=False
-            ).annotate(remaining_borrowed=F('qty') - F('returned_qty'))
-
-            consumed_items_list = borrowed_items.objects.filter(
-                borrow=borrow_entry, item__is_consumable=True
-            ).annotate(remaining_borrowed=F('qty') - F('returned_qty'))
+            if not borrow_entries.exists():
+                messages.error(request, "No active borrow requests found for this ID.")
+                return redirect('return_borrowed_items')
 
         except borrow_info.DoesNotExist:
-            messages.error(request, "Invalid Borrow ID.")
-            logger.error(f"Invalid Borrow ID entered: {borrow_id}")
+            messages.error(request, "Invalid Personal ID.")
             return redirect('return_borrowed_items')
 
-    if request.method == 'POST' and 'return_items' in request.POST and borrow_entry and borrow_entry.status == 'B':
+    if request.method == 'POST' and 'return_items' in request.POST:
+        borrow_id = request.POST.get('borrow_id')
         try:
+            # Fetch the specific borrow entry being marked as returned
+            borrow_entry = borrow_info.objects.get(borrow_id=borrow_id, laboratory_id=selected_laboratory_id, status='B')
+            
+            borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_entry, item__is_consumable=False)
+            consumed_items_list = borrowed_items.objects.filter(borrow=borrow_entry, item__is_consumable=True)
+            
             for item in borrowed_items_list:
                 returned_all = request.POST.get(f'returned_all_{item.item.item_id}', False) == 'on'
                 qty_returned = int(request.POST.get(f'return_qty_{item.item.item_id}', 0))
                 hold_clearance = request.POST.get(f'hold_clearance_{item.item.item_id}', False) == 'on'
                 remarks = request.POST.get(f'remarks_{item.item.item_id}', '').strip()
                 amount_to_pay = request.POST.get(f'amount_to_pay_{item.item.item_id}', 0)
-
+                
                 if returned_all:
                     item.returned_qty = item.qty
                 else:
                     item.returned_qty = qty_returned
                 item.save()
-
+                
                 if hold_clearance and remarks:
                     reported_items.objects.create(
                         borrow=borrow_entry,
@@ -2777,30 +2782,33 @@ def return_borrowed_items(request):
                         report_reason=remarks,
                         amount_to_pay=amount_to_pay or 0,
                         laboratory_id=selected_laboratory_id,
-                        user=user_borrowed
+                        user=borrow_entry.user
                     )
-
+            
             for consumed_item in consumed_items_list:
                 consumed_item.returned_qty = consumed_item.qty
                 consumed_item.save()
-
+            
+            # Check if all items have been returned
             if all(item.qty == item.returned_qty for item in borrowed_items_list) and \
-            all(item.qty == item.returned_qty for item in consumed_items_list):
-                borrow_entry.status = 'X'
+                    all(item.qty == item.returned_qty for item in consumed_items_list):
+                borrow_entry.status = 'X'  # Mark borrow entry as completed
                 borrow_entry.save()
-
-            messages.success(request, 'Successfully Returned an Item')
+            
+            messages.success(request, 'Successfully Returned Items')
             return redirect('return_borrowed_items')
+        except borrow_info.DoesNotExist:
+            messages.error(request, "Invalid borrow entry.")
         except Exception as e:
             logger.error(f"Error while returning items for Borrow ID {borrow_id}: {e}", exc_info=True)
             messages.error(request, "An error occurred while returning items.")
 
+
     return render(request, 'mod_borrowing/borrowing_return_borrowed_items.html', {
-        'borrow_entry': borrow_entry,
-        'borrowed_items_list': borrowed_items_list,
-        'consumed_items_list': consumed_items_list,
-        'borrow_id': borrow_id,
+        'borrow_entries': borrow_entries,
+        'b_user_id': b_user_id,
     })
+
 
 @transaction.atomic
 @login_required
@@ -3005,24 +3013,20 @@ def clearance_student_viewClearance(request):
 
         # Use the user instance's ID for querying
         selected_laboratory_id = request.session.get('selected_lab')
+        current_user = request.user
 
         try:
-            # Retrieve the borrow_info entries for the current user
-            user_borrows = borrow_info.objects.filter(user=user, laboratory_id=selected_laboratory_id)
 
-            # Check if the user has any borrows
-            if user_borrows.exists():
-                reports = reported_items.objects.filter(borrow__in=user_borrows)
+            reports = reported_items.objects.filter(user=current_user, laboratory_id=selected_laboratory_id)
 
                 # Handle the filter by status
-                status = request.GET.get('status', 'All')
-                if status != 'All':
-                    if status == 'Cleared':
-                        reports = reports.filter(status=0)  # Clear status
-                    elif status == 'Pending':
-                        reports = reports.filter(status=1)  # Pending status
-            else:
-                reports = reported_items.objects.none()  # No reports if no borrows
+            status = request.GET.get('status', 'All')
+            if status != 'All':
+                if status == 'Cleared':
+                    reports = reports.filter(status=0)  # Clear status
+                elif status == 'Pending':
+                    reports = reports.filter(status=1)  # Pending status
+       
 
         except Exception as e: 
             reports = reported_items.objects.none()  # If there's an error, return no reports
@@ -3044,6 +3048,8 @@ def clearance_student_viewClearanceDetailed(request, report_id):
     # Get the currently logged-in user
     try:
         user = request.user
+        selected_laboratory_id = request.session.get('selected_lab')
+        lab = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id)
         report = get_object_or_404(reported_items, report_id=report_id, user=user)
         borrow = report.borrow  # Access related borrow_info directly from report
 
@@ -3054,7 +3060,8 @@ def clearance_student_viewClearanceDetailed(request, report_id):
         context = {
             'report': report,                  # Main report entry
             'borrow_details': borrow,          # Borrow details
-            'report_details': report_details   # All reported items for this borrow
+            'report_details': report_details,   # All reported items for this borrow
+            'laboratory_name': lab.name
         }
         return render(request, 'mod_clearance/student_viewClearanceDetailed.html', context)
     except Exception as e:
@@ -3147,6 +3154,8 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
     try:
         # Get the reported item by ID
         report = get_object_or_404(reported_items, report_id=report_id)
+        selected_laboratory_id = request.session.get('selected_lab')
+        lab = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id)
 
         # Prepare report data in a similar structure as in 'clearance_labtech_viewclearance'
         borrow_info_obj = report.borrow
@@ -3163,6 +3172,7 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
             'status': 'Pending' if report.status == 1 else 'Cleared',
             'quantity': report.qty_reported,
             'remarks': report.remarks if report.remarks else '',
+     
         }
 
         if request.method == 'POST':
@@ -3182,6 +3192,7 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
         # Pass the report_data to the context for rendering
         context = {
             'report_data': report_data,
+            'laboratory_name': lab.name,
         }
 
         return render(request, 'mod_clearance/labtech_viewclearanceDetailed.html', context)

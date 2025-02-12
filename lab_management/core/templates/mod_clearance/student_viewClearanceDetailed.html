@@ -43,7 +43,7 @@
                     <h5 class="card-title">Clearance Details</h5>
 
                     <!-- Reported Items Table -->
-                    <table class="table datatable">
+                    <table class="table datatable" id="reportedItemsTable">
                         <thead>
                             <tr>
                                 <th>Item</th>
@@ -69,8 +69,48 @@
                     </table>
                 </div>
             </div>
+      
         </div>
     </div>
     <p>Kindly proceed to the lab to settle payment.</p>
+    <button class="btn btn-info" id="downloadBtn">Download PDF</button>
 </section>
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+          
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFont("helvetica", "bold"); 
+            const labName = '{{ laboratory_name }}'
+            doc.text(`${labName} Clearance Details`, 105, 20, { align: 'center' });
+
+            doc.setFont("helvetica", "normal"); 
+
+
+            const rfNumber = '{{ report.report_id }}';
+            const studentName = '{{report_data.user_name}}';
+            const itemName = '{{report_data.item_name}}';
+            const reason = '{{report_data.reason}}';
+            const amountDue = '{{report_data.amount_due}}';
+            const remarks = '{{report_data.remarks}}';
+            const status = '{{report_data.status}}';
+  
+            doc.setFontSize(12);
+ 
+  
+           
+            doc.autoTable({ html: '#reportedItemsTable', startY: 40 });
+            const fileName = `clearance_RF#${rfNumber}.pdf`;
+            doc.save(fileName);
+   
+        });
+    });
+  
+    function cancelRequest(rfNumber) {
+        alert('Cancel request for Borrow ID: ' + rfNumber);
+    }
+  </script>
 {% endblock %}

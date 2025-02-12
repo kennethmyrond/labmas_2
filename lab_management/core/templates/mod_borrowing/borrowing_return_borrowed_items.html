@@ -1,4 +1,5 @@
 {% extends 'temp_navbar.html' %}
+
 {% block title %}Return Borrowed Items{% endblock %}
 
 {% block content %}
@@ -24,7 +25,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Return Items</h5>
 
-                    <!-- Search Form for Borrow ID -->
+                    <!-- Search Form for Personal ID -->
                     <form method="GET" action="{% url 'return_borrowed_items' %}">
                         {% csrf_token %}
                         <!-- QR Code Scanner Modal -->
@@ -45,10 +46,11 @@
                                 </div>
                             </div>
                         </div>
+
                         <div class="row mb-3">
-                            <label for="borrow_id" class="col-sm-2 col-form-label">Borrow ID:</label>
+                            <label for="b_user_id" class="col-sm-2 col-form-label">Personal ID:</label>
                             <div class="col-sm-8">
-                                <input type="text" class="form-control" id="borrow_id" name="borrow_id" placeholder="Enter Borrow ID" value="{{ borrow_id }}" required>
+                                <input type="text" class="form-control" id="b_user_id" name="b_user_id" placeholder="Enter Personal ID" value="{{ b_user_id }}" required>
                             </div>
                             <div class="col-sm-2 d-flex justify-content-end">
                                 <button type="submit" class="btn btn-primary me-2"><i class="bi bi-search"></i></button>
@@ -60,88 +62,92 @@
                     </form>
 
                     <!-- Display Borrow Information if available -->
-                    {% if borrow_entry %}
+                    {% if borrow_entries %}
                     <form method="POST" action="">
                         {% csrf_token %}
-                        <ul>
-                            <li><strong>Borrower Name:</strong> {{ borrow_entry.user.firstname }}  {{ borrow_entry.user.lastname }}</li>
-                            <li><strong>Request Date:</strong> {{ borrow_entry.request_date }}</li>
-                            <li><strong>Borrow Date:</strong> {{ borrow_entry.borrow_date }}</li>
-                            <li><strong>Due Date:</strong> {{ borrow_entry.due_date }}</li>
-                            <li><strong>Status:</strong> {{ borrow_entry.get_status_display }}</li>
-                            {% if borrow_entry.questions_responses %}
-                                {% for question, answer in borrow_entry.questions_responses.items %}
-                                    <li><strong>{{ question }}:</strong> {{ answer }}</li>
-                                {% endfor %}
-                            {% endif %}
-                        </ul>
+                        {% for borrow_entry in borrow_entries %}
+                        <div class="card mt-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Borrow Request ID: {{ borrow_entry.borrow_id }}</h5>
+                                <ul>
+                                    <li><strong>Borrower Name:</strong> {{ borrow_entry.user.firstname }} {{ borrow_entry.user.lastname }}</li>
+                                    <li><strong>Request Date:</strong> {{ borrow_entry.request_date }}</li>
+                                    <li><strong>Borrow Date:</strong> {{ borrow_entry.borrow_date }}</li>
+                                    <li><strong>Due Date:</strong> {{ borrow_entry.due_date }}</li>
+                                    <li><strong>Status:</strong> {{ borrow_entry.get_status_display }}</li>
+                                </ul>
+                                <input type="hidden" name="borrow_id" value="{{ borrow_entry.borrow_id }}">
+                                
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Qty Borrowed</th>
+                                            <th>Returned All</th>
+                                            <th>Returned Qty</th>
+                                            <th>Hold Clearance</th>
+                                            <th>Remarks</th>
+                                            <th>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in borrow_entry.borrowed_items_set.all %}
+                                        <tr>
+                                            <td>{{ item.item.item_name }}</td>
+                                            <td>{{ item.qty }}</td>
+                                            <td>
+                                                <input type="checkbox" name="returned_all_{{ item.item.item_id }}" class="returned-all-checkbox">
+                                            </td>
+                                            <td>
+                                                <input type="number" name="return_qty_{{ item.item.item_id }}" class="form-control" min="0" max="{{ item.qty }}">
+                                            </td>
+                                            <td>
+                                                <input type="checkbox" name="hold_clearance_{{ item.item.item_id }}" class="hold-clearance-checkbox">
+                                            </td>
+                                            <td>
+                                                <input type="text" name="remarks_{{ item.item.item_id }}" class="form-control">
+                                            </td>
+                                            <td>
+                                                <input type="number" name="amount_to_pay_{{ item.item.item_id }}" class="form-control" min="0" step="0.01">
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
 
-                        <!-- Borrowed Items Table (Not Consumed) -->
-                        <table id="borrowed-items-datatable" class="table datatable table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Qty Borrowed</th>
-                                    <th>Returned All</th>
-                                    <th>Returned Qty</th>
-                                    <th>Hold Clearance</th>
-                                    <th>Remarks</th>
-                                    <th>Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in borrowed_items_list %}
-                                <tr>
-                                    <td>{{ item.item.item_name }}</td>
-                                    <td>{{ item.remaining_borrowed }}</td>
-                                    <td>
-                                        <input type="checkbox" name="returned_all_{{ item.item.item_id }}" class="returned-all-checkbox" checked>
-                                    </td>
-                                    <td>
-                                        <input type="number" name="return_qty_{{ item.item.item_id }}" class="form-control returned-qty" min="0" max="{{ item.remaining_borrowed }}" value="{{ item.remaining_borrowed }}" readonly>
-                                    </td>
-                                    <td>
-                                        <input type="checkbox" name="hold_clearance_{{ item.item.item_id }}" class="hold-clearance-checkbox" disabled>
-                                    </td>
-                                    <td>
-                                        <input type="text" name="remarks_{{ item.item.item_id }}" class="form-control remarks-input" disabled>
-                                    </td>
-                                    <td>
-                                        <input type="number" name="amount_to_pay_{{ item.item.item_id }}" class="form-control amount-input" min="0" step="0.01" disabled>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        <br><br><br>
-                        <!-- Consumed Items Table -->
-                        {% if consumed_items_list %}
-                        <h5>Consumable Items (Not being counted for return)</h5>
-                        <table id="consumed-items-datatable" class="table datatable table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Qty Consumed</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in consumed_items_list %}
-                                <tr>
-                                    <td>{{ item.item.item_name }}</td>
-                                    <td>{{ item.qty }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        {% endif %}
+                                <!-- Consumable Items Table -->
+                                {% if consumed_items_list %}
+                                <h5>Consumable Items (Not being counted for return)</h5>
+                                <table id="consumed-items-datatable" class="table datatable table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Qty Consumed</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in consumed_items_list %}
+                                        <tr>
+                                            <td>{{ item.item.item_name }}</td>
+                                            <td>{{ item.qty }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                {% endif %}
 
-                        <!-- Disable submit button if not applicable for return -->
-                        {% if borrow_entry.status != 'B' %}
-                            <button type="submit" name="return_items" class="btn btn-primary" disabled>Submit Return</button>
-                        {% else %}
-                            <button type="submit" name="return_items" class="btn btn-primary">Submit Return</button>
-                        {% endif %}
+                                <!-- Submit Button for Return -->
+                                {% if borrow_entry.status == 'B' %}
+                                    <button type="submit" name="return_items" class="btn btn-primary">Submit Return</button>
+                                {% else %}
+                                    <button type="submit" name="return_items" class="btn btn-primary" disabled>Submit Return</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
                     </form>
+                    {% else %}
+                        <div class="alert alert-warning">No active borrow requests found for this ID.</div>
                     {% endif %}
                 </div>
             </div>

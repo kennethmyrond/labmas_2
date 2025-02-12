@@ -30,6 +30,7 @@
             <thead>
                 <tr>
                     <th>Reservation ID</th>
+                    <th>User ID</th>
                     <th>Number of People</th>
                     <th>Purpose</th>
                     <th>Date Requested</th>
@@ -44,6 +45,7 @@
                           {{ requests.reservation_id }}
                       </a>
                   </td>
+                  <td>{{ requests.r_user_id }}</td>
                   <td>{{ requests.num_people }}</td>
                   <td>{{ requests.purpose }}</td>
                   <td>{{ requests.request_date }}</td>
