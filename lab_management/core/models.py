@@ -315,13 +315,6 @@ class item_handling(models.Model):
                 expiration_entry.remaining_uses -= self.qty
                 expiration_entry.save()
         super().save(*args, **kwargs)
-    
-# class item_expirations(models.Model):
-#     inventory_item = models.ForeignKey('item_inventory', on_delete=models.CASCADE, primary_key=True)
-#     expired_date = models.DateField()
-
-#     def __str__(self):
-#         return f"Expiration for Inventory Item {self.inventory_item_id}"
 
 class item_expirations(models.Model):
     inventory_item = models.OneToOneField('item_inventory', on_delete=models.CASCADE, primary_key=True)    

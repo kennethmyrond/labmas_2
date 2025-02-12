@@ -281,7 +281,7 @@ def suggest_report_users(request):
     return JsonResponse(results, safe=False)
 
 @transaction.atomic
-@login_required
+# @login_required
 def remove_item_from_inventory(inventory_item, amount, user, change_type, remarks=''):
     if inventory_item.qty < amount:
         raise ValueError("Not enough items in inventory to remove.")
@@ -1343,7 +1343,8 @@ def inventory_physicalCount_view(request):
         selected_laboratory_id = request.session.get('selected_lab')
         item_types_list = item_types.objects.filter(laboratory_id=selected_laboratory_id)
         selected_item_type = request.GET.get('item_type')
-        current_user = request.user
+        current_user = get_object_or_404(user, user_id=request.user.user_id)
+        print(f"1-User Type: {type(current_user)}, Value: {current_user}")
 
         # Filter items by laboratory and selected item type
         if selected_item_type:
@@ -1372,9 +1373,9 @@ def inventory_physicalCount_view(request):
 
         # Check if the form is submitted
         if request.method == "POST":
+            current_user = get_object_or_404(user, user_id=request.user.user_id)
             for item in inventory_items:
-                if item.expiry_type != None or item.rec_per_inv:
-                    # Handle item_inventory updates individually
+                if item.expiry_type != None or item.rec_per_inv:# Handle item_inventory updates individually
                     for inventory in item.individual_inventories:
                         try:
                             count_qty = request.POST.get(f'count_qty_{inventory.inventory_item_id}')
@@ -1388,11 +1389,15 @@ def inventory_physicalCount_view(request):
 
                             # Add or remove discrepancy from inventory
                             if discrepancy_qty != 0:
-                                adjust_inventory_item('inv',inventory, discrepancy_qty, current_user, "P", "Physical count adjustment")
+                                if isinstance(current_user, User):
+                                    adjust_inventory_item('inv', inventory, discrepancy_qty, current_user, "P", "Physical count adjustment")
+                                else:
+                                    logger.error(f"Invalid user instance passed: {type(current_user)}")
+                                    messages.error(request, "User authentication error occurred.")
+                                    return redirect('userlogin')
                         except Exception as e:
                             logger.error(f"Error processing inventory {inventory.inventory_item_id} during physical count: {e}", exc_info=True)
                             messages.error(request, f"Error updating item {inventory.inventory_item_id}")
-
                 else:
                     try:
                         count_qty = request.POST.get(f'count_qty_{item.item_id}')
@@ -1422,10 +1427,14 @@ def inventory_physicalCount_view(request):
         messages.error(request, "An unexpected error occurred. Please try again.")
         return redirect('home')
 
+# @login_required
 @transaction.atomic
-@login_required
-def adjust_inventory_item(status, inventory, discrepancy_qty, user, change_type, remark):
+def adjust_inventory_item(status, inventory, discrepancy_qty, current_user, change_type, remark):
     try:
+        # if not isinstance(current_user, user):  # <-- Potential Issue: lowercase `user`
+        #     raise ValueError(f"Expected 'User' instance, got {type(current_user)} instead.")
+        
+        print(f"Adjusting Inventory | User: {current_user} | Type: {type(current_user)}")
         if discrepancy_qty > 0:
             if status=='item':
                 item_inventory_instance = item_inventory.objects.create(
@@ -1437,31 +1446,31 @@ def adjust_inventory_item(status, inventory, discrepancy_qty, user, change_type,
                 )
                 item_handling.objects.create(
                     inventory_item=item_inventory_instance,
-                    updated_by=user,
+                    updated_by=current_user,
                     changes=change_type,
                     qty=discrepancy_qty,
                     remarks=remark
                 )
-                logger.info(f"Added {discrepancy_qty} to item {inventory.item_name} by {user}")
+                logger.info(f"Added {discrepancy_qty} to item {inventory.item_name} by {current_user}")
 
             else:
                 item_handling.objects.create(
                     inventory_item=inventory,
-                    updated_by=user,
+                    updated_by=current_user,
                     changes=change_type,
                     qty=discrepancy_qty,
                     remarks=remark
                 )
                 inventory.qty += discrepancy_qty
                 inventory.save()
-                logger.info(f"Added {discrepancy_qty} to inventory {inventory.inventory_item_id} by {user}")
+                logger.info(f"Added {discrepancy_qty} to inventory {inventory.inventory_item_id} by {current_user}")
 
         elif discrepancy_qty < 0:
             remaining_amount = abs(discrepancy_qty)
             if status=='item':
                 print('pass', inventory)
                 item_description_instance = get_object_or_404(item_description, item_id=inventory.item_id)
-                if item_description_instance.expiry_type != None:
+                if item_description_instance.expiry_type == 'Date':
                     item_inventory_queryset = item_inventory.objects.filter(
                             item=item_description_instance,
                             qty__gt=0
@@ -1480,20 +1489,20 @@ def adjust_inventory_item(status, inventory, discrepancy_qty, user, change_type,
 
                     if item_inventory_instance.qty >= remaining_amount:
                         try:
-                            remove_item_from_inventory(item_inventory_instance, remaining_amount, user, 'P', 'Physical Count Adjustment')
+                            remove_item_from_inventory(item_inventory_instance, remaining_amount, current_user, 'P', 'Physical Count Adjustment')
                             remaining_amount = 0
                         except ValueError as e:
                             print(e)
                             break
                     else:
                         try:
-                            remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, user, 'P', 'Physical Count Adjustment')
+                            remove_item_from_inventory(item_inventory_instance, item_inventory_instance.qty, current_user, 'P', 'Physical Count Adjustment')
                             remaining_amount -= item_inventory_instance.qty
                         except ValueError as e:
                             logger.error(f"Error removing inventory item {item_inventory_instance.inventory_item_id}: {e}", exc_info=True)
                             break
             else:
-                remove_item_from_inventory(inventory, remaining_amount, user, change_type, remark)
+                remove_item_from_inventory(inventory, remaining_amount, current_user, change_type, remark)
     except Exception as e:
         logger.error(f"Unexpected error adjusting inventory {inventory}: {e}", exc_info=True)
 
