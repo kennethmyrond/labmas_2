@@ -1,0 +1,169 @@
+{% extends 'temp_navbar.html' %}
+{% load socialaccount inventory_extras %}
+{% block title %}Experiments{% endblock %}
+
+{% block content %}
+  <div class="pagetitle">
+    <h1>Inventory</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Experiments</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+  {% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">List of Experiments</h5>
+
+            <div>
+              <div class="col-sm-12 d-flex">
+                <form method="GET" action="" class="col d-flex w-100">
+                  {% csrf_token %}
+                  <input type="text" class="form-control me-2" id="" name="" placeholder="Search Experiment...">
+                  <button type="submit" class="btn btn-secondary"><i class="bi bi-search"></i></button>
+                </form>
+                <button type="button" class="btn btn-primary ms-2" id="add" data-bs-toggle="modal" data-bs-target="#addexperiment">Add Experiment</button>
+              </div>
+            </div>
+            <br><br>
+          
+          <!-- experiments in cards -->
+
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h5 class="card-title mb-0">Experiment 1</h5>
+                  <button type="button" class="btn btn-secondary ms-2" id="add" data-bs-toggle="modal" data-bs-target="#addtocart">Add Item</button>
+                </div>
+                <ul>
+                  <li><strong>Description: </strong>Experiment description</li>
+                </ul>
+                
+                 <!-- Table with stripped rows -->
+                <table class="table datatable">
+                  <thead>
+                    <tr>
+                      <th>Item Name</th>
+                      <th>Description</th>
+                      <th>Quantity</th>
+                      <th>Unit</th>
+                      <th style="display:none;"></th> <!-- Hidden column -->
+                      <th style="display:none;"></th> <!-- Hidden column -->
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for supplier in suppliers %}
+                    <tr>
+                      <td><a href=""></a></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td style="display:none;"></td> <!-- Hidden cell -->
+                      <td style="display:none;"></td> <!-- Hidden cell -->
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                <!-- End Table with stripped rows -->
+              </div>
+            </div>
+
+            <!-- end of experiments in cards -->
+            
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+  
+  <!-- Add Supplier Modal -->
+  <form method="POST">
+    <div class="modal fade" id="addexperiment" tabindex="-1" aria-labelledby="addexperiment" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addtocartLabel">Add New Experiment</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="experimentname" class="form-label">Experiment Name</label>
+              <input type="text" class="form-control" id="" placeholder="Enter Experiment Name" name="experimentname" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="expdescription" class="form-label">Description</label>
+              <textarea class="form-control" id="expdescription" placeholder="Enter Description" name="expdescription" rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="submit" class="btn btn-primary" id="submit">Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <form method="POST">
+    <div class="modal fade" id="addtocart" tabindex="-1" aria-labelledby="addtocartLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addtocartLabel">Add New Item</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="experimentname" class="form-label">Experiment Name</label>
+              <input type="text" class="form-control" id="" placeholder="Enter Experiment Name" name="experimentname" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="itemDescription" class="form-label">Description</label>
+              <textarea class="form-control" id="itemDescription" placeholder="Enter Description" name="itemDescription" rows="3" required></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="quantity" class="form-label">Quantity</label>
+              <input type="number" class="form-control" id="quantity" name="quantity" placeholder="Enter Quantity" min="0" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="unit" class="form-label">Unit</label>
+              <input type="text" class="form-control" id="unit" placeholder="Enter Unit of Measurement" name="unit" required>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="submit" class="btn btn-primary" id="submit">Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+
+
+
+  <script>
+    document.getElementById('contactNumber').addEventListener('input', function (e) {
+        // Remove any non-digit characters
+        this.value = this.value.replace(/\D/g, '');
+    });
+    </script>
+    
+
+{% endblock %}

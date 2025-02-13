@@ -427,6 +427,19 @@ def register(request):
             password = request.POST.get('password')
             confirm_password = request.POST.get('confirm_password')
 
+            if not email:
+                messages.error(request, "Email cannot be blank.")
+                return render(request, "register.html")
+            
+            if not firstname:
+                messages.error(request, "First Name cannot be blank.")
+                return render(request, "register.html")
+            
+            if not lastname:
+                messages.error(request, "Last Name cannot be blank.")
+                return render(request, "register.html")
+                
+            # Check if email exists
             if User.objects.filter(email=email).exists():
                 messages.error(request, "Email already exists.")
                 return render(request, "register.html")
@@ -1873,9 +1886,9 @@ def get_add_cols(request, category_id):
         return JsonResponse({'success': False, 'message': "An error occurred while retrieving add_cols."}, status=500)
 
 @login_required
-def inventory_tobuyList(request):
+def inventory_experiments(request):
     try:
-        return render(request, 'mod_inventory/inventory_tobuyList.html')
+        return render(request, 'mod_inventory/inventory_experiments.html')
     
     except Exception as e:
         logger.error(f"Error rendering to-buy list: {e}", exc_info=True)

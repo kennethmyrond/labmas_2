@@ -49,7 +49,7 @@ urlpatterns = [
     path('delete_category/<int:category_id>/', views.delete_category, name='delete_category'),
     path('delete_attribute/<int:category_id>/<str:attribute_name>/', views.delete_attribute, name='delete_attribute'),
     path('get_fixed_choices/<int:category_id>/', views.get_fixed_choices, name='get_fixed_choices'),
-    path('to_buy_list/', views.inventory_tobuyList, name='inventory_tobuyList'),
+    path('experiments/', views.inventory_experiments, name='inventory_experiments'),
 
     # ajax select2
     path('suggest_items/', views.suggest_items, name='suggest_items'),
