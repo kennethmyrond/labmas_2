@@ -28,7 +28,7 @@
         <h5 class="card-title">{{ lab.name }}</h5>
         <p class="card-text"><strong>Lab Head:</strong> {{ lab.coordinator_name }}</p>
         <p class="card-text"><strong>Description:</strong> {{ lab.description }}</p>
-        <p class="card-text"><strong>Role:</strong> {{ lab.description }}</p>
+        <!-- <p class="card-text"><strong>Role:</strong> {{ lab.description }}</p> -->
         <div class="mt-auto">
           <a href="{% url 'set_lab' lab.laboratory_id %}" class="btn {% if lab.laboratory_id == selected_lab_id %}btn-primary{% else %}btn-secondary{% endif %} w-100">
             {% if lab.laboratory_id == selected_lab_id %}Selected Laboratory{% else %}Select Laboratory{% endif %}

@@ -48,9 +48,14 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="b_user_id" class="col-sm-2 col-form-label">Personal ID:</label>
+                            <!-- <label for="b_user_id" class="col-sm-2 col-form-label">Personal ID:</label>
                             <div class="col-sm-8">
                                 <input type="text" class="form-control" id="b_user_id" name="b_user_id" placeholder="Enter Personal ID" value="{{ b_user_id }}" required>
+                            </div> -->
+                            <label for="search_query" class="col-sm-2 col-form-label">Enter ID:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" id="search_query" name="search_query" 
+                                    placeholder="Enter Personal ID or Borrow ID" value="{{ search_query }}" required>
                             </div>
                             <div class="col-sm-2 d-flex justify-content-end">
                                 <button type="submit" class="btn btn-primary me-2"><i class="bi bi-search"></i></button>
@@ -164,7 +169,7 @@
         const scanQrButton = document.getElementById("scanQrButton");
         const qrVideo = document.getElementById("qrVideo");
         const qrScannerModal = document.getElementById("qrScannerModal");
-        const borrowIdInput = document.getElementById("borrow_id");
+        const borrowIdInput = document.getElementById("search_query");
         let qrScanner;
 
         // Initialize QR Scanner

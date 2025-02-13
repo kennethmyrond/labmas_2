@@ -2796,53 +2796,53 @@ def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
 @login_required
 @lab_permission_required('return_item')
 def return_borrowed_items(request):
-    b_user_id = request.GET.get('b_user_id', '')  # Fetch b_user_id from GET request
+    search_query = request.GET.get('search_query', '').strip()  # Get search input
     borrow_entries = None
     selected_laboratory_id = request.session.get('selected_lab')
 
-    if b_user_id:
-        try:
+    try:
+        if search_query:  # Try to find by Borrow ID first
             borrow_entries = borrow_info.objects.filter(
-                user__personal_id=b_user_id, 
-                laboratory_id=selected_laboratory_id, 
+                borrow_id=search_query,
+                laboratory_id=selected_laboratory_id,
                 status='B'
             ).select_related('user')
 
-            #debugging
-            print(f"Personal ID entered: {b_user_id}")
-            print(f"Query Executed: {borrow_entries.query}")
-            print(f"Results Found: {borrow_entries.exists()}")
+            if not borrow_entries.exists(): # If no Borrow ID match, try searching by Personal ID
+                borrow_entries = borrow_info.objects.filter(
+                    user__personal_id=search_query,
+                    laboratory_id=selected_laboratory_id,
+                    status='B'
+                ).select_related('user')
 
-            if not borrow_entries.exists():
+            if not borrow_entries.exists():  
                 messages.error(request, "No active borrow requests found for this ID.")
                 return redirect('return_borrowed_items')
 
-        except borrow_info.DoesNotExist:
-            messages.error(request, "Invalid Personal ID.")
-            return redirect('return_borrowed_items')
+    except borrow_info.DoesNotExist:
+        messages.error(request, "Invalid ID.")
+        return redirect('return_borrowed_items')
 
     if request.method == 'POST' and 'return_items' in request.POST:
         borrow_id = request.POST.get('borrow_id')
         try:
-            # Fetch the specific borrow entry being marked as returned
             borrow_entry = borrow_info.objects.get(borrow_id=borrow_id, laboratory_id=selected_laboratory_id, status='B')
-            
             borrowed_items_list = borrowed_items.objects.filter(borrow=borrow_entry, item__is_consumable=False)
             consumed_items_list = borrowed_items.objects.filter(borrow=borrow_entry, item__is_consumable=True)
-            
+
             for item in borrowed_items_list:
                 returned_all = request.POST.get(f'returned_all_{item.item.item_id}', False) == 'on'
                 qty_returned = int(request.POST.get(f'return_qty_{item.item.item_id}', 0))
                 hold_clearance = request.POST.get(f'hold_clearance_{item.item.item_id}', False) == 'on'
                 remarks = request.POST.get(f'remarks_{item.item.item_id}', '').strip()
                 amount_to_pay = request.POST.get(f'amount_to_pay_{item.item.item_id}', 0)
-                
+
                 if returned_all:
                     item.returned_qty = item.qty
                 else:
                     item.returned_qty = qty_returned
                 item.save()
-                
+
                 if hold_clearance and remarks:
                     reported_items.objects.create(
                         borrow=borrow_entry,
@@ -2853,29 +2853,28 @@ def return_borrowed_items(request):
                         laboratory_id=selected_laboratory_id,
                         user=borrow_entry.user
                     )
-            
+
             for consumed_item in consumed_items_list:
                 consumed_item.returned_qty = consumed_item.qty
                 consumed_item.save()
-            
-            # Check if all items have been returned
+
             if all(item.qty == item.returned_qty for item in borrowed_items_list) and \
                     all(item.qty == item.returned_qty for item in consumed_items_list):
-                borrow_entry.status = 'X'  # Mark borrow entry as completed
+                borrow_entry.status = 'X'
                 borrow_entry.save()
-            
+
             messages.success(request, 'Successfully Returned Items')
             return redirect('return_borrowed_items')
+
         except borrow_info.DoesNotExist:
             messages.error(request, "Invalid borrow entry.")
         except Exception as e:
             logger.error(f"Error while returning items for Borrow ID {borrow_id}: {e}", exc_info=True)
             messages.error(request, "An error occurred while returning items.")
 
-
     return render(request, 'mod_borrowing/borrowing_return_borrowed_items.html', {
         'borrow_entries': borrow_entries,
-        'b_user_id': b_user_id,
+        'search_query': search_query,
     })
 
 
