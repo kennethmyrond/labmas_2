@@ -1434,7 +1434,7 @@ def inventory_physicalCount_view(request):
             item.parsed_add_cols = json.loads(item.add_cols) if item.add_cols else {}
             
             # If item tracks expiration or per-inventory quantity, fetch individual inventories
-            if item.expiry_type != None or item.rec_per_inv:
+            if item.expiry_type != None or item.expiry_type != ' ' or item.rec_per_inv:
                 item.individual_inventories = item_inventory.objects.filter(item=item, qty__gt=0).order_by('inventory_item_id')
             else:
                 # Total quantity for items without inventory-level tracking
@@ -1444,7 +1444,7 @@ def inventory_physicalCount_view(request):
         if request.method == "POST":
             current_user = get_object_or_404(user, user_id=request.user.user_id)
             for item in inventory_items:
-                if item.expiry_type != None or item.rec_per_inv:# Handle item_inventory updates individually
+                if item.expiry_type != None or item.expiry_type != ' ' or item.rec_per_inv:# Handle item_inventory updates individually
                     for inventory in item.individual_inventories:
                         try:
                             count_qty = request.POST.get(f'count_qty_{inventory.inventory_item_id}')

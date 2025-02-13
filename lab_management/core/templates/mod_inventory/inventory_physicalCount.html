@@ -62,7 +62,7 @@
                 </thead>
                 <tbody>
                   {% for item in inventory_items %}
-                    {% if item.expiry_type != null or item.rec_per_inv %}
+                    {% if item.expiry_type != null or item.expiry_type != '' or item.rec_per_inv %}
                         <!-- Display individual inventory items if per-inventory tracking is enabled -->
                         {% for inventory in item.individual_inventories %}
                             <tr>
