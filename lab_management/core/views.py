@@ -415,7 +415,20 @@ def register(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
+
+
+        if not email:
+            messages.error(request, "Email cannot be blank.")
+            return render(request, "register.html")
         
+        if not firstname:
+            messages.error(request, "First Name cannot be blank.")
+            return render(request, "register.html")
+        
+        if not lastname:
+            messages.error(request, "Last Name cannot be blank.")
+            return render(request, "register.html")
+             
         # Check if email exists
         if User.objects.filter(email=email).exists():
             messages.error(request, "Email already exists.")
