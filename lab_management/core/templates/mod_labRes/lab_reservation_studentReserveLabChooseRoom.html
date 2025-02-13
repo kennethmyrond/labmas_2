@@ -151,14 +151,7 @@
                           </div>
                       </div>
 
-                      <div class="row mb-3">
-                        <label for="selectedTable" class="col-sm-2 col-form-label">Select Table:</label>
-                        <div class="col-sm-10">
-                            <select id="selectedTable" name="selectedTable" class="form-select" required>
-                                <option value="" disabled selected>Select a table</option>
-                            </select>
-                        </div>
-                    </div>
+                   
 
 
                       <div class="row mb-3">
@@ -178,6 +171,15 @@
                               *Time must be between {{ reservation_config_obj.start_time }} and {{ reservation_config_obj.end_time }}.
                           </div>
                       </div>
+
+                      <div class="row mb-3">
+                        <label for="selectedTable" class="col-sm-2 col-form-label">Select Table:</label>
+                        <div class="col-sm-10">
+                            <select id="selectedTable" name="selectedTable" class="form-select" required>
+                                <option value="" disabled selected>Select a table</option>
+                            </select>
+                        </div>
+                    </div>
 
                       <script>
                           const reservationForm = document.querySelector(`form[action="{% url 'lab_reservation_student_reserveLabConfirm' %}"]`);
@@ -248,8 +250,8 @@
 
 <script type="text/javascript">
   $(document).ready(function() {
-      $('#selectedRoom').change(function() {
-          var roomId = $(this).val();
+      function loadTables() {
+          var roomId = $('#selectedRoom').val();
           var selectedDate = $('#selectedDate').val();
           var selectedStartTime = $('#selectedStartTime').val();
           var selectedEndTime = $('#selectedEndTime').val();
@@ -276,13 +278,17 @@
               $('#selectedTable').empty();
               $('#selectedTable').append('<option value="" disabled selected>Select a table</option>');
           }
-      });
-
-      // Trigger change event on page load if a room is already selected
-      var initialRoomId = $('#selectedRoom').val();
-      if (initialRoomId) {
-          $('#selectedRoom').trigger('change');
       }
+
+      // Trigger when any relevant input changes
+    $('#selectedRoom, #selectedDate, #selectedStartTime, #selectedEndTime').change(loadTables);
+
+    // Delay execution on page load to ensure values are populated
+    setTimeout(function() {
+      if ($('#selectedRoom').val() && $('#selectedDate').val() && $('#selectedStartTime').val() && $('#selectedEndTime').val()) {
+          loadTables();
+      }
+  }, 500); // Adjust delay as needed
   });
 </script>
 

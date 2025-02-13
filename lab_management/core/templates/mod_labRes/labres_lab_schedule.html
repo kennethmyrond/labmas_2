@@ -91,7 +91,7 @@
                   {% for day in days_range %}
                       <div class="day" data-day="{{ day }}" data-toggle="modal" data-target="#scheduleModal" 
                            data-schedules="{% with reservations=reservations_by_day|get_item:day %}{% if reservations %}{% for reservation in reservations %}<div class='reservation'><strong>{{ reservation.start_time|time:'h:i A' }} - {{ reservation.end_time|time:'h:i A' }}</strong>
-                                          <br>ID: {{ reservation.reservation_id }}<br>Name: {{ reservation.contact_name }}<br>Email: {{ reservation.contact_email }}<br>Purpose: {{ reservation.purpose }}</div>{% endfor %} {% endif %}{% endwith %}">
+                                          <br>ID: {{ reservation.reservation_id }}<br>Name: {{ reservation.contact_name }}<br>Email: {{ reservation.contact_email }}<br>Purpose: {{ reservation.purpose }}<br>Table: {{ reservation.table.table_name }}</div>{% endfor %} {% endif %}{% endwith %}">
                           <div class="day-header">{{ day }}</div>
                           {% with reservations=reservations_by_day|get_item:day %}
                               {% if reservations %}
