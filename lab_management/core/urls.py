@@ -12,6 +12,7 @@ handler404 = custom_404_view
 urlpatterns = [
     path('login/', views.userlogin, name='userlogin'),
     path('register/', views.register, name='register'),
+    path("confirm-email/<uidb64>/<token>/", views.confirm_email, name="confirm_email"),
     
     path('', views.home, name='home'),
     path('request_laboratory/', views.request_laboratory, name='request_laboratory'),

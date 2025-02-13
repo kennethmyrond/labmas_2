@@ -24,6 +24,16 @@ from django.views.decorators.csrf import csrf_exempt
 from collections import defaultdict
 from functools import wraps
 
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.conf import settings
+
+
 from allauth.socialaccount.models import SocialAccount
 
 # from allauth.socialaccount.helpers import provider_login_url
@@ -409,38 +419,84 @@ class ItemEditForm(forms.ModelForm):
 User = get_user_model()
 
 def register(request):
-    if request.method == "POST":
-        firstname = request.POST.get('firstname')
-        lastname = request.POST.get('lastname')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
-        
-        # Check if email exists
-        if User.objects.filter(email=email).exists():
-            messages.error(request, "Email already exists.")
-            return render(request, "register.html")
-        
-        # Validate password policy
-        if password != confirm_password:
-            messages.error(request, "Passwords do not match.")
-        else:
-            try:
-                validate_password(password)
-            except ValidationError as e:
-                messages.error(request, e)
-            else:
-                # Create user
-                user = User.objects.create_user(
-                    email=email, 
-                    firstname=firstname, 
-                    lastname=lastname, 
-                    password=password
-                )
-                messages.success(request, "Account created successfully. Please log in.")
-                return redirect("userlogin")
+    try:
+        if request.method == "POST":
+            firstname = request.POST.get('firstname')
+            lastname = request.POST.get('lastname')
+            email = request.POST.get('email')
+            password = request.POST.get('password')
+            confirm_password = request.POST.get('confirm_password')
 
+            if User.objects.filter(email=email).exists():
+                messages.error(request, "Email already exists.")
+                return render(request, "register.html")
+
+            if password != confirm_password:
+                messages.error(request, "Passwords do not match.")
+            else:
+                try:
+                    validate_password(password)
+                except ValidationError as e:
+                    messages.error(request, e)
+                else:
+                    user = User.objects.create_user(
+                        email=email, 
+                        firstname=firstname, 
+                        lastname=lastname, 
+                        password=password,
+                        is_deactivated=True  # User is inactive until they confirm their email
+                    )
+
+                    # Generate email confirmation token
+                    uid = urlsafe_base64_encode(force_bytes(user.pk))
+                    token = default_token_generator.make_token(user)
+                    confirmation_url = request.build_absolute_uri(
+                        reverse("confirm_email", kwargs={"uidb64": uid, "token": token})
+                    )
+
+                    # Send confirmation email with proper HTML formatting
+                    subject = "LabMaS Account - Confirm Your Email"
+                    from_email = settings.DEFAULT_FROM_EMAIL
+                    recipient_list = [user.email]
+
+                    # Load email template
+                    context = {
+                        "user": user,
+                        "confirmation_url": confirmation_url
+                    }
+                    html_content = render_to_string("email_confirmation.html", context)
+                    text_content = "Please confirm your email using the link provided."
+
+                    email = EmailMultiAlternatives(subject, text_content, from_email, recipient_list)
+                    email.attach_alternative(html_content, "text/html")  # Attach HTML version
+                    email.send()
+
+                    messages.success(request, "Account created successfully. Please check your email to confirm your account.")
+                    return redirect("userlogin")
+                
+    except Exception as e:
+        logger.error(f"Error registering user: {e}", exc_info=True)
+        messages.error(request, "An error occurred while registering the user.")
+                       
     return render(request, "register.html")
+
+def confirm_email(request, uidb64, token):
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = get_object_or_404(User, pk=uid)
+
+        if default_token_generator.check_token(user, token):
+            user.is_deactivated = False
+            user.save()
+            messages.success(request, "Your email has been confirmed. You can now log in.")
+            return redirect("userlogin")
+        else:
+            messages.error(request, "Invalid or expired confirmation link.")
+    except Exception as e:
+        logger.error(f"Error confirming email: {e}", exc_info=True)
+        messages.error(request, "An error occurred while confirming your email.")
+
+    return redirect("userlogin")
 
 def custom_login(request):
     if 'error' in request.GET and request.GET['error'] == 'access_denied':

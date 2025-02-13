@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Confirmation</title>
+</head>
+<body>
+    <p>Hello {{ user.firstname }},</p>
+    <p>Thank you for registering. Please confirm your email by clicking the link below:</p>
+    <p><a href="{{ confirmation_url }}">Confirm Email</a></p>
+    <p>If you didn't register, please ignore this email.</p>
+</body>
+</html>
