@@ -2356,7 +2356,7 @@ def borrowing_student_viewPreBookRequestsview(request):
         accepted_requests = prebook_requests.filter(status='A')
         declined_requests = prebook_requests.filter(status='D')
         borrowed_requests = prebook_requests.filter(status='B')
-        cancelled_requests = prebook_requests.filter(status='C')
+        cancelled_requests = prebook_requests.filter(status='L')
         completed_requests = prebook_requests.filter(status='X')
 
         # Walk-in request statuses
@@ -2364,7 +2364,7 @@ def borrowing_student_viewPreBookRequestsview(request):
         walkin_accepted_requests = walkin_requests.filter(status='A')
         walkin_declined_requests = walkin_requests.filter(status='D')
         walkin_borrowed_requests = walkin_requests.filter(status='B')
-        walkin_cancelled_requests = walkin_requests.filter(status='C')
+        walkin_cancelled_requests = walkin_requests.filter(status='L')
         walkin_completed_requests = walkin_requests.filter(status='X')
 
         return render(request, 'mod_borrowing/borrowing_studentViewPreBookRequests.html', {

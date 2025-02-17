@@ -5698,7 +5698,29 @@ Traceback (most recent call last):
   File "C:\Python311\Lib\smtplib.py", line 662, in auth
     raise SMTPAuthenticationError(code, resp)
 smtplib.SMTPAuthenticationError: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials d9443c01a7336-220d53643ddsm8248045ad.70 - gsmtp')
-WARNING 2025-02-14 13:58:11,697 log Not Found: /favicon.ico
-WARNING 2025-02-14 13:58:11,698 basehttp "GET /favicon.ico HTTP/1.1" 404 38004
-WARNING 2025-02-17 15:16:16,752 log Not Found: /favicon.ico
-WARNING 2025-02-17 15:16:16,756 basehttp "GET /favicon.ico HTTP/1.1" 404 38004
+WARNING 2025-02-16 12:24:02,039 log Not Found: /favicon.ico
+WARNING 2025-02-16 12:24:02,040 basehttp "GET /favicon.ico HTTP/1.1" 404 38004
+WARNING 2025-02-17 13:58:20,743 log Not Found: /favicon.ico
+WARNING 2025-02-17 13:58:20,744 basehttp "GET /favicon.ico HTTP/1.1" 404 38004
+WARNING 2025-02-17 14:21:43,803 decorators Unauthorized attempt to access view_wip by Juan Crooz
+WARNING 2025-02-17 14:57:02,510 decorators Unauthorized attempt to access view_wip by Juan Crooz
+WARNING 2025-02-17 14:57:10,433 decorators Unauthorized attempt to access view_wip by Juan Crooz
+WARNING 2025-02-17 14:58:14,979 decorators Unauthorized attempt to access view_wip by Juan Crooz
+WARNING 2025-02-17 14:58:42,600 decorators Unauthorized attempt to access view_wip by Juan Crooz
+WARNING 2025-02-17 15:14:59,749 log Forbidden (CSRF token from POST incorrect.): /login/
+WARNING 2025-02-17 15:14:59,750 basehttp "POST /login/ HTTP/1.1" 403 2503
+WARNING 2025-02-17 15:15:01,798 log Forbidden (CSRF token from POST incorrect.): /login/
+WARNING 2025-02-17 15:15:01,799 basehttp "POST /login/ HTTP/1.1" 403 2503
+WARNING 2025-02-17 16:18:39,205 decorators Unauthorized attempt to access reserve_laboratory by System Admin
+WARNING 2025-02-17 16:21:59,737 log Bad Request: /export-schedule/
+WARNING 2025-02-17 16:21:59,738 basehttp "GET /export-schedule/?roomSelect=&selectMonth=2025-02 HTTP/1.1" 400 71
+WARNING 2025-02-17 16:52:03,007 decorators Unauthorized attempt to access view_wip by chem labcoord
+WARNING 2025-02-17 16:52:06,133 decorators Unauthorized attempt to access view_wip by chem labcoord
+WARNING 2025-02-17 16:52:13,366 decorators Unauthorized attempt to access view_wip by chem labcoord
+WARNING 2025-02-17 16:53:12,300 decorators Unauthorized attempt to access view_wip by chem labcoord
+WARNING 2025-02-17 16:53:37,871 decorators Unauthorized attempt to access view_wip by chem labcoord
+WARNING 2025-02-17 16:53:40,217 decorators Unauthorized attempt to access view_wip by chem labcoord
+WARNING 2025-02-17 16:54:46,256 decorators Unauthorized attempt to access view_wip by chem labcoord
+WARNING 2025-02-17 16:54:49,803 decorators Unauthorized attempt to access view_wip by chem labcoord
+WARNING 2025-02-17 16:54:51,646 decorators Unauthorized attempt to access view_wip by chem labcoord
+WARNING 2025-02-17 16:55:15,062 decorators Unauthorized attempt to access view_wip by chem labcoord
