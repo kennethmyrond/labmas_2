@@ -503,7 +503,7 @@
             </a>
           </li>
           {% endif %}
-          {% if permissions.can_reserve_laboratory%}
+          {% if permissions.can_create_wip or permissions.can_view_wip%}
           <li>
             <a href="{% url 'list_wip' %}" class = "{% if request.resolver_match.url_name in 'list_wip view_wip' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>Work-In-Progress</span>
