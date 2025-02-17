@@ -31,8 +31,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-SESSION_COOKIE_SECURE = True  # Only send session cookies over HTTPS
-SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookies
+SESSION_COOKIE_SECURE = False  # Only send session cookies over HTTPS
+SESSION_COOKIE_HTTPONLY = False  # Prevent JavaScript access to session cookies
 
 # Application definition
 
