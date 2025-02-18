@@ -3969,7 +3969,8 @@ def labres_lab_schedule(request):
                     # Get reservations for the selected month
                     reservations = laboratory_reservations.objects.filter(
                         room_id=room.room_id,  # Ensure you use room.room_id to access the ID
-                        start_date__range=[start_date, end_date]
+                        start_date__range=[start_date, end_date],
+                        status='R'
                     )
 
                     # Format start_time and end_time for each reservation
@@ -5674,7 +5675,7 @@ def deactivate_lab(request, laboratory_id):
         logger.error(f"Error deactivating Lab {laboratory_id}: {e}", exc_info=True)
         messages.error(request, "Failed to deactivate laboratory. Please try again.")
     
-    return redirect('superuser_manage_labs')
+    return redirect('home')
 
 
 @login_required()
