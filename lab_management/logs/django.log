@@ -5726,3 +5726,12 @@ WARNING 2025-02-17 16:54:51,646 decorators Unauthorized attempt to access view_w
 WARNING 2025-02-17 16:55:15,062 decorators Unauthorized attempt to access view_wip by chem labcoord
 WARNING 2025-02-18 12:39:22,345 log Not Found: /favicon.ico
 WARNING 2025-02-18 12:39:22,346 basehttp "GET /favicon.ico HTTP/1.1" 404 38004
+WARNING 2025-02-18 21:06:57,202 log Not Found: /favicon.ico
+WARNING 2025-02-18 21:06:57,203 basehttp "GET /favicon.ico HTTP/1.1" 404 38004
+WARNING 2025-02-18 21:16:40,870 log Not Found: /buy_list/
+WARNING 2025-02-18 21:16:40,879 log Not Found: /buy_list/
+WARNING 2025-02-18 21:16:40,880 basehttp "GET /buy_list/ HTTP/1.1" 404 38271
+WARNING 2025-02-18 21:16:44,467 log Not Found: /buy_list/
+WARNING 2025-02-18 21:16:44,467 basehttp "GET /buy_list/ HTTP/1.1" 404 38271
+WARNING 2025-02-18 21:17:08,706 log Not Found: /buy_list/
+WARNING 2025-02-18 21:17:08,707 basehttp "GET /buy_list/ HTTP/1.1" 404 38271

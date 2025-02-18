@@ -1891,9 +1891,18 @@ def inventory_experiments(request):
         return render(request, 'mod_inventory/inventory_experiments.html')
     
     except Exception as e:
-        logger.error(f"Error rendering to-buy list: {e}", exc_info=True)
-        messages.error(request, "An error occurred while loading the to-buy list.")
-        return redirect('home')  # Redirect user to a safe page if error occurs
+        logger.error(f"Error rendering Experiments: {e}", exc_info=True)
+        messages.error(request, "An error occurred while loading the Experiments page.")
+        return redirect('home')  
+    
+@login_required
+def inventory_buyList(request):
+    try:
+        return render(request, 'mod_inventory/inventory_buyList.html')
+    except Exception as e:
+        logger.error(f"Error rendering List: {e}", exc_info=True)
+        messages.error(request, "An error occurred while loading the Buy List page.")
+        return redirect('home')  
 
 
 # =====================================================
