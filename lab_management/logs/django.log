@@ -5724,3 +5724,5 @@ WARNING 2025-02-17 16:54:46,256 decorators Unauthorized attempt to access view_w
 WARNING 2025-02-17 16:54:49,803 decorators Unauthorized attempt to access view_wip by chem labcoord
 WARNING 2025-02-17 16:54:51,646 decorators Unauthorized attempt to access view_wip by chem labcoord
 WARNING 2025-02-17 16:55:15,062 decorators Unauthorized attempt to access view_wip by chem labcoord
+WARNING 2025-02-18 12:39:22,345 log Not Found: /favicon.ico
+WARNING 2025-02-18 12:39:22,346 basehttp "GET /favicon.ico HTTP/1.1" 404 38004
