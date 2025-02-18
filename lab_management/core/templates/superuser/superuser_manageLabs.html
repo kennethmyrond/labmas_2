@@ -11,6 +11,16 @@
     color: red;
     font-weight: bold;
   }
+
+  .clickable-lab {
+    color: blue;
+    cursor: pointer;
+  }
+
+  .clickable-lab:hover {
+    color: darkblue;
+  }
+
 </style>
 
 <div class="pagetitle">
@@ -53,7 +63,9 @@
             <tbody>
               {% for lab in labs %}
               <tr class="clickable-row" onclick="window.location.href='{% url 'superuser_lab_info' lab.laboratory_id %}'">
-                <td style="text-align:left;">{{ lab.name }}</td>
+                <td style="text-align:left;">
+                  <span class="clickable-lab">{{ lab.name }}</span>
+                </td>
                 <td style="text-align:left;">{{ lab.description }}</td>
                 <td>{{ lab.user_count }}</td>
                 <td>{{ lab.date_created|date:"Y-m-d" }}</td>
