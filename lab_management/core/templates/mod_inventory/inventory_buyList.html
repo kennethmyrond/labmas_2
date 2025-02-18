@@ -72,17 +72,17 @@
           <div class="modal-body">
             {% csrf_token %}
             <div class="mb-3">
-              <label for="supplierName" class="form-label">Item Name</label>
-              <input type="text" class="form-control" id="supplierName" placeholder="Enter Item Name" name="supplier_name" required>
+              <label for="itemName" class="form-label">Item Name</label>
+              <input type="text" class="form-control" id="itemName" placeholder="Enter Item Name" name="itemName" required>
             </div>
             <div class="mb-3">
-              <label for="contactNumber" class="form-label">Quantity</label>
-              <input type="tel" class="form-control" id="quantity" name="quantity" 
-                     pattern="[0-9]{7,15}" inputmode="numeric" placeholder="Enter Quantity">
+              <label for="quantity" class="form-label">Quantity</label>
+              <input type="number" class="form-control" id="quantity" name="quantity" 
+                      inputmode="numeric" placeholder="Enter Quantity" min="0">
             </div>
             <div class="mb-3">
-              <label for="supplierDescription" class="form-label">Description</label>
-              <textarea class="form-control" id="supplierDescription" placeholder="Enter Description" name="description" rows="3"></textarea>
+              <label for="itemDescription" class="form-label">Description</label>
+              <textarea class="form-control" id="itemDescription" placeholder="Enter Description" name="itemDescription" rows="3"></textarea>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -93,13 +93,6 @@
       </div>
     </div>
   </form>
-
-  <script>
-    document.getElementById('contactNumber').addEventListener('input', function (e) {
-        // Remove any non-digit characters
-        this.value = this.value.replace(/\D/g, '');
-    });
-    </script>
     
 
 {% endblock %}
