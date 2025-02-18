@@ -141,7 +141,6 @@ urlpatterns = [
     path('setup/deactivate_lab/<int:laboratory_id>/', views.deactivate_lab, name='deactivate_lab'),
     path('setup/labInfo/<int:laboratory_id>/toggle_module/', views.toggle_module_status, name='toggle_module_status'),
     
-    
     path('setup/labInfo/<int:laboratory_id>/add_room/', views.add_room, name='add_room'),
     #path('setup/editLab/<int:laboratory_id>/', views.setup_editLab, name='setup_editLab'),
     path('setup/manageRooms', views.setup_manageRooms, name='setup_manageRooms'),
