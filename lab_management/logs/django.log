@@ -5735,3 +5735,5 @@ WARNING 2025-02-18 21:16:44,467 log Not Found: /buy_list/
 WARNING 2025-02-18 21:16:44,467 basehttp "GET /buy_list/ HTTP/1.1" 404 38271
 WARNING 2025-02-18 21:17:08,706 log Not Found: /buy_list/
 WARNING 2025-02-18 21:17:08,707 basehttp "GET /buy_list/ HTTP/1.1" 404 38271
+WARNING 2025-02-19 12:58:31,781 log Not Found: /favicon.ico
+WARNING 2025-02-19 12:58:31,784 basehttp "GET /favicon.ico HTTP/1.1" 404 38277

@@ -45,7 +45,11 @@
                     <td>{{ item.name }}</td>
                     <td>{{ item.description }}</td>
                     <td>{{ item.quantity }}</td>
-                    <td><button id="deletebtn" class="btn btn-danger ms-2">Clear</button></td>
+                    <td><form method="POST" action="{% url 'clear_buyItem' item.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger ms-2">Clear</button>
+                        </form>
+                    </td>
                     <td style="display:none;"></td>
                   </tr>
                   {% empty %}

@@ -52,6 +52,8 @@ urlpatterns = [
     path('experiments/', views.inventory_experiments, name='inventory_experiments'),
     path('shopping_list/', views.inventory_buyList, name='inventory_buyList'),
 
+    path("inventory/shopping_list/clear/<int:item_id>/", views.clear_buyItem, name="clear_buyItem"),
+
     # ajax select2
     path('suggest_items/', views.suggest_items, name='suggest_items'),
     path('suggest_suppliers/', views.suggest_suppliers, name='suggest_suppliers'),

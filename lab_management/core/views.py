@@ -1925,8 +1925,21 @@ def inventory_buyList(request):
             messages.error(request, "An error occurred while adding the item.")
             return redirect("inventory_buyList")
     
-    items = ShoppingItem.objects.all()
+    items = ShoppingItem.objects.filter(is_active=True)
     return render(request, "mod_inventory/inventory_buyList.html", {"items": items})
+
+@login_required
+def clear_buyItem(request, item_id):
+    try:
+        item = get_object_or_404(ShoppingItem, id=item_id)
+        item.is_active = False
+        item.save()
+        messages.success(request, "Item cleared.")
+    except Exception as e:
+        logger.error(f"Error clearing item: {e}", exc_info=True)
+        messages.error(request, "An error occurred while clearing the item.")
+
+    return redirect("inventory_buyList")
  
 
 
