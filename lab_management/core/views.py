@@ -5478,7 +5478,7 @@ def superuser_manage_labs(request):
         if not request.user.is_superuser:
             return render(request, 'error_page.html', {'message': 'Module is allowed for this laboratory.'})
 
-        labs = laboratory.objects.exclude(Q(laboratory_id=0) | Q(is_available=0)).annotate(user_count=Count('laboratory_users'))   # Retrieve all laboratory records
+        labs = laboratory.objects.exclude(Q(laboratory_id=0) | Q(is_available=0)).annotate(user_count=Count('laboratory_users', laboratory_users__is_active=1))   # Retrieve all laboratory records
         context = {
             'labs': labs,
         }
@@ -5606,7 +5606,7 @@ def superuser_lab_info(request, laboratory_id):
             role_name=F('role__name')
         )
         lab_roles = laboratory_roles.objects.filter(Q(laboratory_id=0) | Q(laboratory_id=lab.laboratory_id)).annotate(
-            usercount=Count('users', filter=Q(users__laboratory_id=laboratory_id))
+            usercount=Count('users', filter=Q(users__laboratory_id=laboratory_id, users__is_active=1))
         )
 
         print(lab_roles)
