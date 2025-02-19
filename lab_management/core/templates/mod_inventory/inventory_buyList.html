@@ -35,19 +35,27 @@
                   <th>Item Name</th>
                   <th>Description</th>
                   <th>Quantity</th>
-                  <th style="display:none;"></th> <!-- Hidden column -->
+                  <th>Actions</th> 
                   <th style="display:none;"></th> <!-- Hidden column -->
                 </tr>
               </thead>
               <tbody>
-                {% for supplier in suppliers %}
-                <tr>
-                  <td><a href="{% url 'inventory_supplierDetails' supplier.suppliers_id %}">{{ supplier.supplier_name }}</a></td>
-                  <td>{{ supplier.description }}</td>
-                  <td>{{ supplier.supplied_items_count }}</td>
-                  <td style="display:none;"></td> <!-- Hidden cell -->
-                  <td style="display:none;"></td> <!-- Hidden cell -->
-                </tr>
+                {% for item in items %}
+                  <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.description }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td><form method="POST" action="{% url 'clear_buyItem' item.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger ms-2">Clear</button>
+                        </form>
+                    </td>
+                    <td style="display:none;"></td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="3" class="text-center">No items in the shopping list.</td>
+                  </tr>
                 {% endfor %}
               </tbody>
             </table>
@@ -60,7 +68,7 @@
     </div>
   </section>
   
-  <!-- Add Supplier Modal -->
+  <!-- Add item Modal -->
   <form method="POST">
     <div class="modal fade" id="addtocart" tabindex="-1" aria-labelledby="addtocartLabel" aria-hidden="true">
       <div class="modal-dialog">

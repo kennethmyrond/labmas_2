@@ -36,6 +36,7 @@ from django.conf import settings
 
 from allauth.socialaccount.models import SocialAccount
 
+
 # from allauth.socialaccount.helpers import provider_login_url
 from .forms import LoginForm, InventoryItemForm
 from .models import RoomTable, laboratory, Module, item_description, item_types, item_inventory, suppliers, user, suppliers, item_expirations, item_handling
@@ -49,6 +50,8 @@ from calendar import monthrange
 from pyzbar.pyzbar import decode
 from PIL import Image, ImageDraw, ImageFont 
 from io import BytesIO
+from .models import ShoppingItem
+from .forms import ShoppingItemForm
 # from ratelimit.decorators import ratelimit 
 
 
@@ -1897,12 +1900,47 @@ def inventory_experiments(request):
     
 @login_required
 def inventory_buyList(request):
+    if request.method == "POST":
+        try:
+            item_name = request.POST.get("itemName")
+            item_description = request.POST.get("itemDescription")
+            item_quantity = request.POST.get("quantity")
+
+            if not item_name or not item_quantity:
+                    messages.error(request, "Item Name and Quantity are required.")
+                    return redirect("inventory_buyList")
+            
+            new_item = ShoppingItem(
+                    name=item_name,
+                    description=item_description,
+                    quantity=int(item_quantity),
+                )
+            new_item.save()
+            messages.success(request, "Item added successfully!")
+            return redirect("inventory_buyList")
+            
+            #return render(request, 'mod_inventory/inventory_buyList.html')
+        except Exception as e:
+            logger.error(f"Error adding item: {e}", exc_info=True)
+            messages.error(request, "An error occurred while adding the item.")
+            return redirect("inventory_buyList")
+    
+    items = ShoppingItem.objects.filter(is_active=True)
+    return render(request, "mod_inventory/inventory_buyList.html", {"items": items})
+
+@login_required
+def clear_buyItem(request, item_id):
     try:
-        return render(request, 'mod_inventory/inventory_buyList.html')
+        item = get_object_or_404(ShoppingItem, id=item_id)
+        item.is_active = False
+        item.save()
+        messages.success(request, "Item cleared.")
     except Exception as e:
-        logger.error(f"Error rendering List: {e}", exc_info=True)
-        messages.error(request, "An error occurred while loading the Buy List page.")
-        return redirect('home')  
+        logger.error(f"Error clearing item: {e}", exc_info=True)
+        messages.error(request, "An error occurred while clearing the item.")
+
+    return redirect("inventory_buyList")
+ 
 
 
 # =====================================================

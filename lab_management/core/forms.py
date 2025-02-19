@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
+from .models import ShoppingItem
 
 class LoginForm(AuthenticationForm):
     username = forms.CharField(max_length=254, widget=forms.TextInput(attrs={'placeholder': 'Username'}))
@@ -44,3 +45,8 @@ class InventoryItemForm(forms.Form):
     grade = forms.CharField(max_length=45, required=True)
     location = forms.CharField(max_length=45, required=True)
     kind = forms.CharField(max_length=45, required=True)
+
+class ShoppingItemForm(forms.ModelForm):
+    class Meta:
+        model = ShoppingItem
+        fields = ['name', 'description', 'quantity']
