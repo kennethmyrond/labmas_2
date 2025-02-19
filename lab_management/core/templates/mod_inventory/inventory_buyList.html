@@ -35,7 +35,7 @@
                   <th>Item Name</th>
                   <th>Description</th>
                   <th>Quantity</th>
-                  <th style="display:none;"></th> <!-- Hidden column -->
+                  <th>Actions</th> 
                   <th style="display:none;"></th> <!-- Hidden column -->
                 </tr>
               </thead>
@@ -45,7 +45,7 @@
                     <td>{{ item.name }}</td>
                     <td>{{ item.description }}</td>
                     <td>{{ item.quantity }}</td>
-                    <td style="display:none;"></td>
+                    <td><button id="deletebtn" class="btn btn-danger ms-2">Clear</button></td>
                     <td style="display:none;"></td>
                   </tr>
                   {% empty %}
