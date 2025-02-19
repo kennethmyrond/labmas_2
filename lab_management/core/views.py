@@ -1899,6 +1899,7 @@ def inventory_experiments(request):
         return redirect('home')  
     
 @login_required
+@lab_permission_required('manage_shopping_list')
 def inventory_buyList(request):
     if request.method == "POST":
         try:
@@ -1923,7 +1924,7 @@ def inventory_buyList(request):
         except Exception as e:
             logger.error(f"Error adding item: {e}", exc_info=True)
             messages.error(request, "An error occurred while adding the item.")
-            return redirect("inventory_buyList")
+            return redirect("home")
     
     items = ShoppingItem.objects.filter(is_active=True)
     return render(request, "mod_inventory/inventory_buyList.html", {"items": items})
@@ -6332,11 +6333,11 @@ def setup_createlab(request):
 
     # Default permissions per role
     default_permissions = {
-        1: [7, 8, 9, 10, 11, 1, 2, 3, 4, 5, 6, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-        2: [9, 11, 1, 5, 6, 13, 16, 17, 18, 19, 20, 21],
-        3: [8, 10, 1, 2, 3, 4, 13, 15],
-        4: [1, 18],
-        5: [7, 12, 14]
+        1: [7, 8, 9, 10, 11, 1, 2, 3, 4, 5, 6, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 25], #role w/ all permissions on
+        2: [9, 11, 1, 5, 6, 13, 16, 17, 18, 19, 20, 21, 25, 23], # lab coord
+        3: [8, 10, 1, 2, 3, 4, 13, 15, 22, 23, 24], # lab tech
+        4: [1, 18], # dept heads
+        5: [7, 12, 14, 23] # students
     }
 
     # Group permissions by module

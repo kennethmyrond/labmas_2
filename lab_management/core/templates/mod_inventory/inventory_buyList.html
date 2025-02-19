@@ -29,7 +29,7 @@
               </div>
             </div>
             <!-- Table with stripped rows -->
-            <table class="table datatable">
+            <table class="table inventory-datatable">
               <thead>
                 <tr>
                   <th>Item Name</th>
@@ -101,6 +101,30 @@
       </div>
     </div>
   </form>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const today = new Date().toISOString().split('T')[0];
+    inventory_filename = '{{selected_lab_name}}_shoppinglist_' + today;
+    new DataTable('.inventory-datatable', {
+      order: [[1, 'asc']],
+      layout: {
+        bottomStart: {
+            // buttons: ['copy', 'excel', 'pdf', 'colvis']
+            buttons: [{
+                    extend: 'excelHtml5',
+                    title: inventory_filename
+                },
+                {
+                    extend: 'pdfHtml5',
+                    title: inventory_filename
+                }, 'copy', 'colvis']
+        }
+      }
+      
+    });
+  });
+  </script>
     
 
 {% endblock %}

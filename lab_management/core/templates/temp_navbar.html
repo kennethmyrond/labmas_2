@@ -359,18 +359,19 @@
                 </a>
             </li>
             {%endif%}
-
+            {% if permissions.can_manage_shopping_list %}
             <li>
               <a href="{% url 'inventory_buyList' %}" class="{% if request.resolver_match.url_name == 'inventory_buyList' %}active{% endif %}">
                   <i class="bi bi-circle"></i><span>Shopping List</span>
               </a>
-          </li>
+            </li>
+            {% endif %}
 
-            <li>
+            <!-- <li>
               <a href="{% url 'inventory_experiments' %}" class="{% if request.resolver_match.url_name == 'inventory_experiments' %}active{% endif %}">
                   <i class="bi bi-circle"></i><span>Experiments</span>
               </a>
-          </li>
+          </li> -->
         </ul>
     </li><!-- End inventory Nav -->
     {% endif %}
