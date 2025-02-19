@@ -385,6 +385,14 @@ class suppliers(models.Model):
     def __str__(self):
         return self.suppliername
     
+class ShoppingItem(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    quantity = models.PositiveIntegerField()
+
+    def __str__(self):
+        return self.name
+    
 
 # borrowing & Clearance
 class borrowing_config(models.Model):
