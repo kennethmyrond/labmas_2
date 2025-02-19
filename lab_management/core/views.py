@@ -1073,6 +1073,76 @@ def inventory_addNewItem_view(request):
 
 @transaction.atomic
 @login_required
+@lab_permission_required('add_new_item')
+def inventory_mass_upload_view(request):
+    if request.method == "POST":
+        item_type_id = request.POST.get("item_type")
+        excel_file = request.FILES.get("excel_file")
+        lab_id = request.session.get("selected_lab")
+
+        selected_lab_id = get_object_or_404(laboratory, laboratory_id=lab_id)
+
+        if not item_type_id or not excel_file:
+            messages.error(request, "Please select an item type and upload a valid Excel file.")
+            return redirect("inventory_addNewItem")  # Redirect to existing page
+
+        try:
+            item_type = item_types.objects.get(itemType_id=item_type_id)
+            required_columns = json.loads(item_type.add_cols) + ["Item Name", "Total Quantity"]
+
+            df = pd.read_excel(excel_file)
+
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            if missing_columns:
+                messages.error(request, f"Missing columns: {', '.join(missing_columns)}")
+                return redirect("inventory_addNewItem")
+
+            for _, row in df.iterrows():
+                item_name = row["Item Name"]
+                total_quantity = row["Total Quantity"]
+                alert_qty = row['Reorder Point']
+
+                if not isinstance(item_name, str) or not isinstance(total_quantity, (int, float)):
+                    messages.error(request, f"Invalid data in row: {row.to_dict()}")
+                    continue
+
+                add_cols_data = {col: row[col] for col in json.loads(item_type.add_cols)}
+                add_cols_json = json.dumps(add_cols_data)
+
+                item = item_description.objects.create(
+                    item_name=item_name,
+                    itemType=item_type,
+                    laboratory=selected_lab_id,
+                    add_cols=add_cols_json,
+                    alert_qty=alert_qty or 0,
+                )
+
+                inventory_item = item_inventory.objects.create(
+                    item=item,
+                    date_purchased=now(),
+                    date_received=now(),
+                    qty=total_quantity,
+                )
+
+                item_handling.objects.create(
+                    inventory_item=inventory_item,
+                    updated_by=request.user,
+                    changes="A",
+                    qty=total_quantity,
+                    remarks="Added Mass Upload",
+                )
+
+            messages.success(request, "Items successfully uploaded.")
+            return redirect("inventory_view")  # ✅ Redirect to view inventory page
+
+        except Exception as e:
+            messages.error(request, f"Error processing file: {str(e)}")
+            return redirect("inventory_addNewItem")
+
+    return redirect("inventory_addNewItem")  # ✅ Ensure redirection if GET request
+
+@transaction.atomic
+@login_required
 @lab_permission_required('update_item_inventory')
 def inventory_updateItem_view(request):
     if not request.user.is_authenticated:

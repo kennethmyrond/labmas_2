@@ -14,13 +14,76 @@
         </ol>
     </nav>
 </div><!-- End Page Title -->
-
+{% if messages %}
+{% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+{% endfor %}
+{% endif %}
 <section class="section">
     <div class="row">
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-body">
+                    <div class="row">
+                    <div class="col">
                     <h5 class="card-title">Add New Item</h5>
+                </div>  
+                <div class="col d-flex justify-content-end">
+                    <!-- Mass Upload Button -->
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#massUploadModal">
+                        <i class="bi bi-upload"></i> Mass Upload Items
+                    </button>
+                </div>
+                    <!-- Mass Upload Modal -->
+                    <div class="modal fade" id="massUploadModal" tabindex="-1" role="dialog" aria-labelledby="massUploadModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="massUploadModalLabel">Mass Upload Inventory Items</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="alert alert-warning">
+                                        Ensure your Excel file's columns match the selected item type's fields.<br>
+                                        Required Columns: <span id="requiredColumns">Please select an item type.</span>
+                                    </p>
+                                    
+                                    <form method="POST" action="{% url 'inventory_mass_upload' %}" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        
+                                        <!-- Item Type Selection -->
+                                        <div class="row mb-3">
+                                            <label class="col-sm-4 col-form-label">Select Item Type:</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" id="item_type_modal" name="item_type" required>
+                                                    <option value="">-- Select Item Type --</option>
+                                                    {% for type in item_types %}
+                                                        <option value="{{ type.itemType_id }}" data-add-cols="{{ type.add_cols }}">
+                                                            {{ type.itemType_name }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Excel File Upload -->
+                                        <div class="row mb-3">
+                                            <label class="col-sm-4 col-form-label">Upload Excel File:</label>
+                                            <div class="col-sm-8">
+                                                <input type="file" class="form-control" name="excel_file" accept=".xlsx, .xls" required>
+                                            </div>
+                                        </div>
+
+                                        <div class="text-end">
+                                            <button type="submit" class="btn btn-primary">Upload</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                    <hr>
                     
                     <!-- General Form Elements -->
                     <form method="POST">
@@ -274,6 +337,27 @@ function toggleExpirationFields() {
         document.getElementById('condition_field').style.display = 'block';
     }
 }
+
+document.addEventListener("DOMContentLoaded", function() {
+    const itemTypeSelect = document.getElementById("item_type_modal");
+    const requiredColumnsSpan = document.getElementById("requiredColumns");
+
+    itemTypeSelect.addEventListener("change", function() {
+        const selectedOption = itemTypeSelect.options[itemTypeSelect.selectedIndex];
+        const addColsJson = selectedOption.getAttribute("data-add-cols");
+
+        if (addColsJson) {
+            try {
+                const addCols = JSON.parse(addColsJson);
+                requiredColumnsSpan.innerHTML = addCols.join(", ") + ", Item Name, Total Quantity";
+            } catch (e) {
+                console.error("Error parsing add_cols JSON:", e);
+            }
+        } else {
+            requiredColumnsSpan.innerHTML = "Please select an item type.";
+        }
+    });
+});
 </script>
 
 {% endblock %}
