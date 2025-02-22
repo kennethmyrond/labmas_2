@@ -5799,3 +5799,616 @@ Traceback (most recent call last):
   File "C:\Python311\Lib\site-packages\django\db\models\sql\query.py", line 1768, in names_to_path
     raise FieldError(
 django.core.exceptions.FieldError: Cannot resolve keyword 'users' into field. Choices are: borrow_info, borrowing_config, date_created, department, description, is_available, item_description, item_types, laboratory_id, laboratory_permissions, laboratory_reservations, laboratory_roles, laboratory_users, modules, name, reported_items, reservation_config, rooms, suppliers, wip_experiments
+ERROR 2025-02-21 11:32:49,683 views Error in borrowing_labcoord_detailedPrebookrequests for ken uy: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2901, in borrowing_labcoord_detailedPrebookrequests
+    return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html', {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+ERROR 2025-02-21 11:32:53,246 views Error in borrowing_labcoord_detailedPrebookrequests for ken uy: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2901, in borrowing_labcoord_detailedPrebookrequests
+    return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html', {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+ERROR 2025-02-21 11:32:58,238 views Error in borrowing_labcoord_detailedPrebookrequests for ken uy: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2901, in borrowing_labcoord_detailedPrebookrequests
+    return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html', {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+ERROR 2025-02-21 11:33:06,270 views Error in borrowing_labcoord_detailedPrebookrequests for ken uy: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2901, in borrowing_labcoord_detailedPrebookrequests
+    return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html', {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+ERROR 2025-02-21 11:33:30,319 views Error in borrowing_labcoord_detailedPrebookrequests for ken uy: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2901, in borrowing_labcoord_detailedPrebookrequests
+    return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html', {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+ERROR 2025-02-21 13:05:30,176 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:30,177 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:30,256 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:30,262 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:49,545 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:49,554 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:49,565 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:49,574 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:51,597 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:51,613 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:54,337 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:54,357 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:54,361 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 13:05:54,377 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+WARNING 2025-02-21 13:05:56,735 log Not Found: /apple-touch-icon-precomposed.png
+WARNING 2025-02-21 13:05:56,767 basehttp "GET /apple-touch-icon-precomposed.png HTTP/1.1" 404 38942
+WARNING 2025-02-21 13:05:56,774 log Not Found: /favicon.ico
+WARNING 2025-02-21 13:05:56,788 log Not Found: /apple-touch-icon.png
+WARNING 2025-02-21 13:05:56,788 basehttp "GET /favicon.ico HTTP/1.1" 404 38879
+WARNING 2025-02-21 13:05:56,788 basehttp "GET /apple-touch-icon.png HTTP/1.1" 404 38906
+WARNING 2025-02-21 13:06:07,819 log Not Found: /favicon.ico
+WARNING 2025-02-21 13:06:07,819 basehttp "GET /favicon.ico HTTP/1.1" 404 38879
+WARNING 2025-02-21 13:10:16,913 log Not Found: /favicon.ico
+WARNING 2025-02-21 13:10:16,913 basehttp "GET /favicon.ico HTTP/1.1" 404 38879
+WARNING 2025-02-21 13:10:22,621 log Not Found: /favicon.ico
+WARNING 2025-02-21 13:10:22,622 basehttp "GET /favicon.ico HTTP/1.1" 404 38879
+ERROR 2025-02-21 13:12:07,104 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+ERROR 2025-02-21 13:12:13,103 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+ERROR 2025-02-21 13:12:16,587 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+ERROR 2025-02-21 13:12:19,471 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+ERROR 2025-02-21 13:12:28,458 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+ERROR 2025-02-21 13:12:51,304 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+WARNING 2025-02-21 13:13:15,661 log Not Found: /favicon.ico
+WARNING 2025-02-21 13:13:15,665 basehttp "GET /favicon.ico HTTP/1.1" 404 38879
+ERROR 2025-02-21 13:16:04,703 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+ERROR 2025-02-21 13:16:07,729 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+ERROR 2025-02-21 13:16:25,819 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+WARNING 2025-02-21 13:20:09,390 log Forbidden (CSRF token from POST incorrect.): /register/
+WARNING 2025-02-21 13:20:09,391 basehttp "POST /register/ HTTP/1.1" 403 2503
+ERROR 2025-02-21 13:20:10,841 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+WARNING 2025-02-21 13:20:13,726 log Forbidden (CSRF token from POST incorrect.): /register/
+WARNING 2025-02-21 13:20:13,727 basehttp "POST /register/ HTTP/1.1" 403 2503
+ERROR 2025-02-21 13:20:14,110 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+WARNING 2025-02-21 13:20:30,057 log Not Found: /favicon.ico
+WARNING 2025-02-21 13:20:30,058 basehttp "GET /favicon.ico HTTP/1.1" 404 38879
+WARNING 2025-02-21 13:22:17,292 log Not Found: /favicon.ico
+WARNING 2025-02-21 13:22:17,293 basehttp "GET /favicon.ico HTTP/1.1" 404 38879
+ERROR 2025-02-21 13:22:38,035 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+ERROR 2025-02-21 13:27:38,646 views Unexpected error in superuser_lab_info: [Errno 5] Input/output error
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 5682, in superuser_lab_info
+    print(lab_roles)
+OSError: [Errno 5] Input/output error
+WARNING 2025-02-21 13:43:22,532 log Not Found: /favicon.ico
+WARNING 2025-02-21 13:43:22,555 basehttp "GET /favicon.ico HTTP/1.1" 404 38879
+WARNING 2025-02-21 13:44:48,834 log Not Found: /robots.txt
+WARNING 2025-02-21 13:44:48,835 basehttp "GET /robots.txt HTTP/1.1" 404 38876
+WARNING 2025-02-21 13:45:54,427 log Not Found: /favicon.ico
+WARNING 2025-02-21 13:45:54,428 basehttp "GET /favicon.ico HTTP/1.1" 404 38879
+WARNING 2025-02-21 13:49:41,633 log Not Found: /favicon.ico
+WARNING 2025-02-21 13:49:41,648 basehttp "GET /favicon.ico HTTP/1.1" 404 38879
+ERROR 2025-02-21 14:32:47,790 views Error in borrowing_labcoord_borrowconfig for chem labcoord: NOT NULL constraint failed: core_item_description.lead_time_prep
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2746, in borrowing_labcoord_borrowconfig
+    item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1253, in update
+    rows = query.get_compiler(self.db).execute_sql(CURSOR)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 2003, in execute_sql
+    cursor = super().execute_sql(result_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+ERROR 2025-02-21 14:33:07,625 views Error in borrowing_labcoord_borrowconfig for chem labcoord: NOT NULL constraint failed: core_item_description.lead_time_prep
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2746, in borrowing_labcoord_borrowconfig
+    item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1253, in update
+    rows = query.get_compiler(self.db).execute_sql(CURSOR)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 2003, in execute_sql
+    cursor = super().execute_sql(result_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+ERROR 2025-02-21 14:33:22,692 views Error in borrowing_labcoord_borrowconfig for chem labcoord: NOT NULL constraint failed: core_item_description.lead_time_prep
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2746, in borrowing_labcoord_borrowconfig
+    item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1253, in update
+    rows = query.get_compiler(self.db).execute_sql(CURSOR)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 2003, in execute_sql
+    cursor = super().execute_sql(result_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+ERROR 2025-02-21 14:34:00,942 views Error in borrowing_labcoord_borrowconfig for chem labcoord: NOT NULL constraint failed: core_item_description.lead_time_prep
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2746, in borrowing_labcoord_borrowconfig
+    item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1253, in update
+    rows = query.get_compiler(self.db).execute_sql(CURSOR)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 2003, in execute_sql
+    cursor = super().execute_sql(result_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+ERROR 2025-02-21 14:34:28,679 views Error in borrowing_labcoord_borrowconfig for chem labcoord: NOT NULL constraint failed: core_item_description.lead_time_prep
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2746, in borrowing_labcoord_borrowconfig
+    item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1253, in update
+    rows = query.get_compiler(self.db).execute_sql(CURSOR)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 2003, in execute_sql
+    cursor = super().execute_sql(result_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+ERROR 2025-02-21 14:39:56,084 views Error in borrowing_labcoord_detailedPrebookrequests for chem labcoord: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2901, in borrowing_labcoord_detailedPrebookrequests
+    return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html', {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+ERROR 2025-02-21 14:39:58,280 views Error in borrowing_labcoord_detailedPrebookrequests for chem labcoord: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2901, in borrowing_labcoord_detailedPrebookrequests
+    return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html', {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/template/loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html
+ERROR 2025-02-21 15:08:02,662 views Error in borrowing_labcoord_borrowconfig for ken uy: NOT NULL constraint failed: core_item_description.lead_time_prep
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2746, in borrowing_labcoord_borrowconfig
+    item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1253, in update
+    rows = query.get_compiler(self.db).execute_sql(CURSOR)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 2003, in execute_sql
+    cursor = super().execute_sql(result_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+ERROR 2025-02-21 15:08:23,471 views Error in borrowing_labcoord_borrowconfig for ken uy: NOT NULL constraint failed: core_item_description.lead_time_prep
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2746, in borrowing_labcoord_borrowconfig
+    item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1253, in update
+    rows = query.get_compiler(self.db).execute_sql(CURSOR)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 2003, in execute_sql
+    cursor = super().execute_sql(result_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+ERROR 2025-02-21 15:08:36,789 views Error in borrowing_labcoord_borrowconfig for ken uy: NOT NULL constraint failed: core_item_description.lead_time_prep
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2746, in borrowing_labcoord_borrowconfig
+    item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1253, in update
+    rows = query.get_compiler(self.db).execute_sql(CURSOR)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 2003, in execute_sql
+    cursor = super().execute_sql(result_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+WARNING 2025-02-21 15:50:48,484 log Not Found: /favicon.ico
+WARNING 2025-02-21 15:50:48,485 basehttp "GET /favicon.ico HTTP/1.1" 404 38879
+ERROR 2025-02-21 16:12:05,865 views Error in borrowing_labcoord_borrowconfig for CT LabCoord: NOT NULL constraint failed: core_item_description.lead_time_prep
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/root/labmas_2/lab_management/core/views.py", line 2746, in borrowing_labcoord_borrowconfig
+    item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/query.py", line 1253, in update
+    rows = query.get_compiler(self.db).execute_sql(CURSOR)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 2003, in execute_sql
+    cursor = super().execute_sql(result_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/models/sql/compiler.py", line 1574, in execute_sql
+    cursor.execute(sql, params)
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/labmas_2/lab_management/venv/lib/python3.11/site-packages/django/db/backends/sqlite3/base.py", line 354, in execute
+    return super().execute(query, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: NOT NULL constraint failed: core_item_description.lead_time_prep
+ERROR 2025-02-21 16:32:37,466 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 16:32:37,678 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 16:32:38,062 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-02-21 16:32:38,532 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+WARNING 2025-02-21 22:35:25,093 log Not Found: /favicon.ico
+WARNING 2025-02-22 00:16:56,861 log Not Found: /favicon.ico
+WARNING 2025-02-22 00:18:44,149 log Not Found: /apple-touch-icon-precomposed.png
+WARNING 2025-02-22 00:18:44,173 log Not Found: /apple-touch-icon.png
+WARNING 2025-02-22 00:18:44,181 log Not Found: /favicon.ico
+WARNING 2025-02-22 01:01:02,503 log Not Found: /favicon.ico
+WARNING 2025-02-22 21:17:09,061 log Not Found: /favicon.ico
+WARNING 2025-02-22 23:07:22,157 log Not Found: /favicon.ico
+WARNING 2025-02-22 23:08:05,364 log Not Found: /apple-touch-icon-precomposed.png
+WARNING 2025-02-22 23:08:05,428 log Not Found: /favicon.ico
+WARNING 2025-02-22 23:08:05,438 log Not Found: /apple-touch-icon.png
+WARNING 2025-02-22 23:52:21,280 log Not Found: /favicon.ico
+WARNING 2025-02-23 00:13:25,204 log Not Found: /favicon.ico
