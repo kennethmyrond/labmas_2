@@ -5799,3 +5799,11 @@ Traceback (most recent call last):
   File "C:\Python311\Lib\site-packages\django\db\models\sql\query.py", line 1768, in names_to_path
     raise FieldError(
 django.core.exceptions.FieldError: Cannot resolve keyword 'users' into field. Choices are: borrow_info, borrowing_config, date_created, department, description, is_available, item_description, item_types, laboratory_id, laboratory_permissions, laboratory_reservations, laboratory_roles, laboratory_users, modules, name, reported_items, reservation_config, rooms, suppliers, wip_experiments
+WARNING 2025-02-21 09:25:10,038 log Not Found: /favicon.ico
+WARNING 2025-02-21 09:25:10,041 basehttp "GET /favicon.ico HTTP/1.1" 404 38867
+ERROR 2025-02-21 11:39:48,080 views Error while returning items for Borrow ID 20120243112: invalid literal for int() with base 10: ''
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 2953, in return_borrowed_items
+    qty_returned = int(request.POST.get(f'return_qty_{item.item.item_id}', 0))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: ''
