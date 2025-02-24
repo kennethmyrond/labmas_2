@@ -118,9 +118,10 @@ urlpatterns = [
     path('lab-reservation/lab/reservationRequests_detailed/<int:reservation_id>/', views.labres_lab_reservationreqsDetailed, name='labres_lab_reservationreqsDetailed'),
 
     # wip
+    path('wip/student/', views.student_create_wip, name="student_wip_list"),
+    path('wip/laboratory/', views.lab_wip_list, name="lab_wip_list"),
     path('wip/<str:wip_id>/', views.view_wip, name='view_wip'),
     path('wip/<str:wip_id>/clear/', views.clear_wip, name='clear_wip'),
-    path('wip/', views.list_wip, name='list_wip'),
 
     # reports
     path('user-reports/', views.reports_view, name='user_reports'),

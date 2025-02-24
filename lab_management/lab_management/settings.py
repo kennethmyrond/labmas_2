@@ -156,15 +156,15 @@ WSGI_APPLICATION = 'lab_management.wsgi.application'
 #        'NAME': BASE_DIR / 'db.sqlite3',
 #    }
 #}
-
+ #  'HOST': '',
 DATABASES = {
      'default': {
          'ENGINE': 'django.db.backends.mysql',
          'NAME': 'dblabmas_v2',
          'USER': 'django_user',
          'PASSWORD': 'Dlsu1234!',
-         'HOST': '127.0.0.1',
-         'PORT': '3306',
+         'HOST': '127.0.0.1',  # Use the Linux server hostname/IP
+         'PORT': '3307',
          'OPTIONS': {
              'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
          }

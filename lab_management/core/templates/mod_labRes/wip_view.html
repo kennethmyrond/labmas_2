@@ -13,26 +13,47 @@
 </div>
 
 <section class="section">
-    <!-- Add Manual Clearance Button -->
-    
     <div class="row">
-        <div class="col-lg-12">
+        <div class="col-lg-8">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">WIP ID: {{ wip.wip_id }}</h5>
-                    <p><strong>Student / Owner:</strong> {{ wip.user}}</p>
+                    <p><strong>Student / Owner:</strong> {{ wip.user }}</p>
                     <p><strong>Laboratory:</strong> {{ wip.laboratory }}</p>
                     <p><strong>Room:</strong> {{ wip.room }}</p>
                     <p><strong>Start Time:</strong> {{ wip.start_time|date:"Y/m/d H:i" }}</p>
                     <p><strong>End Time:</strong> {{ wip.end_time|date:"Y/m/d H:i" }}</p>
                     <p><strong>Description:</strong> {{ wip.description }}</p>
                     <p><strong>Remarks:</strong> {{ wip.remarks }}</p>
-                    <p><strong>Status:</strong> {{ wip.get_status_display }}</p>
+                    <p>
+                    {% if wip.status_with_overdue == "Active (Overdue)" %}
+                        <span class="badge bg-danger">Active (Overdue)</span>
+                    {% elif wip.status_with_overdue == "Active" %}
+                        <span class="badge bg-warning text-dark">Active</span>
+                    {% elif wip.status_with_overdue == "Cleared" %}
+                        <span class="badge bg-success">Cleared</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ wip.status_with_overdue }}</span>
+                    {% endif %}</p>
 
-                    {% if permissions.can_clear_wip%}
+                    {% if permissions.can_clear_wip %}
                     {% if wip.status == 'A' %}
                         <a href="{% url 'clear_wip' wip.wip_id %}" class="btn btn-warning">Clear WIP</a>
                     {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Image Preview -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">WIP Image</h5>
+                    {% if wip.wip_image %}
+                        <img src="{{ wip.wip_image.url }}" class="img-fluid rounded shadow" alt="WIP Image">
+                    {% else %}
+                        <p class="text-muted">No Image Available</p>
                     {% endif %}
                 </div>
             </div>

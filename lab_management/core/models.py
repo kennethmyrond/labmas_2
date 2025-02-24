@@ -622,8 +622,9 @@ class WorkInProgress(models.Model):
     start_time = models.DateTimeField(default=timezone.now)  # When the WIP was registered
     end_time = models.DateTimeField(null=True, blank=True)  # When the WIP was cleared
     description = models.TextField(help_text="Describe the experiment and items left in the lab.")
-    status = models.CharField(max_length=1, default='A', choices=[('A', 'Active'), ('C', 'Completed')])
+    status = models.CharField(max_length=1, default='A', choices=[('A', 'Active'), ('C', 'Cleared')])
     remarks = models.TextField(null=True, blank=True, help_text="Additional notes or remarks.")
+    wip_image = models.ImageField(upload_to='uploads/wip_images/', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.wip_id:
@@ -638,4 +639,20 @@ class WorkInProgress(models.Model):
     def __str__(self):
         return f"WIP {self.wip_id} by {self.user_id} in {self.laboratory}"
 
+    @property
+    def status_name(self):
+        return dict(self._meta.get_field('status').choices).get(self.status, 'Unknown')
+
+    @property
+    def is_overdue(self):
+        if self.end_time and timezone.now() > self.end_time:
+            return True
+        return False
+
+    @property
+    def status_with_overdue(self):
+        status_name = self.status_name
+        if self.is_overdue and self.status == 'A':  # Only mark as overdue if status is Active
+            return f"{status_name} (Overdue)"
+        return status_name
 

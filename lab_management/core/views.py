@@ -4606,7 +4606,6 @@ def get_room_configuration(request, room_id):
 # ======================= WIP ============================
 
 @login_required
-@lab_permission_required('view_wip')
 def view_wip(request, wip_id):
     try:
         selected_laboratory_id = request.session.get('selected_lab')
@@ -4626,9 +4625,9 @@ def view_wip(request, wip_id):
         permission_ids = user_permissions.values_list('permissions__permission_id', flat=True)
 
         if 22 in permission_ids:
-            wip = get_object_or_404(WorkInProgress, wip_id=wip_id)
-        elif 23 in permission_ids:
             wip = get_object_or_404(WorkInProgress, wip_id=wip_id, user=current_user)
+        elif 23 in permission_ids:
+            wip = get_object_or_404(WorkInProgress, wip_id=wip_id)
         else:
             wip = WorkInProgress.objects.none()
 
@@ -4640,81 +4639,95 @@ def view_wip(request, wip_id):
 
 @transaction.atomic
 @login_required
-@lab_permission_required('view_wip')
-def list_wip(request):
+@lab_permission_required('create_wip')
+def student_create_wip(request):
     try:
         selected_laboratory_id = request.session.get('selected_lab')
         selected_laboratory = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id)
-
         current_user = request.user
-        user_roles = laboratory_users.objects.filter(
-            laboratory=selected_laboratory, 
-            user=current_user, 
-            is_active=True, 
-            status='A'
-        ).values_list('role', flat=True)
-        user_permissions = laboratory_permissions.objects.filter(
-            role__in=user_roles, 
-            laboratory=selected_laboratory
-        )
-        permission_ids = user_permissions.values_list('permissions__permission_id', flat=True)
 
-        if 22 in permission_ids:
-            wip_experiments = WorkInProgress.objects.filter(laboratory=selected_laboratory_id).order_by('-start_time')
-        elif 23 in permission_ids:
-            wip_experiments = WorkInProgress.objects.filter(laboratory=selected_laboratory_id, user=current_user).order_by('-start_time')
-        else:
-            wip_experiments = WorkInProgress.objects.none()
-
+        wip_experiments = WorkInProgress.objects.filter(laboratory=selected_laboratory_id, user=current_user).order_by('-start_time')
         rooms_query = rooms.objects.filter(laboratory_id=selected_laboratory_id, is_disabled=False, is_reservable=True)
 
         if request.method == 'POST':
-            selected_user_id = request.POST.get('user')
             room_id = request.POST.get('room')
             description = request.POST.get('description')
             remarks = request.POST.get('remarks')
-            selected_user = user.objects.get(user_id=selected_user_id)
-            selected_room = rooms.objects.get(room_id=room_id)
-            start_time = timezone.now()
+            end_time = request.POST.get('end_time')
+            wip_image = request.FILES.get('wip_image')
 
+            if not room_id or not description or not end_time:
+                messages.error(request, "Please fill in all required fields.")
+            else:
+                selected_room = rooms.objects.get(room_id=room_id)
+            
             WorkInProgress.objects.create(
-                user_id=selected_user.user_id,
+                user=current_user,
                 laboratory=selected_laboratory,
                 room=selected_room,
                 description=description,
-                start_time=start_time,
+                start_time=timezone.now(),
                 remarks=remarks,
+                end_time=end_time,
+                wip_image=wip_image,
                 status='A'
             )
-            messages.success(request, "WIP created successfully!")
-            return redirect('list_wip')
+            messages.success(request, "WIP logged successfully!")
+            return redirect('student_wip_list')
         
-        context = {
+        return render(request, 'mod_labRes/wip_list_student.html', {
             'wip_experiments': wip_experiments,
             'rooms': rooms_query,
-        }
-        return render(request, 'mod_labRes/wip_list.html', context )
+        })
     except Exception as e:
-        logger.error(f"Error viewing list wip: {e}", exc_info=True)
-        messages.error(request, "An error occured unexpectedly.")
+        logger.error(f"Error logging student WIP: {e}", exc_info=True)
+        messages.error(request, "An error occurred while logging WIP.")
         return redirect('home')
 
 @transaction.atomic
 @login_required
-@lab_permission_required('clear_wip')
+@lab_permission_required('view_wip')
+def lab_wip_list(request):
+    """Lab staff can view all active WIPs"""
+    try:
+        selected_laboratory_id = request.session.get('selected_lab')
+        selected_laboratory = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id)
+
+        wip_experiments = WorkInProgress.objects.filter(laboratory=selected_laboratory_id).order_by('-start_time')
+
+        return render(request, 'mod_labRes/wip_list_lab.html', {
+            'wip_experiments': wip_experiments,
+        })
+    except Exception as e:
+        logger.error(f"Error viewing lab WIP list: {e}", exc_info=True)
+        messages.error(request, "An error occurred while retrieving WIP data.")
+        return redirect('home')
+
+@transaction.atomic
+@login_required
 def clear_wip(request, wip_id):
+    """Allow users (students/lab staff) to clear WIPs"""
     try:
         wip = get_object_or_404(WorkInProgress, wip_id=wip_id)
+
+        if request.user != wip.user and not request.user.has_perm('clear_wip'):
+            messages.error(request, "You don't have permission to clear this WIP.")
+            return redirect('home')
+
         if request.method == 'POST':
-            wip.end_time = timezone.now()
-            wip.status = 'C'  # Mark as completed
+            wip.status = 'C'  # Mark as Cleared
             wip.save()
-            messages.success(request, 'WIP experiment cleared successfully.')
-            return redirect('list_wip')
+            messages.success(request, 'WIP cleared successfully.')
+
+            # Redirect based on user type
+            if request.user.has_perm('view_wip'):
+                return redirect('lab_wip_list')
+            return redirect('student_wip_list')
+
         return render(request, 'mod_labRes/wip_clear.html', {'wip': wip})
     except Exception as e:
-        logger.error(f"Error clearing wip: {e}", exc_info=True)
-        messages.error(request, "An error occured unexpectedly.")
+        logger.error(f"Error clearing WIP: {e}", exc_info=True)
+        messages.error(request, "An unexpected error occurred.")
         return redirect('home')
 #  ================================================================= 
 

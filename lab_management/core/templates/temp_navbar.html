@@ -475,10 +475,10 @@
       {% if 4 in selected_lab_modules %}
       {% if permissions.can_reserve_laboratory or permissions.can_view_reservations or permissions.can_approve_deny_reservations or permissions.can_configure_lab_reservation %}
       <li class="nav-item">
-        <a class="nav-link {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule labres_lab_reservationreqs labres_lab_reservationreqsDetailed lab_reservation_student_reserveLabConfirmDetails lab_reservation_preapproval create_wip list_wip view_wip clear_wip'%}active{% else %}collapsed{% endif %}" data-bs-target="#reserve-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule labres_lab_reservationreqs labres_lab_reservationreqsDetailed lab_reservation_student_reserveLabConfirmDetails lab_reservation_preapproval create_wip view_wip clear_wip lab_wip_list student_wip_list'%}active{% else %}collapsed{% endif %}" data-bs-target="#reserve-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-journal-bookmark"></i><span>Lab Reservation</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="reserve-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule labres_lab_reservationreqs labres_lab_reservationreqsDetailed lab_reservation_student_reserveLabConfirmDetails lab_reservation_preapproval create_wip list_wip view_wip clear_wip'%}show{% endif %} " data-bs-parent="#sidebar-nav">
+        <ul id="reserve-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule labres_lab_reservationreqs labres_lab_reservationreqsDetailed lab_reservation_student_reserveLabConfirmDetails lab_reservation_preapproval create_wip view_wip clear_wip lab_wip_list student_wip_list'%}show{% endif %} " data-bs-parent="#sidebar-nav">
           {% if permissions.can_reserve_laboratory%}
           <li>           
             <a href="{% url 'lab_reservation_student_reserveLabChooseRoom' %}" class = "{% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_preapproval' %}active{% endif %}">
@@ -510,10 +510,17 @@
             </a>
           </li>
           {% endif %}
-          {% if permissions.can_create_wip or permissions.can_view_wip%}
+          {% if permissions.can_view_wip%}
           <li>
-            <a href="{% url 'list_wip' %}" class = "{% if request.resolver_match.url_name in 'list_wip view_wip' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>Work-In-Progress</span>
+            <a href="{% url 'lab_wip_list' %}" class = "{% if request.resolver_match.url_name in 'lab_wip_list' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>Work-In-Progress (WIP) List</span>
+            </a>
+          </li>
+          {% endif %}
+          {% if permissions.can_create_wip%}
+          <li>
+            <a href="{% url 'student_wip_list' %}" class = "{% if request.resolver_match.url_name in 'student_wip_list' %}active{% endif %}">
+              <i class="bi bi-circle"></i><span>My Work-In-Progress (WIP) Experiments</span>
             </a>
           </li>
           {% endif %}

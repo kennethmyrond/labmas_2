@@ -23,11 +23,6 @@
 <section class="section">
     <div class="row">
         <div class="col-lg-12">
-            {% if permissions.can_create_wip%}
-            <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addWIPModal">
-                + Create WIP
-            </button>
-            {% endif %}
                    <!-- Tabs Navigation -->
                    <ul class="nav nav-tabs" id="wipTabs" role="tablist">
                 
@@ -57,6 +52,7 @@
                                 <th>User Full Name</th>
                                 <th>Room</th>
                                 <th>Start Time</th>
+                                <th>End Time</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -70,7 +66,18 @@
                                 <td>{{ wip.user.get_fullname }}</td>
                                 <td>{{ wip.room }}</td>
                                 <td>{{ wip.start_time|date:"Y/m/d H:i" }}</td>
-                                <td>{{ wip.get_status_display }}</td>
+                                <td>{{ wip.end_time|date:"Y/m/d H:i" }}</td>
+                                <td>
+                                    {% if wip.status_with_overdue == "Active (Overdue)" %}
+                                        <span class="badge bg-danger">Active (Overdue)</span>
+                                    {% elif wip.status_with_overdue == "Active" %}
+                                        <span class="badge bg-warning text-dark">Active</span>
+                                    {% elif wip.status_with_overdue == "Cleared" %}
+                                        <span class="badge bg-success">Cleared</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ wip.status_with_overdue }}</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <a href="{% url 'view_wip' wip.wip_id %}" class="btn btn-info"><i class="bi bi-info-square"></i></a>
                                     {% if permissions.can_clear_wip%}
@@ -106,7 +113,17 @@
                                 <td>{{ wip.room }}</td>
                                 <td>{{ wip.start_time|date:"Y/m/d H:i" }}</td>
                                 <td>{{ wip.end_time|date:"Y/m/d H:i" }}</td>
-                                <td>{{ wip.get_status_display }}</td>
+                                <td>
+                                    {% if wip.status_with_overdue == "Active (Overdue)" %}
+                                        <span class="badge bg-danger">Active (Overdue)</span>
+                                    {% elif wip.status_with_overdue == "Active" %}
+                                        <span class="badge bg-warning text-dark">Active</span>
+                                    {% elif wip.status_with_overdue == "Cleared" %}
+                                        <span class="badge bg-success">Cleared</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ wip.status_with_overdue }}</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <a href="{% url 'view_wip' wip.wip_id %}" class="btn btn-info"><i class="bi bi-info-square"></i></a>
                                     {% if permissions.can_clear_wip%}
@@ -145,7 +162,17 @@
                                 <td>{{ wip.room }}</td>
                                 <td>{{ wip.start_time|date:"Y/m/d H:i" }}</td>
                                 <td>{{ wip.end_time|date:"Y/m/d H:i" }}</td>
-                                <td>{{ wip.get_status_display }}</td>
+                                <td>
+                                    {% if wip.status_with_overdue == "Active (Overdue)" %}
+                                        <span class="badge bg-danger">Active (Overdue)</span>
+                                    {% elif wip.status_with_overdue == "Active" %}
+                                        <span class="badge bg-warning text-dark">Active</span>
+                                    {% elif wip.status_with_overdue == "Cleared" %}
+                                        <span class="badge bg-success">Cleared</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ wip.status_with_overdue }}</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <a href="{% url 'view_wip' wip.wip_id %}" class="btn btn-info"><i class="bi bi-info-square"></i></a>
                                 </td>
@@ -169,7 +196,7 @@
           <h5 class="modal-title" id="addWIPModalLabel">Create Work-In-Progress</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <form method="POST" action="{% url 'list_wip' %}">
+        <form method="POST" action="{% url 'lab_wip_list' %}">
           {% csrf_token %}
           <div class="modal-body">
             <!-- User Dropdown -->
@@ -207,46 +234,4 @@
       </div>
     </div>
 </div>
-
-<script>
-function updateIdNumber() {
-    const userSelect = document.getElementById('user');
-    const selectedOption = userSelect.options[userSelect.selectedIndex];
-    const idNumberField = document.getElementById('id_number');
-    idNumberField.value = selectedOption.getAttribute('data-id');
-}
-
-$(document).ready(function() {
-    $('#addWIPModal').on('shown.bs.modal', function () {
-      $('#user').select2({
-        dropdownParent: $('#addWIPModal'),
-        ajax: {
-            url: '/suggest_report_users/',
-            dataType: 'json',
-            delay: 250,
-            data: function(params) {
-                return {
-                    query: params.term
-                };
-            },
-            processResults: function(data) {
-                console.log("Data received from suggest_users:", data);
-                return {
-                    results: data.map(function(user) {
-                        return {
-                          id: user.user_id,
-                          text: user.fullname
-                        };
-                    })
-                };
-            },
-            placeholder: 'Search for an item',
-            minimumInputLength: 2,
-            width: '100%' 
-        }
-      });
-    });
-});
-</script>
-
 {% endblock %}
