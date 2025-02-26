@@ -375,14 +375,19 @@
               qtyInput.value = '';
           });
       });
+
+      document.querySelectorAll('.reset-lead-time').forEach(button => {
+        button.addEventListener('click', function() {
+            let itemId = this.getAttribute('data-item-id');
+            let inputField = document.querySelector(`input[name="lead_time_prep_${itemId}"]`);
+            if (inputField) {
+                inputField.value = '';
+            }
+        });
+    });
+
   });
 
-  document.querySelectorAll('.reset-lead-time').forEach(button => {
-    button.addEventListener('click', function () {
-        let itemId = this.dataset.itemId;
-        document.querySelector(`input[name="lead_time_prep_${itemId}"]`).value = '';
-    });
-});
 
 </script>
 

@@ -2742,9 +2742,9 @@ def borrowing_labcoord_borrowconfig(request):
                     for item in items_with_qty:
                         lead_time_prep = request.POST.get(f'lead_time_prep_{item.item_id}')
                         if lead_time_prep is not None:
-                            lead_time_prep = int(lead_time_prep) if lead_time_prep else None
+                            lead_time_prep = int(lead_time_prep) if lead_time_prep else None  # Convert empty string to None
                             item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
-
+                            
                         qty_limit = request.POST.get(f'qty_limit_{item.item_id}')
                         if qty_limit is not None:
                             qty_limit = int(qty_limit) if qty_limit else None
