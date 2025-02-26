@@ -233,7 +233,7 @@ class item_description(models.Model):
     max_uses = models.IntegerField(null=True, blank=True) # Maximum allowed uses for the item
     maintenance_interval = models.IntegerField(null=True, blank=True) # Maintenance interval in days
 
-    lead_time_prep = models.IntegerField(default=0)  # Lead time in days
+    lead_time_prep = models.IntegerField(null=True, blank=True)  # Lead time in days
     qty_limit = models.IntegerField(null=True, blank=True) #for the borrowing_config, to set qty limit to each item.
     
     def save(self, *args, **kwargs):
@@ -522,30 +522,33 @@ class reported_items(models.Model):
     report_id = models.CharField(max_length=20, unique=True, primary_key=True)
     laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
     borrow = models.ForeignKey('borrow_info', on_delete=models.CASCADE, null=True, blank=True)
-    user = models.ForeignKey('user', on_delete=models.CASCADE, null=True, blank=True)  # Add this line
+    user = models.ForeignKey('user', on_delete=models.CASCADE, null=True, blank=True)  
     item = models.ForeignKey('item_description', on_delete=models.CASCADE, null=True, blank=True)
     qty_reported = models.IntegerField(null=False, blank=False)
     report_reason = models.CharField(max_length=255)
     amount_to_pay = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     reported_date = models.DateTimeField(auto_now_add=True)
     remarks = models.TextField(null=True, blank=True)
-
-    def save(self, *args, **kwargs):
-            if not self.report_id:
-                last_report = reported_items.objects.all().order_by('report_id').last()
-                new_report_id = int(last_report.report_id) + 1 if last_report else 1001
-                self.report_id = str(new_report_id)
-            super().save(*args, **kwargs)
-
-    # Add a status field with choices for Pending (1) and Cleared (0)
+    
     STATUS_CHOICES = [
         (1, 'Pending'),
         (0, 'Cleared'),
     ]
-    status = models.IntegerField(choices=STATUS_CHOICES, default=1)  # Default to Pending
+    status = models.IntegerField(choices=STATUS_CHOICES, default=1)  
+
+    # New field to track who cleared the clearance
+    cleared_by = models.ForeignKey('user', on_delete=models.SET_NULL, null=True, blank=True, related_name='clearance_cleared_by')
+
+    def save(self, *args, **kwargs):
+        if not self.report_id:
+            last_report = reported_items.objects.all().order_by('report_id').last()
+            new_report_id = int(last_report.report_id) + 1 if last_report else 1001
+            self.report_id = str(new_report_id)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Reported {self.item.item_name} for Borrow {self.borrow.borrow_id}"
+
 
 
 # Lab Reservation

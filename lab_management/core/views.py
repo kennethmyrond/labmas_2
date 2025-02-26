@@ -2742,7 +2742,7 @@ def borrowing_labcoord_borrowconfig(request):
                     for item in items_with_qty:
                         lead_time_prep = request.POST.get(f'lead_time_prep_{item.item_id}')
                         if lead_time_prep is not None:
-                            lead_time_prep = int(lead_time_prep) if lead_time_prep else None
+                            lead_time_prep = int(lead_time_prep) if lead_time_prep else None  # Convert empty string to None
                             item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
 
                         qty_limit = request.POST.get(f'qty_limit_{item.item_id}')
@@ -3241,7 +3241,10 @@ def clearance_student_viewClearanceDetailed(request, report_id):
 
         # Retrieve all reported items for the specific borrow entry
         report_details = reported_items.objects.filter(borrow=borrow, user=user)
-
+        # Add cleared_by info for each reported item
+        for r in report_details:
+            r.cleared_by_name = r.cleared_by.get_fullname() if r.cleared_by else "Not yet cleared"
+            
         # Context for rendering details of borrow and reports
         context = {
             'report': report,                  # Main report entry
@@ -3303,23 +3306,26 @@ def clearance_labtech_viewclearance(request):
     report_data = []
 
     try:
+
         for report in reports:
                 borrow_info_obj = report.borrow
                 user_obj = borrow_info_obj.user if borrow_info_obj else report.user
+
 
                 report_data.append({
                     'report_id': report.report_id,
                     'borrow_id': borrow_info_obj.borrow_id if borrow_info_obj else "Manual Entry",
                     'user_name': f"{user_obj.firstname} {user_obj.lastname}" if user_obj else "Unknown",
                     'id_number': user_obj.personal_id if user_obj else "N/A",
+                    'user_email': user_obj.email if user_obj else "N/A",
                     'item_name': report.item.item_name,
                     'reason': report.report_reason,
                     'amount_due': report.amount_to_pay,
                     'status': 'Pending' if report.status == 1 else 'Cleared',
                     'quantity': report.qty_reported,
                 })
-
-
+        
+ 
         context = {
             'reports': report_data,
             'users': users,
@@ -3352,12 +3358,14 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
             'borrow_id': borrow_info_obj.borrow_id if borrow_info_obj else "Manual Entry",
             'user_name': f"{user_obj.firstname} {user_obj.lastname}" if user_obj else "Unknown",
             'id_number': user_obj.personal_id if user_obj else "N/A",
+            'user_email': user_obj.email if user_obj else "N/A",
             'item_name': report.item.item_name,
             'reason': report.report_reason,
             'amount_due': report.amount_to_pay,
             'status': 'Pending' if report.status == 1 else 'Cleared',
             'quantity': report.qty_reported,
             'remarks': report.remarks if report.remarks else '',
+            'cleared_by': f"{report.cleared_by.firstname} {report.cleared_by.lastname}" if report.cleared_by else "Not yet cleared",
      
         }
 
@@ -3367,8 +3375,9 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
             if remarks:
                 report.remarks = remarks
             
-            # Update the status to Cleared
+            # Set the status to Cleared and record the user who cleared it
             report.status = 0  # Assuming status 0 means Cleared
+            report.cleared_by = request.user  # Save the logged-in user
             report.save()
 
             # Redirect to the same page or to the view clearance page

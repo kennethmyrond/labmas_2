@@ -50,6 +50,7 @@
                                 <th>Reason</th>
                                 <th>Quantity</th>
                                 <th>Amount to Pay</th>
+                                <th>Cleared By</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -59,6 +60,7 @@
                                 <td class="red-text">{{ report.report_reason }}</td> <!-- Reason text will be red -->
                                 <td>{{ report.qty_reported }}</td>
                                 <td>{{ report.amount_to_pay }}</td>
+                                <td>{{ report.cleared_by_name }}</td>
                             </tr>
                             {% empty %}
                             <tr>
@@ -97,6 +99,7 @@
             const amountDue = '{{report_data.amount_due}}';
             const remarks = '{{report_data.remarks}}';
             const status = '{{report_data.status}}';
+            const clearedby = '{{report_data.cleared_by_name}}';
   
             doc.setFontSize(12);
  
