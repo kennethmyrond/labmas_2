@@ -141,7 +141,16 @@
                     {% endif %}
                     
                 </div>
-            </div>
+
+                <div class="row mb-3">
+                  <label for="clearedBy" class="col-sm-2 col-form-label">Cleared By:</label>
+                  <div class="col-sm-10">
+                  
+                    {{ report_data.cleared_by }}
+                  
+                  </div>
+                </div>
+
           </div>
             
   
@@ -186,6 +195,7 @@
             const amountDue = '{{report_data.amount_due}}';
             const remarks = '{{report_data.remarks}}';
             const status = '{{report_data.status}}';
+            const clearedBy = '{{report_data.cleared_by}}'
 
       
             const clearanceData = [
@@ -197,7 +207,8 @@
               `Reason: ${reason}`,
               `Amount Due (PHP): ${amountDue}`,
               `Remarks: ${remarks}`,
-              `Status: ${status}`
+              `Status: ${status}`,
+              `Cleared By: ${clearedBy}`,
           ];
 
             

@@ -3241,7 +3241,10 @@ def clearance_student_viewClearanceDetailed(request, report_id):
 
         # Retrieve all reported items for the specific borrow entry
         report_details = reported_items.objects.filter(borrow=borrow, user=user)
-
+        # Add cleared_by info for each reported item
+        for r in report_details:
+            r.cleared_by_name = r.cleared_by.get_fullname() if r.cleared_by else "Not yet cleared"
+            
         # Context for rendering details of borrow and reports
         context = {
             'report': report,                  # Main report entry
@@ -3362,6 +3365,7 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
             'status': 'Pending' if report.status == 1 else 'Cleared',
             'quantity': report.qty_reported,
             'remarks': report.remarks if report.remarks else '',
+            'cleared_by': f"{report.cleared_by.firstname} {report.cleared_by.lastname}" if report.cleared_by else "Not yet cleared",
      
         }
 
@@ -3371,8 +3375,9 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
             if remarks:
                 report.remarks = remarks
             
-            # Update the status to Cleared
+            # Set the status to Cleared and record the user who cleared it
             report.status = 0  # Assuming status 0 means Cleared
+            report.cleared_by = request.user  # Save the logged-in user
             report.save()
 
             # Redirect to the same page or to the view clearance page
