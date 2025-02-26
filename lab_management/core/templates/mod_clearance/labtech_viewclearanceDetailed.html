@@ -74,6 +74,14 @@
                 </div>
               </div>
 
+              <div class="row mb-3">
+                <label for="email" class="col-sm-2 col-form-label">Email:</label>
+                <div class="col-sm-10">
+                    {{ report_data.user_email }}
+                </div>
+            </div>
+            
+
               <div class="row mb-3 border-1">
                 <span for="IDNumber" class="col-2 col-form-label">ID Number:</span>
                 <span class="col-10">
@@ -171,6 +179,7 @@
 
             const rfNumber = '{{ report_data.borrow_id }}';
             const studentName = '{{report_data.user_name}}';
+            const email = '{{report_data.user_email}}'
             const idNumber = '{{report_data.id_number}}';
             const itemName = '{{report_data.item_name}}';
             const reason = '{{report_data.reason}}';
@@ -182,6 +191,7 @@
             const clearanceData = [
               `RF No.: ${rfNumber}`,
               `Student Name: ${studentName}`,
+              `Email: ${email}`,
               `ID Number: ${idNumber}`,
               `Item: ${itemName}`,
               `Reason: ${reason}`,

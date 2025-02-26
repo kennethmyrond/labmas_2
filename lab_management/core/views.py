@@ -2744,7 +2744,7 @@ def borrowing_labcoord_borrowconfig(request):
                         if lead_time_prep is not None:
                             lead_time_prep = int(lead_time_prep) if lead_time_prep else None  # Convert empty string to None
                             item_description.objects.filter(item_id=item.item_id).update(lead_time_prep=lead_time_prep)
-                            
+
                         qty_limit = request.POST.get(f'qty_limit_{item.item_id}')
                         if qty_limit is not None:
                             qty_limit = int(qty_limit) if qty_limit else None
@@ -3303,23 +3303,26 @@ def clearance_labtech_viewclearance(request):
     report_data = []
 
     try:
+
         for report in reports:
                 borrow_info_obj = report.borrow
                 user_obj = borrow_info_obj.user if borrow_info_obj else report.user
+
 
                 report_data.append({
                     'report_id': report.report_id,
                     'borrow_id': borrow_info_obj.borrow_id if borrow_info_obj else "Manual Entry",
                     'user_name': f"{user_obj.firstname} {user_obj.lastname}" if user_obj else "Unknown",
                     'id_number': user_obj.personal_id if user_obj else "N/A",
+                    'user_email': user_obj.email if user_obj else "N/A",
                     'item_name': report.item.item_name,
                     'reason': report.report_reason,
                     'amount_due': report.amount_to_pay,
                     'status': 'Pending' if report.status == 1 else 'Cleared',
                     'quantity': report.qty_reported,
                 })
-
-
+        
+ 
         context = {
             'reports': report_data,
             'users': users,
@@ -3352,6 +3355,7 @@ def clearance_labtech_viewclearanceDetailed(request, report_id):
             'borrow_id': borrow_info_obj.borrow_id if borrow_info_obj else "Manual Entry",
             'user_name': f"{user_obj.firstname} {user_obj.lastname}" if user_obj else "Unknown",
             'id_number': user_obj.personal_id if user_obj else "N/A",
+            'user_email': user_obj.email if user_obj else "N/A",
             'item_name': report.item.item_name,
             'reason': report.report_reason,
             'amount_due': report.amount_to_pay,
