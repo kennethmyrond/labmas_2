@@ -2443,7 +2443,7 @@ def borrowing_student_viewPreBookRequestsview(request):
             request_date__isnull=False,
             borrow_date__isnull=False
         ).exclude(
-            truncated_request_date=F('borrow_date')  # Exclude same-day requests (walk-ins)
+            request_date=F('borrow_date')  # Exclude same-day requests (walk-ins)
         ).order_by('-request_date')
 
         # Walk-in requests: where request_date == borrow_date
