@@ -523,30 +523,32 @@
             }
         }).on('change', checkItemExpiration);
 
-        $('#itemSupplier').select2({
-            ajax: {
-                url: '/suggest_suppliers',  // Your URL endpoint to fetch supplier suggestions
-                dataType: 'json',
-                delay: 250,
-                data: function(params) {
-                    return {
-                        query: params.term // The search term that user enters
-                    };
-                },
-                processResults: function(data) {
-                    return {
-                        results: data.map(function(supplier) {
-                            return {
-                                id: supplier.suppliers_id,
-                                text: supplier.supplier_name
-                            };
-                        })
-                    };
-                },
-                placeholder: 'Search for a supplier',
-                minimumInputLength: 2
-            }
-        });
+        
+    });
+
+    $('#itemSupplier').select2({
+        ajax: {
+            url: '/suggest_suppliers',  // Your URL endpoint to fetch supplier suggestions
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+                return {
+                    query: params.term // The search term that user enters
+                };
+            },
+            processResults: function(data) {
+                return {
+                    results: data.map(function(supplier) {
+                        return {
+                            id: supplier.suppliers_id,
+                            text: supplier.supplier_name
+                        };
+                    })
+                };
+            },
+            placeholder: 'Search for a supplier',
+            minimumInputLength: 2
+        }
     });
 </script>
 

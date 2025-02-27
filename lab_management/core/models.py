@@ -387,9 +387,13 @@ class suppliers(models.Model):
     
 class ShoppingItem(models.Model):
     name = models.CharField(max_length=255)
+    existing_item = models.ForeignKey('item_description', on_delete=models.CASCADE, null=True, blank=True)
     description = models.TextField(blank=True, null=True)
     quantity = models.PositiveIntegerField()
     is_active = models.BooleanField(default=True)
+    laboratory = models.ForeignKey('Laboratory', on_delete=models.CASCADE)
+    added_by = models.ForeignKey('User', on_delete=models.CASCADE)
+    added_on = models.DateTimeField(null=True, blank=True, auto_now_add=True)
 
     def __str__(self):
         return self.name

@@ -1180,6 +1180,21 @@ def inventory_updateItem_view(request):
                 purchase_price = request.POST.get('item_price', 0.0) or 0.0
                 expiration_date = request.POST.get('expiration_date') if item_instance.expiry_type == 'Date' else None
                 maintenance_date = request.POST.get('maintenance_date') if item_instance.expiry_type == 'Maintenance' else None
+                
+                # ✅ Check if the item exists in ShoppingItem (for current lab)
+                existing_shopping_item = ShoppingItem.objects.filter(
+                    name=item_instance.item_name,
+                    laboratory_id=selected_laboratory_id,
+                    is_active=True
+                ).first()
+
+                if existing_shopping_item:
+                    existing_shopping_item.quantity -= qty_add
+                    if existing_shopping_item.quantity <= 0:
+                        existing_shopping_item.is_active = False
+                        messages.info(request, f"Item {existing_shopping_item.name} is fully stocked and removed from the shopping list.")
+                    existing_shopping_item.save()
+                
                 new_inventory_item = item_inventory.objects.create(
                     item=item_instance,
                     supplier_id=supplier_id,
@@ -1231,6 +1246,7 @@ def inventory_updateItem_view(request):
                 qr_code = f"data:image/png;base64,{qr_base64}"
 
                 logger.info(f"User {current_user} added {qty_add} of {item_instance.item_name} (Item ID: {item_id}) to inventory.")
+                messages.success(request, f"{qty_add} {existing_shopping_item.name} was added to the inventory.")
 
                 return JsonResponse({
                     'success': True,
@@ -1967,39 +1983,82 @@ def inventory_experiments(request):
         logger.error(f"Error rendering Experiments: {e}", exc_info=True)
         messages.error(request, "An error occurred while loading the Experiments page.")
         return redirect('home')  
-    
+
+@transaction.atomic
 @login_required
 @lab_permission_required('manage_shopping_list')
 def inventory_buyList(request):
-    if request.method == "POST":
-        try:
-            item_name = request.POST.get("itemName")
-            item_description = request.POST.get("itemDescription")
-            item_quantity = request.POST.get("quantity")
+    try:
+        selected_lab_id = request.session.get('selected_lab')
+        current_user = get_object_or_404(user, user_id=request.user.user_id)
 
-            if not item_name or not item_quantity:
-                    messages.error(request, "Item Name and Quantity are required.")
+        if request.method == "POST":
+            try:
+                item_type = request.POST.get("itemType")  # "new" or "existing"
+                selected_item_description = request.POST.get("itemDescription")
+                item_quantity = request.POST.get("quantity")
+
+                if not item_type or not item_quantity:
+                    messages.error(request, "Item Type and Quantity are required.")
                     return redirect("inventory_buyList")
-            
-            new_item = ShoppingItem(
-                    name=item_name,
-                    description=item_description,
-                    quantity=int(item_quantity),
-                )
-            new_item.save()
-            messages.success(request, "Item added successfully!")
-            return redirect("inventory_buyList")
-            
-            #return render(request, 'mod_inventory/inventory_buyList.html')
-        except Exception as e:
-            logger.error(f"Error adding item: {e}", exc_info=True)
-            messages.error(request, "An error occurred while adding the item.")
-            return redirect("home")
-    
-    items = ShoppingItem.objects.filter(is_active=True)
-    return render(request, "mod_inventory/inventory_buyList.html", {"items": items})
 
+                # Handling New Item
+                if item_type == "new":
+                    item_name = request.POST.get("itemName")
+                    if not item_name:
+                        messages.error(request, "Item Name is required for a new item.")
+                        return redirect("inventory_buyList")
+
+                    new_item = ShoppingItem(
+                        name=item_name,
+                        description=selected_item_description,
+                        quantity=int(item_quantity),
+                        laboratory_id=selected_lab_id,
+                        added_by=current_user,
+                        existing_item=None  # Not an existing item
+                    )
+
+                # Handling Existing Item
+                elif item_type == "existing":
+                    existing_item_id = request.POST.get("existingItem")
+                    if not existing_item_id:
+                        messages.error(request, "Please select an existing item.")
+                        return redirect("inventory_buyList")
+
+                    # Fetch existing item name for display
+                    existing_item = get_object_or_404(item_description, item_id=existing_item_id)
+
+                    new_item = ShoppingItem(
+                        name=existing_item.item_name,  # Use existing name
+                        description=selected_item_description,
+                        quantity=int(item_quantity),
+                        laboratory_id=selected_lab_id,
+                        added_by=current_user,
+                        existing_item=existing_item  # Store item_id for reference
+                    )
+
+                new_item.save()
+                messages.success(request, "Item added successfully!")
+                return redirect("inventory_buyList")
+
+            except Exception as e:
+                logger.error(f"Error adding item: {e}", exc_info=True)
+                messages.error(request, "An error occurred while adding the item.")
+                return redirect("inventory_buyList")
+
+        # Fetch items
+        items = ShoppingItem.objects.filter(is_active=True, laboratory_id=selected_lab_id)
+        return render(request, "mod_inventory/inventory_buyList.html", {"items": items})
+
+    except Exception as e:
+        logger.error(f"Error Fetching Shopping Items: {e}", exc_info=True)
+        messages.error(request, "An error occurred while fetching shopping items.")
+        return redirect("home")
+
+    
+@transaction.atomic
 @login_required
+@lab_permission_required('manage_shopping_list')
 def clear_buyItem(request, item_id):
     try:
         item = get_object_or_404(ShoppingItem, id=item_id)

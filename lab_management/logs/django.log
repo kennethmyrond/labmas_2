@@ -8515,3 +8515,62 @@ WARNING 2025-02-28 00:54:22,955 log Not Found: /suggest_inventory_items/82/
 WARNING 2025-02-28 00:54:22,956 basehttp "GET /suggest_inventory_items/82/?_type=query HTTP/1.1" 404 13432
 WARNING 2025-02-28 00:58:45,890 log Not Found: /suggest_inventory_items/82/
 WARNING 2025-02-28 00:58:45,891 basehttp "GET /suggest_inventory_items/82/?_type=query HTTP/1.1" 404 13432
+ERROR 2025-02-28 01:59:34,990 log Internal Server Error: /shopping_list/
+Traceback (most recent call last):
+  File "C:\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\decorators.py", line 21, in _wrapped_view
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 2005, in inventory_buyList
+    items = ShoppingItem.objects.filter(is_active=True, laboratory_id=selected_lab)
+                                                                      ^^^^^^^^^^^^
+NameError: name 'selected_lab' is not defined
+ERROR 2025-02-28 01:59:35,003 basehttp "GET /shopping_list/ HTTP/1.1" 500 82390
+ERROR 2025-02-28 02:21:32,047 views Error adding item: First argument to get_object_or_404() must be a Model, Manager, or QuerySet, not 'str'.
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 2013, in inventory_buyList
+    existing_item = get_object_or_404(item_description, item_id=existing_item_id)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\django\shortcuts.py", line 81, in get_object_or_404
+    raise ValueError(
+ValueError: First argument to get_object_or_404() must be a Model, Manager, or QuerySet, not 'str'.
+ERROR 2025-02-28 02:23:48,559 views Error adding item: Cannot assign "'10120240186'": "ShoppingItem.existing_item" must be a "item_description" instance.
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 2015, in inventory_buyList
+    new_item = ShoppingItem(
+               ^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\django\db\models\base.py", line 543, in __init__
+    _setattr(self, field.name, rel_obj)
+  File "C:\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 287, in __set__
+    raise ValueError(
+ValueError: Cannot assign "'10120240186'": "ShoppingItem.existing_item" must be a "item_description" instance.
+ERROR 2025-02-28 02:25:01,407 views Error adding item: 'item_description' object has no attribute 'id'
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 2021, in inventory_buyList
+    existing_item=existing_item.item_id  # Store item_id for reference
+                  ^^^^^^^^^^^^^^^^
+AttributeError: 'item_description' object has no attribute 'id'
+ERROR 2025-02-28 02:25:35,591 views Error adding item: 'item_description' object has no attribute 'id'
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 2021, in inventory_buyList
+    existing_item=existing_item.id  # Store item_id for reference
+                  ^^^^^^^^^^^^^^^^
+AttributeError: 'item_description' object has no attribute 'id'
+ERROR 2025-02-28 02:25:58,787 views Error adding item: Cannot assign "'10120240186'": "ShoppingItem.existing_item" must be a "item_description" instance.
+Traceback (most recent call last):
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\core\views.py", line 2015, in inventory_buyList
+    new_item = ShoppingItem(
+               ^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\django\db\models\base.py", line 543, in __init__
+    _setattr(self, field.name, rel_obj)
+  File "C:\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 287, in __set__
+    raise ValueError(
+ValueError: Cannot assign "'10120240186'": "ShoppingItem.existing_item" must be a "item_description" instance.
