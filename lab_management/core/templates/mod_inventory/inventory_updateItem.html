@@ -78,11 +78,14 @@
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <div id="reader" style="width: 100%;"></div> <!-- QR Scanner will be rendered here -->
+                                            <!-- QR Scanner will be rendered here -->
+                                            <!-- <div id="reader" style="width: 100%;"></div>  -->
+                                            <!-- <video id="qrVideo" style="width: 100%; height: auto;"></video> -->
+                                            <video id="qrVideo" style="display: none; width: 100%; height: 300px;"></video>
                                             <p class="text-danger" id="qrError" style="display: none;">Unable to scan QR code. Please try again.</p>
                                         </div>
                                         <div class="modal-footer">
-                                            <button id="stopQrScanner" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button id="closeQrScanner" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                                         </div>
                                     </div>
                                 </div>
@@ -268,7 +271,7 @@
     </div>
 </div>
 
-<!-- <script type="module">
+<script type="module">
     import QrScanner from "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js";
 
     QrScanner.WORKER_PATH = "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner-worker.min.js";
@@ -276,13 +279,14 @@
     document.addEventListener("DOMContentLoaded", function () {
         const scanQrButton = document.getElementById("scanQrButton");
         const qrVideo = document.getElementById("qrVideo");
-        const itemNameDropdown = $('#itemName'); // Reference the item dropdown
-        const inventoryItemDropdown = $('#inventoryItemID'); // Reference the inventory dropdown
+        const itemNameDropdown = $('#itemName');
+        const inventoryItemDropdown = $('#inventoryItemID');
         const qrScannerModalElement = document.getElementById('qrScannerModal');
         const closeButton = qrScannerModalElement.querySelector('.btn-close');
         let qrScanner;
+        let isQrSelection = false;  // ✅ Flag to differentiate QR selection from manual selection
+        let select2Initialized = false;
 
-        // Function to dynamically fetch and add an item to the dropdown
         function fetchAndAddItem(itemId, inventoryItemId) {
             $.ajax({
                 url: `/suggest_items/`,
@@ -290,12 +294,12 @@
                 method: 'GET',
                 success: function (data) {
                     if (data.length > 0) {
-                        const item = data[0]; // Assuming only one item matches the exact item_id
+                        const item = data[0];
                         const newOption = new Option(`${item.item_name} | ${item.add_cols}`, item.item_id, true, true);
-                        itemNameDropdown.append(newOption).trigger('change'); // Add and select the new option
+                        itemNameDropdown.append(newOption).trigger('change');
 
                         if (inventoryItemId && inventoryItemId !== "0") {
-                            fetchAndAddInventoryItem(itemId, inventoryItemId); // Fetch inventory item
+                            fetchAndAddInventoryItem(itemId, inventoryItemId);
                         }
                     } else {
                         alert('Item Does Not Exist. Try Again.');
@@ -307,74 +311,76 @@
             });
         }
 
-        // Function to fetch and add inventory items to the inventory dropdown
-function fetchAndAddInventoryItem(itemId, inventoryItemId) {
-    console.log(`Fetching inventory for itemId: ${itemId}, inventoryItemId: ${inventoryItemId}`);
-    $.ajax({
-        url: `/suggest_inventory_items/${itemId}/`, // Fetch inventory items for the given item_id
-        method: 'GET',
-        success: function (data) {
-            const inventoryItemDropdown = $('#inventoryItemID');
-            inventoryItemDropdown.empty(); // Clear existing options
+        function fetchAndAddInventoryItem(itemId, inventoryItemId) {
+            console.log(`Fetching inventory for itemId: ${itemId}, inventoryItemId: ${inventoryItemId}`);
 
-            data.forEach(item => {
-                const formattedText = item.expiration_date !== 'None'
-                    ? `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`
-                    : `${item.inventory_item_id} | qty: ${item.qty}`;
+            $.ajax({
+                url: `/suggest_inventory_items/${itemId}/`,
+                method: "GET",
+                success: function (data) {
+                    $('#inventoryItemIDSection').show();
+                    let currentOptions = inventoryItemDropdown.find("option").map((i, opt) => opt.value).get();
+                    let newOptions = data.map(item => String(item.inventory_item_id));
 
-                const newOption = new Option(formattedText, item.inventory_item_id);
-                inventoryItemDropdown.append(newOption);
+                    if (JSON.stringify(currentOptions) !== JSON.stringify(newOptions)) {
+                        console.log("✅ Data changed. Updating dropdown.");
+                        inventoryItemDropdown.empty();
+
+                        data.forEach(item => {
+                            let formattedText = item.expiry_type === 'Date'
+                                ? `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`
+                                : item.expiry_type === 'Usage'
+                                ? `${item.inventory_item_id} | remain use: ${item.expiration_date}, qty: ${item.qty}`
+                                : item.expiry_type === 'Maintenance'
+                                ? `${item.inventory_item_id} | maintenance: ${item.expiration_date}, qty: ${item.qty}`
+                                : `${item.inventory_item_id} | qty: ${item.qty}`;
+
+                            inventoryItemDropdown.append(new Option(formattedText, item.inventory_item_id));
+                        });
+
+                        if (!select2Initialized) {
+                            inventoryItemDropdown.select2({
+                                placeholder: "Select Inventory Item ID",
+                                allowClear: true
+                            });
+                            select2Initialized = true;
+                        }
+                    } else {
+                        console.log("🚀 No change in dropdown data. Skipping update.");
+                    }
+
+                    if (isQrSelection) {
+                        setTimeout(() => {
+                            inventoryItemDropdown.val(String(inventoryItemId)).trigger("change");
+                            console.log(`✅ Inventory item selected: ${inventoryItemId}`);
+                            isQrSelection = false;  // ✅ Reset flag after setting value
+                        }, 100);
+                    }
+                },
+                error: function () {
+                    alert("An error occurred while fetching inventory items.");
+                }
             });
-
-            inventoryItemDropdown.select2({
-                placeholder: 'Select Inventory Item ID',
-                allowClear: true,
-            });
-
-            const targetValue = String(inventoryItemId); // Convert to string to match option values
-
-            if (targetValue) {
-                setTimeout(() => {
-                    inventoryItemDropdown.val(targetValue).trigger('change');
-                    console.log(`Inventory item ID ${targetValue} selected successfully.`);
-
-                    // Debug: Log the current value of the dropdown
-                    console.log('Current dropdown value:', inventoryItemDropdown.val());
-                }, 100); // 100ms delay
-            }
-        },
-        error: function () {
-            alert('An error occurred while fetching inventory items.');
         }
-    });
-}
-        // Toggle QR scanner when the button is clicked
+
         scanQrButton.addEventListener("click", function () {
             if (!qrScanner) {
-                // Initialize the scanner
                 qrScanner = new QrScanner(qrVideo, (result) => {
-                    // Extract item_id and inventory_item_id from the scanned QR code
                     const [itemId, inventoryItemId] = result.split(", ");
-                    
                     console.log(`Scanned itemId: ${itemId}, inventoryItemId: ${inventoryItemId}`);
 
-                    // Check if the item already exists in the dropdown
+                    isQrSelection = true;  // ✅ Mark that selection is from QR
                     const exists = itemNameDropdown.find(`option[value="${itemId}"]`).length > 0;
 
                     if (exists) {
-                        // If it exists, select it
                         itemNameDropdown.val(itemId).trigger('change');
-
-                        // Only fetch inventory item if it is not null
                         if (inventoryItemId && inventoryItemId !== "0") {
                             fetchAndAddInventoryItem(itemId, inventoryItemId);
                         }
                     } else {
-                        // Fetch and add the item dynamically
                         fetchAndAddItem(itemId, inventoryItemId);
                     }
 
-                    // Stop the scanner and hide the video
                     qrScanner.stop();
                     qrVideo.style.display = "none";
                     closeButton.click();
@@ -383,33 +389,128 @@ function fetchAndAddInventoryItem(itemId, inventoryItemId) {
 
             if (qrVideo.style.display === "none") {
                 qrVideo.style.display = "block";
-                qrScanner.start(); // Start the scanner
+                qrScanner.start();
             } else {
-                qrScanner.stop(); // Stop the scanner
+                qrScanner.stop();
                 qrVideo.style.display = "none";
                 closeButton.click();
             }
         });
 
-        // Add event listener to the close button
         closeButton.addEventListener('click', function () {
             if (qrScanner) qrScanner.stop();
         });
 
-        // Initialize the dropdown with select2 and its AJAX settings
         itemNameDropdown.select2({
             ajax: {
                 url: '/suggest_items/',
                 dataType: 'json',
                 delay: 250,
                 data: function (params) {
+                    return { query: params.term };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.map(item => ({
+                            id: item.item_id,
+                            text: `${item.item_name} | ${item.add_cols}`
+                        }))
+                    };
+                },
+                placeholder: 'Search for an item',
+                minimumInputLength: 2
+            }
+        });
+
+        function checkItemExpiration() {
+            if (isQrSelection) {
+                console.log("🚀 Skipping dropdown update due to QR selection.");
+                return;
+            }
+
+            const itemId = $('#itemName').val();
+            const actionType = document.getElementById('actionType').value;
+
+            if (!itemId) {
+                $('#expirationDateRow').hide();
+                $('#maintenanceDateRow').hide();
+                $('#inventoryItemIDSection').hide();
+                return;
+            }
+
+            $.ajax({
+                url: `/check_item_expiration/${itemId}/`,
+                method: 'GET',
+                success: function (response) {
+                    if (response.rec_expiration !== "" || response.rec_per_inv || response.expiry_type !== "" || response.expiry_type !== "None") {
+                        if (actionType === 'remove' || actionType === 'report') {
+                            $('#inventoryItemIDSection').show();
+
+                            $.ajax({
+                                url: `/suggest_inventory_items/${itemId}/`,
+                                method: 'GET',
+                                success: function (data) {
+                                    let inventoryDropdown = $('#inventoryItemID');
+                                    let currentOptions = inventoryDropdown.find("option").map((i, opt) => opt.value).get();
+                                    let newOptions = data.map(item => String(item.inventory_item_id));
+
+                                    if (JSON.stringify(currentOptions) !== JSON.stringify(newOptions)) {
+                                        console.log("✅ Data changed. Updating dropdown.");
+                                        inventoryDropdown.empty();
+
+                                        data.forEach(item => {
+                                            let formattedText = item.expiry_type === 'Date'
+                                                ? `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`
+                                                : item.expiry_type === 'Usage'
+                                                ? `${item.inventory_item_id} | remain use: ${item.expiration_date}, qty: ${item.qty}`
+                                                : item.expiry_type === 'Maintenance'
+                                                ? `${item.inventory_item_id} | maintenance: ${item.expiration_date}, qty: ${item.qty}`
+                                                : `${item.inventory_item_id} | qty: ${item.qty}`;
+
+                                            inventoryDropdown.append(new Option(formattedText, item.inventory_item_id));
+                                        });
+
+                                        if (!inventoryDropdown.hasClass("select2-hidden-accessible")) {
+                                            inventoryDropdown.select2({
+                                                placeholder: "Select Inventory Item ID",
+                                                allowClear: true,
+                                            });
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    } else {
+                        $('#expirationDateRow').hide();
+                        $('#maintenanceDateRow').hide();
+                        $('#inventoryItemIDSection').hide();
+                    }
+                }
+            });
+        }
+
+        $('#itemName').on('change', checkItemExpiration);
+
+    });
+
+
+    // $('#itemName').on('change', checkItemExpiration);
+
+    $(document).ready(function() {
+        // Initialize select2 for item and supplier fields
+        $('#itemName').select2({
+            ajax: {
+                url: '/suggest_items/',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
                     return {
                         query: params.term // Search term
                     };
                 },
-                processResults: function (data) {
+                processResults: function(data) {
                     return {
-                        results: data.map(function (item) {
+                        results: data.map(function(item) {
                             return {
                                 id: item.item_id,
                                 text: `${item.item_name} | ${item.add_cols}`
@@ -420,203 +521,36 @@ function fetchAndAddInventoryItem(itemId, inventoryItemId) {
                 placeholder: 'Search for an item',
                 minimumInputLength: 2
             }
-        });
+        }).on('change', checkItemExpiration);
 
-        // inventoryItemDropdown.select2({
-        //     placeholder: 'Select Inventory Item ID',
-        //     allowClear: true
-        // });
+        $('#itemSupplier').select2({
+            ajax: {
+                url: '/suggest_suppliers',  // Your URL endpoint to fetch supplier suggestions
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        query: params.term // The search term that user enters
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data.map(function(supplier) {
+                            return {
+                                id: supplier.suppliers_id,
+                                text: supplier.supplier_name
+                            };
+                        })
+                    };
+                },
+                placeholder: 'Search for a supplier',
+                minimumInputLength: 2
+            }
+        });
     });
 </script>
- -->
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const scanQrButton = document.getElementById("scanQrButton");
-    const closeButton = document.getElementById("closeQrScanner");
-    const itemNameDropdown = $('#itemName');
-    const inventoryItemDropdown = $('#inventoryItemID');
-    let qrScanner;
 
-    function startScanner() {
-        if (qrScanner) return; 
-
-        qrScanner = new Html5Qrcode("reader");
-
-        qrScanner.start(
-            { facingMode: "environment" },
-            {
-                fps: 10,
-                qrbox: { width: 250, height: 250 }
-            },
-            (decodedText) => {
-                console.log("Scanned QR Code:", decodedText);
-
-                if (!/^\d+,\s?\d+$/.test(decodedText)) {
-                    console.warn("Invalid QR Code Format. Expected format: itemID, inventoryID");
-                    return;
-                }
-
-                processScannedData(decodedText);
-                stopScanner();
-                $("#qrScannerModal").modal("hide");
-            },
-            (errorMessage) => {
-                if (errorMessage.includes("No MultiFormat Readers were able to detect the code")) {
-                    return;
-                }
-                console.warn("QR Scan Error:", errorMessage);
-            }
-        ).catch((err) => {
-            console.error("QR Scanner Error:", err);
-            alert("Error accessing camera: " + err);
-        });
-    }
-
-    function stopScanner() {
-        if (qrScanner) {
-            qrScanner.stop().then(() => {
-                qrScanner.clear();
-                qrScanner = null;
-
-                $(".modal-backdrop").remove();
-                $("body").removeClass("modal-open");
-                setTimeout(() => document.body.focus(), 300);
-            }).catch((err) => console.error("Stop Scanner Error:", err));
-        }
-    }
-
-    function processScannedData(scannedText) {
-        console.log("Processing Scanned Data:", scannedText);
-
-        const [itemId, inventoryItemId] = scannedText.split(",").map((s) => s.trim());
-
-        console.log(`Extracted Item ID: ${itemId}, Inventory ID: ${inventoryItemId}`);
-
-        const exists = itemNameDropdown.find(`option[value="${itemId}"]`).length > 0;
-
-        if (exists) {
-            itemNameDropdown.val(itemId).trigger('change');
-
-            if (inventoryItemId && inventoryItemId !== "0") {
-                fetchAndAddInventoryItem(itemId, inventoryItemId);
-            }
-        } else {
-            fetchAndAddItem(itemId, inventoryItemId);
-        }
-    }
-
-    scanQrButton.addEventListener("click", startScanner);
-    closeButton.addEventListener("click", stopScanner);
-
-    function fetchAndAddItem(itemId, inventoryItemId) {
-        $.ajax({
-            url: `/suggest_items/`,
-            data: { query: itemId },
-            method: "GET",
-            success: function (data) {
-                if (data.length > 0) {
-                    const item = data[0];
-                    const newOption = new Option(`${item.item_name} | ${item.add_cols}`, item.item_id, true, true);
-                    itemNameDropdown.append(newOption).trigger("change");
-
-                    if (inventoryItemId && inventoryItemId !== "0") {
-                        fetchAndAddInventoryItem(itemId, inventoryItemId);
-                    }
-                } else {
-                    alert("Item Does Not Exist. Try Again.");
-                }
-            },
-            error: function () {
-                alert("An error occurred while fetching item details.");
-            }
-        });
-    }
-
-    // function fetchAndSelectInventoryItem(itemId, inventoryItemId) {
-    //     console.log(`Fetching inventory for itemId: ${itemId}, inventoryItemId: ${inventoryItemId}`);
-
-    //     $.ajax({
-    //         url: `/suggest_inventory_items/${itemId}/`, 
-    //         method: "GET",
-    //         success: function (data) {
-    //             let selectedFound = false;
-
-    //             inventoryItemDropdown.empty().append(data.map(item => {
-    //                 const formattedText = item.expiration_date !== "None"
-    //                     ? `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`
-    //                     : `${item.inventory_item_id} | qty: ${item.qty}`;
-
-    //                 const newOption = new Option(formattedText, item.inventory_item_id, false, false);
-
-    //                 if (String(item.inventory_item_id) === String(inventoryItemId)) {
-    //                     selectedFound = true;
-    //                 }
-
-    //                 return newOption;
-    //             }));
-
-    //             inventoryItemDropdown.select2({
-    //                 placeholder: "Select Inventory Item ID",
-    //                 allowClear: true
-    //             });
-
-    //             if (selectedFound) {
-    //                 setTimeout(() => {
-    //                     inventoryItemDropdown.val(String(inventoryItemId)).trigger("change");
-    //                     console.log(`Selected Inventory ID: ${inventoryItemId}`);
-    //                 }, 100);
-    //             }
-    //         },
-    //         error: function () {
-    //             alert("An error occurred while fetching inventory items.");
-    //         }
-    //     });
-    // }
-
-function fetchAndAddInventoryItem(itemId, inventoryItemId) {
-    console.log(`Fetching inventory for itemId: ${itemId}, inventoryItemId: ${inventoryItemId}`);
-    $.ajax({
-        url: `/suggest_inventory_items/${itemId}/`, // Fetch inventory items for the given item_id
-        method: 'GET',
-        success: function (data) {
-            const inventoryItemDropdown = $('#inventoryItemID');
-            inventoryItemDropdown.empty(); // Clear existing options
-
-            data.forEach(item => {
-                const formattedText = item.expiration_date !== 'None'
-                    ? `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`
-                    : `${item.inventory_item_id} | qty: ${item.qty}`;
-
-                const newOption = new Option(formattedText, item.inventory_item_id);
-                inventoryItemDropdown.append(newOption);
-            });
-
-            inventoryItemDropdown.select2({
-                placeholder: 'Select Inventory Item ID',
-                allowClear: true,
-            });
-
-            const targetValue = String(inventoryItemId); // Convert to string to match option values
-
-            if (targetValue) {
-                setTimeout(() => {
-                    inventoryItemDropdown.val(targetValue).trigger('change');
-                    console.log(`Inventory item ID ${targetValue} selected successfully.`);
-
-                    // Debug: Log the current value of the dropdown
-                    console.log('Current dropdown value:', inventoryItemDropdown.val());
-                }, 100); // 100ms delay
-            }
-        },
-        error: function () {
-            alert('An error occurred while fetching inventory items.');
-        }
-    });
-}
-});
-</script>
- 
 <script>
     // check date purchased and received
     document.addEventListener('DOMContentLoaded', function() {
@@ -736,162 +670,42 @@ function fetchAndAddInventoryItem(itemId, inventoryItemId) {
     }
 
     function submitForm() {
-    $('#confirmationModal').modal('hide');
+        $('#confirmationModal').modal('hide');
 
-    const actionType = document.getElementById('actionType').value;
+        const actionType = document.getElementById('actionType').value;
 
-    // Submit the form data via AJAX
-    $.ajax({
-        type: 'POST',
-        url: '', // Keep this as the current view URL
-        data: $('#updateForm').serialize(),
-        success: function(response) {
-            if (response.success) {
-                if (actionType === 'add') {
-                    // Handle "add" action
-                    if (response.new_inventory_item_id) {
-                        // Populate the modal with the response data
-                        $('#newInventoryItemId').text(response.new_inventory_item_id);
-                        $('#itemQrCodeImage').attr('src', response.item_qrcode); // Set the QR code image
-                        $('#qr_code_dl').attr('href', response.item_qrcode); // Set download link
-                        $('#qr_code_dl').attr('download', `QR_${response.item_name}_${response.new_inventory_item_id}.png`); // Set download filename
-                        $('#successModal').modal('show');
-                    } else {
-                        alert('Error adding item to inventory. Please try again.');
+        // Submit the form data via AJAX
+        $.ajax({
+            type: 'POST',
+            url: '', // Keep this as the current view URL
+            data: $('#updateForm').serialize(),
+            success: function(response) {
+                if (response.success) {
+                    if (actionType === 'add') {
+                        // Handle "add" action
+                        if (response.new_inventory_item_id) {
+                            // Populate the modal with the response data
+                            $('#newInventoryItemId').text(response.new_inventory_item_id);
+                            $('#itemQrCodeImage').attr('src', response.item_qrcode); // Set the QR code image
+                            $('#qr_code_dl').attr('href', response.item_qrcode); // Set download link
+                            $('#qr_code_dl').attr('download', `QR_${response.item_name}_${response.new_inventory_item_id}.png`); // Set download filename
+                            $('#successModal').modal('show');
+                        } else {
+                            alert('Error adding item to inventory. Please try again.');
+                        }
+                    } else if (actionType === 'remove' || actionType === 'report') {
+                        // Handle "remove" or "report" action
+                        location.reload(); // Reload the page to reflect changes
                     }
-                } else if (actionType === 'remove' || actionType === 'report') {
-                    // Handle "remove" or "report" action
-                    location.reload(); // Reload the page to reflect changes
+                } else {
+                    alert('An error occurred while processing the request.');
                 }
-            } else {
+            },
+            error: function() {
                 alert('An error occurred while processing the request.');
             }
-        },
-        error: function() {
-            alert('An error occurred while processing the request.');
-        }
-    });
-}
-
-function checkItemExpiration() {
-    const itemId = $('#itemName').val();
-    const actionType = document.getElementById('actionType').value;
-
-    if (!itemId) {
-        $('#expirationDateRow').hide();
-        $('#maintenanceDateRow').hide();
-        $('#inventoryItemIDSection').hide();
-        return;
-    }
-
-    // AJAX call to check if the item requires expiration and to populate inventory items
-    $.ajax({
-        url: `/check_item_expiration/${itemId}/`,
-        method: 'GET',
-        success: function(response) {
-            if (response.rec_expiration!=="" || response.rec_per_inv) {
-                if (actionType === 'remove' || actionType === 'report') {
-                    $('#inventoryItemIDSection').show();
-
-                    // Fetch inventory items for the selected item
-                    $.ajax({
-                        url: `/suggest_inventory_items/${itemId}/`,
-                        method: 'GET',
-                        success: function(data) {
-                            const inventoryDropdown = $('#inventoryItemID');
-                            inventoryDropdown.empty();  // Clear existing options
-                            let formattedText;
-                            data.forEach(item => {
-                                // Format: <inventory_item_id> \ exp:<expiration_date> , qty: <qty>
-                                if(item.expiry_type === 'Date'){
-                                    formattedText = `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`;
-                                } else if(item.expiry_type === 'Usage'){
-                                    formattedText = `${item.inventory_item_id} | remain use: ${item.expiration_date}, qty: ${item.qty}`;
-                                } else if(item.expiry_type === 'Maintenance'){
-                                    formattedText = `${item.inventory_item_id} | maintenance: ${item.expiration_date}, qty: ${item.qty}`;
-                                } else{
-                                    formattedText = `${item.inventory_item_id} | qty: ${item.qty}`;
-                                }
-                                inventoryDropdown.append(new Option(formattedText, item.inventory_item_id));
-                            });
-
-                            // Reinitialize Select2 with updated options
-                            inventoryDropdown.select2({
-                                placeholder: 'Select Inventory Item ID',
-                                allowClear: true,
-                            });
-                        }
-                    });
-                } else {
-                    if(response.rec_expiration==='Date'){
-                        $('#expirationDateRow').show();
-                    }
-                    if(response.rec_expiration==='Maintenance'){
-                        $('#maintenanceDateRow').show();
-                    }
-                }
-            } else {
-                $('#expirationDateRow').hide();
-                $('#maintenanceDateRow').hide();
-                $('#inventoryItemIDSection').hide();
-            }
-        }
-    });
-}
-
-    $('#itemName').on('change', checkItemExpiration);
-    $(document).ready(function() {
-        // Initialize select2 for item and supplier fields
-        $('#itemName').select2({
-            ajax: {
-                url: '/suggest_items/',
-                dataType: 'json',
-                delay: 250,
-                data: function(params) {
-                    return {
-                        query: params.term // Search term
-                    };
-                },
-                processResults: function(data) {
-                    return {
-                        results: data.map(function(item) {
-                            return {
-                                id: item.item_id,
-                                text: `${item.item_name} | ${item.add_cols}`
-                            };
-                        })
-                    };
-                },
-                placeholder: 'Search for an item',
-                minimumInputLength: 2
-            }
-        }).on('change', checkItemExpiration);
-
-        $('#itemSupplier').select2({
-            ajax: {
-                url: '/suggest_suppliers',  // Your URL endpoint to fetch supplier suggestions
-                dataType: 'json',
-                delay: 250,
-                data: function(params) {
-                    return {
-                        query: params.term // The search term that user enters
-                    };
-                },
-                processResults: function(data) {
-                    return {
-                        results: data.map(function(supplier) {
-                            return {
-                                id: supplier.suppliers_id,
-                                text: supplier.supplier_name
-                            };
-                        })
-                    };
-                },
-                placeholder: 'Search for a supplier',
-                minimumInputLength: 2
-            }
         });
-    });
+    }
 
     function toggleActionFields() {
         const actionType = document.getElementById('actionType').value;
@@ -913,5 +727,4 @@ function checkItemExpiration() {
     }
 
 </script>
-
 {% endblock %}
