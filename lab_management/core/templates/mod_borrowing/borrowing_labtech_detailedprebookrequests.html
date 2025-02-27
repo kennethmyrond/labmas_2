@@ -89,7 +89,7 @@
                                                 <h5 class="modal-title" id="selectInventoryModalLabel">Select Inventory Items for {{ item.item.item_name }}</h5>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
-                                            <div class="modal-body">
+                                            <!-- <div class="modal-body">
                                                 {% for i in "x"|rjust:item.qty %}
                                                     <div class="mb-3">
                                                         <label class="form-label">Select Inventory Item {{ forloop.counter }}</label>
@@ -103,7 +103,22 @@
                                                         </select>
                                                     </div>
                                                 {% endfor %}
-                                            </div>
+                                            </div> -->
+                                            <div class="modal-body">
+                                                {% for i in "x"|rjust:item.qty %}
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Select Inventory Item {{ forloop.counter }}</label>
+                                                        <select class="form-select inventory-item-select" name="inventory_items_{{ item.id }}" data-item-id="{{ item.item.item_id }}" required>
+                                                            <option value="">-- Select Inventory Item --</option>
+                                                            {% for inv_item in inventory_items_map|get_item:item.id %}
+                                                                <option value="{{ inv_item.inventory_item_id }}">
+                                                                    {{ inv_item.inventory_item_id }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>                                            
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                                             </div>
@@ -182,6 +197,41 @@
 </section>
 
 <script type="text/javascript">
+    $(document).ready(function () {
+        function initializeSelect2() {
+            $('.inventory-item-select').each(function () {
+                let selectElement = $(this);
+                let itemId = selectElement.data('item-id'); // Get itemId from data attribute
+                
+                if (!selectElement.hasClass("select2-hidden-accessible")) {
+                    selectElement.select2({
+                        placeholder: "Select Inventory Item",
+                        allowClear: true,
+                        dropdownParent: selectElement.closest('.modal'),
+                        width: '100%',
+                        ajax: {
+                            url: function () {
+                                return `/suggest_inventory_items/${itemId}/`; // Correctly use itemId
+                            },
+                            dataType: 'json',
+                            delay: 250,
+                            processResults: function (data) {
+                                return {
+                                    results: data.map(item => ({
+                                        id: item.inventory_item_id,
+                                        text: `${item.inventory_item_id} | qty: ${item.qty}`
+                                    }))
+                                };
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        // Call function on page load
+        initializeSelect2();
+    });
 
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('downloadBtn').addEventListener('click', function() {

@@ -1,0 +1,362 @@
+CREATE TABLE `core_borrow_info` (
+  `borrow_id` varchar(20) NOT NULL,
+  `b_user_id` varchar(20) DEFAULT NULL,
+  `request_date` datetime(6) DEFAULT NULL,
+  `borrow_date` date DEFAULT NULL,
+  `due_date` date DEFAULT NULL,
+  `status` varchar(1) DEFAULT NULL,
+  `questions_responses` json NOT NULL,
+  `remarks` varchar(45) DEFAULT NULL,
+  `notification_sent` tinyint(1) NOT NULL,
+  `approved_by_id` varchar(20) DEFAULT NULL,
+  `user_id` varchar(20) DEFAULT NULL,
+  `laboratory_id` varchar(20) NOT NULL,
+  PRIMARY KEY (`borrow_id`),
+  KEY `core_borrow_info_approved_by_id_660d5ff4_fk_core_user_user_id` (`approved_by_id`),
+  KEY `core_borrow_info_user_id_666f1b4a_fk_core_user_user_id` (`user_id`),
+  KEY `core_borrow_info_laboratory_id_f00ec501_fk_core_labo` (`laboratory_id`),
+  CONSTRAINT `core_borrow_info_approved_by_id_660d5ff4_fk_core_user_user_id` FOREIGN KEY (`approved_by_id`) REFERENCES `core_user` (`user_id`),
+  CONSTRAINT `core_borrow_info_laboratory_id_f00ec501_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`),
+  CONSTRAINT `core_borrow_info_user_id_666f1b4a_fk_core_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `core_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_borrowed_items` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `inventory_item` varchar(255) DEFAULT NULL,
+  `qty` int DEFAULT NULL,
+  `unit` varchar(20) DEFAULT NULL,
+  `returned_qty` int NOT NULL,
+  `remarks` varchar(1) DEFAULT NULL,
+  `borrow_id` varchar(20) NOT NULL,
+  `item_id` varchar(20) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `core_borrowed_items_borrow_id_item_id_a957da68_uniq` (`borrow_id`,`item_id`),
+  KEY `core_borrowed_items_item_id_57af546b_fk_core_item` (`item_id`),
+  CONSTRAINT `core_borrowed_items_borrow_id_9019ab22_fk_core_borr` FOREIGN KEY (`borrow_id`) REFERENCES `core_borrow_info` (`borrow_id`),
+  CONSTRAINT `core_borrowed_items_item_id_57af546b_fk_core_item` FOREIGN KEY (`item_id`) REFERENCES `core_item_description` (`item_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=95 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_borrowing_config` (
+  `laboratory_id` varchar(20) NOT NULL,
+  `allow_walkin` tinyint(1) NOT NULL,
+  `allow_prebook` tinyint(1) NOT NULL,
+  `prebook_lead_time` int NOT NULL,
+  `allow_shortterm` tinyint(1) NOT NULL,
+  `allow_longterm` tinyint(1) NOT NULL,
+  `questions_config` json NOT NULL,
+  PRIMARY KEY (`laboratory_id`),
+  CONSTRAINT `core_borrowing_confi_laboratory_id_8acf5be1_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_item_description` (
+  `item_id` varchar(20) NOT NULL,
+  `item_name` varchar(45) DEFAULT NULL,
+  `alert_qty` int DEFAULT NULL,
+  `add_cols` varchar(255) DEFAULT NULL,
+  `is_disabled` tinyint(1) NOT NULL,
+  `rec_per_inv` tinyint(1) NOT NULL,
+  `allow_borrow` tinyint(1) NOT NULL,
+  `is_consumable` tinyint(1) NOT NULL,
+  `rec_expiration` tinyint(1) NOT NULL,
+  `expiry_type` varchar(45) DEFAULT NULL,
+  `max_uses` int DEFAULT NULL,
+  `maintenance_interval` int DEFAULT NULL,
+  `lead_time_prep` int DEFAULT NULL,
+  `qty_limit` int DEFAULT NULL,
+  `laboratory_id` varchar(20) DEFAULT NULL,
+  `itemType_id` int DEFAULT NULL,
+  PRIMARY KEY (`item_id`),
+  KEY `core_item_descriptio_itemType_id_175cb0c4_fk_core_item` (`itemType_id`),
+  KEY `core_item_descriptio_laboratory_id_544e816d_fk_core_labo` (`laboratory_id`),
+  CONSTRAINT `core_item_descriptio_itemType_id_175cb0c4_fk_core_item` FOREIGN KEY (`itemType_id`) REFERENCES `core_item_types` (`itemType_id`),
+  CONSTRAINT `core_item_descriptio_laboratory_id_544e816d_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_item_expirations` (
+  `inventory_item_id` varchar(20) NOT NULL,
+  `expired_date` date DEFAULT NULL,
+  `remaining_uses` int DEFAULT NULL,
+  `next_maintenance_date` date DEFAULT NULL,
+  PRIMARY KEY (`inventory_item_id`),
+  CONSTRAINT `core_item_expiration_inventory_item_id_d008ba34_fk_core_item` FOREIGN KEY (`inventory_item_id`) REFERENCES `core_item_inventory` (`inventory_item_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_item_handling` (
+  `item_handling_id` int NOT NULL AUTO_INCREMENT,
+  `timestamp` datetime(6) DEFAULT NULL,
+  `changes` varchar(1) NOT NULL,
+  `qty` int NOT NULL,
+  `remarks` varchar(45) DEFAULT NULL,
+  `inventory_item_id` varchar(20) DEFAULT NULL,
+  `updated_by_id` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`item_handling_id`),
+  KEY `core_item_handling_inventory_item_id_0453f3f1_fk_core_item` (`inventory_item_id`),
+  KEY `core_item_handling_updated_by_id_69dbe00f_fk_core_user_user_id` (`updated_by_id`),
+  CONSTRAINT `core_item_handling_inventory_item_id_0453f3f1_fk_core_item` FOREIGN KEY (`inventory_item_id`) REFERENCES `core_item_inventory` (`inventory_item_id`),
+  CONSTRAINT `core_item_handling_updated_by_id_69dbe00f_fk_core_user_user_id` FOREIGN KEY (`updated_by_id`) REFERENCES `core_user` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=325 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_item_inventory` (
+  `inventory_item_id` varchar(20) NOT NULL,
+  `date_purchased` datetime(6) DEFAULT NULL,
+  `date_received` datetime(6) DEFAULT NULL,
+  `purchase_price` double DEFAULT NULL,
+  `remarks` varchar(45) DEFAULT NULL,
+  `qty` int NOT NULL,
+  `uses` int NOT NULL,
+  `item_id` varchar(20) NOT NULL,
+  `supplier_id` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`inventory_item_id`),
+  KEY `core_item_inventory_item_id_08cd8b93_fk_core_item` (`item_id`),
+  KEY `core_item_inventory_supplier_id_6be69ccf_fk_core_supp` (`supplier_id`),
+  CONSTRAINT `core_item_inventory_item_id_08cd8b93_fk_core_item` FOREIGN KEY (`item_id`) REFERENCES `core_item_description` (`item_id`),
+  CONSTRAINT `core_item_inventory_supplier_id_6be69ccf_fk_core_supp` FOREIGN KEY (`supplier_id`) REFERENCES `core_suppliers` (`suppliers_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_item_types` (
+  `itemType_id` int NOT NULL AUTO_INCREMENT,
+  `itemType_name` varchar(45) DEFAULT NULL,
+  `add_cols` longtext NOT NULL,
+  `is_consumable` tinyint(1) NOT NULL,
+  `laboratory_id` varchar(20) NOT NULL,
+  PRIMARY KEY (`itemType_id`),
+  KEY `core_item_types_laboratory_id_6bdc239f_fk_core_labo` (`laboratory_id`),
+  CONSTRAINT `core_item_types_laboratory_id_6bdc239f_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_laboratory` (
+  `laboratory_id` varchar(20) NOT NULL,
+  `name` varchar(45) DEFAULT NULL,
+  `description` varchar(45) DEFAULT NULL,
+  `department` varchar(45) DEFAULT NULL,
+  `is_available` tinyint(1) NOT NULL,
+  `date_created` datetime(6) NOT NULL,
+  `modules` json NOT NULL,
+  PRIMARY KEY (`laboratory_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_laboratory_permissions` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `laboratory_id` varchar(20) NOT NULL,
+  `role_id` int NOT NULL,
+  `permissions_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `core_laboratory_permissi_role_id_laboratory_id_pe_24944900_uniq` (`role_id`,`laboratory_id`,`permissions_id`),
+  KEY `core_laboratory_perm_laboratory_id_e02dcadd_fk_core_labo` (`laboratory_id`),
+  KEY `core_laboratory_perm_permissions_id_41789e3d_fk_core_perm` (`permissions_id`),
+  CONSTRAINT `core_laboratory_perm_laboratory_id_e02dcadd_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`),
+  CONSTRAINT `core_laboratory_perm_permissions_id_41789e3d_fk_core_perm` FOREIGN KEY (`permissions_id`) REFERENCES `core_permissions` (`permission_id`),
+  CONSTRAINT `core_laboratory_perm_role_id_fda8b80e_fk_core_labo` FOREIGN KEY (`role_id`) REFERENCES `core_laboratory_roles` (`roles_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=577 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_laboratory_reservations` (
+  `reservation_id` varchar(20) NOT NULL,
+  `r_user_id` varchar(20) DEFAULT NULL,
+  `request_date` datetime(6) NOT NULL,
+  `start_date` date DEFAULT NULL,
+  `start_time` time(6) DEFAULT NULL,
+  `end_time` time(6) DEFAULT NULL,
+  `status` varchar(1) NOT NULL,
+  `purpose` varchar(255) DEFAULT NULL,
+  `num_people` int DEFAULT NULL,
+  `contact_email` varchar(254) DEFAULT NULL,
+  `contact_name` varchar(255) DEFAULT NULL,
+  `filled_approval_form` varchar(100) DEFAULT NULL,
+  `laboratory_id` varchar(20) NOT NULL,
+  `user_id` varchar(20) DEFAULT NULL,
+  `room_id` varchar(20) DEFAULT NULL,
+  `table_id` int DEFAULT NULL,
+  PRIMARY KEY (`reservation_id`),
+  KEY `core_laboratory_rese_laboratory_id_9145227f_fk_core_labo` (`laboratory_id`),
+  KEY `core_laboratory_rese_user_id_07753dec_fk_core_user` (`user_id`),
+  KEY `core_laboratory_rese_room_id_b9d5ad8a_fk_core_room` (`room_id`),
+  KEY `core_laboratory_rese_table_id_3ec65593_fk_core_room` (`table_id`),
+  CONSTRAINT `core_laboratory_rese_laboratory_id_9145227f_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`),
+  CONSTRAINT `core_laboratory_rese_room_id_b9d5ad8a_fk_core_room` FOREIGN KEY (`room_id`) REFERENCES `core_rooms` (`room_id`),
+  CONSTRAINT `core_laboratory_rese_table_id_3ec65593_fk_core_room` FOREIGN KEY (`table_id`) REFERENCES `core_roomtable` (`table_id`),
+  CONSTRAINT `core_laboratory_rese_user_id_07753dec_fk_core_user` FOREIGN KEY (`user_id`) REFERENCES `core_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_laboratory_roles` (
+  `roles_id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(45) DEFAULT NULL,
+  `laboratory_id` varchar(20) NOT NULL,
+  PRIMARY KEY (`roles_id`),
+  KEY `core_laboratory_role_laboratory_id_fa98590f_fk_core_labo` (`laboratory_id`),
+  CONSTRAINT `core_laboratory_role_laboratory_id_fa98590f_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_laboratory_users` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `is_active` tinyint(1) NOT NULL,
+  `status` varchar(1) NOT NULL,
+  `timestamp` datetime(6) DEFAULT NULL,
+  `laboratory_id` varchar(20) NOT NULL,
+  `role_id` int NOT NULL,
+  `user_id` varchar(20) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `core_laboratory_user_laboratory_id_0f3a812c_fk_core_labo` (`laboratory_id`),
+  KEY `core_laboratory_user_role_id_fa817d1a_fk_core_labo` (`role_id`),
+  KEY `core_laboratory_users_user_id_35bb59b1_fk_core_user_user_id` (`user_id`),
+  CONSTRAINT `core_laboratory_user_laboratory_id_0f3a812c_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`),
+  CONSTRAINT `core_laboratory_user_role_id_fa817d1a_fk_core_labo` FOREIGN KEY (`role_id`) REFERENCES `core_laboratory_roles` (`roles_id`),
+  CONSTRAINT `core_laboratory_users_user_id_35bb59b1_fk_core_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `core_user` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_module` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  `enabled` tinyint(1) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_notification` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `message` varchar(255) NOT NULL,
+  `is_read` tinyint(1) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `user_id` varchar(20) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `core_notification_user_id_6e341aac_fk_core_user_user_id` (`user_id`),
+  CONSTRAINT `core_notification_user_id_6e341aac_fk_core_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `core_user` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=116 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_permissions` (
+  `permission_id` int NOT NULL AUTO_INCREMENT,
+  `codename` varchar(45) DEFAULT NULL,
+  `name` varchar(45) DEFAULT NULL,
+  `module_id` bigint NOT NULL,
+  PRIMARY KEY (`permission_id`),
+  KEY `core_permissions_module_id_f3a7c6ca_fk_core_module_id` (`module_id`),
+  CONSTRAINT `core_permissions_module_id_f3a7c6ca_fk_core_module_id` FOREIGN KEY (`module_id`) REFERENCES `core_module` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_reported_items` (
+  `report_id` varchar(20) NOT NULL,
+  `qty_reported` int NOT NULL,
+  `report_reason` varchar(255) NOT NULL,
+  `amount_to_pay` decimal(10,2) DEFAULT NULL,
+  `reported_date` datetime(6) NOT NULL,
+  `remarks` longtext,
+  `status` int NOT NULL,
+  `borrow_id` varchar(20) DEFAULT NULL,
+  `item_id` varchar(20) DEFAULT NULL,
+  `laboratory_id` varchar(20) NOT NULL,
+  `user_id` varchar(20) DEFAULT NULL,
+  `cleared_by_id` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`report_id`),
+  KEY `core_reported_items_borrow_id_2c91bcb3_fk_core_borr` (`borrow_id`),
+  KEY `core_reported_items_item_id_1c1a1b8d_fk_core_item` (`item_id`),
+  KEY `core_reported_items_laboratory_id_d3fb1b2a_fk_core_labo` (`laboratory_id`),
+  KEY `core_reported_items_user_id_e176eec4_fk_core_user_user_id` (`user_id`),
+  KEY `core_reported_items_cleared_by_id_f48d0fc4_fk_core_user_user_id` (`cleared_by_id`),
+  CONSTRAINT `core_reported_items_borrow_id_2c91bcb3_fk_core_borr` FOREIGN KEY (`borrow_id`) REFERENCES `core_borrow_info` (`borrow_id`),
+  CONSTRAINT `core_reported_items_cleared_by_id_f48d0fc4_fk_core_user_user_id` FOREIGN KEY (`cleared_by_id`) REFERENCES `core_user` (`user_id`),
+  CONSTRAINT `core_reported_items_item_id_1c1a1b8d_fk_core_item` FOREIGN KEY (`item_id`) REFERENCES `core_item_description` (`item_id`),
+  CONSTRAINT `core_reported_items_laboratory_id_d3fb1b2a_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`),
+  CONSTRAINT `core_reported_items_user_id_e176eec4_fk_core_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `core_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_reservation_config` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `reservation_type` varchar(10) NOT NULL,
+  `start_time` time(6) DEFAULT NULL,
+  `end_time` time(6) DEFAULT NULL,
+  `require_approval` tinyint(1) NOT NULL,
+  `require_payment` tinyint(1) NOT NULL,
+  `approval_form` varchar(100) DEFAULT NULL,
+  `tc_description` longtext,
+  `leadtime` int unsigned NOT NULL,
+  `laboratory_id` varchar(20) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `core_reservation_con_laboratory_id_4f833299_fk_core_labo` (`laboratory_id`),
+  CONSTRAINT `core_reservation_con_laboratory_id_4f833299_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`),
+  CONSTRAINT `core_reservation_config_chk_1` CHECK ((`leadtime` >= 0))
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_rooms` (
+  `room_id` varchar(20) NOT NULL,
+  `name` varchar(45) DEFAULT NULL,
+  `capacity` int NOT NULL,
+  `description` varchar(45) DEFAULT NULL,
+  `is_disabled` tinyint(1) NOT NULL,
+  `is_reservable` tinyint(1) NOT NULL,
+  `blocked_time` varchar(45) NOT NULL,
+  `laboratory_id` varchar(20) NOT NULL,
+  PRIMARY KEY (`room_id`),
+  KEY `core_rooms_laboratory_id_4036fb4d_fk_core_labo` (`laboratory_id`),
+  CONSTRAINT `core_rooms_laboratory_id_4036fb4d_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_roomtable` (
+  `table_id` int NOT NULL AUTO_INCREMENT,
+  `table_name` varchar(45) DEFAULT NULL,
+  `capacity` int NOT NULL,
+  `blocked_time` json NOT NULL,
+  `room_id` varchar(20) NOT NULL,
+  PRIMARY KEY (`table_id`),
+  KEY `core_roomtable_room_id_3d1e3f4d_fk_core_rooms_room_id` (`room_id`),
+  CONSTRAINT `core_roomtable_room_id_3d1e3f4d_fk_core_rooms_room_id` FOREIGN KEY (`room_id`) REFERENCES `core_rooms` (`room_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_shoppingitem` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `description` longtext,
+  `quantity` int unsigned NOT NULL,
+  `is_active` tinyint(1) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `core_shoppingitem_chk_1` CHECK ((`quantity` >= 0))
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_suppliers` (
+  `suppliers_id` varchar(20) NOT NULL,
+  `supplier_name` varchar(45) NOT NULL,
+  `contact_person` varchar(45) DEFAULT NULL,
+  `contact_number` bigint DEFAULT NULL,
+  `email` varchar(254) DEFAULT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `is_disabled` tinyint(1) NOT NULL,
+  `laboratory_id` varchar(20) NOT NULL,
+  PRIMARY KEY (`suppliers_id`),
+  UNIQUE KEY `email` (`email`),
+  KEY `core_suppliers_laboratory_id_1ca623d7_fk_core_labo` (`laboratory_id`),
+  CONSTRAINT `core_suppliers_laboratory_id_1ca623d7_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_user` (
+  `password` varchar(128) NOT NULL,
+  `last_login` datetime(6) DEFAULT NULL,
+  `user_id` varchar(20) NOT NULL,
+  `firstname` varchar(45) NOT NULL,
+  `lastname` varchar(45) NOT NULL,
+  `username` varchar(45) DEFAULT NULL,
+  `email` varchar(254) NOT NULL,
+  `personal_id` varchar(45) DEFAULT NULL,
+  `date_joined` datetime(6) NOT NULL,
+  `is_deactivated` tinyint(1) NOT NULL,
+  `is_staff` tinyint(1) NOT NULL,
+  `is_superuser` tinyint(1) NOT NULL,
+  PRIMARY KEY (`user_id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `core_workinprogress` (
+  `wip_id` varchar(20) NOT NULL,
+  `start_time` datetime(6) NOT NULL,
+  `end_time` datetime(6) DEFAULT NULL,
+  `description` longtext NOT NULL,
+  `status` varchar(1) NOT NULL,
+  `remarks` longtext,
+  `laboratory_id` varchar(20) NOT NULL,
+  `room_id` varchar(20) DEFAULT NULL,
+  `user_id` varchar(20) DEFAULT NULL,
+  `wip_image` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`wip_id`),
+  KEY `core_workinprogress_laboratory_id_0cd091eb_fk_core_labo` (`laboratory_id`),
+  KEY `core_workinprogress_room_id_6218a850_fk_core_rooms_room_id` (`room_id`),
+  KEY `core_workinprogress_user_id_87871d47_fk_core_user_user_id` (`user_id`),
+  CONSTRAINT `core_workinprogress_laboratory_id_0cd091eb_fk_core_labo` FOREIGN KEY (`laboratory_id`) REFERENCES `core_laboratory` (`laboratory_id`),
+  CONSTRAINT `core_workinprogress_room_id_6218a850_fk_core_rooms_room_id` FOREIGN KEY (`room_id`) REFERENCES `core_rooms` (`room_id`),
+  CONSTRAINT `core_workinprogress_user_id_87871d47_fk_core_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `core_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

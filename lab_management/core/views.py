@@ -11,8 +11,8 @@ from django.contrib.auth.hashers import check_password
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.db.models.functions import TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear, Abs
-from django.db.models import Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField, Max, Min
+from django.db.models.functions import Cast, TruncDate, Coalesce, Greatest, Concat, TruncDay, TruncMonth, TruncYear, Abs
+from django.db.models import DateField, Q, Sum , Prefetch, F, Count, Avg , CharField, Value,  Case, When, ExpressionWrapper, IntegerField, Max, Min
 from django.db import connection, models, DatabaseError, IntegrityError, transaction
 from django.utils import timezone
 from django.utils.dateformat import DateFormat
@@ -2437,14 +2437,18 @@ def borrowing_student_viewPreBookRequestsview(request):
 
         # Filter borrow_info based on statuses
         prebook_requests = borrow_info.objects.annotate(
-            truncated_request_date=TruncDate('request_date')
+            truncated_request_date=Cast('request_date', DateField()),  # Convert to DateField
+            truncated_borrow_date=Cast('borrow_date', DateField())  # Ensure both fields are DateField
         ).filter(
             user=current_user,
             request_date__isnull=False,
-            borrow_date__isnull=False
+            borrow_date__isnull=False,
+            laboratory_id=laboratory_id
         ).exclude(
-            request_date=F('borrow_date')  # Exclude same-day requests (walk-ins)
+            truncated_request_date=F('truncated_borrow_date')  # Compare properly
         ).order_by('-request_date')
+
+        print("---", prebook_requests)
 
         # Walk-in requests: where request_date == borrow_date
         walkin_requests = borrow_info.objects.annotate(
@@ -2454,7 +2458,8 @@ def borrowing_student_viewPreBookRequestsview(request):
             user=current_user,
             request_date_only=F('borrow_date_only'),
             request_date__isnull=False,
-            borrow_date__isnull=False
+            borrow_date__isnull=False,
+            laboratory_id=laboratory_id
         ).order_by('-request_date')
 
         walkin_requests = borrow_info.objects.extra(
@@ -2466,8 +2471,10 @@ def borrowing_student_viewPreBookRequestsview(request):
         ).filter(
             user=current_user,
             request_date__isnull=False,
-            borrow_date__isnull=False
+            borrow_date__isnull=False,
+            laboratory_id=laboratory_id
         ).order_by('-request_date')
+
 
         # Filter pre-book requests by status
         pending_requests = prebook_requests.filter(status='P')
