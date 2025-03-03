@@ -63,6 +63,8 @@ urlpatterns = [
     # New URL for fetching add_cols
     path('get_add_cols/<int:category_id>/', views.get_add_cols, name='get_add_cols'),
 
+    path('test', views.test_view, name='test_view'),
+
     # borrowing
     path('borrowing/', views.borrowing_view, name='borrowing'),
     path('borrowing/student/borrow_prebook', views.borrowing_student_prebookview, name='borrowing_studentPrebook'),

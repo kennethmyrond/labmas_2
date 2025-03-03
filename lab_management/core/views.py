@@ -58,14 +58,13 @@ from .forms import ShoppingItemForm
 # python image library pillow
 
 import json, qrcode, base64, threading, time, re
-
 import logging
+import pint
+
 
 sec_logger = logging.getLogger('django.security')
-
 logger = logging.getLogger('custom_logger')
 
-import pint
 
 def get_unit_choices():
     ureg = pint.UnitRegistry()
@@ -94,6 +93,13 @@ def get_unit_choices():
 
 
 prev_day = ''
+
+def test_view(request):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT @current_user;")
+        result = cursor.fetchone()
+    return HttpResponse(f"Current User: {result[0]}")
+
 # thread every midnight query items to check due date if today (for on holding past due date )
 @transaction.atomic
 def late_borrow(request):

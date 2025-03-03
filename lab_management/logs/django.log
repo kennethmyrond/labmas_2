@@ -8574,3 +8574,19 @@ Traceback (most recent call last):
   File "C:\Python311\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 287, in __set__
     raise ValueError(
 ValueError: Cannot assign "'10120240186'": "ShoppingItem.existing_item" must be a "item_description" instance.
+ERROR 2025-03-02 17:16:14,135 log Internal Server Error: /test
+Traceback (most recent call last):
+  File "C:\Python311\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\django\utils\deprecation.py", line 128, in __call__
+    response = self.process_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ryan\Documents\GitHub\labmas_2\lab_management\lab_management\middleware.py", line 7, in process_request
+    current_user = request.user.id
+                   ^^^^^^^^^^^^^^^
+  File "C:\Python311\Lib\site-packages\django\utils\functional.py", line 253, in inner
+    return func(_wrapped, *args)
+           ^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'user' object has no attribute 'id'
+ERROR 2025-03-02 17:16:14,146 basehttp "GET /test HTTP/1.1" 500 74026

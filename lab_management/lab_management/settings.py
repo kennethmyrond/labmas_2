@@ -106,7 +106,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
-    
+    'lab_management.middleware.SetCurrentUserMiddleware',
 ]
 
 ROOT_URLCONF = 'lab_management.urls'
