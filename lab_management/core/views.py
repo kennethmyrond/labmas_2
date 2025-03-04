@@ -1189,10 +1189,12 @@ def inventory_updateItem_view(request):
                 
                 # ✅ Check if the item exists in ShoppingItem (for current lab)
                 existing_shopping_item = ShoppingItem.objects.filter(
-                    name=item_instance.item_name,
+                    existing_item_id=item_instance.item_id,
                     laboratory_id=selected_laboratory_id,
-                    is_active=True
+                    is_active=1
                 ).first()
+
+                print("----", existing_shopping_item)
 
                 if existing_shopping_item:
                     existing_shopping_item.quantity -= qty_add
@@ -1252,7 +1254,7 @@ def inventory_updateItem_view(request):
                 qr_code = f"data:image/png;base64,{qr_base64}"
 
                 logger.info(f"User {current_user} added {qty_add} of {item_instance.item_name} (Item ID: {item_id}) to inventory.")
-                messages.success(request, f"{qty_add} {existing_shopping_item.name} was added to the inventory.")
+                messages.success(request, f"{qty_add} {item_instance.item_name} was added to the inventory.")
 
                 return JsonResponse({
                     'success': True,

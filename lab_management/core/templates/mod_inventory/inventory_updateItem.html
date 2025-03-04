@@ -423,76 +423,87 @@
         });
 
         function checkItemExpiration() {
-            if (isQrSelection) {
-                console.log("🚀 Skipping dropdown update due to QR selection.");
-                return;
-            }
-
-            const itemId = $('#itemName').val();
-            const actionType = document.getElementById('actionType').value;
-
-            if (!itemId) {
-                $('#expirationDateRow').hide();
-                $('#maintenanceDateRow').hide();
-                $('#inventoryItemIDSection').hide();
-                return;
-            }
-
-            $.ajax({
-                url: `/check_item_expiration/${itemId}/`,
-                method: 'GET',
-                success: function (response) {
-                    if (response.rec_expiration !== "" || response.rec_per_inv || response.expiry_type !== "" || response.expiry_type !== "None") {
-                        if (actionType === 'remove' || actionType === 'report') {
-                            $('#inventoryItemIDSection').show();
-
-                            $.ajax({
-                                url: `/suggest_inventory_items/${itemId}/`,
-                                method: 'GET',
-                                success: function (data) {
-                                    let inventoryDropdown = $('#inventoryItemID');
-                                    let currentOptions = inventoryDropdown.find("option").map((i, opt) => opt.value).get();
-                                    let newOptions = data.map(item => String(item.inventory_item_id));
-
-                                    if (JSON.stringify(currentOptions) !== JSON.stringify(newOptions)) {
-                                        console.log("✅ Data changed. Updating dropdown.");
-                                        inventoryDropdown.empty();
-
-                                        data.forEach(item => {
-                                            let formattedText = item.expiry_type === 'Date'
-                                                ? `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`
-                                                : item.expiry_type === 'Usage'
-                                                ? `${item.inventory_item_id} | remain use: ${item.expiration_date}, qty: ${item.qty}`
-                                                : item.expiry_type === 'Maintenance'
-                                                ? `${item.inventory_item_id} | maintenance: ${item.expiration_date}, qty: ${item.qty}`
-                                                : `${item.inventory_item_id} | qty: ${item.qty}`;
-
-                                            inventoryDropdown.append(new Option(formattedText, item.inventory_item_id));
-                                        });
-
-                                        if (!inventoryDropdown.hasClass("select2-hidden-accessible")) {
-                                            inventoryDropdown.select2({
-                                                placeholder: "Select Inventory Item ID",
-                                                allowClear: true,
-                                            });
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    } else {
-                        $('#expirationDateRow').hide();
-                        $('#maintenanceDateRow').hide();
-                        $('#inventoryItemIDSection').hide();
-                    }
-                }
-            });
+        if (isQrSelection) {
+            console.log("🚀 Skipping dropdown update due to QR selection.");
+            return;
         }
 
-        $('#itemName').on('change', checkItemExpiration);
+        const itemId = $('#itemName').val();
+        const actionType = document.getElementById('actionType').value;
+
+        if (!itemId) {
+            $('#expirationDateRow').hide();
+            $('#maintenanceDateRow').hide();
+            $('#inventoryItemIDSection').hide();
+            return;
+        }
+
+        $.ajax({
+            url: `/check_item_expiration/${itemId}/`,
+            method: 'GET',
+            success: function (response) {
+                if (response.rec_expiration !== "" || response.rec_per_inv || response.expiry_type !== "" || response.expiry_type !== "None") {
+                    if (actionType === 'remove' || actionType === 'report') {
+                        $('#inventoryItemIDSection').show();
+
+                        $.ajax({
+                            url: `/suggest_inventory_items/${itemId}/`,
+                            method: 'GET',
+                            success: function (data) {
+                                let inventoryDropdown = $('#inventoryItemID');
+                                let currentOptions = inventoryDropdown.find("option").map((i, opt) => opt.value).get();
+                                let newOptions = data.map(item => String(item.inventory_item_id));
+
+                                if (JSON.stringify(currentOptions) !== JSON.stringify(newOptions)) {
+                                    console.log("✅ Data changed. Updating dropdown.");
+                                    inventoryDropdown.empty();
+
+                                    data.forEach(item => {
+                                        let formattedText = item.expiry_type === 'Date'
+                                            ? `${item.inventory_item_id} | exp: ${item.expiration_date}, qty: ${item.qty}`
+                                            : item.expiry_type === 'Usage'
+                                            ? `${item.inventory_item_id} | remain use: ${item.expiration_date}, qty: ${item.qty}`
+                                            : item.expiry_type === 'Maintenance'
+                                            ? `${item.inventory_item_id} | maintenance: ${item.expiration_date}, qty: ${item.qty}`
+                                            : `${item.inventory_item_id} | qty: ${item.qty}`;
+
+                                        inventoryDropdown.append(new Option(formattedText, item.inventory_item_id));
+                                    });
+
+                                    if (!inventoryDropdown.hasClass("select2-hidden-accessible")) {
+                                        inventoryDropdown.select2({
+                                            placeholder: "Select Inventory Item ID",
+                                            allowClear: true,
+                                        });
+                                    }
+                                }
+                            }
+                        });
+                    }else {
+                        if(response.rec_expiration==='Date'){
+                            $('#expirationDateRow').show();
+                        }
+                        if(response.rec_expiration==='Maintenance'){
+                            $('#maintenanceDateRow').show();
+                        }
+                    }
+                } else {
+                    $('#expirationDateRow').hide();
+                    $('#maintenanceDateRow').hide();
+                    $('#inventoryItemIDSection').hide();
+                }
+            }
+        });
+    }
+
+    $('#itemName').on('change', checkItemExpiration);
+
+
+        
 
     });
 
+    
 
     // $('#itemName').on('change', checkItemExpiration);
 

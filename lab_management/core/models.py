@@ -321,20 +321,12 @@ class item_expirations(models.Model):
     
     # Expiry by Date
     expired_date = models.DateField(null=True, blank=True)
+    
     # Expiry by Number of Uses
-    # max_uses = models.IntegerField(null=True, blank=True) # Maximum allowed uses for the item
     remaining_uses = models.IntegerField(null=True, blank=True)  # Current remaining uses
     # Expiry by Calibration/Maintenance
     next_maintenance_date = models.DateField(null=True, blank=True)
-    # # Expiry by Storage Conditions
-    # optimal_temperature = models.FloatField(null=True, blank=True)  # °C
-    # current_temperature = models.FloatField(null=True, blank=True)  # Track real-time temperature
-    # # Expiry by Condition
-    # condition_status = models.CharField(
-    #     max_length=20,
-    #     choices=[('Good', 'Good'), ('Fair', 'Fair'), ('Poor', 'Poor')],
-    #     default='Good'
-    # )   
+    
     
     def __str__(self):
         return f"Expiration for Inventory Item {self.inventory_item_id}"
