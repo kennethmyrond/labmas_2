@@ -382,14 +382,14 @@
 {% if permissions.can_borrow_items or permissions.can_view_borrowed_items or permissions.can_view_booking_requests or permissions.can_return_item or permissions.can_configure_borrowing or permissions.can_view_wip or permissions.can_create_wip%}
 <li class="nav-item">
   <a class="nav-link {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_labcoord_prebookrequests  borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items borrowing_labtech_detailedprebookrequests create_wip view_wip clear_wip lab_wip_list student_wip_list' %}active{% else %}collapsed{% endif %}" data-bs-target="#borrow-nav" data-bs-toggle="collapse" href="#">
-      <i class="bi bi-journal-text"></i><span>Borrowing</span><i class="bi bi-chevron-down ms-auto"></i>
+      <i class="bi bi-journal-text"></i><span>Lab Item Request</span><i class="bi bi-chevron-down ms-auto"></i>
   </a>
   <ul id="borrow-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_studentviewWalkInRequests borrowing_studentDetailedPreBookRequests borrowing_studentDetailedWalkInRequests borrowing_labcoord_prebookrequests borrowing_labcoord_borrowconfig borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items borrowing_labtech_detailedprebookrequests  create_wip view_wip clear_wip lab_wip_list student_wip_list' %}show{% endif %}" data-bs-parent="#sidebar-nav">
       {% if permissions.can_borrow_items %}
       {% if borrow_config.allow_prebook %}
       <li>
           <a href="{% url 'borrowing_studentPrebook' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentPrebook' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>Borrow Item (Pre-Book)</span>
+              <i class="bi bi-circle"></i><span>Item Request (Pre-Book)</span>
           </a>
       </li>
       {%endif%}
@@ -397,7 +397,7 @@
       {% if borrow_config.allow_walkin %}
       <li>
           <a href="{% url 'borrowing_studentWalkin' %}" class="{% if request.resolver_match.url_name == 'borrowing_studentWalkin' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>Borrow Item (Walk-In)</span>
+              <i class="bi bi-circle"></i><span>Item Request (Walk-In)</span>
           </a>
       </li>
       {%endif%}
@@ -405,7 +405,7 @@
       {% if permissions.can_borrow_items %}
       <li>
           <a href="{% url 'borrowing_studentviewPreBookRequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_studentviewPreBookRequests borrowing_studentDetailedPreBookRequests' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>My Borrowed Items</span>
+              <i class="bi bi-circle"></i><span>My Items Request</span>
           </a>
       </li>
       {%endif%}
@@ -417,21 +417,21 @@
       {% if permissions.can_view_booking_requests %}
       <li>
         <a href="{% url 'borrowing_labcoord_prebookrequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_labcoord_prebookrequests borrowing_labcoord_detailedPrebookrequests' %}active{% endif %}">
-            <i class="bi bi-circle"></i><span>View Borrowing Requests </span>
+            <i class="bi bi-circle"></i><span>View Item Requests </span>
         </a>
       </li>
       {%endif%}
       {% if permissions.can_view_borrowed_items %}
     <li>
       <a href="{% url 'borrowing_labtech_prebookrequests' %}" class="{% if request.resolver_match.url_name in 'borrowing_labtech_prebookrequests borrowing_labtech_detailedprebookrequests' %}active{% endif %}">
-          <i class="bi bi-circle"></i><span>Prepare Items Borrowed</span>
+          <i class="bi bi-circle"></i><span>Prepare Items Request</span>
       </a>
     </li>
     {%endif%}
     {% if permissions.can_return_item %}
     <li>
       <a href="{% url 'return_borrowed_items' %}" class="{% if request.resolver_match.url_name in 'return_borrowed_items' %}active{% endif %}">
-          <i class="bi bi-circle"></i><span>Return Items Borrowed</span>
+          <i class="bi bi-circle"></i><span>Return Items Request</span>
       </a>
     </li>
     {%endif%}
@@ -452,7 +452,7 @@
     {% if permissions.can_configure_borrowing %}
     <li>
       <a href="{% url 'borrowing_labcoord_borrowconfig' %}" class="{% if request.resolver_match.url_name == 'borrowing_labcoord_borrowconfig' %}active{% endif %}">
-          <i class="bi bi-circle"></i><span>Borrowing Configuration</span>
+          <i class="bi bi-circle"></i><span>Item Request Configuration</span>
       </a>
   </li>
   {%endif%}

@@ -55,7 +55,7 @@
                             <label for="search_query" class="col-sm-2 col-form-label">Enter ID:</label>
                             <div class="col-sm-8">
                                 <input type="text" class="form-control" id="search_query" name="search_query" 
-                                    placeholder="Enter Personal ID or Borrow ID" value="{{ search_query }}" required>
+                                    placeholder="Enter Personal ID or Request ID" value="{{ search_query }}" required>
                             </div>
                             <div class="col-sm-2 d-flex justify-content-end">
                                 <button type="submit" class="btn btn-primary me-2"><i class="bi bi-search"></i></button>
@@ -152,7 +152,7 @@
                         {% endfor %}
                     </form>
                     {% else %}
-                        <div class="alert alert-warning">No active borrow requests found for this ID.</div>
+                        <div class="alert alert-warning">No active requests found for this ID.</div>
                     {% endif %}
                 </div>
             </div>

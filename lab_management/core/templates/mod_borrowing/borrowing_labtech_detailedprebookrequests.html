@@ -4,11 +4,11 @@
 
 {% block content %}
 <div class="pagetitle">
-    <h1>Borrowing Details</h1>
+    <h1>Item Request Details</h1>
     <nav>
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'borrowing_labtech_prebookrequests' %}">Prepare Items Borrowed</a></li>
-            <li class="breadcrumb-item active">Borrowing Details</li>
+            <li class="breadcrumb-item"><a href="{% url 'borrowing_labtech_prebookrequests' %}">Prepare Items Request</a></li>
+            <li class="breadcrumb-item active">Items Details</li>
         </ol>
     </nav>
 </div>
@@ -28,8 +28,8 @@
             <div class="card">
                 <div class="card-body">
                     <div id="borrowerDetails">
-                    <h5 class="card-title">Borrow ID: {{ borrow_entry.borrow_id }}</h5>
-                    <p><strong>Borrow Name:</strong> {{ borrow_entry.user.firstname }} {{ borrow_entry.user.lastname }}</p>
+                    <h5 class="card-title">Item Request ID: {{ borrow_entry.borrow_id }}</h5>
+                    <p><strong>Requested By:</strong> {{ borrow_entry.user.firstname }} {{ borrow_entry.user.lastname }}</p>
                     <p><strong>Date Requested:</strong> {{ borrow_entry.request_date|date:"Y/m/d" }}</p>
                     <p><strong>Date Needed:</strong> {{ borrow_entry.borrow_date|date:"Y/m/d" }}</p>
                     <p><strong>Due Date:</strong> {{ borrow_entry.due_date|date:"Y/m/d" }}</p>
@@ -37,7 +37,7 @@
                     <p><strong>Remarks:</strong> {{ borrow_entry.remarks }}</p>
                     </div>
                     <hr>
-                    <h5 class="card-title">Borrowed Items</h5>
+                    <h5 class="card-title">Item Request</h5>
 
                     
                     <div class="mt-4">
@@ -130,7 +130,7 @@
                         </table>
 
                         <div class="mt-4">
-                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" {% if borrow_entry.status == 'B' or today < borrow_entry.borrow_date %}disabled{% endif %} >Mark as Borrowed</button>
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmBorrowModal" {% if borrow_entry.status == 'B' or today < borrow_entry.borrow_date %}disabled{% endif %} >Mark as Claimed</button>
                             <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal" {% if borrow_entry.status == 'L' or today < borrow_entry.borrow_date %}disabled{% endif %} >Cancel</button>
                         </div>
                         <br>

@@ -4,10 +4,10 @@
 
 {% block content %}
 <div class="pagetitle">
-  <h1>Borrowing Requests</h1>
+  <h1>Item Requests</h1>
   <nav>
     <ol class="breadcrumb">
-        <li class="breadcrumb-item" active>Prepare Items Borrowed</li>
+        <li class="breadcrumb-item" active>Prepare Items Request</li>
     </ol>
 </nav>
 </div>
@@ -86,16 +86,16 @@ tr.highlight {
 
 <div class="card">
   <div class="card-body">
-    <h5 class="card-title">Preparation for Future Borrow</h5>
+    <h5 class="card-title">Preparation for Upcoming Requests</h5>
     <table class="table table-striped">
       <thead>
           <tr>
               <th>Item Name</th> 
               <th>Quantity & Unit</th> 
               <th>Preparation Date</th> 
-              <th>Borrow Date</th> 
+              <th>Request Date</th> 
               <!-- <th>Status</th> -->
-              <th>Borrow ID</th>
+              <th>Request ID</th>
           </tr>
       </thead>
       <tbody>
@@ -126,13 +126,13 @@ tr.highlight {
 <!-- Tabs for Today, Future, Past, Cancelled, and Accepted borrows -->
 <ul class="nav nav-tabs" id="borrowRequestsTabs" role="tablist">
   <li class="nav-item">
-    <a class="nav-link active" id="today-tab" data-bs-toggle="tab" href="#today-borrows" role="tab">Today Borrow</a>
+    <a class="nav-link active" id="today-tab" data-bs-toggle="tab" href="#today-borrows" role="tab">Today's Requests</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="past-tab" data-bs-toggle="tab" href="#past-borrows" role="tab">Past Borrows</a>
+    <a class="nav-link" id="past-tab" data-bs-toggle="tab" href="#past-borrows" role="tab">Completed Requests</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="future-tab" data-bs-toggle="tab" href="#future-borrows" role="tab">Future Borrows</a>
+    <a class="nav-link" id="future-tab" data-bs-toggle="tab" href="#future-borrows" role="tab">Upcoming Requests</a>
   </li>
   <li class="nav-item">
     <a class="nav-link" id="cancelled-tab" data-bs-toggle="tab" href="#borrowed" role="tab">Marked As Borrowed</a>
@@ -159,8 +159,8 @@ tr.highlight {
               <table class="table table-striped datatable">
                 <thead>
                   <tr>
-                    <th>Borrow ID</th>
-                    <th>Borrower</th>
+                    <th>Request ID</th>
+                    <th>Requested By</th>
                     <th>Items</th>
                     <th>Confirm</th>
                     <th>Cancel</th>
