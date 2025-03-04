@@ -379,12 +379,12 @@
     {% endif %}
 
     {% if 2 in selected_lab_modules %}
-{% if permissions.can_borrow_items or permissions.can_view_borrowed_items or permissions.can_view_booking_requests or permissions.can_return_item or permissions.can_configure_borrowing %}
+{% if permissions.can_borrow_items or permissions.can_view_borrowed_items or permissions.can_view_booking_requests or permissions.can_return_item or permissions.can_configure_borrowing or permissions.can_view_wip or permissions.can_create_wip%}
 <li class="nav-item">
-  <a class="nav-link {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_labcoord_prebookrequests  borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items borrowing_labtech_detailedprebookrequests' %}active{% else %}collapsed{% endif %}" data-bs-target="#borrow-nav" data-bs-toggle="collapse" href="#">
+  <a class="nav-link {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_labcoord_prebookrequests  borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items borrowing_labtech_detailedprebookrequests create_wip view_wip clear_wip lab_wip_list student_wip_list' %}active{% else %}collapsed{% endif %}" data-bs-target="#borrow-nav" data-bs-toggle="collapse" href="#">
       <i class="bi bi-journal-text"></i><span>Borrowing</span><i class="bi bi-chevron-down ms-auto"></i>
   </a>
-  <ul id="borrow-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_studentviewWalkInRequests borrowing_studentDetailedPreBookRequests borrowing_studentDetailedWalkInRequests borrowing_labcoord_prebookrequests borrowing_labcoord_borrowconfig borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items borrowing_labtech_detailedprebookrequests' %}show{% endif %}" data-bs-parent="#sidebar-nav">
+  <ul id="borrow-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'borrowing_studentPrebook borrowing_studentWalkin borrowing_studentviewPreBookRequests borrowing_studentviewWalkInRequests borrowing_studentDetailedPreBookRequests borrowing_studentDetailedWalkInRequests borrowing_labcoord_prebookrequests borrowing_labcoord_borrowconfig borrowing_labcoord_detailedPrebookrequests borrowing_labtech_prebookrequests return_borrowed_items borrowing_labtech_detailedprebookrequests  create_wip view_wip clear_wip lab_wip_list student_wip_list' %}show{% endif %}" data-bs-parent="#sidebar-nav">
       {% if permissions.can_borrow_items %}
       {% if borrow_config.allow_prebook %}
       <li>
@@ -435,6 +435,20 @@
       </a>
     </li>
     {%endif%}
+    {% if permissions.can_view_wip%}
+      <li>
+        <a href="{% url 'lab_wip_list' %}" class = "{% if request.resolver_match.url_name in 'lab_wip_list' %}active{% endif %}">
+          <i class="bi bi-circle"></i><span>Work-In-Progress (WIP) List</span>
+        </a>
+      </li>
+    {% endif %}
+    {% if permissions.can_create_wip%}
+      <li>
+        <a href="{% url 'student_wip_list' %}" class = "{% if request.resolver_match.url_name in 'student_wip_list' %}active{% endif %}">
+          <i class="bi bi-circle"></i><span>My Work-In-Progress (WIP) Experiments</span>
+        </a>
+      </li>
+      {% endif %}
     {% if permissions.can_configure_borrowing %}
     <li>
       <a href="{% url 'borrowing_labcoord_borrowconfig' %}" class="{% if request.resolver_match.url_name == 'borrowing_labcoord_borrowconfig' %}active{% endif %}">
@@ -476,10 +490,10 @@
       {% if 4 in selected_lab_modules %}
       {% if permissions.can_reserve_laboratory or permissions.can_view_reservations or permissions.can_approve_deny_reservations or permissions.can_configure_lab_reservation %}
       <li class="nav-item">
-        <a class="nav-link {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule labres_lab_reservationreqs labres_lab_reservationreqsDetailed lab_reservation_student_reserveLabConfirmDetails lab_reservation_preapproval create_wip view_wip clear_wip lab_wip_list student_wip_list'%}active{% else %}collapsed{% endif %}" data-bs-target="#reserve-nav" data-bs-toggle="collapse" href="#">
+        <a class="nav-link {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule labres_lab_reservationreqs labres_lab_reservationreqsDetailed lab_reservation_student_reserveLabConfirmDetails lab_reservation_preapproval'%}active{% else %}collapsed{% endif %}" data-bs-target="#reserve-nav" data-bs-toggle="collapse" href="#">
           <i class="bi bi-journal-bookmark"></i><span>Lab Reservation</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
-        <ul id="reserve-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule labres_lab_reservationreqs labres_lab_reservationreqsDetailed lab_reservation_student_reserveLabConfirmDetails lab_reservation_preapproval create_wip view_wip clear_wip lab_wip_list student_wip_list'%}show{% endif %} " data-bs-parent="#sidebar-nav">
+        <ul id="reserve-nav" class="nav-content collapse {% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_student_reserveLabSummary lab_reservation_detail labres_labcoord_configroom labres_labcoord_configtime labres_lab_schedule labres_lab_reservationreqs labres_lab_reservationreqsDetailed lab_reservation_student_reserveLabConfirmDetails lab_reservation_preapproval'%}show{% endif %} " data-bs-parent="#sidebar-nav">
           {% if permissions.can_reserve_laboratory%}
           <li>           
             <a href="{% url 'lab_reservation_student_reserveLabChooseRoom' %}" class = "{% if request.resolver_match.url_name in 'lab_reservation_student_reserveLabChooseRoom lab_reservation_student_reserveLabChooseTime lab_reservation_preapproval' %}active{% endif %}">
@@ -508,20 +522,6 @@
           <li>
             <a href="{% url 'labres_labcoord_configroom' %}" class = "{% if request.resolver_match.url_name in 'labres_labcoord_configroom' %}active{% endif %}">
               <i class="bi bi-circle"></i><span>Configure Laboratory Reservation</span>
-            </a>
-          </li>
-          {% endif %}
-          {% if permissions.can_view_wip%}
-          <li>
-            <a href="{% url 'lab_wip_list' %}" class = "{% if request.resolver_match.url_name in 'lab_wip_list' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>Work-In-Progress (WIP) List</span>
-            </a>
-          </li>
-          {% endif %}
-          {% if permissions.can_create_wip%}
-          <li>
-            <a href="{% url 'student_wip_list' %}" class = "{% if request.resolver_match.url_name in 'student_wip_list' %}active{% endif %}">
-              <i class="bi bi-circle"></i><span>My Work-In-Progress (WIP) Experiments</span>
             </a>
           </li>
           {% endif %}
