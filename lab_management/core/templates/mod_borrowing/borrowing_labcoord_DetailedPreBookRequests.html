@@ -5,10 +5,10 @@
 
 {% block content %}
 <div class="pagetitle">
-    <h1>Borrowing Request Details</h1>
+    <h1>Item Request Details</h1>
     <nav>
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'borrowing_labcoord_prebookrequests' %}">View Borrowing Requests</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'borrowing_labcoord_prebookrequests' %}">View Item Requests</a></li>
             <li class="breadcrumb-item active">Request Details</li>
         </ol>
     </nav>
@@ -29,7 +29,7 @@
           <div class="card">
               <div class="card-body">
                 <div id="borrowerDetails">
-                  <h5 class="card-title">Borrow ID: {{ borrow_request.borrow_id }}</h5>
+                  <h5 class="card-title">Item Request ID: {{ borrow_request.borrow_id }}</h5>
                   <p><strong>Name:</strong> {{ borrow_request.user.firstname }} {{ borrow_request.user.lastname }}</p>
                   <p><strong>Date Requested:</strong> {{ borrow_request.request_date|date:"Y/m/d H:i:s" }}</p>
                   <p><strong>Date Needed:</strong> {{ borrow_request.borrow_date|date:"Y/m/d" }}</p>
@@ -48,7 +48,7 @@
 
                   <hr>
                   <!-- Borrowed Items List -->
-                  <h5 class="card-title">Borrowed Items</h5>
+                  <h5 class="card-title">Items Request</h5>
                   <!-- Edit and Action Buttons -->
                   {% if show_action_buttons %}
                   <div class="mt-4">
