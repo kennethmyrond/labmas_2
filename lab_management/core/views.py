@@ -890,7 +890,8 @@ def inventory_itemDetails_view(request, item_id):
                 'expiration_date': expiration_date,
                 'last_updated_date': last_updated_date,
                 'last_updated_by': last_updated_by,
-                'date_created': date_created
+                'date_created': date_created,
+                'pdf_file_url': inventory.pdf_file.url if inventory.pdf_file else None  # Add PDF URL
             })
 
         # Prefetch item_handling related to item_inventory, ordered by timestamp in descending order
@@ -1166,8 +1167,10 @@ def inventory_updateItem_view(request):
         
         inventory_item_id = request.POST.get('inventory_item_id') 
         remarks = request.POST.get('remarks', '')
+        pdf_file = request.FILES.get('pdf_file')
+        print("Received PDF:", pdf_file)
         remaining_qty=0
-        
+
         try:
             # Fetch item and supplier
             item_instance = get_object_or_404(item_description, item_id=item_id)
@@ -1209,7 +1212,8 @@ def inventory_updateItem_view(request):
                     date_purchased=date_purchased,
                     date_received=date_received,
                     purchase_price=purchase_price,
-                    qty=qty_add
+                    qty=qty_add,
+                    pdf_file=pdf_file if pdf_file else None
                 )
 
                 item_handling.objects.create(

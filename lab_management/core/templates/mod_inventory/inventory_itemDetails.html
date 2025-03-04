@@ -146,6 +146,7 @@
               <th>Timestamp</th>
               <th>Remarks</th>
               <th>Qty</th>
+              <th> Download Pdf</th>
               <!-- {% if item.rec_expiration %}
                 <th>Expirations</th>
               {% endif %} -->
@@ -172,6 +173,17 @@
                   <!-- style=" color:{% if  handling.changes == 'A' %}green{% else %}red{% endif %};"  -->             
                     {{ handling.qty }}
                 </td>
+
+                <td>
+                  {% if inventory.pdf_file %}
+                      <a href="{{ inventory.pdf_file.url }}" download class="btn btn-success btn-sm">
+                          <i class="bi bi-download"></i> Download Receipt
+                      </a>
+                  {% else %}
+                      <span class="text-muted">No PDF</span>
+                  {% endif %}
+              </td>
+
                 <!-- {% if item.rec_expiration %}
                 <td>
                   {% if inventory.expiration_date %}
@@ -228,6 +240,8 @@
                         <li><strong>Purchase Price:</strong> {{ inventory.purchase_price }}</li>
                         <li><strong>Remarks:</strong> {{ inventory.remarks }} </li>
                       </ul>
+
+                    
                       
                       {% if item.expiry_type != ' ' %}
                       <hr>

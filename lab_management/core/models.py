@@ -269,6 +269,7 @@ class item_inventory(models.Model):
     remarks = models.CharField(max_length=45, null=True, blank=True)
     qty = models.IntegerField()
     uses = models.IntegerField(default=0)  # Current remaining uses
+    pdf_file = models.FileField(upload_to='inventory_pdfs/', null=True, blank=True)  # New field for PDF upload
 
     def check_storage_expiry(self):
         """Check if item is stored in the correct conditions."""

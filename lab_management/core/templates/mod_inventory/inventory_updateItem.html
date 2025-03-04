@@ -35,7 +35,7 @@
                     
 
                     <!-- General Form Elements -->
-                    <form id="updateForm" method="POST">
+                    <form id="updateForm" method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div id="form-container">
                             <div class="form-set">
@@ -146,6 +146,14 @@
                                             <input type="number" class="form-control" name="item_price" id="unit_price" step="0.01">
                                         </div>
                                     </div>
+
+                                    <div class="row mb-3">
+                                        <label for="pdf_file" class="col-sm-2 col-form-label">Upload PDF:</label>
+                                        <div class="col-sm-10">
+                                            <input type="file" class="form-control" name="pdf_file" id="pdf_file" accept=".pdf" onchange="validatePDF()">
+                                            <small id="pdf_error" class="text-danger"></small>
+                                        </div>
+                                    </div>
                                     
                                     <div class="row mb-3" id="expirationDateRow" style="display:none;">
                                         <hr>
@@ -228,6 +236,10 @@
                     </tr>
                     <tr id="confirmAddFields3">
                         <th>Supplier</th><td id="confirmSupplier"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Uploaded PDF:</strong></td>
+                        <td id="pdf_display">NA</td>
                     </tr>
                     <tr id="confirmRemoveFields" style="display:none;">
                         <th>Quantity Removed</th><td id="confirmRemovedQty"></td>
@@ -682,43 +694,74 @@
         $('#confirmationModal').modal('show');
     }
 
+        document.getElementById("pdf_file").addEventListener("change", function(event) {
+        const file = event.target.files[0];
+        const displayElement = document.getElementById("pdf_display");
+        
+        if (file) {
+            displayElement.innerHTML = `<a href="#" onclick="previewPDF('${URL.createObjectURL(file)}')">${file.name}</a>`;
+        } else {
+            displayElement.textContent = "NA";
+        }
+    });
+
+    function previewPDF(fileUrl) {
+        window.open(fileUrl, "_blank");
+    }
+
+
+    function validatePDF() {
+    const fileInput = document.getElementById("pdf_file");
+    const errorMsg = document.getElementById("pdf_error");
+
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        if (!file.name.toLowerCase().endsWith(".pdf")) {
+            errorMsg.textContent = "Invalid file type. Only PDF files are allowed.";
+            fileInput.value = "";  // ❌ Reset input if invalid
+        } else {
+            errorMsg.textContent = "";  // ✅ Clear error message if valid
+        }
+    }
+}
+
     function submitForm() {
-        $('#confirmationModal').modal('hide');
+    $('#confirmationModal').modal('hide');
 
-        const actionType = document.getElementById('actionType').value;
+    const actionType = document.getElementById('actionType').value;
+    const formData = new FormData(document.getElementById('updateForm'));  // ✅ Use FormData to include files
 
-        // Submit the form data via AJAX
-        $.ajax({
-            type: 'POST',
-            url: '', // Keep this as the current view URL
-            data: $('#updateForm').serialize(),
-            success: function(response) {
-                if (response.success) {
-                    if (actionType === 'add') {
-                        // Handle "add" action
-                        if (response.new_inventory_item_id) {
-                            // Populate the modal with the response data
-                            $('#newInventoryItemId').text(response.new_inventory_item_id);
-                            $('#itemQrCodeImage').attr('src', response.item_qrcode); // Set the QR code image
-                            $('#qr_code_dl').attr('href', response.item_qrcode); // Set download link
-                            $('#qr_code_dl').attr('download', `QR_${response.item_name}_${response.new_inventory_item_id}.png`); // Set download filename
-                            $('#successModal').modal('show');
-                        } else {
-                            alert('Error adding item to inventory. Please try again.');
-                        }
-                    } else if (actionType === 'remove' || actionType === 'report') {
-                        // Handle "remove" or "report" action
-                        location.reload(); // Reload the page to reflect changes
+    $.ajax({
+        type: 'POST',
+        url: '', // Keep this as the current view URL
+        data: formData,
+        processData: false,  // ✅ Required for file uploads
+        contentType: false,  // ✅ Ensures correct data format
+        success: function(response) {
+            if (response.success) {
+                if (actionType === 'add') {
+                    if (response.new_inventory_item_id) {
+                        $('#newInventoryItemId').text(response.new_inventory_item_id);
+                        $('#itemQrCodeImage').attr('src', response.item_qrcode);
+                        $('#qr_code_dl').attr('href', response.item_qrcode);
+                        $('#qr_code_dl').attr('download', `QR_${response.item_name}_${response.new_inventory_item_id}.png`);
+                        $('#successModal').modal('show');
+                    } else {
+                        alert('Error adding item to inventory. Please try again.');
                     }
-                } else {
-                    alert('An error occurred while processing the request.');
+                } else if (actionType === 'remove' || actionType === 'report') {
+                    location.reload();
                 }
-            },
-            error: function() {
+            } else {
                 alert('An error occurred while processing the request.');
             }
-        });
-    }
+        },
+        error: function() {
+            alert('An error occurred while processing the request.');
+        }
+    });
+}
+
 
     function toggleActionFields() {
         const actionType = document.getElementById('actionType').value;
