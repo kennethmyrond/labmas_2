@@ -41,25 +41,28 @@
                 </tr>
               </thead>
               <tbody>
-                {% for item in items %}
-                  <tr>
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.description }}</td>
-                    <td>{{ item.quantity }}</td>
-                    <td>{{item.added_on}}</td>
-                    <td>{{ item.added_by }}</td>
-                    <td><form method="POST" action="{% url 'clear_buyItem' item.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger ms-2">Clear</button>
-                        </form>
-                    </td>
-                  </tr>
-                  {% empty %}
-                  <tr>
-                    <td colspan="3" class="text-center">No items in the shopping list.</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
+                {% if items %}
+                    {% for item in items %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.description }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.added_on }}</td>
+                            <td>{{ item.added_by }}</td>
+                            <td>
+                                <form method="POST" action="{% url 'clear_buyItem' item.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger ms-2">Clear</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">No items in the shopping list.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
             </table>
             <!-- End Table with stripped rows -->
 
