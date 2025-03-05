@@ -4793,11 +4793,11 @@ def lab_wip_list(request):
 @transaction.atomic
 @login_required
 def clear_wip(request, wip_id):
-    """Allow users (students/lab staff) to clear WIPs"""
     try:
+        selected_laboratory_id = request.session.get('selected_lab')
         wip = get_object_or_404(WorkInProgress, wip_id=wip_id)
 
-        if request.user != wip.user and not request.user.has_perm('clear_wip'):
+        if not request.user.has_perm('clear_wip', laboratory_id=selected_laboratory_id):
             messages.error(request, "You don't have permission to clear this WIP.")
             return redirect('home')
 
@@ -4807,9 +4807,12 @@ def clear_wip(request, wip_id):
             messages.success(request, 'WIP cleared successfully.')
 
             # Redirect based on user type
-            if request.user.has_perm('view_wip'):
+            if request.user.has_perm('view_wip', laboratory_id=selected_laboratory_id):
                 return redirect('lab_wip_list')
-            return redirect('student_wip_list')
+            elif request.user.has_perm('clear_wip', laboratory_id=selected_laboratory_id):
+                return redirect('student_wip_list')
+            else:
+                return redirect('home')
 
         return render(request, 'mod_labRes/wip_clear.html', {'wip': wip})
     except Exception as e:
@@ -6505,9 +6508,9 @@ def setup_createlab(request):
     default_permissions = {
         1: [7, 8, 9, 10, 11, 1, 2, 3, 4, 5, 6, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 25], #role w/ all permissions on
         2: [9, 11, 1, 5, 6, 13, 16, 17, 18, 19, 20, 21, 25, 23], # lab coord
-        3: [8, 10, 1, 2, 3, 4, 13, 15, 22, 23, 24], # lab tech
+        3: [8, 10, 1, 2, 3, 4, 13, 15, 23], # lab tech
         4: [1, 18], # dept heads
-        5: [7, 12, 14, 23] # students
+        5: [7, 12, 14, 22, 24] # students
     }
 
     # Group permissions by module

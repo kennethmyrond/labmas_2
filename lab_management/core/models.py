@@ -147,8 +147,28 @@ class user(AbstractBaseUser):
                     break
         super().save(*args, **kwargs)
 
-    def has_perm(self, perm, obj=None):
-        return self.is_superuser
+    def has_perm(self, perm, obj=None, laboratory_id=None):
+        # If laboratory_id is provided, check permissions in the specific laboratory
+        if laboratory_id:
+            # Get the user's active roles in the specified laboratory
+            user_laboratory_roles = laboratory_users.objects.filter(
+                user=self,
+                laboratory_id=laboratory_id,
+                is_active=True
+            )
+
+            for user_role in user_laboratory_roles:
+                has_permission = laboratory_permissions.objects.filter(
+                    role=user_role.role,
+                    laboratory_id=laboratory_id,
+                    permissions__codename=perm  # Use the dynamic `perm` parameter
+                ).exists()
+
+                if has_permission:
+                    return True
+
+        # If the permission is not found, return False
+        return False
 
     def has_module_perms(self, app_label):
         return self.is_superuser
