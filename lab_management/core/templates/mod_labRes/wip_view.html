@@ -51,7 +51,7 @@
                 <div class="card-body text-center">
                     <h5 class="card-title">WIP Image</h5>
                     {% if wip.wip_image %}
-                        <img src="{{ wip.wip_image.url }}" class="img-fluid rounded shadow" alt="WIP Image">
+                        <img src="{{ wip.wip_image.url }}" class="img-fluid rounded shadow" alt="WIP Image" id="wipImage">
                     {% else %}
                         <p class="text-muted">No Image Available</p>
                     {% endif %}
@@ -60,4 +60,34 @@
         </div>
     </div>
 </section>
+
+<!-- Modal for Full Screen Image -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">WIP Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <img src="" id="modalImage" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const wipImage = document.getElementById('wipImage');
+        const modalImage = document.getElementById('modalImage');
+        const imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+
+        wipImage.addEventListener('click', function() {
+            modalImage.src = wipImage.src;
+            imageModal.show();
+        });
+    });
+</script>
 {% endblock %}
