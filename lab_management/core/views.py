@@ -1095,7 +1095,7 @@ def inventory_mass_upload_view(request):
 
         try:
             item_type = item_types.objects.get(itemType_id=item_type_id)
-            required_columns = json.loads(item_type.add_cols) + ["Item Name", "Total Quantity"]
+            required_columns = json.loads(item_type.add_cols) + ["Item Name", "Total Quantity", "Reorder Point"]
 
             df = pd.read_excel(excel_file)
 
