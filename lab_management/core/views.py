@@ -574,7 +574,9 @@ def home(request):
     else:
         return render(request, "home.html", context)
 
+
 @login_required
+@transaction.atomic
 def request_laboratory(request):
     if request.method == "POST":
         lab_id = request.POST.get("laboratory_id")
@@ -609,6 +611,23 @@ def request_laboratory(request):
         messages.success(request, "Laboratory access request submitted successfully.")
         return redirect("home")
     return redirect("home")
+
+
+@login_required
+def get_laboratory_roles(request):
+    lab_id = request.GET.get("lab_id")
+    try:
+        lab = laboratory.objects.get(laboratory_id=lab_id)
+        roles = laboratory_roles.objects.filter(
+            laboratory__in=[0, lab.laboratory_id]
+        ).values("roles_id", "name")
+        
+        role_list = list(roles)
+        return JsonResponse(role_list, safe=False)
+    
+    except laboratory.DoesNotExist:
+        return JsonResponse({"error": "Invalid laboratory ID"}, status=400)
+
 
 @login_required
 def set_lab(request, laboratory_id):

@@ -16,6 +16,7 @@ urlpatterns = [
     
     path('', views.home, name='home'),
     path('request_laboratory/', views.request_laboratory, name='request_laboratory'),
+    path('get_laboratory_roles/', views.get_laboratory_roles, name='get_laboratory_roles'),
 
     path('set_lab/<int:laboratory_id>/', views.set_lab, name='set_lab'),
     path('logout/', views.logout_view, name='logout'),  # Added trailing slash

@@ -61,38 +61,40 @@
 
 
 <!-- Modal for Adding Laboratory -->
-<div class="modal fade" id="addLabModal" tabindex="-1" role="dialog" aria-labelledby="addLabModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
+<div class="modal fade" id="addLabModal" tabindex="-1" aria-labelledby="addLabModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="addLabModalLabel">Register to Laboratory</h5>
-        <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button> -->
+        <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
       </div>
       <form method="post" action="{% url 'request_laboratory' %}">
         {% csrf_token %}
         <div class="modal-body">
+          <!-- Laboratory ID Input -->
           <div class="form-group">
             <label for="laboratory_id">Laboratory ID</label>
-            <input type="text" class="form-control" id="laboratory_id" name="laboratory_id" required>
+            <input type="text" class="form-control" id="laboratory_id" name="laboratory_id" placeholder="Enter Laboratory ID" required>
+            <small class="form-text text-muted">Enter a valid laboratory ID to proceed.</small>
           </div>
-          <div class="form-group">
-            <label for="role_id">Role ID</label>
-            <input type="text" class="form-control" id="role_id" name="role_id" required>
+
+          <!-- Role Selection (Initially Hidden) -->
+          <div class="form-group mt-3" id="roleSection" style="display:none;">
+            <label for="role_id">Select Role</label>
+            <select class="form-control" id="role_id" name="role_id" style="width: 100%;" required>
+              <option value="">Select a role...</option>
+            </select>
           </div>
-          {% if error_message %}
-            <div class="alert alert-danger mt-2">{{ error_message }}</div>
-          {% endif %}
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-primary">Submit</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary" id="submitButton" disabled>Submit</button>
         </div>
       </form>
     </div>
   </div>
 </div>
+
 
 <script>
   $(document).ready(function() {
@@ -101,6 +103,52 @@
       $('#addLabModal').modal('show');
     {% endif %}
   });
+
+  $(document).ready(function () {
+    // When the laboratory ID input loses focus
+    $('#laboratory_id').on('blur', function () {
+        const labId = $(this).val().trim();
+        const roleDropdown = $('#role_id');
+        const roleSection = $('#roleSection');
+        const submitButton = $('#submitButton');
+
+        // Clear previous role options
+        roleDropdown.empty().append('<option value="">Select a role...</option>');
+        roleSection.hide();
+        submitButton.prop('disabled', true);
+
+        if (labId) {
+          $.ajax({
+              url: '{% url "get_laboratory_roles" %}',  // Updated to use Django's URL template tag
+              data: { lab_id: labId },
+              dataType: 'json',
+              success: function (data) {
+                  if (Array.isArray(data) && data.length > 0) {
+                      data.forEach(role => {
+                          roleDropdown.append(new Option(role.name, role.roles_id));
+                      });
+
+                      roleSection.show();
+                      roleDropdown.select2({
+                          placeholder: "Select a Role",
+                          allowClear: true,
+                          width: '100%',
+                          dropdownParent: $('#addLabModal')
+                      });
+                      submitButton.prop('disabled', false);
+                  } else {
+                      alert('No roles available for this laboratory.');
+                  }
+              },
+              error: function () {
+                  alert('Invalid laboratory ID. Please try again.');
+              }
+          });
+
+        }
+    });
+});
+
 </script>
 
 {% endblock %}
