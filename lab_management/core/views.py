@@ -2976,7 +2976,7 @@ def borrowing_labcoord_detailedPrebookrequests(request, borrow_id):
         # Only show action buttons if the request is pending, accepted, or declined (to allow modifications)
         show_action_buttons = borrow_request.status in ['P', 'A', 'D']
 
-        return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPrebookRequests.html', {
+        return render(request, 'mod_borrowing/borrowing_labcoord_DetailedPreBookRequests.html', {
             'borrow_request': borrow_request,
             'borrowed_items_list': borrowed_items_list,
             'borrowed_items_json': borrowed_items_json,
