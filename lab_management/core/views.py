@@ -574,7 +574,6 @@ def home(request):
     else:
         return render(request, "home.html", context)
 
-
 @login_required
 @transaction.atomic
 def request_laboratory(request):
@@ -616,17 +615,38 @@ def request_laboratory(request):
 @login_required
 def get_laboratory_roles(request):
     lab_id = request.GET.get("lab_id")
+    user = request.user
+
     try:
         lab = laboratory.objects.get(laboratory_id=lab_id)
+
+        # Check if user is already part of this laboratory
+        if laboratory_users.objects.filter(
+            user=user, 
+            laboratory=lab, 
+            status__in=['A', 'P', 'I'], 
+            is_active=True
+        ).exists():
+            return JsonResponse({
+                "success": False, 
+                "message": "You are already registered in this laboratory."
+            })
+
+        # Fetch available roles
         roles = laboratory_roles.objects.filter(
             laboratory__in=[0, lab.laboratory_id]
         ).values("roles_id", "name")
         
-        role_list = list(roles)
-        return JsonResponse(role_list, safe=False)
-    
+        return JsonResponse({
+            "success": True, 
+            "roles": list(roles)
+        })
+
     except laboratory.DoesNotExist:
-        return JsonResponse({"error": "Invalid laboratory ID"}, status=400)
+        return JsonResponse({
+            "success": False, 
+            "message": "Invalid laboratory ID."
+        }, status=400)
 
 
 @login_required

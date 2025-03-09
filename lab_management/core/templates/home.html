@@ -66,13 +66,24 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="addLabModalLabel">Register to Laboratory</h5>
-        <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form method="post" action="{% url 'request_laboratory' %}">
+
+      <!-- Submit directly to the request_laboratory URL -->
+      <form method="POST" action="{% url 'request_laboratory' %}">
         {% csrf_token %}
         <div class="modal-body">
+          <!-- Error Message Container -->
+          {% if error_message %}
+            <div id="modalErrorAlert" class="alert alert-danger" role="alert">
+                {{ error_message }}
+            </div>
+          {% else %}
+            <div id="modalErrorAlert" class="alert alert-danger d-none" role="alert"></div>
+          {% endif %}
+
           <!-- Laboratory ID Input -->
-          <div class="form-group">
+          <div class="form-group mb-3">
             <label for="laboratory_id">Laboratory ID</label>
             <input type="text" class="form-control" id="laboratory_id" name="laboratory_id" placeholder="Enter Laboratory ID" required>
             <small class="form-text text-muted">Enter a valid laboratory ID to proceed.</small>
@@ -81,11 +92,12 @@
           <!-- Role Selection (Initially Hidden) -->
           <div class="form-group mt-3" id="roleSection" style="display:none;">
             <label for="role_id">Select Role</label>
-            <select class="form-control" id="role_id" name="role_id" style="width: 100%;" required>
+            <select class="form-control" id="role_id" name="role_id" required>
               <option value="">Select a role...</option>
             </select>
           </div>
         </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           <button type="submit" class="btn btn-primary" id="submitButton" disabled>Submit</button>
@@ -105,49 +117,61 @@
   });
 
   $(document).ready(function () {
+    const errorAlert = $('#modalErrorAlert');
+    const roleSection = $('#roleSection');
+    const roleDropdown = $('#role_id');
+    const submitButton = $('#submitButton');
+
     // When the laboratory ID input loses focus
     $('#laboratory_id').on('blur', function () {
         const labId = $(this).val().trim();
-        const roleDropdown = $('#role_id');
-        const roleSection = $('#roleSection');
-        const submitButton = $('#submitButton');
 
-        // Clear previous role options
+        // Reset the modal UI
         roleDropdown.empty().append('<option value="">Select a role...</option>');
         roleSection.hide();
         submitButton.prop('disabled', true);
+        errorAlert.addClass('d-none').text('');
 
         if (labId) {
-          $.ajax({
-              url: '{% url "get_laboratory_roles" %}',  // Updated to use Django's URL template tag
-              data: { lab_id: labId },
-              dataType: 'json',
-              success: function (data) {
-                  if (Array.isArray(data) && data.length > 0) {
-                      data.forEach(role => {
-                          roleDropdown.append(new Option(role.name, role.roles_id));
-                      });
+            $.ajax({
+                url: '{% url "get_laboratory_roles" %}',
+                data: { lab_id: labId },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        const roles = response.roles;
+                        if (Array.isArray(roles) && roles.length > 0) {
+                            roles.forEach(role => {
+                                roleDropdown.append(new Option(role.name, role.roles_id));
+                            });
 
-                      roleSection.show();
-                      roleDropdown.select2({
-                          placeholder: "Select a Role",
-                          allowClear: true,
-                          width: '100%',
-                          dropdownParent: $('#addLabModal')
-                      });
-                      submitButton.prop('disabled', false);
-                  } else {
-                      alert('No roles available for this laboratory.');
-                  }
-              },
-              error: function () {
-                  alert('Invalid laboratory ID. Please try again.');
-              }
-          });
-
+                            roleSection.show();
+                            roleDropdown.select2({
+                                placeholder: "Select a Role",
+                                allowClear: true,
+                                width: '100%',
+                                dropdownParent: $('#addLabModal')
+                            });
+                            submitButton.prop('disabled', false);
+                        } else {
+                            errorAlert.removeClass('d-none').text('No roles available for this laboratory.');
+                        }
+                    } else {
+                        errorAlert.removeClass('d-none').text(response.message);
+                        roleSection.hide();
+                        submitButton.prop('disabled', true);
+                    }
+                },
+                error: function () {
+                    errorAlert.removeClass('d-none').text('Invalid laboratory ID. Please try again.');
+                    roleSection.hide();
+                    submitButton.prop('disabled', true);
+                }
+            });
         }
     });
-});
+  });
+
 
 </script>
 

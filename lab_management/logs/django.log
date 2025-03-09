@@ -9317,3 +9317,27 @@ django.db.utils.OperationalError: (2002, "Can't connect to server on '127.0.0.1'
 ERROR 2025-03-09 00:08:16,450 basehttp "GET /inventory-reports/ HTTP/1.1" 500 268254
 WARNING 2025-03-09 19:10:21,646 log Not Found: /favicon.ico
 WARNING 2025-03-09 19:10:21,650 basehttp "GET /favicon.ico HTTP/1.1" 404 39407
+WARNING 2025-03-09 22:15:15,037 log Not Found: /favicon.ico
+WARNING 2025-03-09 22:15:15,040 basehttp "GET /favicon.ico HTTP/1.1" 404 39690
+WARNING 2025-03-09 22:42:11,012 log Bad Request: /get_laboratory_roles/
+WARNING 2025-03-09 22:42:11,013 basehttp "GET /get_laboratory_roles/?lab_id=23942854 HTTP/1.1" 400 34
+WARNING 2025-03-09 22:42:15,252 log Bad Request: /get_laboratory_roles/
+WARNING 2025-03-09 22:42:15,254 basehttp "GET /get_laboratory_roles/?lab_id=23942854 HTTP/1.1" 400 34
+WARNING 2025-03-09 22:42:21,528 log Bad Request: /get_laboratory_roles/
+WARNING 2025-03-09 22:42:21,529 basehttp "GET /get_laboratory_roles/?lab_id=23942854 HTTP/1.1" 400 34
+WARNING 2025-03-09 22:48:16,209 log Bad Request: /get_laboratory_roles/
+WARNING 2025-03-09 22:48:16,211 basehttp "GET /get_laboratory_roles/?lab_id=335345236 HTTP/1.1" 400 55
+WARNING 2025-03-09 22:56:30,232 log Forbidden (CSRF token missing.): /request_laboratory/
+WARNING 2025-03-09 22:56:30,233 basehttp "POST /request_laboratory/ HTTP/1.1" 403 2491
+WARNING 2025-03-09 22:56:50,573 log Forbidden (CSRF token missing.): /request_laboratory/
+WARNING 2025-03-09 22:56:50,574 basehttp "POST /request_laboratory/ HTTP/1.1" 403 2491
+WARNING 2025-03-09 22:57:43,494 log Forbidden (CSRF token missing.): /request_laboratory/
+WARNING 2025-03-09 22:57:43,495 basehttp "POST /request_laboratory/ HTTP/1.1" 403 2491
+WARNING 2025-03-09 22:59:04,974 log Forbidden (CSRF token missing.): /request_laboratory/
+WARNING 2025-03-09 22:59:04,975 basehttp "POST /request_laboratory/ HTTP/1.1" 403 2491
+WARNING 2025-03-09 23:01:17,984 log Forbidden (CSRF token missing.): /request_laboratory/
+WARNING 2025-03-09 23:01:17,986 basehttp "POST /request_laboratory/ HTTP/1.1" 403 2491
+WARNING 2025-03-09 23:01:56,790 log Forbidden (CSRF token missing.): /request_laboratory/
+WARNING 2025-03-09 23:01:56,791 basehttp "POST /request_laboratory/ HTTP/1.1" 403 2491
+WARNING 2025-03-09 23:09:28,490 log Bad Request: /get_laboratory_roles/
+WARNING 2025-03-09 23:09:28,518 basehttp "GET /get_laboratory_roles/?lab_id=22545 HTTP/1.1" 400 55
