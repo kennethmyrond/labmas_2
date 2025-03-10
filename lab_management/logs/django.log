@@ -9341,3 +9341,5 @@ WARNING 2025-03-09 23:01:56,790 log Forbidden (CSRF token missing.): /request_la
 WARNING 2025-03-09 23:01:56,791 basehttp "POST /request_laboratory/ HTTP/1.1" 403 2491
 WARNING 2025-03-09 23:09:28,490 log Bad Request: /get_laboratory_roles/
 WARNING 2025-03-09 23:09:28,518 basehttp "GET /get_laboratory_roles/?lab_id=22545 HTTP/1.1" 400 55
+WARNING 2025-03-10 11:41:57,576 log Not Found: /favicon.ico
+WARNING 2025-03-10 11:41:57,576 basehttp "GET /favicon.ico HTTP/1.1" 404 39690

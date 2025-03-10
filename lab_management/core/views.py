@@ -2289,7 +2289,7 @@ def borrowing_student_prebookview(request):
                     qty=quantity,
                     unit=unit
                 )
-            return redirect('borrowing_studentviewPreBookRequests')
+            return redirect('borrowing_studentDetailedPreBookRequests', borrow_entry.borrow_id)
 
         # Get the current time in the configured timezone
         current_time = timezone.localtime()
@@ -2491,7 +2491,7 @@ def borrowing_student_walkinview(request):
                     unit=unit
                 )
             logger.info(f"Walk-in request created successfully by {request.user} in lab {laboratory_id}")
-            return redirect('borrowing_studentviewPreBookRequests')
+            return redirect('borrowing_studentDetailedPreBookRequests', borrow_entry.borrow_id)
 
         # Fetch the current date and all equipment items including chemicals
         # current_date = current_time.strftime('%B %d, %Y')
