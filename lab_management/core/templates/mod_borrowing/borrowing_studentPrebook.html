@@ -205,9 +205,9 @@
                                     <p><strong>Request Date:</strong> <span id="confirmBorrowDate"></span></p>
                                     <p><strong>Due Date:</strong> <span id="confirmDueDate"></span></p>
                                     
-                                    {% comment %} <!-- Equipment List -->
+                                    <!-- Equipment List -->
                                     <p><strong>Equipment List:</strong></p>
-                                    <div id="confirmEquipmentList"></div> {% endcomment %}
+                                    <div id="confirmEquipmentList"></div> 
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -259,7 +259,7 @@
         equipmentRows.forEach(function(row) {
             const equipmentName = row.querySelector('input[type="text"]').value;
             const equipmentQty = row.querySelector('input[name="quantities[]"]').value;
-            const equipmentUnit = row.querySelector('input[name="units[]"]').value; // Fetch unit from input field
+            const equipmentUnit = row.querySelector('select[name="units[]"]').value; 
 
             // Only add equipment with a non-zero quantity
             if (equipmentQty > 0) {
