@@ -56,7 +56,7 @@
                                     <th>Quantity</th>
                                     <th>Unit</th>
                                     {% if borrow_entry.get_status_display == 'Approved' %}
-                                        <th>Select Inventory Items (Match Borrowed Quantity)</th>
+                                        <th>Select Inventory Items (Match Requested Quantity)</th>
                                     {% endif %}
                                 </tr>
                             </thead>
@@ -143,13 +143,13 @@
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="confirmBorrowModalLabel">Confirm Borrow</h5>
+                                    <h5 class="modal-title" id="confirmBorrowModalLabel">Confirm Request</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <!-- <form method="POST"> -->
                                     {% csrf_token %}
                                     <div class="modal-body">
-                                        <p>Are you sure you want to mark this request as "Borrowed"?</p>
+                                        <p>Are you sure you want to mark this request as "Claimed"?</p>
                                         <div id="editReasonContainer" class="d-none">
                                             <label for="edit_reason">Reason for Quantity Update:</label>
                                             <textarea name="edit_reason" id="edit_reason" class="form-control" placeholder="Enter reason for quantity edits"></textarea>

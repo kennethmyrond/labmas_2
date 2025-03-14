@@ -4,10 +4,10 @@
 
 {% block content %}
 <div class="pagetitle">
-    <h1>Return Borrowed Items</h1>
+    <h1>Return Requested Items</h1>
     <nav>
         <ol class="breadcrumb">
-            <li class="breadcrumb-item active">Return Borrowed Items</li>
+            <li class="breadcrumb-item active">Return Requested Items</li>
         </ol>
     </nav>
 </div>
@@ -75,9 +75,9 @@
                             <div class="card-body">
                                 <h5 class="card-title">Borrow Request ID: {{ borrow_entry.borrow_id }}</h5>
                                 <ul>
-                                    <li><strong>Borrower Name:</strong> {{ borrow_entry.user.firstname }} {{ borrow_entry.user.lastname }}</li>
+                                    <li><strong>Requested By:</strong> {{ borrow_entry.user.firstname }} {{ borrow_entry.user.lastname }}</li>
                                     <li><strong>Request Date:</strong> {{ borrow_entry.request_date }}</li>
-                                    <li><strong>Borrow Date:</strong> {{ borrow_entry.borrow_date }}</li>
+                                    <li><strong>Claimed Date:</strong> {{ borrow_entry.borrow_date }}</li>
                                     <li><strong>Due Date:</strong> {{ borrow_entry.due_date }}</li>
                                     <li><strong>Status:</strong> {{ borrow_entry.get_status_display }}</li>
                                 </ul>
@@ -87,7 +87,7 @@
                                     <thead>
                                         <tr>
                                             <th>Item</th>
-                                            <th>Qty Borrowed</th>
+                                            <th>Qty Claimed</th>
                                             <th>Returned All</th>
                                             <th>Returned Qty</th>
                                             <th>Hold Clearance</th>
