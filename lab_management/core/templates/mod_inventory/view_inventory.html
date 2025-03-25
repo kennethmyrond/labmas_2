@@ -72,7 +72,9 @@
                 {% for item in inventory_items %}
                   <tr>
                     <td style="color: {% if item.total_qty > item.alert_qty %}green{% else %}red{% endif %}; text-align:center;">
-                      {% if item.total_qty > item.alert_qty %}Available{% else %}Low Stock{% endif %}
+                      {% if item.total_qty == 0 %}No Stock
+                      {% elif item.total_qty > item.alert_qty %}Available
+                      {% else %}Low Stock{% endif %}
                     </td>
                     <!-- <td>
                       <span class="badge {% if item.total_qty > item.alert_qty %} badge-success {% else %} badge-danger {% endif %} text-uppercase">{% if item.total_qty > item.alert_qty %}Available{% else %}Low Stock{% endif %}</span>
