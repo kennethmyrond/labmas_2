@@ -124,10 +124,32 @@
                                     <option value="">None</option>
                                     <option value="Date">Expiration Date</option>
                                     <option value="Usage">Number of Uses</option>
-                                    <option value="Maintenance">Maintenance-Based</option>                                
+                                    <option value="Maintenance">Maintenance-Based</option> 
+                                    <option value="Warranty">Warranty</option>                               
                                 </select>
                             </div>
                         </div>
+
+                        <!-- Warranty Expiration Fields -->
+                        <div class="row mb-3 expiration-field" id="warranty_fields" style="display: none;">
+                            <label for="purchase_date" class="col-sm-2 col-form-label">Purchase Date:</label>
+                            <div class="col-sm-4">
+                                <input type="date" class="form-control" id="purchase_date" name="purchase_date">
+                            </div>
+
+                            <label for="warranty_duration" class="col-sm-2 col-form-label">Warranty Duration:</label>
+                            <div class="col-sm-2">
+                                <input type="number" class="form-control" id="warranty_duration" name="warranty_duration" min="1">
+                            </div>
+
+                            <div class="col-sm-2">
+                                <select class="form-select" id="warranty_unit" name="warranty_unit">
+                                    <option value="months">Months</option>
+                                    <option value="years">Years</option>
+                                </select>
+                            </div>
+                        </div>
+
 
                         <!-- Usage-Based Expiration Field -->
                         <div class="row mb-3 expiration-field" id="max_uses_field" style="display: none;">
@@ -335,6 +357,8 @@ function toggleExpirationFields() {
         document.getElementById('max_uses_field').style.display = 'block';
     } else if (expirationType === 'Maintenance') {
         document.getElementById('condition_field').style.display = 'block';
+    } else if (expirationType === 'Warranty'){
+        document.getElementById('warranty_fields').style.display = 'block';
     }
 }
 

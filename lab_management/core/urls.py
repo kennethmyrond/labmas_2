@@ -28,7 +28,8 @@ urlpatterns = [
 
     # path('accounts/', include('allauth.urls')),
     # path('auth/', include('dj_rest_auth.urls')),
-
+    
+    path('mark-all-notifications-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
     # inventory
     path('inventory/', views.inventory_view, name='inventory_view'),
     path("update-maintenance/<str:inventory_item_id>/", views.update_maintenance, name="update_maintenance"),
@@ -79,8 +80,6 @@ urlpatterns = [
     path('borrowing/labcoord/prebookrequests', views.borrowing_labcoord_prebookrequests, name='borrowing_labcoord_prebookrequests'),
     path('borrowing/labcoord/detailedPrebookrequests/<int:borrow_id>/', views.borrowing_labcoord_detailedPrebookrequests, name='borrowing_labcoord_detailedPrebookrequests'),
     path('borrowing/labcoord/borrowconfig', views.borrowing_labcoord_borrowconfig, name='borrowing_labcoord_borrowconfig'),
-
-    path('mark-all-notifications-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
 
     path('borrowing/student/get-items/<int:item_type_id>/', views.get_items_by_type, name='get_items_by_type'),
     path('borrowing/student/get-quantity/<int:item_id>/', views.get_quantity_for_item, name='get_quantity_for_item'),

@@ -252,6 +252,7 @@ class item_description(models.Model):
     expiry_type = models.CharField(max_length=45, null=True, blank=True, choices=[('Date', 'Date'), ('Usage', 'Usage'), ('Maintenance', 'Maintenance'),  ('Temperature', 'Temperature')]) # Expiry type for the item
     max_uses = models.IntegerField(null=True, blank=True) # Maximum allowed uses for the item
     maintenance_interval = models.IntegerField(null=True, blank=True) # Maintenance interval in days
+    warranty_expiration = models.DateField(null=True, blank=True) # Stores the calculated warranty
 
     lead_time_prep = models.IntegerField(null=True, blank=True)  # Lead time in days
     qty_limit = models.IntegerField(null=True, blank=True) #for the borrowing_config, to set qty limit to each item.

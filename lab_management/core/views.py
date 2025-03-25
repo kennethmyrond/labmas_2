@@ -20,6 +20,7 @@ from django.utils.timezone import now
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from django.urls import reverse
 from django import forms
+from dateutil.relativedelta import relativedelta
 from django.views.decorators.csrf import csrf_exempt
 from collections import defaultdict
 from functools import wraps
@@ -1059,8 +1060,24 @@ def inventory_addNewItem_view(request):
         expiry_type = request.POST.get('expiration_type')  # 'date', 'usage', or 'maintenance'
         if expiry_type == "null":
             expiry_type = None
+        
         max_uses = request.POST.get('max_uses', None) if expiry_type == 'Usage' else None
         maintenance_interval = request.POST.get('maintenance_interval', None) if expiry_type == 'Maintenance' else None
+        warranty_expiration = None
+
+        if expiry_type == 'Warranty':
+            purchase_date = request.POST.get('purchase_date')
+            warranty_duration = request.POST.get('warranty_duration')
+            warranty_unit = request.POST.get('warranty_unit')  # 'months' or 'years'
+
+            if purchase_date and warranty_duration and warranty_unit:
+                purchase_date = datetime.strptime(purchase_date, "%Y-%m-%d").date()
+                warranty_duration = int(warranty_duration)
+
+                if warranty_unit == 'years':
+                    warranty_expiration = purchase_date + relativedelta(years=warranty_duration)
+                else:
+                    warranty_expiration = purchase_date + relativedelta(months=warranty_duration)
 
         logger.info(f"User {request.user} attempting to add a new item: {item_name}, type: {item_type_id}")
 
@@ -1091,6 +1108,7 @@ def inventory_addNewItem_view(request):
                 expiry_type=expiry_type,
                 max_uses = max_uses,
                 maintenance_interval = maintenance_interval,
+                warranty_expiration=warranty_expiration,
             )
             new_item.save()
 
