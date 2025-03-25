@@ -1,5 +1,6 @@
 import json, qrcode, random
 from datetime import datetime
+from datetime import timedelta
 from django.utils.crypto import get_random_string
 from django.contrib.auth.models import User
 from django.db import models
@@ -249,13 +250,19 @@ class item_description(models.Model):
     is_consumable = models.BooleanField(default=False)
 
     rec_expiration = models.BooleanField(default=False)
-    expiry_type = models.CharField(max_length=45, null=True, blank=True, choices=[('Date', 'Date'), ('Usage', 'Usage'), ('Maintenance', 'Maintenance'),  ('Temperature', 'Temperature')]) # Expiry type for the item
+    expiry_type = models.CharField(max_length=45, null=True, blank=True, choices=[('Date', 'Date'), ('Usage', 'Usage'), ('Maintenance', 'Maintenance'), ('Warranty', 'Warranty'),  ('Temperature', 'Temperature')]) # Expiry type for the item
     max_uses = models.IntegerField(null=True, blank=True) # Maximum allowed uses for the item
     maintenance_interval = models.IntegerField(null=True, blank=True) # Maintenance interval in days
     warranty_expiration = models.DateField(null=True, blank=True) # Stores the calculated warranty
 
     lead_time_prep = models.IntegerField(null=True, blank=True)  # Lead time in days
     qty_limit = models.IntegerField(null=True, blank=True) #for the borrowing_config, to set qty limit to each item.
+    
+    def is_warranty_expiring_soon(self):
+        """ Check if the warranty expires within the next 30 days """
+        if self.expiry_type == "Warranty" and self.warranty_expiration:
+            return self.warranty_expiration <= timezone.now().date() + timedelta(days=30)
+        return False
     
     def save(self, *args, **kwargs):
         if not self.item_id:

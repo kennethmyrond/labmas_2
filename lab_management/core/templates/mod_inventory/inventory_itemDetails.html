@@ -209,7 +209,12 @@
                       <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-hand-index-thumb-fill"></i></span></span>
                     {% elif inventory.qty > 0 and item.expiry_type == 'Maintenance' and inventory.expiration_date <= date_today %}
                       <span title="Nearing expiration" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-tools"></i></span></span>
-                    {% endif %}
+                      {% endif %}
+                      {% if is_warranty_expiring %}
+                      <span title="Warranty Expiring Soon!" style="color: red; font-size: 16px; margin-left: 5px;">
+                        <span class="badge badge-pill bg-warning"><i style="color:black;" class="bi bi-calendar-date"></i></span>
+                      </span>
+                    {% endif %}                   
                   {% endif %}
                 </td>
                 <td style="display:none"></td>

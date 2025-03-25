@@ -768,6 +768,7 @@ def inventory_view(request):
             ).annotate(total_qty=Coalesce(Sum('item_inventory__qty'), 0))  # Calculate total quantity
             add_cols = []
         
+
         # Log inventory count
         logger.debug(f"Inventory fetched: {inventory_items.count()} items found.")
         notifications_sent = False  # Flag to prevent duplicate notifications
@@ -777,6 +778,7 @@ def inventory_view(request):
         for item in inventory_items:
             expirations = item_expirations.objects.filter(inventory_item__item=item)
             expiration_warnings = ''
+            item.is_warranty_expiring = item.is_warranty_expiring_soon()
 
             # Check expiration conditions
             for exp in expirations:
@@ -838,13 +840,15 @@ def inventory_view(request):
 
         # Get unread notifications for the user
         notifications = get_notifications(request)
-
+        
         return render(request, 'mod_inventory/view_inventory.html', {
             'inventory_items': inventory_items,
             'item_types': item_types_list,
             'selected_item_type': int(selected_item_type) if selected_item_type else None,
             'add_cols': add_cols,
-            'notifications': notifications,  # Pass notifications to the template
+            'notifications': notifications,
+            'is_warranty_expiring': any(item.is_warranty_expiring for item in inventory_items),
+        
         })
     except Exception as e:
         logger.error(f"Error fetching inventory: {e}", exc_info=True)
@@ -890,6 +894,9 @@ def inventory_itemDetails_view(request, item_id):
         add_cols_data = json.loads(item.add_cols) if item.add_cols else {} # Parse add_cols JSON
         item_inventories = item_inventory.objects.filter(item=item).select_related('supplier')
         
+        # Check if the warranty is expiring soon
+        is_warranty_expiring = item.is_warranty_expiring_soon()
+
         item_type = item.itemType# Get the related itemType instance
         date_today = date.today()
         lab = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id)
@@ -1008,7 +1015,8 @@ def inventory_itemDetails_view(request, item_id):
                 })
         
         logger.debug(f"Fetched {len(item_inventories)} inventory items for item {item_id}.")
-
+        is_warranty_expiring = item.is_warranty_expiring_soon() if item.expiry_type == "Warranty" else False
+        
         context = {
             'item': item,
             'itemType_name': item_type.itemType_name if item_type else None,
@@ -1019,7 +1027,7 @@ def inventory_itemDetails_view(request, item_id):
             'is_edit_mode': False,  # Not in edit mode
             'qr_code_data': qr_code_data_item_only,
             'date_today': date_today,
-
+            'is_warranty_expiring': is_warranty_expiring,
             'lab_name': lab.name,
             'supplier_data': supplier_data,
 

@@ -86,7 +86,12 @@
                       {% elif item.expiration_warning == 'U' %}
                       <span title="Nearing Max Uses" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-hand-index-thumb-fill"></i></span></span>
                       {% elif item.expiration_warning == 'M' %}
-                          <span title="Nearing Maintenance" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-tools"></i></span></span>
+                      <span title="Nearing Maintenance" style="color: red; font-size: 16px; margin-left: 5px;"><span class="badge badge-pill bg-warning"><i style = "color:black;" class="bi bi-tools"></i></span></span>
+                      {% endif %}
+                      {% if item.is_warranty_expiring %}
+                        <span title="Warranty Expiring Soon!" style="color: red; font-size: 16px; margin-left: 5px;">
+                            <span class="badge badge-pill bg-warning"><i style="color:black;" class="bi bi-calendar-date"></i></span>
+                        </span>
                       {% endif %}
                     </td>
                     <td class="{% if item.total_qty > 0 %}qty-positive{% else %}qty-negative{% endif %}" style="text-align:right;">
