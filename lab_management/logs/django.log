@@ -9470,3 +9470,15 @@ WARNING 2025-03-26 17:28:54,082 log Not Found: /
 WARNING 2025-03-26 17:28:54,083 basehttp "GET / HTTP/1.1" 404 3546
 WARNING 2025-03-26 17:28:59,393 log Not Found: /
 WARNING 2025-03-26 17:28:59,393 basehttp "GET / HTTP/1.1" 404 3546
+WARNING 2025-03-26 17:55:08,857 log Not Found: /accounts/google/login/callback/
+WARNING 2025-03-26 17:55:08,857 basehttp "GET /accounts/google/login/callback/?state=KNVYfz3xsMlZbBC5&code=4%2F0AQSTgQEifCSiCsQtfYe_WnVPsigLLebmgmXBBDJcmlV8RduqhTA3cdcZKAqI1iY7eSLpGQ&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid&authuser=0&hd=dlsu.edu.ph&prompt=none HTTP/1.1" 404 10546
+WARNING 2025-03-26 17:55:27,992 log Not Found: /
+WARNING 2025-03-26 17:55:27,993 basehttp "GET / HTTP/1.1" 404 3546
+WARNING 2025-03-26 17:55:31,978 log Not Found: /accounts/google/login/callback/
+WARNING 2025-03-26 17:55:31,979 basehttp "GET /accounts/google/login/callback/?state=KNVYfz3xsMlZbBC5&code=4%2F0AQSTgQEifCSiCsQtfYe_WnVPsigLLebmgmXBBDJcmlV8RduqhTA3cdcZKAqI1iY7eSLpGQ&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid&authuser=0&hd=dlsu.edu.ph&prompt=none HTTP/1.1" 404 10546
+WARNING 2025-03-26 17:55:35,414 log Not Found: /accounts/google/login/callback/
+WARNING 2025-03-26 17:55:35,414 basehttp "GET /accounts/google/login/callback/?state=KNVYfz3xsMlZbBC5&code=4%2F0AQSTgQGeHKJIfdBVvMvgsbEndql9ds2iKHKrTVDFHz-78RQg5yx5TXwfvpcauPfsiSvceg&scope=email+profile+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile+openid&authuser=0&hd=dlsu.edu.ph&prompt=none HTTP/1.1" 404 10546
+WARNING 2025-03-26 17:57:24,871 log Not Found: /
+WARNING 2025-03-26 17:57:24,871 basehttp "GET / HTTP/1.1" 404 3546
+WARNING 2025-03-26 17:57:29,467 log Not Found: /
+WARNING 2025-03-26 17:57:29,468 basehttp "GET / HTTP/1.1" 404 3546

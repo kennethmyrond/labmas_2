@@ -42,7 +42,8 @@ def labs_context(request):
             coordinator_name=Subquery(coordinator_name)
         )
 
-        is_available = get_object_or_404(laboratory, laboratory_id=selected_lab_id).is_available
+        if selected_lab_id:
+            is_available = get_object_or_404(laboratory, laboratory_id=selected_lab_id).is_available
 
         if selected_lab_id:
             lab = laboratory.objects.filter(laboratory_id=selected_lab_id).first()
