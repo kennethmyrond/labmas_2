@@ -565,9 +565,18 @@ def home(request):
             laboratory_users__status='P'
         )
     
+    deactivated_labs = laboratory.objects.filter(
+            is_available=False, 
+            laboratory_users__user=request.user, 
+            laboratory_users__is_active=True,
+            laboratory_users__status='A',
+            laboratory_users__role=2
+        )
+    
     context = {
         'user': request.user, 
-        'pending_labs':pending_labs
+        'pending_labs':pending_labs,
+        'deactivated_labs':deactivated_labs
     }
 
     if request.user.is_superuser:
@@ -657,7 +666,7 @@ def set_lab(request, laboratory_id):
         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
         
         # Check if the laboratory is available
-        if lab.is_available == 1 and laboratory_users.objects.filter(user=request.user, laboratory=lab, is_active=True, status='A').exists():
+        if laboratory_users.objects.filter(user=request.user, laboratory=lab, is_active=True, status='A').exists():
                 # Set the chosen laboratory in the session
                 request.session['selected_lab'] = lab.laboratory_id
                 request.session['selected_lab_name'] = lab.name
@@ -1757,6 +1766,8 @@ def inventory_manageSuppliers_view(request):
             supplied_items_count=models.Count('item_inventory')
         )
 
+        is_lab_available = get_object_or_404(laboratory, laboratory_id=selected_laboratory_id).is_available
+
         if request.method == "POST":
             supplier_name = request.POST.get("supplier_name")
             contact_person = request.POST.get("contact_person")
@@ -1778,6 +1789,7 @@ def inventory_manageSuppliers_view(request):
 
         return render(request, 'mod_inventory/inventory_manageSuppliers.html', {
             'suppliers': lab_suppliers,
+            'is_lab_available': is_lab_available
         })
     except Exception as e:
         logger.error(f"Unexpected error in inventory_manageSuppliers_view: {e}", exc_info=True)
@@ -5716,7 +5728,7 @@ def superuser_manage_labs(request):
         if not request.user.is_superuser:
             return render(request, 'error_page.html', {'message': 'Module is allowed for this laboratory.'})
 
-        labs = laboratory.objects.exclude(Q(laboratory_id=0) | Q(is_available=0)).annotate(user_count=Count('laboratory_users', laboratory_users__is_active=1))   # Retrieve all laboratory records
+        labs = laboratory.objects.exclude(Q(laboratory_id=0)).annotate(user_count=Count('laboratory_users', laboratory_users__is_active=1))   # Retrieve all laboratory records
         context = {
             'labs': labs,
         }
@@ -5883,27 +5895,6 @@ def superuser_lab_info(request, laboratory_id):
         messages.error(request, "An unexpected error occurred. Please try again.")
         return redirect('home')
 
-
-# @login_required()
-# @superuser_or_lab_permission_required('configure_laboratory')
-# def add_module_to_lab(request, laboratory_id):
-#     if request.method == 'POST':
-#         module_id = request.POST.get('module_id')
-#         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
-#         module = get_object_or_404(Module, id=module_id)
-
-#         # Check if the module is already associated with the lab
-#         if LaboratoryModule.objects.filter(laboratory=lab, module=module).exists():
-#             messages.error(request, "The module is already added to this laboratory.")
-#         else:
-#             # Create a LaboratoryModule entry
-#             LaboratoryModule.objects.get_or_create(laboratory=lab, module=module)
-#             messages.success(request, "Module added successfully.")
-
-#         return redirect('superuser_lab_info', laboratory_id=laboratory_id)
-
-#     return redirect('superuser_lab_info', laboratory_id=laboratory_id)
-
 @transaction.atomic
 @login_required()
 @superuser_or_lab_permission_required('configure_laboratory')
@@ -5956,6 +5947,20 @@ def deactivate_lab(request, laboratory_id):
         lab = get_object_or_404(laboratory, laboratory_id=laboratory_id)
         lab.is_available = False  # Set is_available to 0 (inactive)
         lab.save()  # Save the changes to the database
+
+        # Default lab coordinator (role_id = 2) permissions
+        default_permissions = {9, 1, 5, 13, 16, 18, 19, 25, 23}
+
+        # Remove all permissions for roles other than lab coordinator (role_id = 2)
+        laboratory_permissions.objects.filter(laboratory=lab).delete()
+
+        # Re-add the default permissions for lab coordinator
+        new_permissions = [
+            laboratory_permissions(role_id=2, laboratory=lab, permissions_id=perm_id)
+            for perm_id in default_permissions
+        ]
+        laboratory_permissions.objects.bulk_create(new_permissions)
+
         messages.success(request, "Laboratory deactivated successfully.")  # Optional success message
     except Exception as e:
         logger.error(f"Error deactivating Lab {laboratory_id}: {e}", exc_info=True)
@@ -5963,6 +5968,7 @@ def deactivate_lab(request, laboratory_id):
     
     return redirect('home')
 
+# 2: [9, 11, 1, 5, 6, 13, 16, 17, 18, 19, 20, 21, 25, 23],
 
 @login_required()
 @superuser_or_lab_permission_required('configure_laboratory')

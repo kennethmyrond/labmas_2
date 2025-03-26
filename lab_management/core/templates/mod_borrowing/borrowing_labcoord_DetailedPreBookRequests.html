@@ -52,8 +52,8 @@
                   <!-- Edit and Action Buttons -->
                   {% if show_action_buttons %}
                   <div class="mt-4">
-                      <button class="btn btn-primary" id="editBtn" onclick="enableEdit()" {%if borrow_request.status == 'D' or borrow_request.status == 'A'%} disabled {%endif%}>Edit Quantity</button>
-                      <button class="btn btn-secondary d-none" id="revertBtn" onclick="revertEdit()">Revert Edit</button>
+                      <button class="btn btn-primary" id="editBtn" onclick="enableEdit()" {%if borrow_request.status == 'D' or borrow_request.status == 'A'%} disabled {%endif%} {%if not is_available_lab%} disabled {%endif%}>Edit Quantity</button>
+                      <button class="btn btn-secondary d-none" id="revertBtn" onclick="revertEdit()" {%if not is_available_lab%} disabled {%endif%}>Revert Edit</button>
                   </div>
                   {% endif %}
 
@@ -88,8 +88,8 @@
 
                       {% if show_action_buttons %}
                       <div class="mt-4">
-                          <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#acceptModal" {%if borrow_request.status == 'A' %} disabled {%endif%}>Approve</button>
-                          <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#declineModal" {%if borrow_request.status == 'D' %} disabled {%endif%} >Decline</button>
+                          <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#acceptModal" {%if borrow_request.status == 'A' %} disabled {%endif%} {%if not is_available_lab%} disabled {%endif%}>Approve</button>
+                          <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#declineModal" {%if borrow_request.status == 'D' %} disabled {%endif%} {%if not is_available_lab%} disabled {%endif%}>Decline</button>
                       </div>
                       {% else %}
                       <div class="alert alert-info">This request has already been processed.</div>

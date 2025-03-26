@@ -58,6 +58,30 @@
   {% endfor %}
 </div>
 
+<!-- Deactivated Laboratories -->
+{% if deactivated_labs %}
+<hr>
+<h3>Deactivated Laboratories</h3>
+<div class="row">
+  {% for lab in deactivated_labs %}
+  <div class="col-md-4 d-flex align-items-stretch">
+    <div class="card {% if lab.laboratory_id == selected_lab_id %}border-danger{% else %}border-secondary{% endif %} mb-3 w-100">
+      <div class="card-body d-flex flex-column p-4">
+        <h5 class="card-title">{{ lab.name }}</h5>
+        <p class="card-text"><strong>Description:</strong> {{ lab.description }}</p>
+        <p class="text-danger"><strong>Note:</strong> This laboratory is deactivated.</p>
+        <div class="mt-auto">
+          <a href="{% url 'set_lab' lab.laboratory_id %}" class="btn {% if lab.laboratory_id == selected_lab_id %}btn-danger{% else %}btn-outline-danger{% endif %} w-100">
+            {% if lab.laboratory_id == selected_lab_id %}Selected (Deactivated){% else %}Select (Deactivated){% endif %}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 
 
 <!-- Modal for Adding Laboratory -->

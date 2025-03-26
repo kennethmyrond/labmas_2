@@ -25,7 +25,7 @@
             <h5 class="card-title">List of Items for Purchasing</h5>
             <div class="row mb-3">
               <div class="col-sm-10">
-                <button type="submit" class="btn btn-primary" id="add" data-bs-toggle="modal" data-bs-target="#addtocart">Add Item to list</button>
+                <button type="submit" class="btn btn-primary" id="add" data-bs-toggle="modal" data-bs-target="#addtocart" {%if not is_available_lab%} disabled {%endif%}>Add Item to list</button>
               </div>
             </div>
             <!-- Table with stripped rows -->
@@ -52,7 +52,7 @@
                             <td>
                                 <form method="POST" action="{% url 'clear_buyItem' item.id %}" style="display:inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-danger ms-2">Clear</button>
+                                    <button type="submit" class="btn btn-danger ms-2" {%if not is_available_lab%} disabled {%endif%}>Clear</button>
                                 </form>
                             </td>
                         </tr>

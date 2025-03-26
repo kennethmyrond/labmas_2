@@ -250,14 +250,14 @@
               <td>{{ user.role_name }}</td>
               <td class="status-{{ user.is_active|yesno:'active,terminated' }}" style="color: {%if user.status == 'A' %}green{%else%}red{%endif%};">{{ user.get_status_display }}</td>
               <td>
-                <button class="btn btn-sm btn-warning" onclick="showEditRoleModal('{{ user.user_id }}', '{{ user.role_name }}')">✎</button>
+                <button class="btn btn-sm btn-warning" onclick="showEditRoleModal('{{ user.user_id }}', '{{ user.role_name }}')" {% if not lab.is_available %} disabled {% endif %}>✎</button>
               </td>
               <td>
                 <form id="toggleStatusForm-{{ user.user_id }}" method="POST" style="display: inline;">
                   {% csrf_token %}
                   <input type="hidden" name="toggle_user_status" value="1">
                   <input type="hidden" name="user_id" value="{{ user.user_id }}">
-                  <button type="button" class="btn btn-sm btn-{{ user.is_active|yesno:'danger,success' }}" onclick="toggleUserStatus('{{ user.user_id }}')">
+                  <button type="button" class="btn btn-sm btn-{{ user.is_active|yesno:'danger,success' }}" onclick="toggleUserStatus('{{ user.user_id }}')" {% if not lab.is_available %} disabled {% endif %}>
                     {{ user.is_active|yesno:"Remove,Activate" }}
                   </button>
                 </form>
@@ -479,7 +479,7 @@
               </div>
             </div>
 
-            <button type="submit" name="add_room" class="btn btn-primary">Add Room</button>
+            <button type="submit" name="add_room" class="btn btn-primary" {% if not lab.is_available %} disabled {% endif %}>Add Room</button>
           </form>
 
           <hr>
@@ -506,8 +506,8 @@
                     <td>{{ room.description }}</td>
                     <td><input type="checkbox" name="room_{{ room.room_id }}_enabled" {% if room.is_reservable %}checked{% endif %}></td>
                     <td>
-                        <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#editRoomModal{{ room.room_id }}">✎</button>
-                        <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteRoomModal{{ room.room_id }}">🗑</button>
+                        <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#editRoomModal{{ room.room_id }}" {% if not lab.is_available %} disabled {% endif %}>✎</button>
+                        <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteRoomModal{{ room.room_id }}" {% if not lab.is_available %} disabled {% endif %}>🗑</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -515,8 +515,8 @@
         </table>
     </div>
 
-            <button type="submit" name="save_rooms" class="btn btn-primary">Save Room Configuration</button>
-            <button type="submit" name="cancel" class="btn btn-secondary">Cancel</button>
+            <button type="submit" name="save_rooms" class="btn btn-primary" {% if not lab.is_available %} disabled {% endif %}>Save Room Configuration</button>
+            <button type="submit" name="cancel" class="btn btn-secondary" {% if not lab.is_available %} disabled {% endif %}>Cancel</button>
 
     <!-- Delete Room Modal -->
     {% for room in lab_rooms %}
@@ -632,8 +632,8 @@
                   <form method="POST" style="display: inline;">
                     {% csrf_token %}
                     <input type="hidden" name="user_id" value="{{ user.user_id }}">
-                    <button type="submit" name="accept_user" class="btn btn-success btn-sm">Accept</button>
-                    <button type="submit" name="decline_user" class="btn btn-danger btn-sm">Decline</button>
+                    <button type="submit" name="accept_user" class="btn btn-success btn-sm" {% if not lab.is_available %} disabled {% endif %}>Accept</button>
+                    <button type="submit" name="decline_user" class="btn btn-danger btn-sm" {% if not lab.is_available %} disabled {% endif %}>Decline</button>
                   </form>
                 </td>
               </tr>

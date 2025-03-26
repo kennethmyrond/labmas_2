@@ -60,7 +60,7 @@
           </form>
 
           <!-- Add Manual Clearance Button -->
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#manualClearanceModal">
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#manualClearanceModal" {%if not is_available_lab%} disabled {%endif%}>
             Add Manual Clearance
           </button>
 

@@ -34,8 +34,8 @@
             <!-- Edit and Disable Buttons -->
             
             {% if not supplier.is_disabled %}
-            <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#editSupplierModal">Edit</button>
-            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#disableSupplierModal">Delete</button>
+            <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#editSupplierModal" {%if not is_available_lab%} disabled {%endif%}>Edit</button>
+            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#disableSupplierModal" {%if not is_available_lab%} disabled {%endif%}>Delete</button>
             {% endif %}
           </div>
         </div>

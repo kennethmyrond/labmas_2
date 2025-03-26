@@ -25,7 +25,7 @@
             <h5 class="card-title">Manage Suppliers</h5>
             <div class="row mb-3">
               <div class="col-sm-10">
-                <button type="submit" class="btn btn-primary" id="add" data-bs-toggle="modal" data-bs-target="#addSupplierModal">Add Supplier</button>
+                <button type="submit" class="btn btn-primary" id="add" data-bs-toggle="modal" data-bs-target="#addSupplierModal" {%if not is_available_lab%} disabled {%endif%}>Add Supplier</button>
               </div>
             </div>
             <!-- Table with stripped rows -->

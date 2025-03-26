@@ -74,7 +74,8 @@
                                     <option value="" {% if item.expiry_type == null %}selected{% endif %}>None</option>
                                     <option value="Date" {% if item.expiry_type == "Date" %}selected{% endif %}>Expiration Date</option>
                                     <option value="Usage" {% if item.expiry_type == "Usage" %}selected{% endif %}>Number of Uses</option>
-                                    <option value="Maintenance" {% if item.expiry_type == "Maintenance" %}selected{% endif %}>Maintenance-Based</option>                                
+                                    <option value="Maintenance" {% if item.expiry_type == "Maintenance" %}selected{% endif %}>Maintenance-Based</option>    
+                                    <option value="Warranty" {% if item.expiry_type == "Warranty" %}selected{% endif %}>Warranty</option>                               
                                 </select>
                             </div>
                         </div>

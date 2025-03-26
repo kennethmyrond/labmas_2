@@ -156,7 +156,7 @@
   
               <div class="row mb-5">
                 <div class="col-sm-10 d-flex align-items-center">        
-                    <button type="submit" class="btn btn-primary me-3" {% if report_data.status == 'Cleared' %} disabled {% endif %}>Mark as Cleared</button>
+                    <button type="submit" class="btn btn-primary me-3" {% if report_data.status == 'Cleared' %} disabled {% endif %} {%if not is_available_lab%} disabled {%endif%}>Mark as Cleared</button>
                 </div>
             </div>
             
