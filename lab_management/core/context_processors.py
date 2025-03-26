@@ -16,6 +16,7 @@ def labs_context(request):
     borrow_config = None
     permissions = {}
     is_available = True
+    user_role = None
 
     if request.user.is_authenticated:
         # print(request.user.user_id)
@@ -45,7 +46,6 @@ def labs_context(request):
         if selected_lab_id:
             is_available = get_object_or_404(laboratory, laboratory_id=selected_lab_id).is_available
 
-        if selected_lab_id:
             lab = laboratory.objects.filter(laboratory_id=selected_lab_id).first()
             if lab:
                 module_ids = lab.modules
@@ -62,6 +62,13 @@ def labs_context(request):
                 for perm in all_permissions
             }
 
+            user_role = laboratory_users.objects.filter(
+                user=current_user,
+                laboratory_id=selected_lab_id,
+                is_active=True,
+                status='A'
+            ).values('role_id').first()
+
     return {
         'laboratories': user_labs,
         'selected_lab_id': selected_lab_id,
@@ -70,5 +77,6 @@ def labs_context(request):
         'logged_user': current_user,
         'permissions': permissions,
         'borrow_config': borrow_config,
-        'is_available_lab': is_available
+        'is_available_lab': is_available,
+        'user_role': user_role.get('role_id') if user_role else None
     }

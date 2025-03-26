@@ -18,6 +18,12 @@
     </nav>
 </div>
 
+{% if user_role == 2 and 2 not in selected_lab_modules or not is_available_lab %}
+<div class="alert alert-danger" role="alert">
+  The module is currently disabled, but you can still access the data.
+</div>
+{% endif %}
+
 <section class="section">
     <div class="row">
         <div class="col-lg-8">
@@ -44,7 +50,7 @@
 
                     {% if permissions.can_clear_wip %}
                     {% if wip.status == 'A' %}
-                        <a href="{% url 'clear_wip' wip.wip_id %}" class="btn btn-warning">Clear WIP</a>
+                        <a href="{% url 'clear_wip' wip.wip_id %}" class="btn btn-warning" {% if user_role == 2 and 2 not in selected_lab_modules %} hidden {%endif%}>Clear WIP</a>
                     {% endif %}
                     {% endif %}
                 </div>

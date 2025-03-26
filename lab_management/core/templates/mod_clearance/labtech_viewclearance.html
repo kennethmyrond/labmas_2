@@ -37,6 +37,12 @@
     {% endfor %}
 {% endif %}
 
+{% if user_role == 2 and 3 not in selected_lab_modules or not is_available_lab %}
+<div class="alert alert-danger" role="alert">
+  The module is currently disabled, but you can still access the data.
+</div>
+{% endif %}
+
 
 <section class="section">
   <div class="row">
@@ -60,7 +66,7 @@
           </form>
 
           <!-- Add Manual Clearance Button -->
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#manualClearanceModal" {%if not is_available_lab%} disabled {%endif%}>
+          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#manualClearanceModal" {%if not is_available_lab%} disabled {%endif%} {% if user_role == 2 and 3 not in selected_lab_modules %} disabled {%endif%}>
             Add Manual Clearance
           </button>
 

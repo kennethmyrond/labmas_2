@@ -26,6 +26,12 @@
   </nav>
 </div>
 
+{% if user_role == 2 and 3 not in selected_lab_modules or not is_available_lab %}
+<div class="alert alert-danger" role="alert">
+  The module is currently disabled, but you can still access the data.
+</div>
+{% endif %}
+
 <section class="section">
   <div class="row">
     <div class="col-lg-12">
@@ -92,8 +98,8 @@
           <form method="POST">
             {% csrf_token %}
             
-            <button type="submit" name="action" value="accept" class="btn btn-success" {% if reservation.status == 'R' %}disabled{% endif %}>Accept</button>
-            <button type="submit" name="action" value="delete" class="btn btn-danger" {% if reservation.status == 'R' %}disabled{% endif %}>Decline</button>
+            <button type="submit" name="action" value="accept" class="btn btn-success" {% if reservation.status == 'R' %}disabled{% endif %} {%if not is_available_lab%} disabled {%endif%} {% if user_role == 2 and 4 not in selected_lab_modules %} disabled {%endif%}>Accept</button>
+            <button type="submit" name="action" value="delete" class="btn btn-danger" {% if reservation.status == 'R' %}disabled{% endif %} {%if not is_available_lab%} disabled {%endif%} {% if user_role == 2 and 4 not in selected_lab_modules %} disabled {%endif%}>Decline</button>
           </form>
          <br>
          <button class="btn btn-info" id="downloadBtn">Download PDF</button>

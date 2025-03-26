@@ -18,6 +18,12 @@
     {% endfor %}
 {% endif %}
 
+{% if user_role == 2 and 1 not in selected_lab_modules %}
+<div class="alert alert-danger" role="alert">
+  The module is currently disabled, but you can still access the data.
+</div>
+{% endif %}
+
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
@@ -34,8 +40,8 @@
             <!-- Edit and Disable Buttons -->
             
             {% if not supplier.is_disabled %}
-            <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#editSupplierModal" {%if not is_available_lab%} disabled {%endif%}>Edit</button>
-            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#disableSupplierModal" {%if not is_available_lab%} disabled {%endif%}>Delete</button>
+            <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#editSupplierModal" {%if not is_available_lab%} disabled {%endif%} {% if user_role == 2 and 1 not in selected_lab_modules %} disabled {%endif%}>Edit</button>
+            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#disableSupplierModal" {%if not is_available_lab%} disabled {%endif%} {% if user_role == 2 and 1 not in selected_lab_modules %} disabled {%endif%}>Delete</button>
             {% endif %}
           </div>
         </div>

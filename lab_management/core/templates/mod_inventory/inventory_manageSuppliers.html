@@ -16,6 +16,13 @@
         <div class="alert alert-{{ message.tags }}">{{ message }}</div>
     {% endfor %}
 {% endif %}
+
+{% if user_role == 2 and 1 not in selected_lab_modules or not is_available_lab %}
+<div class="alert alert-danger" role="alert">
+  The module is currently disabled, but you can still access the data.
+</div>
+{% endif %}
+
   <section class="section">
     <div class="row">
       <div class="col-lg-12">
@@ -25,7 +32,7 @@
             <h5 class="card-title">Manage Suppliers</h5>
             <div class="row mb-3">
               <div class="col-sm-10">
-                <button type="submit" class="btn btn-primary" id="add" data-bs-toggle="modal" data-bs-target="#addSupplierModal" {%if not is_available_lab%} disabled {%endif%}>Add Supplier</button>
+                <button type="submit" class="btn btn-primary" id="add" data-bs-toggle="modal" data-bs-target="#addSupplierModal" {%if not is_available_lab%} disabled {%endif%} {% if user_role == 2 and 1 not in selected_lab_modules %} disabled {%endif%}>Add Supplier</button>
               </div>
             </div>
             <!-- Table with stripped rows -->

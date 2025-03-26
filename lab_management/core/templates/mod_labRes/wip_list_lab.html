@@ -3,12 +3,6 @@
 
 {% block content %}
 
-<!-- Success message -->
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-{% endif %}
 
 
 <div class="pagetitle">
@@ -19,6 +13,21 @@
       </ol>
     </nav>
 </div>
+
+<!-- Success message -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+
+{% if user_role == 2 and 2 not in selected_lab_modules or not is_available_lab %}
+<div class="alert alert-danger" role="alert">
+  The module is currently disabled, but you can still access the data.
+</div>
+{% endif %}
+
 
 <section class="section">
     <div class="row">
@@ -81,7 +90,7 @@
                                 <td>
                                     <a href="{% url 'view_wip' wip.wip_id %}" class="btn btn-info"><i class="bi bi-info-square"></i></a>
                                     {% if permissions.can_clear_wip%}
-                                    <a href="{% url 'clear_wip' wip.wip_id %}" class="btn btn-warning"><i class="bi bi-x-circle"></i></a>
+                                    <a href="{% url 'clear_wip' wip.wip_id %}" class="btn btn-warning" {% if user_role == 2 and 2 not in selected_lab_modules %} hidden {%endif%}><i class="bi bi-x-circle"></i></a>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -128,7 +137,7 @@
                                     <a href="{% url 'view_wip' wip.wip_id %}" class="btn btn-info"><i class="bi bi-info-square"></i></a>
                                     {% if permissions.can_clear_wip%}
                                     {% if wip.status == 'A' %}
-                                    <a href="{% url 'clear_wip' wip.wip_id %}" class="btn btn-warning"><i class="bi bi-x-circle"></i></a>
+                                    <a href="{% url 'clear_wip' wip.wip_id %}" class="btn btn-warning" {% if user_role == 2 and 2 not in selected_lab_modules %} hidden {%endif%}><i class="bi bi-x-circle"></i></a>
                                     {% endif %}
                                     {% endif %}
                                 </td>

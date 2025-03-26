@@ -8,11 +8,7 @@
     --bs-btn-color: #353535;
     --bs-btn-bg: #ececec;}
   </style>
-  {% if messages %}
-  {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-  {% endfor %}
-{% endif %}
+
 
   <div class="pagetitle">
     <h1>Inventory</h1>
@@ -22,6 +18,18 @@
       </ol>
     </nav>
   </div><!-- End Page Title -->
+  
+{% if messages %}
+  {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+{% if user_role == 2 and 1 not in selected_lab_modules or not is_available_lab %}
+<div class="alert alert-danger" role="alert">
+  The module is currently disabled, but you can still access the data.
+</div>
+{% endif %}
 
   <section class="section">
     <div class="row">
